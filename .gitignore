@@ -1,7 +1,7 @@
 venv
 .idea
 __pycache__/
-user/migrations/
-branch/migrations/
-location/migrations/
-system/migrations/
+user/migrations
+branch/migrations
+location/migrations
+system/migrations
