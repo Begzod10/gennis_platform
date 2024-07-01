@@ -23,7 +23,7 @@ class ProfileForm(ModelForm):
     class Meta:
         model = Profile
         fields = ['name', 'surname', 'username',
-                  'father_name', 'profile_img', 'birth_date', 'registered_date', 'phone', 'comment', 'age', 'observer']
+                  'father_name', 'profile_img', 'birth_date', 'phone', 'comment', 'age', 'observer', ]
 
     def __init__(self, *args, **kwargs):
         super(ProfileForm, self).__init__(*args, **kwargs)

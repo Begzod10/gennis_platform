@@ -1,14 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import User
 import uuid
-
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
+from django.utils import timezone
 
 
 class Profile(models.Model):
-    id = models.UUIDField(default=uuid.uuid4, unique=True,
-                          primary_key=True, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=200, blank=True, null=True)
@@ -16,9 +13,9 @@ class Profile(models.Model):
     username = models.CharField(max_length=200, blank=True, null=True)
     father_name = models.CharField(max_length=200, blank=True, null=True)
     profile_img = models.ImageField(
-        null=True, blank=True, upload_to='profiles/', default="profiles/user-default.png")
-    birth_date = models.DateTimeField(auto_now_add=True)
-    registered_date = models.DateTimeField(auto_now_add=True)
+        null=True, blank=True, upload_to='profiles/', default="")
+    birth_date = models.DateTimeField()
+    registered_date = models.DateTimeField(default=timezone.now)
     phone = models.CharField(max_length=200, blank=True, null=True)
     age = models.CharField(max_length=200, blank=True, null=True)
     comment = models.CharField(max_length=200, blank=True, null=True)
@@ -28,7 +25,7 @@ class Profile(models.Model):
         return str(self.username)
 
     class Meta:
-        ordering = ['created']
+        ordering = ['id']
 
     @property
     def imageURL(self):
