@@ -5,3 +5,4 @@ user/migrations
 branch/migrations
 location/migrations
 system/migrations
+language/migrations

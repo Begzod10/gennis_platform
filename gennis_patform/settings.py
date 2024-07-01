@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'system.apps.SystemConfig',
     'location.apps.LocationConfig',
     'branch.apps.BranchConfig',
+    'drf_yasg',
+    'language.apps.LanguageConfig',
 ]
 
 MIDDLEWARE = [

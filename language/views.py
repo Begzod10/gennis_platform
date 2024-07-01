@@ -5,13 +5,13 @@ from gennis_patform.permission import IsAdminOrReadOnly
 from .serializers import *
 
 
-class CreateSystemList(generics.ListCreateAPIView):
-    queryset = System.objects.all()
-    serializer_class = SystemSerializers
+class CreateLanguageList(generics.ListCreateAPIView):
+    queryset = Language.objects.all()
+    serializer_class = LanguageSerializers
     permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrReadOnly) # login qilgan yoki yuq ligini va admin emasligini tekshiradi
 
 
-class SystemRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = System.objects.all()
-    serializer_class = SystemSerializers
+class LanguageRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Language.objects.all()
+    serializer_class = LanguageSerializers
     permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrReadOnly) # login qilgan yoki yuq ligini va admin emasligini tekshiradi
