@@ -40,9 +40,10 @@ INSTALLED_APPS = [
     'system.apps.SystemConfig',
     'location.apps.LocationConfig',
     'branch.apps.BranchConfig',
-    'drf_yasg',
     'language.apps.LanguageConfig',
+    'drf_yasg',
 ]
+SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

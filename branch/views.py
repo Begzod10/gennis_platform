@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 
 @api_view(['POST'])
-def create_project(request):
+def create_branch(request):
     form = BranchForm()
 
     if request.method == 'POST':
