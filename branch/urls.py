@@ -1,6 +1,7 @@
 from django.urls import path
-from . import views
+from .views import *
 
 urlpatterns = [
-    path('create-branch/', views.create_branch, name="create_branch"),
+    path('branch/', CreateBranchList.as_view(), name='branch-list-create'),
+    path('branch/<int:pk>/', BranchRetrieveUpdateDestroyAPIView.as_view(), name='branch-detail'),
 ]
