@@ -1,5 +1,5 @@
 venv
-.idea/
+.idea
 
 # Har qanday  migratsiya fayllarini qabul qilmaydi
 **/__pycache__/
