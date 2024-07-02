@@ -1,8 +1,8 @@
 venv
-.idea
-__pycache__/
-user/migrations
-branch/migrations
-location/migrations
-system/migrations
-language/migrations
+.idea/
+
+# Har qanday  migratsiya fayllarini qabul qilmaydi
+**/__pycache__/
+
+#  Har qanday  migratsiya fayllarini qabul qilmaydi
+**/migrations/
