@@ -19,10 +19,6 @@ from .serializers import *
 #     return render(request, '')
 
 
-class UserRetrieveAPIView(generics.RetrieveAPIView):
-    queryset = CustomUser.objects.all()
-    serializer_class = UserSerializer
-
 
 class UserListCreateView(generics.ListCreateAPIView):
     queryset = CustomUser.objects.all()
