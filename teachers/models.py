@@ -1,7 +1,7 @@
 from django.db import models
 
 from subjects.models import Subject
-from user.serializers import *
+from user.serializers import UserSerializer,CustomUser
 
 
 class Teacher(models.Model):

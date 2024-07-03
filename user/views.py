@@ -1,10 +1,6 @@
-from django.contrib.auth import authenticate
-from django.shortcuts import render
 from rest_framework import generics
 
 from .serializers import *
-
-
 
 
 class UserListCreateView(generics.ListCreateAPIView):

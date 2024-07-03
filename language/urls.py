@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import *
+from .views import (CreateLanguageList, LanguageRetrieveUpdateDestroyAPIView)
 
 urlpatterns = [
     path('language/', CreateLanguageList.as_view(), name='language-list-create'),

@@ -1,5 +1,6 @@
-from django.urls import path, include
-from .views import *
+from django.urls import path
+
+from .views import (CreateBranchList, BranchRetrieveUpdateDestroyAPIView)
 
 urlpatterns = [
     path('branch/', CreateBranchList.as_view(), name='branch-list-create'),
