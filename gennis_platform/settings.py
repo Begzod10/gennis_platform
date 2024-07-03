@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'branch.apps.BranchConfig',
     'permissions.apps.PermissionsConfig',
     'language.apps.LanguageConfig',
+    'payments.apps.PaymentsConfig',
     'drf_yasg',
 ]
 
