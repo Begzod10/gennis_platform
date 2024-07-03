@@ -1,8 +1,4 @@
 venv
-.idea/
-
-# Har qanday  migratsiya fayllarini qabul qilmaydi
-**/__pycache__/
-
-#  Har qanday  migratsiya fayllarini qabul qilmaydi
+.idea
 **/migrations/
+**/__pycache__/
