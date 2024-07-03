@@ -28,6 +28,9 @@ urlpatterns = [
     path('api/', include('language.urls')),
     path('api/', include('branch.urls')),
     path('api/', include('payments.urls')),
+    path('api/', include('students.urls')),
+    path('api/', include('teachers.urls')),
+    path('api/', include('subjects.urls')),
 
 ]
 urlpatterns += doc_urls

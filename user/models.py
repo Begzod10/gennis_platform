@@ -7,7 +7,7 @@ from django.contrib.auth.models import AbstractUser
 class CustomUser(AbstractUser):
     name = models.CharField(max_length=200, blank=True, null=True)
     surname = models.CharField(max_length=200, blank=True, null=True)
-    username = models.CharField(max_length=200, blank=True, null=True)
+    username = models.CharField(max_length=200, blank=True, null=True,unique=True)
     father_name = models.CharField(max_length=200, blank=True, null=True)
     profile_img = models.ImageField(
         null=True, blank=True, upload_to='profiles/', default="")
