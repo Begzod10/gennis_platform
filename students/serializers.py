@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import (Student, CustomUser, UserSerializer)
+from .models import (Student, CustomUser, UserSerializer, StudentHistoryGroups)
 
 
 class StudentSerializer(serializers.ModelSerializer):
@@ -27,6 +27,22 @@ class StudentSerializer(serializers.ModelSerializer):
                     setattr(user, attr, value)
             user.save()
 
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
+
+
+class StudentHistoryGroupsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentHistoryGroups
+        fields = '__all__'
+
+    def create(self, validated_data):
+        student = StudentHistoryGroups.objects.create(**validated_data)
+        return student
+
+    def update(self, instance, validated_data):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
