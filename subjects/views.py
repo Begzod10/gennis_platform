@@ -9,7 +9,6 @@ class SyncSubjectsAndLevelsView(APIView):
     def get(self, request, *args, **kwargs):
         subjects_url = 'http://192.168.68.100:5001/get_subjects/'
         # level_url = 'http://192.168.68.100:5001/api/info_level_subject'
-
         try:
             # Fetch subjects data
             subjects_response = requests.get(subjects_url)

@@ -7,3 +7,5 @@ class LocationSerializers(serializers.ModelSerializer):
     class Meta:
         model = Location
         fields = '__all__'
+
+

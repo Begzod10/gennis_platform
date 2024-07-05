@@ -3,7 +3,8 @@ from rest_framework import serializers
 from .models import Branch
 
 
-class BranchSerializers(serializers.ModelSerializer):
+class BranchSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Branch
-        fields = '__all__'
+        fields = ['id', 'name', 'number', 'location']

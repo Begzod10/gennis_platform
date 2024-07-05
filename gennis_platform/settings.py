@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'branch.apps.BranchConfig',
     'permissions.apps.PermissionsConfig',
     'language.apps.LanguageConfig',
+    'group.apps.GroupConfig',
     'payments.apps.PaymentsConfig',
     'students.apps.StudentsConfig',
     'subjects.apps.SubjectsConfig',
@@ -97,6 +98,7 @@ DATABASES = {
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
+
 AUTH_USER_MODEL = 'user.CustomUser'
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -113,6 +115,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 2,

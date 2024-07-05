@@ -12,3 +12,4 @@ class Branch(models.Model):
 
     def __str__(self):
         return self.name, self.number
+

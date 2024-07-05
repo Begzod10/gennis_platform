@@ -9,3 +9,4 @@ class Subject(models.Model):
 class SubjectLevel(models.Model):
     name = models.CharField(max_length=250, blank=False, null=False)
     subject_id = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='levels')
+

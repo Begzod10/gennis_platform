@@ -1,6 +1,5 @@
 # from django.contrib.auth.models import User
 
-# from students.serializers import UserSerializer
 from rest_framework import serializers
 
 from user.models import CustomUser

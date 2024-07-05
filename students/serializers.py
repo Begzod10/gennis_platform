@@ -6,6 +6,10 @@ from .models import (Student, CustomUser, UserSerializer, StudentHistoryGroups)
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()
 
+
+class StudentSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
     class Meta:
         model = Student
         fields = '__all__'
