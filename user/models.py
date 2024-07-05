@@ -5,9 +5,9 @@ from django.contrib.auth.models import AbstractUser
 
 
 class CustomUser(AbstractUser):
-    name = models.CharField(max_length=200, blank=True, null=True)
+    name = models.CharField(max_length=200, blank=True, null=False)
     surname = models.CharField(max_length=200, blank=True, null=True)
-    username = models.CharField(max_length=200, blank=True, null=True,unique=True)
+    username = models.CharField(max_length=200, blank=True, null=False, unique=True)
     father_name = models.CharField(max_length=200, blank=True, null=True)
     profile_img = models.ImageField(
         null=True, blank=True, upload_to='profiles/', default="")
@@ -31,6 +31,7 @@ class CustomUser(AbstractUser):
         help_text='Specific permissions for this user.',
         related_query_name='custom_user',
     )
+
     # acces models.ManyToManyField(Student)
 
     def __str__(self):
