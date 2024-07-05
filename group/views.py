@@ -8,34 +8,21 @@ import json
 
 from students.models import Student
 from group.models import Group
-from teachers.models import Teacher
 from students.serializers import StudentSerializer
 from group.serializers import GroupSerializer
-from user.models import CustomUser
+
+from functions.createGroup import creat_group
 
 
 class CreatGroups(APIView):
-    # def post(self, request):
-    #     data = json.loads(request.body)
-    #     students = data.get('students')
-    #     teacher = data.get('teacher')
-    #     group = Group.objects.create(name=data['name'], price=data['price'], branch_id=data['branch'],
-    #                                  language_id=data['language'], teacher_salary=data['teacher_salary'],
-    #                                  attendance_days=data['attendance_days'], status=False, deleted=False,
-    #                                  level_id=data['level'], subject_id=data['subject'])
-    #     for student in students:
-    #         st = Student.objects.get(pk=student)
-    #         group.students.add(st)
-    #     tch = Teacher.objects.get(pk=teacher)
-    #     group.teacher.add(tch)
-    #     serializers = GroupSerializer(group)
-    #     return Response({'data': serializers.data})
     def post(self, request):
-        serializer = GroupSerializer(data=request.data)
-        if serializer.is_valid():
-            group = serializer.save()
-            return Response({'data': GroupSerializer(group).data})
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        data = json.loads(request.body)
+        group = creat_group(data.get('students'), data.get('teacher'), data['name'],
+                            data['price'], data['branch'], data['language'],
+                            data['teacher_salary'], data['attendance_days'],
+                            data['level'], data['subject'], data['system'])
+        serializers = GroupSerializer(group)
+        return Response({'data': serializers.data})
 
     def get(self, request):
         groups = Group.objects.all()
@@ -104,5 +91,3 @@ class MoveToGroupApi(APIView):
         groups = Group.objects.filter(branch_id=group.branch_id, system_id=group.system_id)
         groups_serializers = GroupSerializer(groups, many=True)
         return Response({'groups': groups_serializers.data, 'group': group_serializer.data})
-
-# class
