@@ -3,7 +3,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from subjects.models import Subject, SubjectLevel
-
+from rest_framework import generics
+from subjects.serializers import SubjectSerializer,SubjectLevelSerializer
 
 class SyncSubjectsAndLevelsView(APIView):
     def get(self, request, *args, **kwargs):
@@ -40,3 +41,17 @@ class SyncSubjectsAndLevelsView(APIView):
 
         except Exception as e:
             return Response({'error': f'Server error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class SubjectList(generics.ListAPIView):
+    queryset = Subject.objects.all()
+    serializer_class = SubjectSerializer
+    # permission_classes = (
+    #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)  # login qilgan yoki yuq ligini va admin emasligini tekshiradi
+
+
+class SubjectLevelList(generics.ListAPIView):
+    queryset = SubjectLevel.objects.all()
+    serializer_class = SubjectLevelSerializer
+    # permission_classes = (
+    #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)  # login qilgan yoki yuq ligini va admin emasligini tekshiradi
+
+

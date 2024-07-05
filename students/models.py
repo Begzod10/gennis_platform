@@ -2,7 +2,7 @@ from django.db import models
 
 from subjects.models import Subject
 from teachers.models import Teacher
-from user.serializers import (CustomUser, UserSerializer)
+from user.serializers import (CustomUser)
 
 
 class Student(models.Model):
@@ -20,3 +20,10 @@ class StudentHistoryGroups(models.Model):
     reason = models.CharField(max_length=50)
     joined_day = models.DateTimeField()
     left_day = models.DateTimeField()
+
+
+class StudentCharity(models.Model):
+    charity_sum = models.IntegerField()
+    group = models.ForeignKey('group.Group', on_delete=models.SET_NULL, null=True, related_name='group_id_charity')
+    added_data = models.DateTimeField(auto_now_add=True)
+    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, related_name='charity_student_id')

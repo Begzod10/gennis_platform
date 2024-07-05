@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'students.apps.StudentsConfig',
     'subjects.apps.SubjectsConfig',
     'teachers.apps.TeachersConfig',
+    'rooms.apps.RoomsConfig',
     'drf_yasg',
     'djoser',
 ]
