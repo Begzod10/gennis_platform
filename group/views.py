@@ -106,3 +106,4 @@ class MoveToGroupApi(APIView):
         return Response({'groups': groups_serializers.data, 'group': group_serializer.data})
 
 # class
+
