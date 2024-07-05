@@ -1,0 +1,17 @@
+venv
+.idea
+__pycache__/
+user/migrations
+user/__pycache__/
+branch/migrations
+branch/__pycache__/
+location/migrations
+location/__pycache__/
+system/migrations
+system/__pycache__/
+permissions/migrations
+permissions/__pycache__/
+language/migrations
+language/__pycache__/
+**/migrations/
+**/__pycache__/
