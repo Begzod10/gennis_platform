@@ -1,8 +1,8 @@
 from rest_framework import serializers
 
 
-from .models import (Teacher, UserSerializer, CustomUser)
-
+from .models import (Teacher)
+from user.serializers import UserSerializer, CustomUser
 
 
 class TeacherSerializer(serializers.ModelSerializer):

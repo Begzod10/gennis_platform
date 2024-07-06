@@ -1,10 +1,8 @@
 from rest_framework import serializers
 
-from .models import (Student, CustomUser, UserSerializer, StudentHistoryGroups)
-
-
-class StudentSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
+from .models import (Student)
+from group.models import StudentHistoryGroups
+from user.serializers import CustomUser, UserSerializer
 
 
 class StudentSerializer(serializers.ModelSerializer):

@@ -28,3 +28,11 @@ class Group(models.Model):
     attendance_days = models.IntegerField()
     system = models.ForeignKey(System, on_delete=models.CASCADE)
 
+
+class StudentHistoryGroups(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True)
+    group = models.ForeignKey(Group, on_delete=models.SET_NULL, null=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True)
+    reason = models.CharField(max_length=50)
+    joined_day = models.DateTimeField()
+    left_day = models.DateTimeField()
