@@ -1,8 +1,14 @@
 from rest_framework import generics
+
+
+from .serializers import (
+    Teacher, TeacherSerializer
+)
+
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from gennis_platform.permission import IsAdminOrReadOnly
-from .serializers import *
+
 
 
 class TeacherListCreateView(generics.ListCreateAPIView):

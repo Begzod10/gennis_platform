@@ -5,7 +5,11 @@ from location.serializers import LocationSerializers
 
 
 class BranchSerializer(serializers.ModelSerializer):
-    location = LocationSerializers()
+    id = serializers.CharField(max_length=100, required=True)
+    name = serializers.CharField(max_length=100, required=False)
+    number = serializers.CharField(max_length=100, required=False)
+
+    location = LocationSerializers(required=False)
 
     class Meta:
         model = Branch

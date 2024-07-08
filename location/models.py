@@ -1,8 +1,6 @@
 from django.db import models
-
-# Create your models here.
-
 from system.models import System
+
 
 
 class Location(models.Model):

@@ -1,13 +1,6 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate, logout
-from django.contrib.auth.models import User
-from .forms import CustomUserCreationForm
+from user.serializers import UserSerializer,CustomUser
 
-from django.contrib.auth import authenticate
-from django.shortcuts import render
 from rest_framework import generics
-
-from .serializers import *
 
 
 class UserListCreateView(generics.ListCreateAPIView):

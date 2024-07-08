@@ -11,7 +11,7 @@ from group.models import Group
 from students.serializers import StudentSerializer
 from group.serializers import GroupSerializer
 
-from functions.createGroup import creat_group
+from group.functions.createGroup import creat_group
 
 
 class CreatGroups(APIView):
@@ -91,3 +91,4 @@ class MoveToGroupApi(APIView):
         groups = Group.objects.filter(branch_id=group.branch_id, system_id=group.system_id)
         groups_serializers = GroupSerializer(groups, many=True)
         return Response({'groups': groups_serializers.data, 'group': group_serializer.data})
+

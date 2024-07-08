@@ -17,13 +17,19 @@ from system.serializers import SystemSerializers
 
 
 class GroupSerializer(serializers.ModelSerializer):
-    branch = BranchSerializer()
-    language = LanguageSerializers()
-    level = SubjectLevelSerializer()
-    subject = SubjectSerializer()
-    students = StudentSerializer(many=True)
-    teacher = TeacherSerializer(many=True)
-    system = SystemSerializers()
+    id = serializers.CharField(max_length=100, required=True)
+    name = serializers.CharField(max_length=100, required=False)
+    price = serializers.CharField(max_length=100, required=False)
+    status = serializers.CharField(max_length=100, required=False)
+    teacher_salary = serializers.CharField(max_length=100, required=False)
+    attendance_days = serializers.CharField(max_length=100, required=False)
+    branch = BranchSerializer(required=False)
+    language = LanguageSerializers(required=False)
+    level = SubjectLevelSerializer(required=False)
+    subject = SubjectSerializer(required=False)
+    students = StudentSerializer(many=True, required=False)
+    teacher = TeacherSerializer(many=True, required=False)
+    system = SystemSerializers(required=False)
 
     class Meta:
         model = Group

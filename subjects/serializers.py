@@ -14,7 +14,6 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 class SubjectLevelSerializer(serializers.ModelSerializer):
     subject_id = SubjectSerializer(read_only=True)
-
     class Meta:
         model = SubjectLevel
         fields = ['id', 'name', 'subject_id']
