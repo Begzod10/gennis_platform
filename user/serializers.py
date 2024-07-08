@@ -1,7 +1,6 @@
 from django.contrib.auth.models import User
 
 from rest_framework import serializers
-
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch
 from branch.serializers import BranchSerializer
 
@@ -10,14 +9,12 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password', 'birth_date',
-                  'email',
                   'phone', 'age', 'profile_img', 'observer', 'comment', 'registered_date', 'branch', 'language']
 
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
-        print(validated_data)
-        user = CustomUser.objects.create_user(
+        user = CustomUser.objects.create(
             username=validated_data['username'],
             password=validated_data['password'],
             name=validated_data.get('name', ''),
@@ -32,8 +29,6 @@ class UserSerializer(serializers.ModelSerializer):
             branch_id=validated_data.get('branch'),
             language_id=validated_data.get('language'),
         )
-        print(user)
-
         return user
 
     def update(self, instance, validated_data):
@@ -51,8 +46,6 @@ class UserSerializer(serializers.ModelSerializer):
         instance.comment = validated_data.get('comment', instance.comment)
         instance.save()
         return instance
-
-
 class UserSalaryListSerializers(serializers.ModelSerializer):
     # user = UserSerializer(read_only=True)
     # branch = BranchSerializer(read_only=True    )
