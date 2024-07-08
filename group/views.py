@@ -9,7 +9,6 @@ from students.models import Student
 from group.models import Group
 from students.serializers import StudentSerializer
 from group.serializers import GroupSerializer
-
 from group.functions.createGroup import creat_group
 
 

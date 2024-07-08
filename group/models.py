@@ -8,9 +8,6 @@ from system.models import System
 from teachers.models import Teacher
 
 
-
-
-
 class Group(models.Model):
     name = models.CharField()
     price = models.IntegerField()
@@ -29,7 +26,6 @@ class Group(models.Model):
     system = models.ForeignKey(System, on_delete=models.CASCADE)
 
 
-
 class StudentHistoryGroups(models.Model):
     student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, related_name='student_student_history')
     group = models.ForeignKey(Group, on_delete=models.SET_NULL, null=True, related_name='group_student_history')
@@ -37,6 +33,7 @@ class StudentHistoryGroups(models.Model):
     reason = models.CharField(max_length=50)
     joined_day = models.DateTimeField()
     left_day = models.DateTimeField()
+
 
 class AttendancePerMonth(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
@@ -69,4 +66,3 @@ class AttendancePerDay(models.Model):
     activeness_ball = models.IntegerField()
     average = models.IntegerField()
     status = models.IntegerField()
-

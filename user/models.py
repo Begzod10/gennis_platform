@@ -11,7 +11,7 @@ from django.conf import settings
 
 class CustomPermission(models.Model):
     permission = models.OneToOneField(Permission, on_delete=models.CASCADE, related_name='custom_permission')
-    salary = models.IntegerField(blank=True, null=True)
+    salary = models.IntegerField( blank=True, null=True)
 
     def __str__(self):
         return f"{self.permission.name} - Salary: {self.salary}"
@@ -68,9 +68,9 @@ class UserSalary(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     permission = models.ForeignKey(CustomPermission, on_delete=models.SET_NULL, null=True)
     date = models.DateTimeField()
-    total_salary = models.IntegerField(blank=True, null=True)
+    total_salary = models.IntegerField( blank=True, null=True)
     taken_salary = models.IntegerField(blank=True, null=True)
-    remaining_salary = models.IntegerField(blank=True, null=True)
+    remaining_salary = models.IntegerField( blank=True, null=True)
 
     class Meta:
         ordering = ['id']
