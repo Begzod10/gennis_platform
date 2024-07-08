@@ -29,7 +29,7 @@ class Group(models.Model):
     system = models.ForeignKey(System, on_delete=models.CASCADE)
 
 
-<<<<<<< HEAD
+
 class StudentHistoryGroups(models.Model):
     student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, related_name='student_student_history')
     group = models.ForeignKey(Group, on_delete=models.SET_NULL, null=True, related_name='group_student_history')
@@ -37,7 +37,7 @@ class StudentHistoryGroups(models.Model):
     reason = models.CharField(max_length=50)
     joined_day = models.DateTimeField()
     left_day = models.DateTimeField()
-=======
+
 class AttendancePerMonth(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
@@ -69,4 +69,4 @@ class AttendancePerDay(models.Model):
     activeness_ball = models.IntegerField()
     average = models.IntegerField()
     status = models.IntegerField()
->>>>>>> 55b1efb65c1279aeaf68712f2b77d013d9849438
+
