@@ -1,23 +1,27 @@
 from django_cron import CronJobBase, Schedule
-from .models import CustomUser, UserSalary
-from datetime import datetime
+from .models import CustomUser, UserSalary, CustomPermission
+from django.utils.timezone import now
 
 
-class CreateMonthlyUsersAndPermissionsJob(CronJobBase):
-    # RUN_EVERY_MINS = 60 * 24 * 30
-    RUN_EVERY_MINS = 1
-
-
+class CreateMonthly(CronJobBase):
+    RUN_EVERY_MINS = 60 * 24
     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
-    code = 'user.create_monthly_users_and_permissions'
+    code = 'user.create_monthly'
 
     def do(self):
-        current_month = datetime.now().strftime('%Y-%m')
+        print('CreateMonthly')
         users = CustomUser.objects.all()
-        print(users)
         for user in users:
-            UserSalary.objects.get_or_create(user=user, data=current_month,
-                                             permission=user.user_permissions.CustomPermission,
-                                             total_salary=user.user_permissions.CustomPermission.salary,
-                                             taken_salary=0,
-                                             remaining_salary=user.user_permissions.CustomPermission.salary)
+            for permission in user.user_permissions.all():
+                current_year = now().year
+                current_month = now().month
+                user_salary = UserSalary.objects.filter(date__year=current_year, date__month=current_month, user=user)
+                if not user_salary:
+                    UserSalary.objects.create(
+                        user=user,
+                        permission=permission.custom_permission,
+                        total_salary=permission.custom_permission.salary,
+                        taken_salary=0,
+                        remaining_salary=permission.custom_permission.salary
+                    )
+
