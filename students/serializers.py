@@ -2,11 +2,8 @@ from rest_framework import serializers
 
 from group.models import StudentHistoryGroups
 from user.serializers import UserSerializer
-from .models import (Student, CustomUser, StudentHistoryGroups, StudentCharity)
-
-
-class StudentSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
+from .models import (Student, CustomUser, StudentCharity, StudentPayment)
+from django.utils.timezone import now
 
 
 class StudentSerializer(serializers.ModelSerializer):
@@ -59,3 +56,35 @@ class StudentCharitySerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentCharity
         fields = '__all__'
+
+
+class StudentPaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentPayment
+        fields = '__all__'
+
+    def create(self, validated_data):
+        # print(**validated_data)
+        # student = Student.objects.get(pk=validated_data.get('student_id'))
+        # current_year = now().year
+        # current_month = now().month
+        # user_salary = StudentPayment.objects.filter(added_data__year=current_year, added_data__month=current_month,
+        #                                             student=student).all()
+        # print(user_salary)
+        # balance = 0
+        # balance += [payment.payment_sum for payment in user_salary]
+        # student_balance = balance - student.total_payment_month
+        # if student_balance <= 0:
+        #     student.debt_status = 2
+        # elif student.total_payment_month > balance:
+        #     student.debt_status = 1
+        # elif student.total_payment_month < balance:
+        #     student.debt_status = 0
+        student_payment = StudentPayment.objects.create(**validated_data)
+        return student_payment
+
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance

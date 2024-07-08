@@ -9,7 +9,6 @@ class CreateMonthly(CronJobBase):
     code = 'user.create_monthly'
 
     def do(self):
-        print('CreateMonthly')
         users = CustomUser.objects.all()
         for user in users:
             for permission in user.user_permissions.all():

@@ -54,6 +54,8 @@ class AddToGroupApi(APIView):
         students = data.get('students')
         for student in students:
             st = Student.objects.get(pk=student)
+            st.total_payment_month += group.price
+            st.save()
             group.students.add(st)
         serializer = GroupSerializer(group)
         return Response({'data': serializer.data})
