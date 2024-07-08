@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from group.models import StudentHistoryGroups
 from user.serializers import UserSerializer
 from .models import (Student, CustomUser, StudentHistoryGroups, StudentCharity)
 
@@ -13,7 +14,7 @@ class StudentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Student
-        fields = ['user', 'total_payment_month', 'shift', 'debt_status', 'subject','id']
+        fields = ['user', 'total_payment_month', 'shift', 'debt_status', 'subject', 'id']
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')

@@ -2,18 +2,18 @@ from rest_framework import serializers
 
 from branch.models import Branch
 from language.models import Language
-from students.models import Student
 from teachers.serializers import TeacherSerializer
-from .models import Group
+from teachers.models import Teacher
+from .models import Group, StudentHistoryGroups
 from subjects.models import Subject, SubjectLevel
 from system.models import System
-
 
 from branch.serializers import BranchSerializer
 from language.serializers import LanguageSerializers
 from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
 from students.serializers import StudentSerializer
 from system.serializers import SystemSerializers
+
 
 class GroupSerializer(serializers.ModelSerializer):
     # branch = BranchSerializer()
@@ -53,6 +53,9 @@ class GroupSerializer(serializers.ModelSerializer):
                                      attendance_days=validated_data['attendance_days'], status=False, deleted=False,
                                      level=level, subject=subject)
         for student in students_data:
+            teacher = Teacher.objects.get(teacher_data)
+            StudentHistoryGroups.objects.create(joined_day=group.created_date, student=student,
+                                                group=group, teacher=teacher)
             group.students.add(student)
 
         group.teacher.add(teacher_data)

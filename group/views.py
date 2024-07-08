@@ -6,11 +6,12 @@ from rest_framework.response import Response
 import jwt
 import json
 
-from students.models import Student
-from group.models import Group
+# from students.models import Student
+# from group.models import Group
+
 from teachers.models import Teacher
-from students.serializers import StudentSerializer
-from group.serializers import GroupSerializer
+from students.serializers import StudentSerializer, Student
+from group.serializers import GroupSerializer, Group
 from user.models import CustomUser
 
 

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from .models import (Teacher, UserSerializer, CustomUser)
+from user.serializers import UserSerializer, CustomUser
+from .models import (Teacher)
 
 
 class TeacherSerializer(serializers.ModelSerializer):
@@ -8,7 +9,7 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Teacher
-        fields = ['user','subject','color','total_students','id']
+        fields = ['user', 'subject', 'color', 'total_students', 'id']
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')

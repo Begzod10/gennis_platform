@@ -1,8 +1,9 @@
 from rest_framework import generics
-from drf_yasg.utils import swagger_auto_schema
 
-from .serializers import (StudentSerializer, Student, StudentHistoryGroupsSerializer, StudentHistoryGroups,
-                          StudentCharitySerializer, StudentCharity)
+from group.models import StudentHistoryGroups
+from .models import Student
+from .serializers import (StudentCharitySerializer, StudentCharity)
+from .serializers import (StudentSerializer, StudentHistoryGroupsSerializer)
 
 
 class StudentListCreateView(generics.ListCreateAPIView):
@@ -47,3 +48,9 @@ class StudentCharityListCreate(generics.ListCreateAPIView):
 class StudentCharityRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     queryset = StudentCharity.objects.all()
     serializer_class = StudentCharitySerializer
+# class StudentHistoryGroupsListCreateView(generics.ListCreateAPIView):
+#     queryset = StudentHistoryGroups.objects.all()
+#     serializer_class = StudentHistoryGroupsSerializer
+#     # permission_classes = (
+#     #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)  # login qilgan yoki yuq ligini va admin emasligini tekshiradi
+#     #
