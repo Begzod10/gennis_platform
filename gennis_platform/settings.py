@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'teachers.apps.TeachersConfig',
     'rooms.apps.RoomsConfig',
     'attendance.apps.AttendanceConfig',
+    'time_table.apps.TimeTableConfig',
     'drf_yasg',
     'djoser',
     'django_cron',
