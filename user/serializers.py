@@ -11,11 +11,12 @@ class UserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password', 'birth_date',
                   'email',
-                  'phone', 'age', 'profile_img', 'observer', 'comment', 'registered_date']
+                  'phone', 'age', 'profile_img', 'observer', 'comment', 'registered_date', 'branch', 'language']
 
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
+        print(validated_data)
         user = CustomUser.objects.create_user(
             username=validated_data['username'],
             password=validated_data['password'],
@@ -28,7 +29,11 @@ class UserSerializer(serializers.ModelSerializer):
             profile_img=validated_data.get('profile_img', ''),
             observer=validated_data.get('observer', False),
             comment=validated_data.get('comment', ''),
+            branch_id=validated_data.get('branch'),
+            language_id=validated_data.get('language'),
         )
+        print(user)
+
         return user
 
     def update(self, instance, validated_data):
@@ -49,8 +54,8 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserSalaryListSerializers(serializers.ModelSerializer):
-    user = UserSerializer()
-    branch = BranchSerializer()
+    # user = UserSerializer(read_only=True)
+    # branch = BranchSerializer(read_only=True    )
 
     class Meta:
         model = UserSalaryList

@@ -2,11 +2,6 @@ from rest_framework import serializers
 
 from branch.models import Branch
 from language.models import Language
-<<<<<<< HEAD
-=======
-from students.models import Student
-from teachers.models import Teacher
->>>>>>> 2398607749231d583f9f93f6743201907f04addb
 from teachers.serializers import TeacherSerializer
 from teachers.models import Teacher
 from .models import Group, StudentHistoryGroups
@@ -32,7 +27,6 @@ class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
-<<<<<<< HEAD
                   'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system']
 
     def create(self, validated_data):
@@ -66,9 +60,6 @@ class GroupSerializer(serializers.ModelSerializer):
 
         group.teacher.add(teacher_data)
         return group
-=======
-                  'language', 'level', 'subject', 'students', 'teacher', 'system', 'branch']
->>>>>>> 2398607749231d583f9f93f6743201907f04addb
 
     def update(self, instance, validated_data):
         subject_data = validated_data.pop('subject')

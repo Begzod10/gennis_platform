@@ -6,22 +6,12 @@ from rest_framework.response import Response
 import jwt
 import json
 
-<<<<<<< HEAD
-# from students.models import Student
-# from group.models import Group
-
-from teachers.models import Teacher
-from students.serializers import StudentSerializer, Student
-from group.serializers import GroupSerializer, Group
-from user.models import CustomUser
-=======
 from students.models import Student
 from group.models import Group
 from students.serializers import StudentSerializer
 from group.serializers import GroupSerializer
 
-from functions.createGroup import creat_group
->>>>>>> 2398607749231d583f9f93f6743201907f04addb
+from .functions.createGroup import creat_group
 
 
 class CreatGroups(APIView):
@@ -101,9 +91,3 @@ class MoveToGroupApi(APIView):
         groups = Group.objects.filter(branch_id=group.branch_id, system_id=group.system_id)
         groups_serializers = GroupSerializer(groups, many=True)
         return Response({'groups': groups_serializers.data, 'group': group_serializer.data})
-<<<<<<< HEAD
-
-# class
-
-=======
->>>>>>> 2398607749231d583f9f93f6743201907f04addb

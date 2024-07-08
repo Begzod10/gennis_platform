@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    StudentCharityListCreate, StudentCharityRetrieveUpdateDestroy,
     StudentListCreateView, StudentRetrieveUpdateDestroyView,
     StudentHistoryGroupsRetrieveUpdateDestroyView
 
@@ -13,4 +14,9 @@ urlpatterns = [
     #      name='student-history-groups-list-create'),
     path('student_history_groups/<int:pk>/', StudentHistoryGroupsRetrieveUpdateDestroyView.as_view(),
          name='student-history-groups-detail'),
+
+    path('student-charities/', StudentCharityListCreate.as_view(), name='student-charity-list-create'),
+    path('student-charities/<int:pk>/', StudentCharityRetrieveUpdateDestroy.as_view(),
+         name='student-charity-retrieve-update-destroy'),
+
 ]

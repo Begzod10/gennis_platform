@@ -1,16 +1,20 @@
 from rest_framework import serializers
 
-from .models import (Student)
 from group.models import StudentHistoryGroups
-from user.serializers import CustomUser, UserSerializer
+from user.serializers import UserSerializer
+from .models import (Student, CustomUser, StudentHistoryGroups, StudentCharity)
 
 
 class StudentSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    user = UserSerializer()
+
+
+class StudentSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
 
     class Meta:
         model = Student
-        fields = '__all__'
+        fields = ['user', 'total_payment_month', 'shift', 'debt_status', 'subject', 'id']
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -49,3 +53,9 @@ class StudentHistoryGroupsSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class StudentCharitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentCharity
+        fields = '__all__'
