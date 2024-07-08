@@ -1,18 +1,16 @@
-from django.shortcuts import render
-from rest_framework import generics, status
+from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-import jwt
+
 import json
 
 from students.models import Student
 from group.models import Group
 from students.serializers import StudentSerializer
 from group.serializers import GroupSerializer
-
-from .functions.createGroup import creat_group
 from group.functions.createGroup import creat_group
+
 
 
 class CreatGroups(APIView):

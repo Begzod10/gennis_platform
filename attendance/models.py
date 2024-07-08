@@ -8,7 +8,7 @@ class AttendancePerMonth(models.Model):
                                 related_name='attendance_per_month_teacher_id')
     student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True,
                                 related_name='attendance_per_month_student_id')
-    date = models.DateField()
+    date = models.DateField(auto_now_add=True)
     group = models.ForeignKey(Group, on_delete=models.SET_NULL, null=True, related_name='attendance_per_month_group_id')
     status = models.IntegerField()
     total_debt = models.IntegerField()
