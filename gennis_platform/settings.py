@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'teachers.apps.TeachersConfig',
     'drf_yasg',
     'djoser',
+    'django_cron',
 ]
 
 MIDDLEWARE = [
