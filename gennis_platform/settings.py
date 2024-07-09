@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'subjects.apps.SubjectsConfig',
     'teachers.apps.TeachersConfig',
     'rooms.apps.RoomsConfig',
+    'class.apps.ClassConfig',
     'attendance.apps.AttendanceConfig',
     'time_table.apps.TimeTableConfig',
     'drf_yasg',

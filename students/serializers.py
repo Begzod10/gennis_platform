@@ -64,23 +64,23 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        # print(**validated_data)
-        # student = Student.objects.get(pk=validated_data.get('student_id'))
-        # current_year = now().year
-        # current_month = now().month
-        # user_salary = StudentPayment.objects.filter(added_data__year=current_year, added_data__month=current_month,
-        #                                             student=student).all()
-        # print(user_salary)
-        # balance = 0
-        # balance += [payment.payment_sum for payment in user_salary]
-        # student_balance = balance - student.total_payment_month
-        # if student_balance <= 0:
-        #     student.debt_status = 2
-        # elif student.total_payment_month > balance:
-        #     student.debt_status = 1
-        # elif student.total_payment_month < balance:
-        #     student.debt_status = 0
+        total_debt = 400
+        remaining_debt = 300
+        payment = 100
+        print(**validated_data)
+        student = Student.objects.get(pk=validated_data.get('student_id'))
+        current_year = now().year
+        current_month = now().month
         student_payment = StudentPayment.objects.create(**validated_data)
+        remaining_debt -= student_payment.payment_sum
+        payment += student_payment.payment_sum
+        if remaining_debt == 0:
+            student.debt_status = 0
+        elif student.total_payment_month > total_debt:
+            student.debt_status = 1
+        elif student.total_payment_month < total_debt:
+            student.debt_status = 2
+        student.save()
         return student_payment
 
     def update(self, instance, validated_data):

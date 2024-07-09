@@ -1,5 +1,8 @@
-from django.db import models
 from django.conf import settings
+from django.db import models
+
+from branch.models import Branch
+from payments.models import PaymentTypes
 from subjects.models import Subject
 
 
@@ -8,3 +11,32 @@ class Teacher(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True)
     color = models.CharField(max_length=50)
     total_students = models.IntegerField()
+
+
+class TeacherSalary(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_id_salary')
+    month_date = models.DateTimeField(auto_now_add=True)
+    total_salary = models.IntegerField(blank=True, null=True)
+    remaining_salary = models.IntegerField(blank=True, null=True)
+    taken_salary = models.IntegerField(blank=True, null=True)
+    total_black_salary = models.IntegerField(blank=True, null=True)
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='branch_id_salary')
+
+    class Meta:
+        ordering = ['id']
+
+
+class TeacherSalaryList(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_id_salary_list')
+    salary_id = models.ForeignKey(TeacherSalary, on_delete=models.SET_NULL, null=True,
+                                  related_name='salary_id_salary_list')
+    payment = models.ForeignKey(PaymentTypes, on_delete=models.SET_NULL, null=True,
+                                related_name='payment_id_salary_list')
+    date = models.DateTimeField(auto_now_add=True)
+    comment = models.CharField(max_length=300)
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='branch_id_salary_list')
+    deleted = models.BooleanField(default='false')
+    salary = models.IntegerField()
+
+    class Meta:
+        ordering = ['id']

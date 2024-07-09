@@ -10,10 +10,6 @@ from .serializers import (
 from django.shortcuts import render
 
 
-
-
-
-
 class CreateSystemList(generics.ListCreateAPIView):
     queryset = System.objects.all()
     serializer_class = SystemSerializers
