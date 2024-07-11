@@ -8,7 +8,8 @@ from students.models import Student
 
 
 class WeekDays(models.Model):
-    name = models.CharField()
+    name_en = models.CharField()
+    name_uz = models.CharField()
     order = models.IntegerField()
 
 

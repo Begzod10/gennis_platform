@@ -2,15 +2,23 @@ from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-
 import json
 
 from students.models import Student
-from group.models import Group
+from group.models import Group, GroupReason
 from students.serializers import StudentSerializer
-from group.serializers import GroupSerializer
+from group.serializers import GroupSerializer, GroupReasonSerializers
 from group.functions.createGroup import creat_group
 
+
+class CreateGroupReasonList(generics.ListCreateAPIView):
+    queryset = GroupReason.objects.all()
+    serializer_class = GroupReasonSerializers
+
+
+class GroupReasonRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = GroupReason.objects.all()
+    serializer_class = GroupReasonSerializers
 
 
 class CreatGroups(APIView):

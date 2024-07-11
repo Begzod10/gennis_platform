@@ -4,7 +4,8 @@ from branch.models import Branch
 from language.models import Language
 from teachers.serializers import TeacherSerializer
 from teachers.models import Teacher
-from .models import Group, StudentHistoryGroups
+from .models import Group, GroupReason
+from students.models import StudentHistoryGroups
 from subjects.models import Subject, SubjectLevel
 from system.models import System
 
@@ -13,6 +14,12 @@ from language.serializers import LanguageSerializers
 from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
 from students.serializers import StudentSerializer
 from system.serializers import SystemSerializers
+
+
+class GroupReasonSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = GroupReason
+        fields = '__all__'
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -88,5 +95,3 @@ class GroupSerializer(serializers.ModelSerializer):
                 instance.level = level
         instance.save()
         return instance
-
-

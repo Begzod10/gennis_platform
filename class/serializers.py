@@ -19,3 +19,21 @@ class ClassColorsSerializers(serializers.ModelSerializer):
     class Meta:
         model = ClassColors
         fields = '__all__'
+
+
+class ClassCoinSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = ClassCoin
+        fields = '__all__'
+
+
+class StudentCoinSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = StudentCoin
+        fields = '__all__'
+
+
+class CoinInfoSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = CoinInfo
+        fields = '__all__'
