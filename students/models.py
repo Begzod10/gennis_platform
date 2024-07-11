@@ -8,9 +8,10 @@ from user.serializers import (CustomUser)
 class Student(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='student_user')
     subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True)
-    total_payment_month = models.IntegerField()
-    shift = models.CharField(max_length=50)
-    debt_status = models.BigIntegerField()
+    total_payment_month = models.IntegerField(null=True)
+    shift = models.CharField(max_length=50, null=True)
+    debt_status = models.BigIntegerField(null=True)
+    parents_number = models.CharField(max_length=250, null=True)
 
 
 class StudentCharity(models.Model):
@@ -26,3 +27,8 @@ class StudentPayment(models.Model):
     payment_sum = models.IntegerField()
     added_data = models.DateTimeField(auto_now_add=True)
     status = models.BooleanField()
+
+
+class DeletedStudent(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student')
+    created = models.DateTimeField(auto_now_add=True)

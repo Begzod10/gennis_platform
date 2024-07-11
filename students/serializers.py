@@ -1,17 +1,21 @@
+from django.utils.timezone import now
 from rest_framework import serializers
 
 from group.models import StudentHistoryGroups
 from user.serializers import UserSerializer
-from .models import (Student, CustomUser, StudentCharity, StudentPayment)
-from django.utils.timezone import now
+from .models import (Student, CustomUser, StudentCharity, StudentPayment, DeletedStudent)
 
 
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()
 
+    parents_number = serializers.CharField(write_only=True)
+    shift = serializers.CharField(write_only=True)
+    subject_id = serializers.CharField(write_only=True)
+
     class Meta:
         model = Student
-        fields = ['user', 'total_payment_month', 'shift', 'debt_status', 'subject', 'id']
+        fields = '__all__'
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -88,3 +92,11 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class DeletedStudentSerializer(serializers.ModelSerializer):
+    student = StudentSerializer(read_only=True)
+
+    class Meta:
+        model = DeletedStudent
+        fields = ['student']
