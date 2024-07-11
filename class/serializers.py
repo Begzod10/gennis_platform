@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import ClassNumber, ClassTypes, ClassColors
+from .models import ClassNumber, ClassTypes, ClassColors, ClassCoin, StudentCoin, CoinInfo
 
 
 class ClassNumberSerializers(serializers.ModelSerializer):
