@@ -46,7 +46,7 @@ class TeacherGroupStatistics(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True,
                                 related_name='teacher_id_teacher_group_statistics')
     reason = models.ForeignKey('group.GroupReason', on_delete=models.SET_NULL, null=True,
-                               related_name='group_reason_id_teacher_sroup_statistics')
+                               related_name='group_reason_id_teacher_group_statistics')
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True,
                                related_name='branch_id_teacher_group_statistics')
     number_students = models.IntegerField()

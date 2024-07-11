@@ -2,8 +2,8 @@ from django.utils.timezone import now
 from rest_framework import serializers
 from teachers.models import Teacher, TeacherGroupStatistics
 from user.serializers import UserSerializer
-from group.models import GroupReason
 from .models import (Student, CustomUser, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent)
+from attendance.models import AttendancePerMonth
 
 
 class StudentSerializer(serializers.ModelSerializer):
@@ -68,6 +68,7 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
+        attendance_per_month = AttendancePerMonth.objects.get(student=validated_data.get('student_id'))
         total_debt = 400
         remaining_debt = 300
         payment = 100
