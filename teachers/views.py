@@ -27,6 +27,7 @@ class TeacherListCreateView(generics.ListCreateAPIView):
 
 class TeacherRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Teacher.objects.all()
+    serializer_class = TeacherSerializer
 
 
 class TeacherSalaryListCreateAPIView(generics.ListCreateAPIView):

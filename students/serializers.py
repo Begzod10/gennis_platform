@@ -68,17 +68,33 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        attendance_per_month = AttendancePerMonth.objects.get(student=validated_data.get('student_id'))
-        total_debt = 400
-        remaining_debt = 300
-        payment = 100
-        print(**validated_data)
+        attendance_per_months = AttendancePerMonth.objects.get(student=validated_data.get('student_id'),
+                                                               status=False).all()
         student = Student.objects.get(pk=validated_data.get('student_id'))
-        current_year = now().year
-        current_month = now().month
         student_payment = StudentPayment.objects.create(**validated_data)
-        remaining_debt -= student_payment.payment_sum
-        payment += student_payment.payment_sum
+        payment_sum = student_payment.payment_sum
+        for attendance_per_month in attendance_per_months:
+            if attendance_per_month.remaining_debt >= payment_sum:
+                attendance_per_month.remaining_debt -= payment_sum
+                attendance_per_month.payment += payment_sum
+                payment_sum = 0
+                if attendance_per_month.remaining_debt == 0:
+                    attendance_per_month.status = True
+            else:
+                payment_sum -= attendance_per_month.remaining_debt
+                attendance_per_month.payment += attendance_per_month.remaining_debt
+                attendance_per_month.remaining_debt = 0
+                attendance_per_month.status = True
+            attendance_per_month.save()
+        student_payment.extra_payment
+        total_debt = 0
+        remaining_debt = 0
+        attendance_per_months = AttendancePerMonth.objects.get(student=validated_data.get('student_id'),
+                                                               status=False).all()
+        for attendance_per_month in attendance_per_months:
+            total_debt += attendance_per_month.total_debt
+            remaining_debt += attendance_per_month.remaining_debt
+
         if remaining_debt == 0:
             student.debt_status = 0
         elif student.total_payment_month > total_debt:
