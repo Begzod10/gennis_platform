@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'attendance.apps.AttendanceConfig',
     'time_table.apps.TimeTableConfig',
     'lead.apps.LeadConfig',
+    'books.apps.BooksConfig',
     'drf_yasg',
     'djoser',
     'django_cron',
