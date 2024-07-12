@@ -1,8 +1,7 @@
 from rest_framework import serializers
 
-
-from .models import (Teacher, UserSerializer, CustomUser)
-
+from user.serializers import UserSerializer, CustomUser
+from .models import (Teacher, TeacherSalaryList, TeacherSalary)
 
 
 class TeacherSerializer(serializers.ModelSerializer):
@@ -10,7 +9,7 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Teacher
-        fields = '__all__'
+        fields = ['user', 'subject', 'color', 'total_students', 'id']
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -33,3 +32,41 @@ class TeacherSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class TeacherSalarySerializers(serializers.ModelSerializer):
+    class Meta:
+        model = TeacherSalary
+        fields = '__all__'
+
+
+class TeacherSalaryListSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = TeacherSalaryList
+        fields = '__all__'
+
+    def create(self, validated_data):
+        payment_id = validated_data.get('payment')
+
+        teacher_salary =validated_data.get('salary_id')
+        teacher_salary.taken_salary += validated_data.get('salary')
+        teacher_salary.remaining_salary -= validated_data.get('salary')
+        teacher_salary.save()
+
+        teacher_salary_list = TeacherSalaryList.objects.create(
+            teacher=validated_data.get('teacher'),
+            salary_id= validated_data.get('salary_id'),
+            payment=payment_id,
+            branch=validated_data.get('branch'),
+            salary=validated_data.get('salary'),
+            date=validated_data.get('date'),
+            comment=validated_data.get('comment', ''),
+            deleted=validated_data.get('deleted'),
+        )
+        return teacher_salary_list
+
+    def update(self, instance, validated_data):
+        instance.payment = validated_data.get('payment', instance.payment)
+        instance.save()
+        return instance
+

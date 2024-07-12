@@ -1,15 +1,17 @@
 import requests
+from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 from subjects.models import Subject, SubjectLevel
-from rest_framework import generics
-from subjects.serializers import SubjectSerializer,SubjectLevelSerializer
+from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
+
 
 class SyncSubjectsAndLevelsView(APIView):
     def get(self, request, *args, **kwargs):
         subjects_url = 'http://192.168.68.100:5001/get_subjects/'
-        # level_url = 'http://192.168.68.100:5001/api/info_level_subject'
+        level_url = 'http://192.168.68.100:5001/api/info_level_subject'
         try:
             # Fetch subjects data
             subjects_response = requests.get(subjects_url)
@@ -18,16 +20,16 @@ class SyncSubjectsAndLevelsView(APIView):
             for subject_data in subjects_data:
                 subject_name = subject_data.get('name')
                 subject, created = Subject.objects.get_or_create(name=subject_name)
-                # level_response = requests.get(f"{level_url}/{subject_data.get('id')}")
-                # level_response.raise_for_status()
-                # level_data = level_response.json().get('levels', [])
-                #
-                # for level_info in level_data:
-                #     level_name = level_info.get('name')
-                #
-                #     subject_level, created_level = SubjectLevel.objects.get_or_create(
-                #         name=level_name, subject_id=subject
-                #     )
+                level_response = requests.get(f"{level_url}/{subject_data.get('id')}")
+                level_response.raise_for_status()
+                level_data = level_response.json().get('levels', [])
+
+                for level_info in level_data:
+                    level_name = level_info.get('name')
+
+                    SubjectLevel.objects.get_or_create(
+                        name=level_name, subject_id=subject
+                    )
 
             return Response({
                 'message': 'Subjects and levels synchronized successfully.',
@@ -41,6 +43,8 @@ class SyncSubjectsAndLevelsView(APIView):
 
         except Exception as e:
             return Response({'error': f'Server error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 class SubjectList(generics.ListAPIView):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
@@ -55,3 +59,15 @@ class SubjectLevelList(generics.ListAPIView):
     #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)  # login qilgan yoki yuq ligini va admin emasligini tekshiradi
 
 
+class SubjectOne(generics.RetrieveAPIView):
+    queryset = Subject.objects.all()
+    serializer_class = SubjectSerializer
+    # permission_classes = (
+    #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)  # login qilgan yoki yuq ligini va admin emasligini tekshiradi
+
+
+class SubjectLevelOne(generics.RetrieveAPIView):
+    queryset = SubjectLevel.objects.all()
+    serializer_class = SubjectLevelSerializer
+    # permission_classes = (
+    #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)  # login qilgan yoki yuq ligini va admin emasligini tekshiradi

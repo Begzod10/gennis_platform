@@ -5,7 +5,7 @@ from system.serializers import SystemSerializers
 
 
 class LocationSerializers(serializers.ModelSerializer):
-    system = SystemSerializers()
+    # system = SystemSerializers(read_only=True)
 
     class Meta:
         model = Location

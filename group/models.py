@@ -24,3 +24,45 @@ class Group(models.Model):
     deleted = models.BooleanField()
     attendance_days = models.IntegerField()
     system = models.ForeignKey(System, on_delete=models.CASCADE)
+
+
+class StudentHistoryGroups(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, related_name='student_student_history')
+    group = models.ForeignKey(Group, on_delete=models.SET_NULL, null=True, related_name='group_student_history')
+    teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_student_history')
+    reason = models.CharField(max_length=50)
+    joined_day = models.DateTimeField()
+    left_day = models.DateTimeField()
+
+
+class AttendancePerMonth(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    date = models.DateTimeField()
+    status = models.IntegerField()
+    total_debt = models.IntegerField()
+    total_salary = models.IntegerField()
+    ball_percentage = models.IntegerField()
+    month_date = models.DateTimeField()
+    total_charity = models.IntegerField()
+    remaining_debt = models.IntegerField()
+    payment = models.IntegerField()
+    remaining_salary = models.IntegerField()
+    taken_salary = models.IntegerField()
+
+
+class AttendancePerDay(models.Model):
+    attendance_per_month = models.ForeignKey(AttendancePerMonth, on_delete=models.CASCADE)
+    debt_per_day = models.IntegerField()
+    salary_per_day = models.IntegerField()
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    charity_per_day = models.IntegerField()
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    day = models.DateTimeField()
+    homework_ball = models.IntegerField()
+    dictionary_ball = models.IntegerField()
+    activeness_ball = models.IntegerField()
+    average = models.IntegerField()
+    status = models.IntegerField()

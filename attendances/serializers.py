@@ -27,8 +27,16 @@ class AttendancePerMonthSerializer(serializers.ModelSerializer):
         fields = ['id', 'date', 'status', 'total_debt', 'total_salary', 'ball_percentage', 'month_date',
                   'total_charity', 'remaining_debt', 'payment', 'remaining_salary', 'teacher', 'student',
                   'taken_salary', 'group']
-    # def create(self, validated_data):
-    #     user_data = validated_data.pop('user')
-    #     user = CustomUser.objects.create(**user_data)
-    #     student = Student.objects.create(user=user, **validated_data)
-    #     return student
+
+
+class AttendancePerDaySerializer(serializers.ModelSerializer):
+    student = StudentSerializer()
+    teacher = TeacherSerializer()
+    group = GroupSerializer()
+    attendance_per_month = AttendancePerMonthSerializer()
+
+    class Meta:
+        model = Group
+        fields = ['id', 'date', 'status', 'debt_per_day', 'salary_per_day', 'charity_per_day', 'day',
+                  'homework_ball', 'dictionary_ball', 'activeness_ball', 'average', 'teacher', 'student',
+                  'status', 'group', 'attendance_per_month']

@@ -8,10 +8,6 @@ from .serializers import (BranchSerializer, Branch)
 class CreateBranchList(generics.ListCreateAPIView):
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
-
-    permission_classes = (
-        IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)
-
     # permission_classes = (
     #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)
 
@@ -19,10 +15,7 @@ class CreateBranchList(generics.ListCreateAPIView):
 class BranchRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
-
-    permission_classes = (
-        IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)
-
     # permission_classes = (
     #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)
     #
+

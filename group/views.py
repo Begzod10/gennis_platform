@@ -1,17 +1,16 @@
-from django.shortcuts import render
-from rest_framework import generics, status
+from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-import jwt
+
 import json
 
 from students.models import Student
 from group.models import Group
 from students.serializers import StudentSerializer
 from group.serializers import GroupSerializer
-
 from group.functions.createGroup import creat_group
+
 
 
 class CreatGroups(APIView):
@@ -55,6 +54,8 @@ class AddToGroupApi(APIView):
         students = data.get('students')
         for student in students:
             st = Student.objects.get(pk=student)
+            st.total_payment_month += group.price
+            st.save()
             group.students.add(st)
         serializer = GroupSerializer(group)
         return Response({'data': serializer.data})
@@ -91,4 +92,3 @@ class MoveToGroupApi(APIView):
         groups = Group.objects.filter(branch_id=group.branch_id, system_id=group.system_id)
         groups_serializers = GroupSerializer(groups, many=True)
         return Response({'groups': groups_serializers.data, 'group': group_serializer.data})
-
