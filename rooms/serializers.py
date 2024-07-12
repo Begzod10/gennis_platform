@@ -6,7 +6,7 @@ from .models import Room, RoomImages, RoomSubject
 class RoomSerializer(serializers.ModelSerializer):
 
     name = serializers.CharField(max_length=100, required=False)
-    id = serializers.CharField(max_length=100, required=True)
+    branch_id = serializers.CharField(max_length=100, required=True)
     seats_number = serializers.CharField(max_length=100, required=False)
     electronic_board = serializers.CharField(max_length=100, required=False)
     deleted = serializers.CharField(max_length=100, required=False)
