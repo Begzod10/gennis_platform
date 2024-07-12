@@ -32,14 +32,12 @@ class BranchTests(APITestCase):
 
     def test_list_branches(self):
         response = self.client.get(self.create_url, format='json')
-        print(f"Response data: {response.data}")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
 
     def test_retrieve_branch(self):
         url = reverse('branch-detail', kwargs={'pk': self.branch.id})
         response = self.client.get(url, format='json')
-        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], self.branch.name)
 
