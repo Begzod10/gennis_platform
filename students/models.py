@@ -29,6 +29,7 @@ class StudentPayment(models.Model):
     payment_sum = models.IntegerField()
     added_data = models.DateTimeField(auto_now_add=True)
     status = models.BooleanField()
+    deleted = models.BooleanField(default=False)
 
 
 class StudentHistoryGroups(models.Model):
