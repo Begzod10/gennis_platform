@@ -13,3 +13,5 @@ class Book(models.Model):
 class BookImage(models.Model):
     image = models.ImageField(upload_to='books/images',null=True)
     book = models.ForeignKey(Book, related_name='book_image_book_id', on_delete=models.CASCADE)
+# class BookOrder(models.Model):
+#     user =
