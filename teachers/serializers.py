@@ -1,7 +1,13 @@
 from rest_framework import serializers
 
 from user.serializers import UserSerializer, CustomUser
-from .models import (Teacher, TeacherSalaryList, TeacherSalary)
+from .models import (Teacher, TeacherSalaryList, TeacherSalary, TeacherGroupStatistics)
+
+
+class TeacherGroupStatisticsSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = TeacherGroupStatistics
+        fields = '__all__'
 
 
 class TeacherSerializer(serializers.ModelSerializer):
@@ -48,14 +54,14 @@ class TeacherSalaryListSerializers(serializers.ModelSerializer):
     def create(self, validated_data):
         payment_id = validated_data.get('payment')
 
-        teacher_salary =validated_data.get('salary_id')
+        teacher_salary = validated_data.get('salary_id')
         teacher_salary.taken_salary += validated_data.get('salary')
         teacher_salary.remaining_salary -= validated_data.get('salary')
         teacher_salary.save()
 
         teacher_salary_list = TeacherSalaryList.objects.create(
             teacher=validated_data.get('teacher'),
-            salary_id= validated_data.get('salary_id'),
+            salary_id=validated_data.get('salary_id'),
             payment=payment_id,
             branch=validated_data.get('branch'),
             salary=validated_data.get('salary'),
@@ -69,4 +75,3 @@ class TeacherSalaryListSerializers(serializers.ModelSerializer):
         instance.payment = validated_data.get('payment', instance.payment)
         instance.save()
         return instance
-

@@ -1,23 +1,34 @@
-from rest_framework import generics,status
+from rest_framework import generics, status
 from rest_framework.response import Response
-
+from .models import TeacherGroupStatistics, Teacher, TeacherSalaryList, TeacherSalary
 from .serializers import (
-    Teacher, TeacherSerializer, TeacherSalaryListSerializers, TeacherSalaryList,TeacherSalary,TeacherSalarySerializers
+    TeacherSerializer, TeacherSalaryListSerializers, TeacherGroupStatisticsSerializers, TeacherSalarySerializers
 )
+
+
+class TeacherGroupStatisticsListView(generics.ListAPIView):
+    # http://ip_adress:8000/Teachers/teacher-statistics-view/?branch_id=3
+    queryset = TeacherGroupStatistics.objects.all()
+    serializer_class = TeacherGroupStatisticsSerializers
+
+    def get_queryset(self):
+        branch = self.request.query_params.get('branch_id', None)
+        if branch is not None:
+            teacher_group_statistics = TeacherGroupStatistics.objects.get(branch=branch)
+        else:
+            teacher_group_statistics = TeacherGroupStatistics.objects.all()
+        return teacher_group_statistics
 
 
 class TeacherListCreateView(generics.ListCreateAPIView):
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializer
-    # permission_classes = (
-    #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)  # login qilgan yoki yuq ligini va admin emasligini tekshiradi
 
 
 class TeacherRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializer
-    # permission_classes = (
-    #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)  # login qilgan yoki yuq ligini va admin emasligini tekshiradi
+
 
 
 class TeacherSalaryListCreateAPIView(generics.ListCreateAPIView):
@@ -45,6 +56,7 @@ class TeacherSalaryListCreateAPIView(generics.ListCreateAPIView):
 class TeacherSalaryListDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = TeacherSalaryList.objects.all()
     serializer_class = TeacherSalaryListSerializers
+
     def delete(self, request, *args, **kwargs):
         list = self.get_object()
         list.deleted = True

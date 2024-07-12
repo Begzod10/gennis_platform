@@ -1,15 +1,13 @@
 from rest_framework import serializers
 
 from .models import Branch
-from location.serializers import LocationSerializers
+from location.serializers import Location
 
 
 class BranchSerializer(serializers.ModelSerializer):
-    # location = LocationSerializers(read_only=True)
-    # id = serializers.CharField(max_length=100, required=True)
-    # name = serializers.CharField(max_length=100, required=False)
-    # number = serializers.CharField(max_length=100, required=False)
-    # location = LocationSerializers(required=False)
+    location = serializers.PrimaryKeyRelatedField(queryset=Location.objects.all())
+    name = serializers.CharField(max_length=100, required=False)
+    number = serializers.CharField(max_length=100, required=False)
 
     class Meta:
         model = Branch

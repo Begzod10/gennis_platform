@@ -45,28 +45,6 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 ]
-# =======
-# from .swagger import urlpatterns as doc_urls
-#
-# from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
-#
-# urlpatterns = [
-#     path('admin/', admin.site.urls),
-#     path('', include('user.urls')),
-#     path('api/', include('system.urls')),
-#     path('api/', include('location.urls')),
-#     path('api/', include('language.urls')),
-#     path('api/', include('branch.urls')),
-#     path('api/', include('payments.urls')),
-#     path('api/', include('students.urls')),
-#     path('api/', include('teachers.urls')),
-#     path('api/', include('subjects.urls')),
-#     path('api/', include('group.urls')),
-#     path('api/v1/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-#     path('api/v1/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-#     path('api/v1/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
-# >>>>>>> 1914f79b58b269d6eea0f0c66ac3e15c862c1be9
-# ]
 urlpatterns += doc_urls
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

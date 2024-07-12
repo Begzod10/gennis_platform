@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from subjects.models import Subject
 from payments.models import PaymentTypes
+from teachers.models import Teacher
 from user.serializers import (CustomUser)
 
 
@@ -32,3 +33,21 @@ class StudentPayment(models.Model):
 class DeletedStudent(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student')
     created = models.DateTimeField(auto_now_add=True)
+
+
+class StudentHistoryGroups(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, related_name='student_student_history')
+    group = models.ForeignKey('group.Group', on_delete=models.SET_NULL, null=True, related_name='group_student_history')
+    teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_student_history')
+    reason = models.CharField(max_length=50)
+    joined_day = models.DateTimeField()
+    left_day = models.DateTimeField()
+
+
+class DeletedStudent(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student')
+    group = models.ForeignKey('group.Group', on_delete=models.CASCADE, related_name='deleted_student_group')
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='deleted_student_teacher')
+    group_reason = models.ForeignKey('group.GroupReason', on_delete=models.SET_NULL, null=True,
+                                     related_name='deleted_student_group_reason')
+    deleted_date = models.DateTimeField(auto_now_add=True)

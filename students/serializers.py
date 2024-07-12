@@ -1,14 +1,14 @@
 from django.utils.timezone import now
 from rest_framework import serializers
-
-from group.models import StudentHistoryGroups
+from teachers.models import Teacher, TeacherGroupStatistics
 from user.serializers import UserSerializer
-from .models import (Student, CustomUser, StudentCharity, StudentPayment, DeletedStudent)
-
+from .models import (Student, CustomUser, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent)
+from attendances.models import AttendancePerMonth
+from subjects.serializers import SubjectSerializer
 
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-
+    subject = SubjectSerializer()
     parents_number = serializers.CharField(write_only=True)
     shift = serializers.CharField(write_only=True)
     subject_id = serializers.CharField(write_only=True)
@@ -68,6 +68,7 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
+        attendance_per_month = AttendancePerMonth.objects.get(student=validated_data.get('student_id'))
         total_debt = 400
         remaining_debt = 300
         payment = 100
@@ -87,6 +88,14 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
         student.save()
         return student_payment
 
+    def delete(self, instance):
+        # instance.deleted = True
+        # instance.save()
+        # instance.user_salary.taken_salary -= instance.salary
+        # instance.user_salary.remaining_salary += instance.salary
+        # instance.user_salary.save()
+        return instance
+
     def update(self, instance, validated_data):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -99,4 +108,29 @@ class DeletedStudentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DeletedStudent
-        fields = ['student']
+        fields = '__all__'
+
+    def create(self, validated_data):
+        deleted_student = DeletedStudent.objects.create(**validated_data)
+        teacher_group_statistics = TeacherGroupStatistics.objects.get(teacher=validated_data.get('teacher'),
+                                                                      group_reason=validated_data.get(
+                                                                          'group_reason'))
+        if teacher_group_statistics:
+            deleted_students_number = len(DeletedStudent.objects.get(teacher=validated_data.get('teacher')).all()) / 100
+
+            number_students = len(DeletedStudent.objects.get(reason=validated_data.get('group_reason'),
+                                                             teacher=validated_data.get('teacher')).all())
+            percentage = deleted_students_number * number_students
+            teacher_group_statistics.number_students = number_students
+            teacher_group_statistics.percentage = percentage
+            teacher_group_statistics.save()
+        else:
+            deleted_students_number = len(DeletedStudent.objects.get(teacher=validated_data.get('teacher')).all()) / 100
+
+            number_students = 1
+            percentage = deleted_students_number * number_students
+            TeacherGroupStatistics.objects.create(teacher=validated_data.get('teacher'),
+                                                  reason=validated_data.get('group_reason'),
+                                                  branch=validated_data.get('branch'),
+                                                  number_students=number_students, percentage=percentage)
+        return deleted_student
