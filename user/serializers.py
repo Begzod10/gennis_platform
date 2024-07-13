@@ -1,10 +1,15 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
+from branch.serializers import BranchSerializer
+from language.serializers import LanguageSerializers, Language
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch
 
 
 class UserSerializer(serializers.ModelSerializer):
+    branch = BranchSerializer()
+    language = LanguageSerializers()
+
     class Meta:
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
@@ -18,7 +23,12 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        user = CustomUser.objects.create(
+        branch_data = validated_data.pop('branch')
+        branch = Branch.objects.get(name=branch_data['name'])
+        language_data = validated_data.pop('language')
+        language = Language.objects.get(name=language_data['name'])
+
+        user = CustomUser.objects.create_user(
             name=validated_data.get('name'),
             surname=validated_data.get('surname'),
             username=validated_data.get('username'),
@@ -31,11 +41,15 @@ class UserSerializer(serializers.ModelSerializer):
             comment=validated_data.get('comment'),
             registered_date=validated_data.get('registered_date'),
             birth_date=validated_data.get('birth_date'),
-            language=validated_data.get('language'),
-            branch=validated_data.get('branch')
+            language=language,
+            branch=branch
         )
         return user
+
     def update(self, instance, validated_data):
+        branch_data = validated_data.pop('branch', None)
+        language_data = validated_data.pop('language', None)
+
         instance.username = validated_data.get('username', instance.username)
         if 'password' in validated_data:
             instance.set_password(validated_data['password'])
@@ -48,6 +62,15 @@ class UserSerializer(serializers.ModelSerializer):
         instance.profile_img = validated_data.get('profile_img', instance.profile_img)
         instance.observer = validated_data.get('observer', instance.observer)
         instance.comment = validated_data.get('comment', instance.comment)
+
+        if branch_data:
+            branch = Branch.objects.get(name=branch_data['name'])
+            instance.branch = branch
+
+        if language_data:
+            language = Language.objects.get(name=language_data['name'])
+            instance.language = language
+
         instance.save()
         return instance
 

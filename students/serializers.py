@@ -21,13 +21,15 @@ class StudentSerializer(serializers.ModelSerializer):
         fields = ['user', 'subject', 'parents_number', 'shift']
 
     def create(self, validated_data):
-
         user_data = validated_data.pop('user')
 
-        user = CustomUser.objects.create(**user_data)
         subject_data = validated_data.pop('subject')
-        # print(user_data)
         subject = Subject.objects.get(name=subject_data['name'])
+
+        user_serializer = UserSerializer(data=user_data)
+        user_serializer.is_valid(raise_exception=True)
+        user = user_serializer.save()
+
         student = Student.objects.create(user=user, **validated_data, subject=subject)
         return student
 
@@ -46,7 +48,6 @@ class StudentSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
-
 
 class StudentHistoryGroupsSerializer(serializers.ModelSerializer):
     class Meta:

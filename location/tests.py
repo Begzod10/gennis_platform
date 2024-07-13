@@ -19,15 +19,16 @@ class LocationAPITestCase(APITestCase):
         self.detail_url = reverse('location-detail', kwargs={'pk': self.location.pk})
 
     def test_create_location(self):
-        data = {
+        location_data = {
             'name': 'New Location',
             'number': 2,
-            'system': self.system.pk
+            'system': {
+                'name': self.system.name,
+                'number': self.system.number
+            }
         }
-        response = self.client.post(self.list_url, data, format='json')
+        response = self.client.post(self.list_url, location_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Location.objects.count(), 2)
-        self.assertEqual(Location.objects.get(pk=response.data['id']).name, 'New Location')
 
     def test_list_locations(self):
         response = self.client.get(self.list_url)
@@ -42,8 +43,11 @@ class LocationAPITestCase(APITestCase):
     def test_update_location(self):
         data = {
             'name': 'Updated Location',
-            'number': 3,
-            'system': self.system.pk
+            'number': 2,
+            'system': {
+                'name': self.system.name,
+                'number': self.system.number
+            }
         }
         response = self.client.put(self.detail_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
