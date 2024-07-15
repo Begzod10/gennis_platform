@@ -5,8 +5,8 @@ from students.models import Student
 
 
 class ClassColors(models.Model):
-    name = models.CharField()
-    value = models.CharField()
+    name = models.CharField(max_length=100)
+    value = models.CharField(max_length=100)
 
     class Meta:
         ordering = ['id']
