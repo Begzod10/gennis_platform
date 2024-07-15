@@ -34,4 +34,4 @@ class AttendancePerDay(models.Model):
     dictionary_ball = models.IntegerField()
     activeness_ball = models.IntegerField()
     average = models.IntegerField()
-    status = models.IntegerField()
+    status = models.BooleanField(default=False)

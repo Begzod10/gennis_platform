@@ -15,6 +15,7 @@ from time_table.functions.checkTime import check_time
 class GroupTimeTableList(APIView):
 
     def post(self, request, group_id):
+        creat_week_days()
         data = json.loads(request.body)
         result = check_time(group_id, data['week']['id'], data['room']['id'], data['branch']['id'],
                             data['start_time'], data['end_time'])

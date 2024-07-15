@@ -8,9 +8,9 @@ from students.models import Student
 
 
 class WeekDays(models.Model):
-    name_en = models.CharField()
-    name_uz = models.CharField()
-    order = models.IntegerField()
+    name_en = models.CharField(null=True)
+    name_uz = models.CharField(null=True)
+    order = models.IntegerField(null=True)
 
 
 class GroupTimeTable(models.Model):

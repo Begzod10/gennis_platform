@@ -30,9 +30,9 @@ class StudentPayment(models.Model):
     status = models.BooleanField()
 
 
-class DeletedStudent(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student')
-    created = models.DateTimeField(auto_now_add=True)
+# class DeletedStudent(models.Model):
+#     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student')
+#     created = models.DateTimeField(auto_now_add=True)
 
 
 class StudentHistoryGroups(models.Model):
@@ -45,9 +45,9 @@ class StudentHistoryGroups(models.Model):
 
 
 class DeletedStudent(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student')
-    group = models.ForeignKey('group.Group', on_delete=models.CASCADE, related_name='deleted_student_group')
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='deleted_student_teacher')
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student', null=True)
+    group = models.ForeignKey('group.Group', on_delete=models.CASCADE, related_name='deleted_student_group', null=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='deleted_student_teacher', null=True)
     group_reason = models.ForeignKey('group.GroupReason', on_delete=models.SET_NULL, null=True,
                                      related_name='deleted_student_group_reason')
     deleted_date = models.DateTimeField(auto_now_add=True)
