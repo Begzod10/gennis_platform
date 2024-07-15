@@ -3,6 +3,7 @@ from attendances.models import AttendancePerMonth, AttendancePerDay
 from students.models import Student, StudentCharity
 from datetime import datetime
 from teachers.models import TeacherSalary
+from .CalculateGroupOverallAttendance import calculate_group_attendances
 
 
 def check_and_create_attendance_per_month(group_id, students, date):
@@ -77,4 +78,5 @@ def check_and_create_attendance_per_month(group_id, students, date):
                                                                   branch_id=group.branch_id, teacher_id=teacher.id)
     current_salary.total_salary = salary
     current_salary.save()
+    calculate_group_attendances(group_id, month_date)
     return errors if not status else {'msg': 'davomat muvaffaqqiyatli kiritildi'}

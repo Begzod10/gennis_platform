@@ -35,3 +35,15 @@ class AttendancePerDay(models.Model):
     activeness_ball = models.IntegerField()
     average = models.IntegerField()
     status = models.BooleanField(default=False)
+
+
+class GroupAttendancesPerMonth(models.Model):
+    total_debt = models.IntegerField(null=True)
+    total_salary = models.IntegerField(null=True)
+    month_date = models.DateTimeField(null=True)
+    total_charity = models.IntegerField(null=True)
+    remaining_debt = models.IntegerField(null=True)
+    payment = models.IntegerField(null=True)
+    remaining_salary = models.IntegerField(null=True)
+    taken_salary = models.IntegerField(null=True)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
