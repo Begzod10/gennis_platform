@@ -34,17 +34,3 @@ class GroupTimeTableList(APIView):
         return Response({"data": serializers.data})
 
 
-class GroupTimeTableUpdate(APIView):
-
-    def patch(self, request, pk):
-        data = json.loads(request.body)
-        result = check_time(data['group']['id'], data['week']['id'], data['room']['id'], data['branch']['id'],
-                            data['start_time'], data['end_time'])
-        if result == True:
-            instance = GroupTimeTable.objects.get(pk=pk)
-            serializer = GroupTimeTableSerializer(data=data, instance=instance)
-            serializer.is_valid()
-            serializer.save()
-            return Response({"data": serializer.data})
-        else:
-            return Response(result)

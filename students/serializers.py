@@ -1,7 +1,7 @@
 from django.utils.timezone import now
 from rest_framework import serializers
 
-from attendance.models import AttendancePerMonth
+from attendances.models import AttendancePerMonth
 from subjects.serializers import SubjectSerializer, Subject
 from teachers.models import TeacherGroupStatistics
 from user.serializers import UserSerializer
