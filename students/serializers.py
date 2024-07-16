@@ -1,26 +1,36 @@
 from django.utils.timezone import now
 from rest_framework import serializers
-from teachers.models import Teacher, TeacherGroupStatistics
+
+from attendance.models import AttendancePerMonth
+from subjects.serializers import SubjectSerializer, Subject
+from teachers.models import TeacherGroupStatistics
 from user.serializers import UserSerializer
 from .models import (Student, CustomUser, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent)
-from attendance.models import AttendancePerMonth
 
 
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-
+    subject = SubjectSerializer()
     parents_number = serializers.CharField(write_only=True)
     shift = serializers.CharField(write_only=True)
-    subject_id = serializers.CharField(write_only=True)
+
+    # subject_id = serializers.CharField(write_only=True)
 
     class Meta:
         model = Student
-        fields = '__all__'
+        fields = ['user', 'subject', 'parents_number', 'shift']
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
-        user = CustomUser.objects.create(**user_data)
-        student = Student.objects.create(user=user, **validated_data)
+
+        subject_data = validated_data.pop('subject')
+        subject = Subject.objects.get(name=subject_data['name'])
+
+        user_serializer = UserSerializer(data=user_data)
+        user_serializer.is_valid(raise_exception=True)
+        user = user_serializer.save()
+
+        student = Student.objects.create(user=user, **validated_data, subject=subject)
         return student
 
     def update(self, instance, validated_data):
@@ -38,7 +48,6 @@ class StudentSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
-
 
 class StudentHistoryGroupsSerializer(serializers.ModelSerializer):
     class Meta:

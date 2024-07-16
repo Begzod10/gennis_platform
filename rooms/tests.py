@@ -93,7 +93,6 @@ class RoomImagesTests(APITestCase):
 
     def test_retrieve_room_image(self):
         response = self.client.get(self.room_images_detail_url)
-        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_update_room_image(self):
@@ -101,7 +100,6 @@ class RoomImagesTests(APITestCase):
             image_file = SimpleUploadedFile(name='updated_image.jpg', content=img.read(), content_type='image/jpeg')
         data = {'image': image_file}
         response = self.client.patch(self.room_images_detail_url, data, format='multipart')
-        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.room_image.refresh_from_db()
         # self.assertIn('updated_image.jpg', self.room_image.image.name)

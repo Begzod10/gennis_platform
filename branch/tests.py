@@ -25,21 +25,33 @@ class BranchTests(APITestCase):
         self.create_url = reverse('branch-list-create')
 
     def test_create_branch(self):
+        self.branch_data = {
+            'name': 'Test Branch',
+            'number': '1',
+            'location': {
+                'name': self.location.name,
+                'number': self.location.number,
+                'system': {
+                    'id': self.system.id,
+                    'name': self.system.name,
+                    'number': self.system.number
+                }
+            }
+        }
         response = self.client.post(self.create_url, self.branch_data, format='json')
+
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Branch.objects.count(), 2)
         self.assertEqual(Branch.objects.get(id=response.data['id']).name, self.branch_data['name'])
 
     def test_list_branches(self):
         response = self.client.get(self.create_url, format='json')
-        print(f"Response data: {response.data}")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
 
     def test_retrieve_branch(self):
         url = reverse('branch-detail', kwargs={'pk': self.branch.id})
         response = self.client.get(url, format='json')
-        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], self.branch.name)
 
@@ -47,8 +59,16 @@ class BranchTests(APITestCase):
         url = reverse('branch-detail', kwargs={'pk': self.branch.id})
         updated_data = {
             'name': 'Updated Branch',
-            'number': 3,
-            'location': self.location.id
+            'number': '3',
+            'location': {
+                'name': self.location.name,
+                'number': self.location.number,
+                'system': {
+                    'id': self.system.id,
+                    'name': self.system.name,
+                    'number': self.system.number
+                }
+            }
         }
         response = self.client.put(url, updated_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
