@@ -24,6 +24,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         branch_data = validated_data.pop('branch')
+        print(validated_data)
         branch = Branch.objects.get(name=branch_data['name'])
         language_data = validated_data.pop('language')
         language = Language.objects.get(name=language_data['name'])
