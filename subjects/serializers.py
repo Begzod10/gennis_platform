@@ -14,11 +14,11 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 
 class SubjectLevelSerializer(serializers.ModelSerializer):
-    subject_id = SubjectSerializer(read_only=True)
+    subject = SubjectSerializer(read_only=True)
 
     class Meta:
         model = SubjectLevel
-        fields = ['id', 'name', 'subject_id']
+        fields = ['id', 'name', 'subject']
 
     def create(self, validated_data):
         return SubjectLevel.objects.create(**validated_data)
