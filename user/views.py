@@ -3,9 +3,9 @@ from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-
+from rest_framework_simplejwt.views import TokenObtainPairView
 from gennis_platform import settings
-from user.serializers import UserSerializer, CustomUser, UserSalaryListSerializers
+from user.serializers import UserSerializer, CustomUser, UserSalaryListSerializers, CustomTokenObtainPairSerializer
 
 
 class UserListCreateView(generics.ListCreateAPIView):
@@ -52,3 +52,7 @@ class UserMe(APIView):
 
         serializer = UserSerializer(user)
         return JsonResponse(serializer.data, safe=False)
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer

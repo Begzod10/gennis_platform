@@ -13,7 +13,7 @@ class ClassColors(models.Model):
 
 
 class ClassTypes(models.Model):
-    name = models.CharField()
+    name = models.CharField(max_length=100)
 
     class Meta:
         ordering = ['id']
@@ -41,8 +41,8 @@ class ClassCoin(models.Model):
 
 
 class CoinInfo(models.Model):
-    value = models.CharField()
-    reason = models.CharField()
+    value = models.CharField(max_length=100)
+    reason = models.CharField(max_length=100)
     day_date = models.DateField()
     class_coin = models.ForeignKey(ClassCoin, on_delete=models.SET_NULL, null=True)
 
@@ -51,7 +51,7 @@ class CoinInfo(models.Model):
 
 
 class StudentCoin(models.Model):
-    value = models.CharField()
+    value = models.CharField(max_length=100)
     class_coin = models.ForeignKey(ClassCoin, on_delete=models.SET_NULL, null=True)
     student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True)
 

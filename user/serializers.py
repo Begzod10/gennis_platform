@@ -5,6 +5,8 @@ from branch.serializers import BranchSerializer
 from language.serializers import LanguageSerializers, Language
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch
 
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
 
 class UserSerializer(serializers.ModelSerializer):
     branch = BranchSerializer()
@@ -14,12 +16,14 @@ class UserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
                   'phone', 'age', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch']
+                  'branch', 'is_superuser', 'is_staff']
         extra_kwargs = {
             'password': {'write_only': True, 'required': True},
             'birth_date': {'required': True},
             'language': {'required': True},
-            'branch': {'required': True}
+            'branch': {'required': True},
+            'is_superuser': {'required': False},
+            'is_staff': {'required': False}
         }
 
     def create(self, validated_data):
@@ -113,3 +117,16 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
         instance.user_salary.remaining_salary += instance.salary
         instance.user_salary.save()
         return instance
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        refresh = self.get_token(self.user)
+
+        data['refresh'] = str(refresh)
+        data['access'] = str(refresh.access_token)
+        user_data = UserSerializer(self.user).data
+        data['admin'] = user_data.get('is_staff', False)
+
+        return data
