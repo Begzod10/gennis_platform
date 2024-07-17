@@ -32,3 +32,8 @@ class ManyLocation(models.Model):
 class ManyBranch(models.Model):
     access = models.ForeignKey(Access, on_delete=models.CASCADE)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
+
+
+class DescriptionForTable(models.Model):
+    table_name = models.CharField()
+    description = models.CharField()

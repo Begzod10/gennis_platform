@@ -1,6 +1,6 @@
 from group.models import Group
 from attendances.models import AttendancePerMonth, AttendancePerDay
-from students.models import Student, StudentCharity
+from students.models import Student
 from datetime import datetime
 from teachers.models import TeacherSalary
 from .CalculateGroupOverallAttendance import calculate_group_attendances
