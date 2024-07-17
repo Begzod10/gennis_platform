@@ -9,10 +9,10 @@ from payments.models import PaymentTypes
 
 class Book(models.Model):
     name = models.CharField(max_length=250)
-    desc = models.CharField()
-    price = models.IntegerField()
-    own_price = models.IntegerField()
-    share_price = models.IntegerField()
+    desc = models.CharField(null=True)
+    price = models.IntegerField(null=False)
+    own_price = models.IntegerField(null=True)
+    share_price = models.IntegerField(null=True)
     file = models.FileField(upload_to='books/files', null=True)
 
 
@@ -26,9 +26,9 @@ class CollectedBookPayments(models.Model):
     payment_type = models.ForeignKey(PaymentTypes, on_delete=models.CASCADE,
                                      related_name='collected_book_payment_payment_type')
     total_debt = models.IntegerField(null=True)
-    month_date = models.DateTimeField()
-    created_date = models.DateTimeField()
-    received_date = models.DateTimeField()
+    month_date = models.DateTimeField(null=True)
+    created_date = models.DateTimeField(null=True)
+    received_date = models.DateTimeField(null=True)
     status = models.BooleanField(null=True)
 
 
@@ -47,7 +47,7 @@ class BookOrder(models.Model):
     editor_status = models.BooleanField(null=True)
     deleted = models.BooleanField(default=False)
     reason = models.CharField(max_length=250)
-    day = models.DateTimeField()
+    day = models.DateTimeField(null=True)
 
 
 class CenterBalance(models.Model):
@@ -55,7 +55,7 @@ class CenterBalance(models.Model):
     total_money = models.IntegerField(null=True)
     remaining_money = models.IntegerField(null=True)
     taken_money = models.IntegerField(null=True)
-    month_date = models.DateTimeField()
+    month_date = models.DateTimeField(null=True)
 
 
 class CenterOrders(models.Model):
@@ -67,8 +67,8 @@ class BalanceOverhead(models.Model):
     balance = models.ForeignKey(CenterBalance, on_delete=models.CASCADE, related_name='balance_overhead_center_balance')
     payment_type = models.ForeignKey(PaymentTypes, on_delete=models.CASCADE,
                                      related_name='balance_overhead_payment_type')
-    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='center_balance_branch')
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='balance_overhead_branch')
     overhead_sum = models.IntegerField(null=True)
-    reason = models.CharField(max_length=250)
+    reason = models.CharField(max_length=250, null=True)
     deleted = models.BooleanField(default=False)
-    day = models.DateTimeField()
+    day = models.DateTimeField(null=True)
