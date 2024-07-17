@@ -40,7 +40,6 @@ class RoomTests(APITestCase):
 
     def test_retrieve_room(self):
         response = self.client.get(self.room_detail_url)
-        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['room']['name'], 'Test Room')
 
