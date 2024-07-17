@@ -11,14 +11,14 @@ class AttendancePerMonth(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE)
     status = models.IntegerField(default=False)
     total_debt = models.IntegerField(default=0)
-    total_salary = models.IntegerField(default=0)
+    # total_salary = models.IntegerField(default=0)
     ball_percentage = models.IntegerField(default=0)
     month_date = models.DateTimeField()
     total_charity = models.IntegerField(default=0)
     remaining_debt = models.IntegerField(default=0)
     payment = models.IntegerField(default=0)
-    remaining_salary = models.IntegerField(default=0)
-    taken_salary = models.IntegerField(default=0)
+    # remaining_salary = models.IntegerField(default=0)
+    # taken_salary = models.IntegerField(default=0)
 
 
 class AttendancePerDay(models.Model):
