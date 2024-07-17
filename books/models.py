@@ -29,7 +29,7 @@ class CollectedBookPayments(models.Model):
     month_date = models.DateTimeField(null=True)
     created_date = models.DateTimeField(null=True)
     received_date = models.DateTimeField(null=True)
-    status = models.BooleanField(null=True)
+    status = models.BooleanField(null=True, )
 
 
 class BookOrder(models.Model):
