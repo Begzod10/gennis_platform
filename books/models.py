@@ -29,7 +29,7 @@ class CollectedBookPayments(models.Model):
     month_date = models.DateTimeField(null=True)
     created_date = models.DateTimeField(null=True)
     received_date = models.DateTimeField(null=True)
-    status = models.BooleanField(null=True, )
+    status = models.BooleanField(null=True, default=False)
 
 
 class BookOrder(models.Model):
@@ -43,8 +43,8 @@ class BookOrder(models.Model):
     collected_payment = models.ForeignKey(CollectedBookPayments, on_delete=models.CASCADE,
                                           related_name='book_order_collected_payment')
     count = models.IntegerField(null=True)
-    admin_status = models.BooleanField(null=True)
-    editor_status = models.BooleanField(null=True)
+    admin_status = models.BooleanField(null=True, default=False)
+    editor_status = models.BooleanField(null=True, default=False)
     deleted = models.BooleanField(default=False)
     reason = models.CharField(max_length=250)
     day = models.DateTimeField(null=True)

@@ -6,10 +6,13 @@ from .views import (
     BookImageListCreateView,
     BookImageRetrieveUpdateDestroyView,
     BookOrderListCreateView,
-    BookOrderRetrieveUpdateDestroyView
+    BookOrderRetrieveUpdateDestroyView,
+    CollectedBookPaymentsRetrieveUpdateDestroyView
 )
 
 urlpatterns = [
+    path('collected_book_payments/<int:pk>/', CollectedBookPaymentsRetrieveUpdateDestroyView.as_view(),
+         name='collected-book-payments-retrieve-update-destroy'),
     path('book_order/', BookOrderListCreateView.as_view(), name='book-order-list-create'),
     path('book_order/<int:pk>/', BookOrderRetrieveUpdateDestroyView.as_view(),
          name='book-order-retrieve-update-destroy'),

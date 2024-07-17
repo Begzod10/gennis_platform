@@ -15,9 +15,7 @@ class BookOrderSerializers(serializers.ModelSerializer):
             payment_type = validated_data.pop('payment_type', None)
             CollectedBookPayments.objects.get_or_create(branch=branch, payment_type=payment_type,
                                                         total_debt=validated_data.pop('total_debt'),
-                                                        month_date=validated_data.pop('month_date'),
-                                                        status=False)
-
+                                                        month_date=validated_data.pop('month_date'))
             instance.admin_status = True
             instance.save()
         else:
