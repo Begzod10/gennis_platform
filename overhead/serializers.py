@@ -1,0 +1,29 @@
+from rest_framework import serializers
+from .models import Overhead
+from payments.serializers import PaymentTypesSerializers, PaymentTypes
+
+
+class OverheadSerializer(serializers.ModelSerializer):
+    payment = PaymentTypesSerializers()
+
+    class Meta:
+        model = Overhead
+        fields = ['id', 'name', 'created', 'payment', 'price']
+
+    def create(self, validated_data):
+        payment = validated_data.pop('payment')
+        payment = PaymentTypes.objects.get(name=payment['name'])
+        overhead = Overhead.objects.create(**validated_data, payment=payment)
+        return overhead
+
+    def update(self, instance, validated_data):
+        payment_data = validated_data.pop('payment')
+        payment = PaymentTypes.objects.get(name=payment_data['name'])
+
+        instance.name = validated_data.get('name', instance.name)
+        instance.created = validated_data.get('created', instance.created)
+        instance.payment = payment
+        instance.price = validated_data.get('price', instance.price)
+
+        instance.save()
+        return instance
