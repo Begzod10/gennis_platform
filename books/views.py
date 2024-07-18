@@ -1,7 +1,22 @@
 from rest_framework import generics
+from .models import Book, BookImage, CenterOrders, CenterBalance, BookOrder, CollectedBookPayments, BalanceOverhead
+from .serializers import BookSerializer, BookImageSerializer, BookOrderSerializers, CenterOrdersSerializers, \
+    CenterBalanceSerializers, BalanceOverheadSerializers, CollectedBookPaymentsSerializers
 
-from .models import Book, BookImage
-from .serializers import BookSerializer, BookImageSerializer
+
+class CollectedBookPaymentsRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = CollectedBookPayments.objects.all()
+    serializer_class = CollectedBookPaymentsSerializers
+
+
+class BookOrderListCreateView(generics.ListCreateAPIView):
+    queryset = BookOrder.objects.all()
+    serializer_class = BookOrderSerializers
+
+
+class BookOrderRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = BookOrder.objects.all()
+    serializer_class = BookOrderSerializers
 
 
 class BookListCreateView(generics.ListCreateAPIView):

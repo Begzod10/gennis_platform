@@ -24,14 +24,14 @@ class CustomUser(AbstractUser):
     father_name = models.CharField(max_length=200, blank=True, null=True)
     profile_img = models.ImageField(
         null=True, blank=True, upload_to='profiles/', default="")
-    birth_date = models.DateTimeField()
-    registered_date = models.DateTimeField(auto_now_add=True)
+    birth_date = models.DateTimeField(null=True)
+    registered_date = models.DateTimeField(auto_now_add=True, )
     phone = models.CharField(max_length=200, blank=True, null=True)
     age = models.CharField(max_length=200, blank=True, null=True)
     comment = models.CharField(max_length=200, blank=True, null=True)
     observer = models.BooleanField(default=False, null=True)
-    branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
-    language = models.ForeignKey(Language, on_delete=models.CASCADE)
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE, null=True)
     groups = models.ManyToManyField(
         Group,
         related_name='custom_user_set',  # related_name'ni o'zgartiring

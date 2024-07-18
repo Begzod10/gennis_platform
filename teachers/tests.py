@@ -47,7 +47,7 @@ class TeacherAPITestCase(APITestCase):
             'user': {
                 'username': 'newuser',
                 'password': 'newpass',
-                'birth_date': timezone.now().isoformat(),
+                # 'birth_date': timezone.now().isoformat(),
                 'language': {
                     'name':self.language.name,
                     'id': self.language.id
@@ -65,7 +65,6 @@ class TeacherAPITestCase(APITestCase):
             'total_students': 20
         }
         response = self.client.post(url, data, format='json')
-        print(response.status_code, response.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Teacher.objects.count(), 2)
         self.assertEqual(Teacher.objects.get(id=response.data['id']).color, 'red')

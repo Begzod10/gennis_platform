@@ -5,8 +5,9 @@ from rest_framework.test import APITestCase
 
 from location.models import Location
 from system.models import System
-from .models import Branch, Room, RoomImages,RoomSubject
+from .models import Branch, Room, RoomImages, RoomSubject
 from subjects.models import Subject
+
 
 class RoomTests(APITestCase):
     def setUp(self):
@@ -54,7 +55,6 @@ class RoomTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.room.refresh_from_db()
         self.assertTrue(self.room.deleted)
-
 
 
 class RoomImagesTests(APITestCase):
@@ -108,6 +108,7 @@ class RoomImagesTests(APITestCase):
         response = self.client.delete(self.room_images_detail_url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(RoomImages.objects.count(), 0)
+
 
 class RoomSubjectTests(APITestCase):
     def setUp(self):

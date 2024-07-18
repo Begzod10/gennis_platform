@@ -23,7 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
                   'branch', 'is_superuser', 'is_staff']
         extra_kwargs = {
             'password': {'write_only': True, 'required': True},
-            'birth_date': {'required': True},
+            'birth_date': {'required': False},
             'language': {'required': True},
             'branch': {'required': True},
             'is_superuser': {'required': False},
@@ -32,6 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         branch_data = validated_data.pop('branch')
+        print(validated_data)
         branch = Branch.objects.get(name=branch_data['name'])
         language_data = validated_data.pop('language')
         language = Language.objects.get(name=language_data['name'])

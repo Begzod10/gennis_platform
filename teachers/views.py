@@ -30,7 +30,6 @@ class TeacherRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TeacherSerializer
 
 
-
 class TeacherSalaryListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = TeacherSalaryListSerializers
 

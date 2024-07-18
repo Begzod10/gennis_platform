@@ -10,20 +10,20 @@ from teachers.models import Teacher
 
 class Group(models.Model):
     name = models.CharField(max_length=255)
-    price = models.IntegerField()
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    level = models.ForeignKey(SubjectLevel, on_delete=models.CASCADE)
-    students = models.ManyToManyField(Student)
+    price = models.IntegerField(null=True)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True)
+    level = models.ForeignKey(SubjectLevel, on_delete=models.CASCADE, null=True)
+    students = models.ManyToManyField(Student, related_name='groups_student')
     teacher = models.ManyToManyField(Teacher)
-    branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
-    color = models.CharField(max_length=255)
-    status = models.BooleanField()
-    created_date = models.DateTimeField(auto_now_add=True)
-    language = models.ForeignKey(Language, on_delete=models.CASCADE)
-    teacher_salary = models.IntegerField()
-    deleted = models.BooleanField()
-    attendance_days = models.IntegerField()
-    system = models.ForeignKey(System, on_delete=models.CASCADE)
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True)
+    color = models.CharField(max_length=255, null=True)
+    status = models.BooleanField(null=True)
+    created_date = models.DateTimeField(auto_now_add=True, null=True)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE, null=True)
+    teacher_salary = models.IntegerField(null=True)
+    deleted = models.BooleanField(null=True, default=False)
+    attendance_days = models.IntegerField(null=True)
+    system = models.ForeignKey(System, on_delete=models.CASCADE, null=True)
 
 
 class GroupReason(models.Model):
@@ -48,7 +48,8 @@ class AttendancePerMonth(models.Model):
 
 
 class AttendancePerDay(models.Model):
-    attendance_per_month = models.ForeignKey(AttendancePerMonth, on_delete=models.CASCADE, related_name='attendance_per_day')
+    attendance_per_month = models.ForeignKey(AttendancePerMonth, on_delete=models.CASCADE,
+                                             related_name='attendance_per_day')
     debt_per_day = models.IntegerField()
     salary_per_day = models.IntegerField()
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='attendance_per_day')

@@ -19,7 +19,8 @@ class UserSerializerTests(APITestCase):
             password="testpassword",
             branch=self.branch,
             language=self.language,
-            birth_date="2000-01-01"
+            # birth_date="2000-01-01"
+
         )
         self.serializer = UserSerializer(instance=self.user)
 
@@ -52,7 +53,7 @@ class UserTests(APITestCase):
             password="testpassword",
             branch=self.branch,
             language=self.language,
-            birth_date="2000-01-01"
+            # birth_date="2000-01-01"
         )
         self.client.login(username="testuser", password="testpassword")
         self.user_data = {
@@ -60,7 +61,7 @@ class UserTests(APITestCase):
             'password': 'newpassword',
             'branch': {'name': 'Test Branch'},
             'language': {'name': 'English'},
-            'birth_date': '2000-01-01'
+            # 'birth_date': '2000-01-01'
         }
 
     def test_create_user(self):
