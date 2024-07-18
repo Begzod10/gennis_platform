@@ -14,8 +14,8 @@ from user.models import CustomUser
 class AddUserGroup(APIView):
     def post(self, request):
         data = json.loads(request.body)
-        user = CustomUser.objects.get(pk=4)
-        group = Group.objects.create(name=data['job_id'])
+        user = CustomUser.objects.get(pk=11)
+        group = Group.objects.get(pk=data['job_id'])
         user.groups.add(group)
 
         return Response({'job': ''})

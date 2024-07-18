@@ -9,14 +9,14 @@ from teachers.models import Teacher
 
 
 class Group(models.Model):
-    name = models.CharField()
+    name = models.CharField(max_length=255)
     price = models.IntegerField()
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     level = models.ForeignKey(SubjectLevel, on_delete=models.CASCADE)
     students = models.ManyToManyField(Student)
     teacher = models.ManyToManyField(Teacher)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
-    color = models.CharField()
+    color = models.CharField(max_length=255)
     status = models.BooleanField()
     created_date = models.DateTimeField(auto_now_add=True)
     language = models.ForeignKey(Language, on_delete=models.CASCADE)
@@ -27,13 +27,13 @@ class Group(models.Model):
 
 
 class GroupReason(models.Model):
-    name = models.CharField()
+    name = models.CharField(max_length=255)
 
 
 class AttendancePerMonth(models.Model):
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='attendance_per_month')
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='attendance_per_month')
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='attendance_per_month')
     date = models.DateTimeField()
     status = models.IntegerField()
     total_debt = models.IntegerField()
@@ -48,13 +48,13 @@ class AttendancePerMonth(models.Model):
 
 
 class AttendancePerDay(models.Model):
-    attendance_per_month = models.ForeignKey(AttendancePerMonth, on_delete=models.CASCADE)
+    attendance_per_month = models.ForeignKey(AttendancePerMonth, on_delete=models.CASCADE, related_name='attendance_per_day')
     debt_per_day = models.IntegerField()
     salary_per_day = models.IntegerField()
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='attendance_per_day')
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='attendance_per_day')
     charity_per_day = models.IntegerField()
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='attendance_per_day')
     day = models.DateTimeField()
     homework_ball = models.IntegerField()
     dictionary_ball = models.IntegerField()

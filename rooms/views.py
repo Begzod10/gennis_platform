@@ -3,6 +3,7 @@ from rest_framework.response import Response
 
 from .models import Room, RoomImages, RoomSubject
 from .serializers import RoomSerializer, RoomImagesSerializer, RoomSubjectSerializer
+from time_table.serializers import GroupTimeTable, GroupTimeTableSerializer
 
 
 class RoomListCreateView(generics.ListCreateAPIView):
@@ -21,8 +22,22 @@ class RoomRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         room.deleted = True
         room.save()
         return Response({"detail": "Room was deleted successfully"}, status=status.HTTP_200_OK)
+
     # permission_classes = (
     #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)  # login qilgan yoki yuq ligini va admin emasligini tekshiradi
+    def get_group_time_tables(self, room_id):
+        time_tables = GroupTimeTable.objects.filter(room_id=room_id)
+        serializer = GroupTimeTableSerializer(time_tables, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        room = self.get_object()
+        time_tables_response = self.get_group_time_tables(room.id)
+        room_data = self.get_serializer(room).data
+        return Response({
+            "room": room_data,
+            "group_time_tables": time_tables_response.data
+        })
 
 
 class RoomImagesListCreateView(generics.ListCreateAPIView):

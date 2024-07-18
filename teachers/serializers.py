@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
-from user.serializers import UserSerializer, CustomUser
-from .models import (Teacher, TeacherSalaryList, TeacherSalary, TeacherGroupStatistics)
+from user.serializers import UserSerializer
+from .models import (Teacher, TeacherSalaryList, TeacherSalary, TeacherGroupStatistics, Subject)
+from subjects.serializers import SubjectSerializer
 
 
 class TeacherGroupStatisticsSerializers(serializers.ModelSerializer):
@@ -12,6 +13,7 @@ class TeacherGroupStatisticsSerializers(serializers.ModelSerializer):
 
 class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializer()
+    subject = SubjectSerializer()
 
     class Meta:
         model = Teacher
@@ -19,9 +21,17 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
-        user = CustomUser.objects.create(**user_data)
-        student = Teacher.objects.create(user=user, **validated_data)
-        return student
+
+        subject_data = validated_data.pop('subject')
+
+        subject = Subject.objects.get(name=subject_data['name'])
+
+        user_serializer = UserSerializer(data=user_data)
+        user_serializer.is_valid(raise_exception=True)
+        user = user_serializer.save()
+
+        teacher = Teacher.objects.create(user=user, **validated_data, subject=subject)
+        return teacher
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', None)

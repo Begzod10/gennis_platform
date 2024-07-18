@@ -9,6 +9,12 @@ from group.models import Group, GroupReason
 from students.serializers import StudentSerializer
 from group.serializers import GroupSerializer, GroupReasonSerializers
 from group.functions.createGroup import creat_group
+from permissions.functions.CheckUserPermissions import check_user_permissions
+from user.models import CustomUser
+from django.db import connection
+import re
+
+from django.contrib.auth.models import Permission
 
 
 class CreateGroupReasonList(generics.ListCreateAPIView):
@@ -34,12 +40,16 @@ class CreatGroups(APIView):
     def get(self, request):
         groups = Group.objects.all()
         serializers = GroupSerializer(groups, many=True)
+
         return Response(serializers.data)
 
 
 class GroupProfile(generics.RetrieveUpdateAPIView):
-    queryset = Group
+    queryset = Group.objects.all()
     serializer_class = GroupSerializer
+    user = CustomUser.objects.get(pk=11)
+    table_names = ['group']
+    check_user_permissions(user, table_names)
 
 
 class DeleteGroups(APIView):
