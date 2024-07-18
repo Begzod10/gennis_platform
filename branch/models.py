@@ -10,6 +10,4 @@ class Branch(models.Model):
     number = models.IntegerField()
     location = models.ForeignKey(Location, on_delete=models.CASCADE, blank=True, null=True)
 
-    def __str__(self):
-        return self.name, self.number
 

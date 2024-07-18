@@ -49,9 +49,6 @@ class CustomUser(AbstractUser):
 
     # acces models.ManyToManyField(Student)
 
-    def __str__(self):
-        return str(self.username)
-
     class Meta:
         ordering = ['id']
 
