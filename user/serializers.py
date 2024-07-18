@@ -5,6 +5,10 @@ from branch.serializers import BranchSerializer
 from language.serializers import LanguageSerializers, Language
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch
 
+from branch.serializers import BranchSerializer
+from language.serializers import LanguageSerializers
+
+
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 

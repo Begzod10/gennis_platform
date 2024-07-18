@@ -7,6 +7,9 @@ from teachers.models import TeacherGroupStatistics
 from user.serializers import UserSerializer
 from .models import (Student, CustomUser, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent)
 
+from attendances.models import AttendancePerMonth
+from subjects.serializers import SubjectSerializer
+
 
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()

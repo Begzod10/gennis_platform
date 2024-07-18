@@ -5,6 +5,8 @@ from .models import Branch
 
 
 class BranchSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=True)
+    # location = serializers.PrimaryKeyRelatedField(queryset=Location.objects.all(), required=False)
     location = LocationSerializers(required=False)
     name = serializers.CharField(max_length=100, required=False)
     number = serializers.CharField(max_length=100, required=False)

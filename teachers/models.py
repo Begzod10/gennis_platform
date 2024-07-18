@@ -15,7 +15,7 @@ class Teacher(models.Model):
 
 class TeacherSalary(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_id_salary')
-    month_date = models.DateTimeField(auto_now_add=True)
+    month_date = models.DateTimeField()
     total_salary = models.IntegerField(blank=True, null=True)
     remaining_salary = models.IntegerField(blank=True, null=True)
     taken_salary = models.IntegerField(blank=True, null=True)
