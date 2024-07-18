@@ -19,7 +19,7 @@ class UserSerializer(serializers.ModelSerializer):
                   'branch', 'is_superuser', 'is_staff']
         extra_kwargs = {
             'password': {'write_only': True, 'required': True},
-            'birth_date': {'required': True},
+            'birth_date': {'required': False},
             'language': {'required': True},
             'branch': {'required': True},
             'is_superuser': {'required': False},

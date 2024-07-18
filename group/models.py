@@ -13,7 +13,7 @@ class Group(models.Model):
     price = models.IntegerField(null=True)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True)
     level = models.ForeignKey(SubjectLevel, on_delete=models.CASCADE, null=True)
-    students = models.ManyToManyField(Student)
+    students = models.ManyToManyField(Student, related_name='groups_student')
     teacher = models.ManyToManyField(Teacher)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True)
     color = models.CharField(max_length=255, null=True)
@@ -21,7 +21,7 @@ class Group(models.Model):
     created_date = models.DateTimeField(auto_now_add=True, null=True)
     language = models.ForeignKey(Language, on_delete=models.CASCADE, null=True)
     teacher_salary = models.IntegerField(null=True)
-    deleted = models.BooleanField(null=True)
+    deleted = models.BooleanField(null=True, default=False)
     attendance_days = models.IntegerField(null=True)
     system = models.ForeignKey(System, on_delete=models.CASCADE, null=True)
 

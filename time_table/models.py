@@ -14,7 +14,7 @@ class WeekDays(models.Model):
 
 
 class GroupTimeTable(models.Model):
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='group_time_table')
     week = models.ForeignKey(WeekDays, on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
     start_time = models.TimeField()

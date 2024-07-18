@@ -36,7 +36,7 @@ class StudentRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         student = self.get_object()
-        create = DeletedStudent.objects.create(student=student)
+        DeletedStudent.objects.create(student=student)
         return Response({"detail": "Student was deleted successfully"}, status=status.HTTP_200_OK)
 
 

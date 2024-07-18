@@ -49,6 +49,7 @@ class StudentSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
 class StudentHistoryGroupsSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentHistoryGroups
@@ -77,9 +78,10 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        attendance_per_months = AttendancePerMonth.objects.get(student=validated_data.get('student_id'),
+        print(validated_data)
+        attendance_per_months = AttendancePerMonth.objects.get(student=validated_data.get('student'),
                                                                status=False).all()
-        student = Student.objects.get(pk=validated_data.get('student_id'))
+        student = Student.objects.get(pk=validated_data.get('student'))
         student_payment = StudentPayment.objects.create(**validated_data)
         payment_sum = student_payment.payment_sum + student_payment.extra_payment
         for attendance_per_month in attendance_per_months:
