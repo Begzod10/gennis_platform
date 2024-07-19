@@ -47,9 +47,9 @@ class CreatGroups(APIView):
 class GroupProfile(generics.RetrieveUpdateAPIView):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
-    user = CustomUser.objects.get(pk=1)
-    table_names = ['group']
-    check_user_permissions(user, table_names)
+    # user = CustomUser.objects.get(pk=1)
+    # table_names = ['group']
+    # check_user_permissions(user, table_names)
 
 
 class DeleteGroups(APIView):

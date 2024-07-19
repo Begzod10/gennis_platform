@@ -5,20 +5,35 @@ from .models import Branch
 
 
 class BranchSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=True)
-    # location = serializers.PrimaryKeyRelatedField(queryset=Location.objects.all(), required=False)
+    id = serializers.IntegerField(required=False)
     location = LocationSerializers(required=False)
-    name = serializers.CharField(max_length=100, required=False)
-    number = serializers.CharField(max_length=100, required=False)
+    name = serializers.CharField(max_length=255, required=False)
+    number = serializers.IntegerField(required=False)
+    map_link = serializers.CharField(required=False)
+    code = serializers.IntegerField(required=False)
+    phone_number = serializers.CharField(max_length=20, required=False)
+    director_fio = serializers.CharField(max_length=255, required=False)
+    location_type = serializers.CharField(max_length=255, required=False)
+    district = serializers.CharField(max_length=255, required=False)
+    bank_sheet = serializers.CharField(required=False)
+    inn = serializers.CharField(max_length=255, required=False)
+    bank = serializers.CharField(max_length=255, required=False)
+    mfo = serializers.CharField(max_length=50, required=False)
+    campus_name = serializers.CharField(max_length=255, required=False)
+    address = serializers.CharField(max_length=255, required=False)
+    year = serializers.DateField(required=False)
 
     class Meta:
         model = Branch
-        fields = ['id', 'name', 'number', 'location']
+        fields = ['id', 'name', 'number', 'location', 'map_link', 'code', 'phone_number',
+                  'director_fio', 'location_type', 'district', 'bank_sheet', 'inn',
+                  'bank', 'mfo', 'campus_name', 'address', 'year']
 
     def create(self, validated_data):
         location_data = validated_data.pop('location')
-        location = Location.objects.get(name=location_data['name'])
-        branch = Branch.objects.create(**validated_data, location=location)
+        print(location_data)
+        location = Location.objects.get(name="Chirchiq")
+        branch = Branch.objects.create(**validated_data, location_id=location)
 
         return branch
 

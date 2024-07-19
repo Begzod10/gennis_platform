@@ -1,14 +1,11 @@
-from django.utils.timezone import now
 from rest_framework import serializers
 
 from attendances.models import AttendancePerMonth
-from subjects.serializers import SubjectSerializer, Subject
+from subjects.serializers import Subject
+from subjects.serializers import SubjectSerializer
 from teachers.models import TeacherGroupStatistics
 from user.serializers import UserSerializer
-from .models import (Student, CustomUser, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent)
-
-from attendances.models import AttendancePerMonth
-from subjects.serializers import SubjectSerializer
+from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent,DeletedNewStudent)
 
 
 class StudentSerializer(serializers.ModelSerializer):
@@ -17,23 +14,20 @@ class StudentSerializer(serializers.ModelSerializer):
     parents_number = serializers.CharField(write_only=True)
     shift = serializers.CharField(write_only=True)
 
-    # subject_id = serializers.CharField(write_only=True)
-
     class Meta:
         model = Student
-        fields = ['user', 'subject', 'parents_number', 'shift']
+        fields = ['id','user', 'subject', 'parents_number', 'shift']
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
-
         subject_data = validated_data.pop('subject')
-        subject = Subject.objects.get(name=subject_data['name'])
 
+        subject = Subject.objects.get(name=subject_data['name'])
         user_serializer = UserSerializer(data=user_data)
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
 
-        student = Student.objects.create(user=user, **validated_data, subject=subject)
+        student = Student.objects.create(user=user, subject=subject, **validated_data)
         return student
 
     def update(self, instance, validated_data):
@@ -124,6 +118,14 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
         instance.student.extra_payment -= instance.payment_sum
         instance.student.extra_payment.save()
         return instance
+
+
+class DeletedNewStudentSerializer(serializers.ModelSerializer):
+    student = StudentSerializer(read_only=True)
+
+    class Meta:
+        model = DeletedNewStudent
+        fields = ['student']
 
 
 class DeletedStudentSerializer(serializers.ModelSerializer):
