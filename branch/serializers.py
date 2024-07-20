@@ -32,7 +32,7 @@ class BranchSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         location_data = validated_data.pop('location')
         location = Location.objects.get(name=location_data['name'])
-        branch = Branch.objects.create(**validated_data, location_id=location)
+        branch = Branch.objects.create(**validated_data, location=location)
 
         return branch
 
