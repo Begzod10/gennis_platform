@@ -12,11 +12,19 @@ from students.models import Student
 from teachers.models import Teacher
 from group.models import Group
 from payments.models import PaymentTypes
+from system.models import System
+from location.models import Location
 
 
 class BalanceOverheadTests(APITestCase):
     def setUp(self):
-        self.branch = Branch.objects.create(name="Test Branch", number=1)
+        self.system = System.objects.create(name='Test System', number=1)
+        self.location = Location.objects.create(
+            name='Test Location',
+            number=1,
+            system=self.system
+        )
+        self.branch = Branch.objects.create(name="Test Branch", number=1, location_id=self.location)
         self.balance = CenterBalance.objects.create(
             total_money=2000000,
             remaining_money=2000000,
@@ -80,7 +88,13 @@ class BalanceOverheadTests(APITestCase):
 
 class BookOrderTests(APITestCase):
     def setUp(self):
-        self.branch = Branch.objects.create(name="Test Branch", number=1)
+        self.system = System.objects.create(name='Test System', number=1)
+        self.location = Location.objects.create(
+            name='Test Location',
+            number=1,
+            system=self.system
+        )
+        self.branch = Branch.objects.create(name="Test Branch", number=1, location_id=self.location)
         self.language = Language.objects.create(name="English")
         self.user = CustomUser.objects.create_user(
             username="testuser",

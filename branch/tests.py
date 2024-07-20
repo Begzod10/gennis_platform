@@ -15,12 +15,12 @@ class BranchTests(APITestCase):
         self.branch_data = {
             'name': 'Test Branch',
             'number': 1,
-            'location': self.location.id
+            'location': self.location
         }
         self.branch = Branch.objects.create(
             name='Existing Branch',
             number=2,
-            location=self.location
+            location_id=self.location
         )
         self.create_url = reverse('branch-list-create')
 
