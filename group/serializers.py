@@ -23,7 +23,7 @@ class GroupReasonSerializers(serializers.ModelSerializer):
 
 
 class GroupSerializer(serializers.ModelSerializer):
-    id = serializers.CharField(max_length=100, required=True)
+    id = serializers.CharField(max_length=100, required=False)
     name = serializers.CharField(max_length=100, required=False)
     price = serializers.CharField(max_length=100, required=False)
     status = serializers.CharField(max_length=100, required=False)

@@ -1,7 +1,8 @@
-from django.db import models
 from django.conf import settings
-from subjects.models import Subject
+from django.db import models
+
 from payments.models import PaymentTypes
+from subjects.models import Subject
 from teachers.models import Teacher
 from user.serializers import (CustomUser)
 
@@ -10,9 +11,12 @@ class Student(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='student_user')
     subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True)
     total_payment_month = models.IntegerField(null=True)
+    extra_payment = models.CharField(null=True)
     shift = models.CharField(max_length=50, null=True)
     debt_status = models.BigIntegerField(null=True)
     parents_number = models.CharField(max_length=250, null=True)
+    representative_name = models.CharField(null=True)
+    representative_surname = models.CharField(null=True)
 
 
 class StudentCharity(models.Model):
@@ -28,11 +32,13 @@ class StudentPayment(models.Model):
     payment_sum = models.IntegerField()
     added_data = models.DateTimeField(auto_now_add=True)
     status = models.BooleanField()
+    deleted = models.BooleanField(default=False)
 
 
-# class DeletedStudent(models.Model):
-#     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student')
-#     created = models.DateTimeField(auto_now_add=True)
+class DeletedNewStudent(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student_new')
+    created = models.DateTimeField(auto_now_add=True)
+    comment = models.CharField(null=True)
 
 
 class StudentHistoryGroups(models.Model):
@@ -51,3 +57,16 @@ class DeletedStudent(models.Model):
     group_reason = models.ForeignKey('group.GroupReason', on_delete=models.SET_NULL, null=True,
                                      related_name='deleted_student_group_reason')
     deleted_date = models.DateTimeField(auto_now_add=True)
+
+
+class ContractStudent(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='contract_student_id')
+    created_date = models.DateField(auto_now_add=True)
+    expire_date = models.DateField()
+    father_name = models.CharField(max_length=255)
+    given_place = models.CharField(max_length=255)
+    place = models.CharField(max_length=255)
+    passport_series = models.CharField(max_length=255)
+    given_time = models.CharField(max_length=255)
+    contract = models.FileField(upload_to='contracts')
+    year = models.DateField(null=True)  # Add this field

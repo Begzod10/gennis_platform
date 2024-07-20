@@ -23,7 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
                   'branch', 'is_superuser', 'is_staff']
         extra_kwargs = {
             'password': {'write_only': True, 'required': True},
-            'birth_date': {'required': True},
+            'birth_date': {'required': False},
             'language': {'required': True},
             'branch': {'required': True},
             'is_superuser': {'required': False},
@@ -31,10 +31,12 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        branch_data = validated_data.pop('branch')
-        branch = Branch.objects.get(name=branch_data['name'])
-        language_data = validated_data.pop('language')
-        language = Language.objects.get(name=language_data['name'])
+        print(validated_data)
+        branch_data = validated_data.pop('branch', None)
+        language_data = validated_data.pop('language', None)
+
+        branch = Branch.objects.get(name=branch_data['name']) if isinstance(branch_data, dict) else None
+        language = Language.objects.get(name=language_data['name']) if isinstance(language_data, dict) else None
 
         user = CustomUser.objects.create_user(
             name=validated_data.get('name'),
@@ -71,11 +73,11 @@ class UserSerializer(serializers.ModelSerializer):
         instance.observer = validated_data.get('observer', instance.observer)
         instance.comment = validated_data.get('comment', instance.comment)
 
-        if branch_data:
+        if branch_data and isinstance(branch_data, dict):
             branch = Branch.objects.get(name=branch_data['name'])
             instance.branch = branch
 
-        if language_data:
+        if language_data and isinstance(language_data, dict):
             language = Language.objects.get(name=language_data['name'])
             instance.language = language
 

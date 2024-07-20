@@ -1,14 +1,11 @@
-from django.utils.timezone import now
 from rest_framework import serializers
 
 from attendances.models import AttendancePerMonth
-from subjects.serializers import SubjectSerializer, Subject
+from subjects.serializers import Subject
+from subjects.serializers import SubjectSerializer
 from teachers.models import TeacherGroupStatistics
 from user.serializers import UserSerializer
-from .models import (Student, CustomUser, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent)
-
-from attendances.models import AttendancePerMonth
-from subjects.serializers import SubjectSerializer
+from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent,DeletedNewStudent)
 
 
 class StudentSerializer(serializers.ModelSerializer):
@@ -17,23 +14,20 @@ class StudentSerializer(serializers.ModelSerializer):
     parents_number = serializers.CharField(write_only=True)
     shift = serializers.CharField(write_only=True)
 
-    # subject_id = serializers.CharField(write_only=True)
-
     class Meta:
         model = Student
-        fields = ['user', 'subject', 'parents_number', 'shift']
+        fields = ['id','user', 'subject', 'parents_number', 'shift']
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
-
         subject_data = validated_data.pop('subject')
-        subject = Subject.objects.get(name=subject_data['name'])
 
+        subject = Subject.objects.get(name=subject_data['name'])
         user_serializer = UserSerializer(data=user_data)
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
 
-        student = Student.objects.create(user=user, **validated_data, subject=subject)
+        student = Student.objects.create(user=user, subject=subject, **validated_data)
         return student
 
     def update(self, instance, validated_data):
@@ -51,6 +45,7 @@ class StudentSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
 
 class StudentHistoryGroupsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -80,17 +75,34 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        attendance_per_month = AttendancePerMonth.objects.get(student=validated_data.get('student_id'))
-        total_debt = 400
-        remaining_debt = 300
-        payment = 100
-        print(**validated_data)
-        student = Student.objects.get(pk=validated_data.get('student_id'))
-        current_year = now().year
-        current_month = now().month
+        print(validated_data)
+        attendance_per_months = AttendancePerMonth.objects.get(student=validated_data.get('student'),
+                                                               status=False).all()
+        student = Student.objects.get(pk=validated_data.get('student'))
         student_payment = StudentPayment.objects.create(**validated_data)
-        remaining_debt -= student_payment.payment_sum
-        payment += student_payment.payment_sum
+        payment_sum = student_payment.payment_sum + student_payment.extra_payment
+        for attendance_per_month in attendance_per_months:
+            if attendance_per_month.remaining_debt >= payment_sum:
+                attendance_per_month.remaining_debt -= payment_sum
+                attendance_per_month.payment += payment_sum
+                payment_sum = 0
+                if attendance_per_month.remaining_debt == 0:
+                    attendance_per_month.status = True
+            else:
+                payment_sum -= attendance_per_month.remaining_debt
+                attendance_per_month.payment += attendance_per_month.remaining_debt
+                attendance_per_month.remaining_debt = 0
+                attendance_per_month.status = True
+            attendance_per_month.save()
+        student_payment.extra_payment = payment_sum
+        student_payment.save()
+        total_debt = 0
+        remaining_debt = 0
+        attendance_per_months = AttendancePerMonth.objects.get(student=validated_data.get('student_id'),
+                                                               status=False).all()
+        for attendance_per_month in attendance_per_months:
+            total_debt += attendance_per_month.total_debt
+            remaining_debt += attendance_per_month.remaining_debt
         if remaining_debt == 0:
             student.debt_status = 0
         elif student.total_payment_month > total_debt:
@@ -101,18 +113,19 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
         return student_payment
 
     def delete(self, instance):
-        # instance.deleted = True
-        # instance.save()
-        # instance.user_salary.taken_salary -= instance.salary
-        # instance.user_salary.remaining_salary += instance.salary
-        # instance.user_salary.save()
+        instance.deleted = True
+        instance.save()
+        instance.student.extra_payment -= instance.payment_sum
+        instance.student.extra_payment.save()
         return instance
 
-    def update(self, instance, validated_data):
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
+
+class DeletedNewStudentSerializer(serializers.ModelSerializer):
+    student = StudentSerializer(read_only=True)
+
+    class Meta:
+        model = DeletedNewStudent
+        fields = ['student']
 
 
 class DeletedStudentSerializer(serializers.ModelSerializer):

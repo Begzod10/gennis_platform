@@ -6,8 +6,3 @@ class System(models.Model):
     """ center, school, institute ... """
     name = models.CharField(max_length=255)
     number = models.IntegerField()
-
-
-
-
-
