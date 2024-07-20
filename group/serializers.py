@@ -1,19 +1,17 @@
 from rest_framework import serializers
 
-from branch.models import Branch
-from language.models import Language
-from teachers.serializers import TeacherSerializer
-from teachers.models import Teacher
-from .models import Group, GroupReason
-from students.models import StudentHistoryGroups
-from subjects.models import Subject, SubjectLevel
-from system.models import System
-
 from branch.serializers import BranchSerializer
+from language.models import Language
 from language.serializers import LanguageSerializers
-from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
+from students.models import StudentHistoryGroups
 from students.serializers import StudentSerializer
+from subjects.models import Subject, SubjectLevel
+from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
+from system.models import System
 from system.serializers import SystemSerializers
+from teachers.models import Teacher, TeacherHistoryGroups
+from teachers.serializers import TeacherSerializer
+from .models import Group, GroupReason
 
 
 class GroupReasonSerializers(serializers.ModelSerializer):
@@ -69,9 +67,12 @@ class GroupSerializer(serializers.ModelSerializer):
             teacher = Teacher.objects.get(teacher_data)
             StudentHistoryGroups.objects.create(joined_day=group.created_date, student=student,
                                                 group=group, teacher=teacher)
+            TeacherHistoryGroups.objects.create(joined_day=group.created_date,
+                                                group=group, teacher=teacher)
             group.students.add(student)
 
         group.teacher.add(teacher_data)
+
         return group
 
     def update(self, instance, validated_data):
