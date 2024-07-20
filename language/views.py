@@ -22,6 +22,18 @@ class CreateLanguageList(generics.ListCreateAPIView):
         serializer = LanguageSerializers(queryset, many=True)
         return Response({'languages': serializer.data, 'permissions': permissions})
 
+
 class LanguageRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Language.objects.all()
     serializer_class = LanguageSerializers  # permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrReadOnly) # login qilgan yoki yuq ligini va admin emasligini tekshiradi
+
+    def retrieve(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['language']
+        permissions = check_user_permissions(user, table_names)
+        language = self.get_object()
+        language_data = self.get_serializer(language).data
+        return Response({'language': language_data, 'permissions': permissions})

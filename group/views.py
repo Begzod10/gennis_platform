@@ -65,6 +65,10 @@ class DeleteGroups(APIView):
         return Response({'data': serializer.data})
 
 
+class TeacherGroupChange(APIView):
+    def post(self,request,pk):
+
+
 class AddToGroupApi(APIView):
     def post(self, request, pk):
         group = Group.objects.get(pk=pk)

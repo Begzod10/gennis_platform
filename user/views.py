@@ -51,7 +51,6 @@ class UserMe(APIView):
             user = CustomUser.objects.get(id=user_id)
         except CustomUser.DoesNotExist:
             return JsonResponse({'error': 'User not found'}, status=404)
-
         serializer = UserSerializer(user)
         table_names = ['customuser']
         permissions = check_user_permissions(user, table_names)
