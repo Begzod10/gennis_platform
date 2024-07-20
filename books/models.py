@@ -27,7 +27,7 @@ class CollectedBookPayments(models.Model):
                                      related_name='collected_book_payment_payment_type')
     total_debt = models.IntegerField(null=True)
     month_date = models.DateTimeField(null=True)
-    created_date = models.DateTimeField(null=True)
+    created_date = models.DateTimeField(auto_now_add=True)
     received_date = models.DateTimeField(null=True)
     status = models.BooleanField(null=True, default=False)
 
@@ -41,7 +41,7 @@ class BookOrder(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='book_order_book')
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='book_order_branch')
     collected_payment = models.ForeignKey(CollectedBookPayments, on_delete=models.CASCADE,
-                                          related_name='book_order_collected_payment')
+                                          related_name='book_order_collected_payment', null=True)
     count = models.IntegerField(null=True)
     admin_status = models.BooleanField(null=True, default=False)
     editor_status = models.BooleanField(null=True, default=False)
@@ -55,7 +55,7 @@ class CenterBalance(models.Model):
     total_money = models.IntegerField(null=True)
     remaining_money = models.IntegerField(null=True)
     taken_money = models.IntegerField(null=True)
-    month_date = models.DateTimeField(null=True)
+    month_date = models.DateTimeField(auto_now_add=True)
 
 
 class CenterOrders(models.Model):
@@ -68,7 +68,8 @@ class BalanceOverhead(models.Model):
     payment_type = models.ForeignKey(PaymentTypes, on_delete=models.CASCADE,
                                      related_name='balance_overhead_payment_type')
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='balance_overhead_branch')
+
     overhead_sum = models.IntegerField(null=True)
     reason = models.CharField(max_length=250, null=True)
     deleted = models.BooleanField(default=False)
-    day = models.DateTimeField(null=True)
+    day = models.DateTimeField(auto_now_add=True)

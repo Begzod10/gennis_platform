@@ -7,7 +7,9 @@ from .views import (
     BookImageRetrieveUpdateDestroyView,
     BookOrderListCreateView,
     BookOrderRetrieveUpdateDestroyView,
-    CollectedBookPaymentsRetrieveUpdateDestroyView
+    CollectedBookPaymentsRetrieveUpdateDestroyView,
+    BalanceOverheadListCreateView,
+    BalanceOverheadRetrieveUpdateDestroyView
 )
 
 urlpatterns = [
@@ -18,7 +20,10 @@ urlpatterns = [
          name='book-order-retrieve-update-destroy'),
     path('books/', BookListCreateView.as_view(), name='book-list-create'),
     path('books/<int:pk>/', BookRetrieveUpdateDestroyView.as_view(), name='book-retrieve-update-destroy'),
-    path('book-images/', BookImageListCreateView.as_view(), name='book-image-list-create'),
-    path('book-images/<int:pk>/', BookImageRetrieveUpdateDestroyView.as_view(),
+    path('book_images/', BookImageListCreateView.as_view(), name='book-image-list-create'),
+    path('book_images/<int:pk>/', BookImageRetrieveUpdateDestroyView.as_view(),
          name='book-image-retrieve-update-destroy'),
+    path('balance_overhead/', BalanceOverheadListCreateView.as_view(), name='balance-overhead-list-create'),
+    path('balance_overhead/<int:pk>/', BalanceOverheadRetrieveUpdateDestroyView.as_view(),
+         name='balance-overhead-retrieve-update-destroy'),
 ]

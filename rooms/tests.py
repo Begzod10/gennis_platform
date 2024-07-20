@@ -29,11 +29,12 @@ class RoomTests(APITestCase):
         data = {
             'name': 'New Room',
             'seats_number': 25,
-            'branch_id': self.branch.pk,
+            'branch_id': self.branch.id,
             'electronic_board': 'True',
             'deleted': 'False'
         }
         response = self.client.post(self.room_url, data, format='json')
+        # print(response.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Room.objects.count(), 2)
         self.assertEqual(Room.objects.latest('id').name, 'New Room')

@@ -4,7 +4,7 @@ from .models import Room, RoomImages, RoomSubject
 
 
 class RoomSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=True)
+    id = serializers.IntegerField(required=False)
 
     name = serializers.CharField(max_length=100, required=False)
     # branch_id = serializers.CharField(max_length=100, required=False)
