@@ -2,7 +2,6 @@ from django.db import models
 from system.models import System
 
 
-
 class Location(models.Model):
     name = models.CharField()
     number = models.IntegerField()

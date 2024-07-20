@@ -90,21 +90,20 @@ class BalanceOverheadSerializers(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        branch_data = validated_data.pop('branch', None)
-        branch = Branch.objects.get(name=branch_data['name'])
-        center_balance = CenterBalance.objects.get(pk=validated_data.pop('center_balance', None))
-        payment_type = PaymentTypes.objects.get(pk=validated_data.pop('payment_type', None))
+        branch = Branch.objects.get(pk=validated_data.pop('branch', None).pk)
+        balance = CenterBalance.objects.get(pk=validated_data.pop('balance', None).pk)
+        payment_type = PaymentTypes.objects.get(pk=validated_data.pop('payment_type', None).pk)
         overhead_sum = validated_data.get('overhead_sum')
         balance_overhead = BalanceOverhead.objects.create(
             overhead_sum=overhead_sum,
             reason=validated_data.get('reason'),
             payment_type=payment_type,
             branch=branch,
-            balance=center_balance,
+            balance=balance,
         )
-        center_balance.remaining_money -= overhead_sum
-        center_balance.taken_money += overhead_sum
-        center_balance.save()
+        balance.remaining_money -= overhead_sum
+        balance.taken_money += overhead_sum
+        balance.save()
         return balance_overhead
 
     def delete(self, instance):

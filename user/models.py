@@ -9,12 +9,12 @@ from language.models import Language
 from django.conf import settings
 
 
-class CustomPermission(models.Model):
-    permission = models.OneToOneField(Permission, on_delete=models.CASCADE, related_name='custom_permission')
+class CustomAutoGroup(models.Model):
+    group = models.OneToOneField(Group, on_delete=models.CASCADE, related_name='custom_permission')
     salary = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.permission.name} - Salary: {self.salary}"
+        return f"{self.group.name} - Salary: {self.salary}"
 
 
 class CustomUser(AbstractUser):
@@ -63,7 +63,7 @@ class CustomUser(AbstractUser):
 
 class UserSalary(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
-    permission = models.ForeignKey(CustomPermission, on_delete=models.SET_NULL, null=True)
+    permission = models.ForeignKey(CustomAutoGroup, on_delete=models.SET_NULL, null=True)
     date = models.DateTimeField(auto_now_add=True)
     total_salary = models.IntegerField(blank=True, null=True)
     taken_salary = models.IntegerField(blank=True, null=True)
@@ -75,7 +75,7 @@ class UserSalary(models.Model):
 
 class UserSalaryList(models.Model):
     user_salary = models.ForeignKey(UserSalary, on_delete=models.SET_NULL, null=True)
-    permission = models.ForeignKey(CustomPermission, on_delete=models.SET_NULL, null=True)
+    permission = models.ForeignKey(CustomAutoGroup, on_delete=models.SET_NULL, null=True)
     payment_types = models.ForeignKey(PaymentTypes, on_delete=models.SET_NULL, null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
