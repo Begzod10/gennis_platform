@@ -1,20 +1,17 @@
-from rest_framework import generics
-from rest_framework.views import APIView
-from rest_framework.response import Response
-
 import json
 
-from students.models import Student
-from group.models import Group, GroupReason
-from students.serializers import StudentSerializer
-from group.serializers import GroupSerializer, GroupReasonSerializers
-from group.functions.createGroup import creat_group
-from permissions.functions.CheckUserPermissions import check_user_permissions
-from user.models import CustomUser
-from django.db import connection
-import re
+from django.shortcuts import get_object_or_404
+from rest_framework import generics
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from django.contrib.auth.models import Permission
+from group.functions.createGroup import creat_group
+from group.models import Group, GroupReason
+from group.serializers import GroupSerializer, GroupReasonSerializers
+from students.models import Student
+from students.serializers import StudentSerializer
+from teachers.serializers import Teacher, TeacherSerializer
 
 
 class CreateGroupReasonList(generics.ListCreateAPIView):
@@ -65,8 +62,53 @@ class DeleteGroups(APIView):
         return Response({'data': serializer.data})
 
 
-# class TeacherGroupChange(APIView):
-#     def post(self,request,pk):
+class TeacherGroupChange(APIView):
+    def post(self, request, pk):
+        group = get_object_or_404(Group, pk=pk)
+        data = request.data
+        teacher_id = data.get('teacher')
+
+        if not teacher_id:
+            return Response({'error': 'Teacher ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        teacher = get_object_or_404(Teacher, pk=teacher_id)
+        statuss = False
+
+        if (group.group_time_table.start_time != teacher.group.group_time_table.start_time and
+                group.group_time_table.week != teacher.group.group_time_table.week and
+                group.group_time_table.room != teacher.group.group_time_table.room and
+                group.group_time_table.end_time != teacher.group.group_time_table.end_time):
+            statuss = True
+
+        if statuss:
+            teacher.group = None
+            teacher.save()
+            group.teacher.add(teacher)
+
+        serializer = GroupSerializer(group)
+        return Response({'data': serializer.data})
+
+    def get(self, request,pk):
+        start_time = request.query_params.get('start_time')
+        end_time = request.query_params.get('end_time')
+        week = request.query_params.get('week')
+        room = request.query_params.get('room')
+        teachers = Teacher.objects.all()
+        teacher_data = []
+
+        for teacher in teachers:
+            status = (start_time != teacher.group.group_time_table.start_time and
+                      week != teacher.group.group_time_table.week and
+                      room != teacher.group.group_time_table.room and
+                      end_time != teacher.group.group_time_table.end_time)
+            serializer = TeacherSerializer(teacher)
+            data = {
+                'teacher': serializer.data,
+                'status': status
+            }
+            teacher_data.append(data)
+
+        return Response(teacher_data)
 
 
 class AddToGroupApi(APIView):

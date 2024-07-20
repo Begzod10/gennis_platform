@@ -90,11 +90,6 @@ class BalanceOverheadSerializers(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        # branch_data = validated_data.pop('branch', None)
-        # payment_type_data = validated_data.pop('payment_type', None)
-        # branch = Branch.objects.get(name=branch_data['name'])
-        # center_balance = CenterBalance.objects.get(pk=validated_data.pop('center_balance', None))
-        # payment_type = PaymentTypes.objects.get(name=payment_type_data('name', None))
         branch = Branch.objects.get(pk=validated_data.pop('branch', None).pk)
         balance = CenterBalance.objects.get(pk=validated_data.pop('balance', None).pk)
         payment_type = PaymentTypes.objects.get(pk=validated_data.pop('payment_type', None).pk)
