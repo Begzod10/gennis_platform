@@ -5,12 +5,19 @@ from permissions.models import Access, ManyBranch, ManyLocation, ManySystem
 from system.serializers import SystemSerializers
 from location.serializers import LocationSerializers
 from user.serializers import UserSerializer
+from django.contrib.auth.models import Permission
 
 
 class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
         fields = ['id', 'name']
+
+
+class PermissionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Permission
+        fields = ['id', 'name', 'content_type_id', 'codename']
 
 
 class AuthGroupSystemSerializer(serializers.ModelSerializer):

@@ -6,6 +6,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from gennis_platform import settings
 from user.serializers import UserSerializer, CustomUser, UserSalaryListSerializers, CustomTokenObtainPairSerializer
+from rest_framework.response import Response
+from permissions.functions.CheckUserPermissions import check_user_permissions
 
 
 class UserListCreateView(generics.ListCreateAPIView):
@@ -51,7 +53,9 @@ class UserMe(APIView):
             return JsonResponse({'error': 'User not found'}, status=404)
 
         serializer = UserSerializer(user)
-        return JsonResponse(serializer.data, safe=False)
+        table_names = ['customuser']
+        permissions = check_user_permissions(user, table_names)
+        return Response({'user': serializer.data, 'permissions': permissions})
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):

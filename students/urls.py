@@ -5,7 +5,7 @@ from .views import (
     StudentListCreateView, StudentRetrieveUpdateDestroyView,
     StudentHistoryGroupsRetrieveUpdateDestroyView,
     StudentPaymentRetrieveUpdateDestroyView,
-    StudentPaymentListCreateView,DeletedStudentDestroy
+    StudentPaymentListCreateView, DeletedStudentDestroy, CreateContractView, UploadPDFContractView
 
 )
 
@@ -15,7 +15,8 @@ urlpatterns = [
     path('deleted-student/<int:pk>/', DeletedStudentDestroy.as_view(), name='deleted-student-detail'),
     path('student_history_groups/<int:pk>/', StudentHistoryGroupsRetrieveUpdateDestroyView.as_view(),
          name='student-history-groups-detail'),
-
+    path('create_contract/<int:user_id>/', CreateContractView.as_view(), name='create_contract'),
+    path('upload_pdf_contract/<int:user_id>/', UploadPDFContractView.as_view(), name='upload_pdf_contract'),
     path('student-charities/', StudentCharityListCreate.as_view(), name='student-charity-list-create'),
     path('student-charities/<int:pk>/', StudentCharityRetrieveUpdateDestroy.as_view(),
          name='student-charity-retrieve-update-destroy'),

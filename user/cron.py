@@ -2,6 +2,7 @@ from django.utils.timezone import now
 from django_cron import CronJobBase, Schedule
 
 from attendances.models import AttendancePerMonth
+from teachers.models import Teacher
 from teachers.models import Teacher, TeacherSalary
 from .models import CustomUser, UserSalary
 
@@ -30,7 +31,8 @@ class CreateMonthly(CronJobBase):
         for teacher in teachers:
             current_year = now().year
             current_month = now().month
-            teacher_salary = TeacherSalary.objects.filter(month_date__year=current_year,month_date__month=current_month,
+            teacher_salary = TeacherSalary.objects.filter(month_date__year=current_year,
+                                                          month_date__month=current_month,
                                                           teacher=teacher)
             if not teacher_salary:
                 attendance = AttendancePerMonth.objects.filter(teacher=teacher, date__year=current_year,

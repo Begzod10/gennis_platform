@@ -19,8 +19,6 @@ class UserSerializerTests(APITestCase):
             password="testpassword",
             branch=self.branch,
             language=self.language,
-            # birth_date="2000-01-01"
-
         )
         self.serializer = UserSerializer(instance=self.user)
 
