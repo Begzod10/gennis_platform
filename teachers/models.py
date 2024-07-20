@@ -14,9 +14,10 @@ class Teacher(models.Model):
     # premium_rate = models.IntegerField()
     # class_type =models.IntegerField()
 
+
 class TeacherSalary(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_id_salary')
-    month_date = models.DateTimeField()
+    month_date = models.DateTimeField(null=True)
     total_salary = models.IntegerField(blank=True, null=True)
     remaining_salary = models.IntegerField(blank=True, null=True)
     taken_salary = models.IntegerField(blank=True, null=True)
