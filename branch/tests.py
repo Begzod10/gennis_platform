@@ -15,12 +15,12 @@ class BranchTests(APITestCase):
         self.branch_data = {
             'name': 'Test Branch',
             'number': 1,
-            'location_id': self.location
+            'location': self.location
         }
         self.branch = Branch.objects.create(
             name='Existing Branch',
             number=2,
-            location_id=self.location
+            location=self.location
         )
         self.create_url = reverse('branch-list-create')
 
@@ -28,7 +28,7 @@ class BranchTests(APITestCase):
         self.branch_data = {
             'name': 'Test Branch',
             'number': '1',
-            'location_id': {
+            'location': {
                 'name': self.location.name,
                 'number': self.location.number,
                 'system': {
@@ -60,7 +60,7 @@ class BranchTests(APITestCase):
         updated_data = {
             'name': 'Updated Branch',
             'number': '3',
-            'location_id': {
+            'location': {
                 'name': self.location.name,
                 'number': self.location.number,
                 'system': {

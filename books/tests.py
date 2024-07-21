@@ -24,7 +24,7 @@ class BalanceOverheadTests(APITestCase):
             number=1,
             system=self.system
         )
-        self.branch = Branch.objects.create(name="Test Branch", number=1, location_id=self.location)
+        self.branch = Branch.objects.create(name="Test Branch", number=1, location=self.location)
         self.balance = CenterBalance.objects.create(
             total_money=2000000,
             remaining_money=2000000,
@@ -81,7 +81,7 @@ class BookOrderTests(APITestCase):
             number=1,
             system=self.system
         )
-        self.branch = Branch.objects.create(name="Test Branch", number=1, location_id=self.location)
+        self.branch = Branch.objects.create(name="Test Branch", number=1, location=self.location)
         self.language = Language.objects.create(name="English")
         self.user = CustomUser.objects.create_user(
             username="testuser",

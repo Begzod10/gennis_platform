@@ -74,7 +74,14 @@ def check_and_create_attendance_per_month(group_id, students, date):
             teacher=teacher
         )
         student_data = Student.objects.get(pk=student['id'])
-
+        if created:
+            if created.remaining_debt == 0:
+                student.debt_status = 0
+            elif student.total_payment_month > created.total_debt:
+                student.debt_status = 1
+            elif student.total_payment_month < created.total_debt:
+                student.debt_status = 2
+            student.save()
         try:
             AttendancePerDay.objects.get(group_id=group_id, teacher=teacher, day=day, student_id=student['id'])
             errors.append({'msg': f'bu kunda {student_data.user.name} {student_data.user.surname} davomat qilingan'})

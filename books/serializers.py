@@ -28,6 +28,7 @@ class BookOrderSerializers(serializers.ModelSerializer):
                 collected_book_payments.save()
             instance.admin_status = True
             instance.save()
+
             return instance
 
 

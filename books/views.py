@@ -65,7 +65,7 @@ class BookOrderListCreateView(generics.ListCreateAPIView):
         if auth_error:
             return Response(auth_error)
 
-        table_names = ['bookorder']
+        table_names = ['bookorder', 'collectedbookpayments']
         permissions = check_user_permissions(user, table_names)
 
         queryset = BookOrder.objects.all()
