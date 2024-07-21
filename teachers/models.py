@@ -28,6 +28,15 @@ class TeacherSalary(models.Model):
         ordering = ['id']
 
 
+class TeacherBlackSalary(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_black_salary')
+    black_salary = models.IntegerField()
+    group = models.ForeignKey('group.Group', on_delete=models.CASCADE)
+    student = models.ForeignKey('students.Student', on_delete=models.CASCADE)
+    month_date = models.DateTimeField()
+    status = models.BooleanField()
+
+
 class TeacherSalaryList(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_id_salary_list')
     salary_id = models.ForeignKey(TeacherSalary, on_delete=models.SET_NULL, null=True,
