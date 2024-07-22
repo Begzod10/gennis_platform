@@ -12,6 +12,9 @@ from group.serializers import GroupSerializer
 
 
 class BookSerializer(serializers.ModelSerializer):
+
+
+
     id = serializers.IntegerField(required=False)
     name = serializers.CharField(max_length=255, required=False)
     desc = serializers.CharField(max_length=255, required=False)
