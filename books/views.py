@@ -16,7 +16,7 @@ class BalanceOverheadListCreateView(generics.ListCreateAPIView):
         if auth_error:
             return Response(auth_error)
 
-        table_names = ['balanceoverhead']
+        table_names = ['balanceoverhead', 'centerbalance', 'branch', 'paymenttypes']
         permissions = check_user_permissions(user, table_names)
 
         queryset = BalanceOverhead.objects.all()
@@ -33,7 +33,7 @@ class BalanceOverheadRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPI
         if auth_error:
             return Response(auth_error)
 
-        table_names = ['balanceoverhead']
+        table_names = ['balanceoverhead', 'centerbalance', 'branch', 'paymenttypes']
         permissions = check_user_permissions(user, table_names)
         balance_overhead = self.get_object()
         balance_overhead_data = self.get_serializer(balance_overhead).data
@@ -49,7 +49,7 @@ class CollectedBookPaymentsRetrieveUpdateDestroyView(generics.RetrieveUpdateDest
         if auth_error:
             return Response(auth_error)
 
-        table_names = ['collectedbookpayments']
+        table_names = ['collectedbookpayments', 'branch', 'paymenttypes']
         permissions = check_user_permissions(user, table_names)
         collected_book_payments = self.get_object()
         collected_book_payments_data = self.get_serializer(collected_book_payments).data
@@ -65,7 +65,8 @@ class BookOrderListCreateView(generics.ListCreateAPIView):
         if auth_error:
             return Response(auth_error)
 
-        table_names = ['bookorder', 'collectedbookpayments']
+        table_names = ['bookorder', 'collectedbookpayments', 'customuser', 'student', 'teacher', 'book', 'group',
+                       'branch']
         permissions = check_user_permissions(user, table_names)
 
         queryset = BookOrder.objects.all()
@@ -82,7 +83,8 @@ class BookOrderRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         if auth_error:
             return Response(auth_error)
 
-        table_names = ['bookorder']
+        table_names = ['bookorder', 'collectedbookpayments', 'customuser', 'student', 'teacher', 'book', 'group',
+                       'branch']
         permissions = check_user_permissions(user, table_names)
         book_order = self.get_object()
         book_order_data = self.get_serializer(book_order).data
@@ -131,7 +133,7 @@ class BookImageListCreateView(generics.ListCreateAPIView):
         if auth_error:
             return Response(auth_error)
 
-        table_names = ['bookimage']
+        table_names = ['bookimage', 'book']
         permissions = check_user_permissions(user, table_names)
 
         queryset = BookImage.objects.all()
@@ -148,7 +150,7 @@ class BookImageRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         if auth_error:
             return Response(auth_error)
 
-        table_names = ['bookimage']
+        table_names = ['bookimage', 'book']
         permissions = check_user_permissions(user, table_names)
         book_image = self.get_object()
         book_image_data = self.get_serializer(book_image).data
