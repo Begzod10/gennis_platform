@@ -14,9 +14,36 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import path
 
+
+from django.conf import settings
+from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import path, include
+from .swagger import urlpatterns as doc_urls
+
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+
 urlpatterns = [
-    path('admin/', admin.site.urls), 
+    path('admin/', admin.site.urls),
+    path('', include('user.urls')),
+    path('api/', include('system.urls')),
+    path('api/', include('location.urls')),
+    path('api/', include('language.urls')),
+    path('api/', include('branch.urls')),
+    path('api/', include('payments.urls')),
+    path('api/', include('students.urls')),
+    path('api/', include('teachers.urls')),
+    path('api/', include('subjects.urls')),
+    path('api/', include('group.urls')),
+    path('api/v1/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/v1/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/v1/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 ]
+urlpatterns += doc_urls
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
