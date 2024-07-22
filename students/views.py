@@ -20,15 +20,20 @@ from .utils import user_contract_folder
 
 class StudentListCreateView(APIView):
     def get(self, request, *args, **kwargs):
-        deleted_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
-        active_students = Student.objects.exclude(id__in=deleted_student_ids)
+        deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
+        deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
+        active_students = Student.objects.exclude(id__in=deleted_student_ids).exclude(id__in=deleted_new_student_ids)
         student_serializer = StudentSerializer(active_students, many=True)
 
-        deleted_students = DeletedNewStudent.objects.all()
-        deleted_student_serializer = DeletedNewStudentSerializer(deleted_students, many=True)
+        deleted_students = DeletedStudent.objects.all()
+        deleted_student_serializer = DeletedStudentSerializer(deleted_students, many=True)
+        delete_new_students = DeletedNewStudent.objects.exclude(id__in=deleted_student_ids)
+        delete_new_student_serializer = DeletedNewStudentSerializer(delete_new_students, many=True)
+
         data = {
-            'new_registered_students': student_serializer.data,  # new studentslar
-            'old_students': deleted_student_serializer.data,  # new studentsdan chiqarilganlar
+            'new_students': student_serializer.data,
+            'deleted_students': deleted_student_serializer.data,
+            'active': delete_new_student_serializer.data,
         }
 
         return Response(data)
