@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User, Group, Permission
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
-
+from datetime import datetime
 from branch.models import Branch
 from payments.models import PaymentTypes
 from language.models import Language
@@ -60,7 +60,13 @@ class CustomUser(AbstractUser):
             url = ''
         return url
 
-
+    def calculate_age(self):
+        if not self.birth_date:
+            return None
+        today = datetime.today()
+        age = today.year - self.birth_date.year - (
+                    (today.month, today.day) < (self.birth_date.month, self.birth_date.day))
+        return age
 class UserSalary(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     permission = models.ForeignKey(CustomAutoGroup, on_delete=models.SET_NULL, null=True)
