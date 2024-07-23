@@ -3,7 +3,7 @@ from rest_framework import serializers
 from attendances.models import AttendancePerMonth
 from subjects.serializers import Subject
 from subjects.serializers import SubjectSerializer
-from teachers.models import TeacherGroupStatistics
+from teachers.models import TeacherGroupStatistics,TeacherBlackSalary
 from user.serializers import UserSerializer
 from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent, DeletedNewStudent)
 
@@ -102,7 +102,7 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
         student_payment.save()
         total_debt = 0
         remaining_debt = 0
-        attendance_per_months = AttendancePerMonth.objects.get(student=validated_data.get('student_id'),
+        attendance_per_months = AttendancePerMonth.objects.filter(student=validated_data.get('student_id'),
                                                                status=False).all()
         for attendance_per_month in attendance_per_months:
             total_debt += attendance_per_month.total_debt
@@ -111,6 +111,7 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
             student.debt_status = 0
         elif student.total_payment_month > total_debt:
             student.debt_status = 1
+            TeacherBlackSalary.objects.filter(student=student, status=False).update(status=True)
         elif student.total_payment_month < total_debt:
             student.debt_status = 2
         student.save()

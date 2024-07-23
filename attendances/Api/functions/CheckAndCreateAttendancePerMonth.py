@@ -79,6 +79,7 @@ def check_and_create_attendance_per_month(group_id, students, date):
                 student.debt_status = 0
             elif student.total_payment_month > created.total_debt:
                 student.debt_status = 1
+                TeacherBlackSalary.objects.filter(student=student, status=False).update(status=True)
             elif student.total_payment_month < created.total_debt:
                 student.debt_status = 2
             student.save()
