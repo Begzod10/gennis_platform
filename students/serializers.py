@@ -111,6 +111,7 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
             student.debt_status = 0
         elif student.total_payment_month > total_debt:
             student.debt_status = 1
+
         elif student.total_payment_month < total_debt:
             student.debt_status = 2
         student.save()

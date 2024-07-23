@@ -16,7 +16,7 @@ class Group(models.Model):
     students = models.ManyToManyField(Student, related_name='groups_student')
     teacher = models.ManyToManyField(Teacher)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True)
-    color = models.ForeignKey('class.ClassColors', on_delete=models.CASCADE, null=True)
+    color = models.ForeignKey('class_.ClassColors', on_delete=models.CASCADE, null=True)
     status = models.BooleanField(null=True)
     created_date = models.DateTimeField(auto_now_add=True, null=True)
     language = models.ForeignKey(Language, on_delete=models.CASCADE, null=True)
@@ -24,7 +24,7 @@ class Group(models.Model):
     deleted = models.BooleanField(null=True, default=False)
     attendance_days = models.IntegerField(null=True)
     system = models.ForeignKey(System, on_delete=models.CASCADE, null=True)
-    class_number = models.ForeignKey('class.ClassNumber', on_delete=models.CASCADE, null=True)
+    class_number = models.ForeignKey('class_.ClassNumber', on_delete=models.CASCADE, null=True)
 
 
 class GroupReason(models.Model):

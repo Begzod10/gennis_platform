@@ -197,7 +197,7 @@ class ClassCoinAPITestCase(TestCase):
         )
 
     def test_create_class_coin(self):
-        url = reverse('class-coin-list-create')
+        url = reverse('class_-coin-list-create')
         data = {
             'total_coin': 3442,
             'given_coin': 7686,
@@ -210,20 +210,20 @@ class ClassCoinAPITestCase(TestCase):
         self.assertEqual(ClassCoin.objects.count(), 2)
 
     def test_retrieve_class_coin(self):
-        url = reverse('class-coin-detail', args=[self.class_coin.id])
+        url = reverse('class_-coin-detail', args=[self.class_coin.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['total_coin'], 3442)
 
     def test_update_class_coin(self):
-        url = reverse('class-coin-detail', args=[self.class_coin.id])
+        url = reverse('class_-coin-detail', args=[self.class_coin.id])
         data = {'total_coin': 45654}
         response = self.client.patch(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['total_coin'], 45654)
 
     def test_delete_class_coin(self):
-        url = reverse('class-coin-detail', args=[self.class_coin.id])
+        url = reverse('class_-coin-detail', args=[self.class_coin.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(ClassCoin.objects.count(), 0)
@@ -263,7 +263,7 @@ class ClassNumberAPITestCase(TestCase):
         self.class_number.subjects.add(self.subjects)
 
     def test_create_class_number(self):
-        url = reverse('class-number-list-create')
+        url = reverse('class_-number-list-create')
         data = {
             'class_types': self.class_types.id,
             'subjects': [self.subjects.id],
@@ -275,20 +275,20 @@ class ClassNumberAPITestCase(TestCase):
         self.assertEqual(ClassNumber.objects.count(), 2)
 
     def test_retrieve_class_number(self):
-        url = reverse('class-number-detail', args=[self.class_number.id])
+        url = reverse('class_-number-detail', args=[self.class_number.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['number'], 31312)
 
     def test_update_class_number(self):
-        url = reverse('class-number-detail', args=[self.class_number.id])
+        url = reverse('class_-number-detail', args=[self.class_number.id])
         data = {'number': 345345}
         response = self.client.patch(url, data, format='json', content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['number'], 345345)
 
     def test_delete_class_number(self):
-        url = reverse('class-number-detail', args=[self.class_number.id])
+        url = reverse('class_-number-detail', args=[self.class_number.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(ClassNumber.objects.count(), 0)
@@ -314,7 +314,7 @@ class ClassColorsAPITestCase(TestCase):
         )
 
     def test_create_class_types(self):
-        url = reverse('class-colors-list-create')
+        url = reverse('class_-colors-list-create')
         data = {
             'name': 'New ClassColors',
             'value': "fu564"
@@ -324,20 +324,20 @@ class ClassColorsAPITestCase(TestCase):
         self.assertEqual(ClassColors.objects.count(), 2)
 
     def test_retrieve_class_types(self):
-        url = reverse('class-colors-detail', args=[self.class_types.id])
+        url = reverse('class_-colors-detail', args=[self.class_types.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], 'Test ClassColors')
 
     def test_update_class_types(self):
-        url = reverse('class-colors-detail', args=[self.class_types.id])
+        url = reverse('class_-colors-detail', args=[self.class_types.id])
         data = {'name': 'Test ClassColors2'}
         response = self.client.patch(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], 'Test ClassColors2')
 
     def test_delete_class_types(self):
-        url = reverse('class-colors-detail', args=[self.class_types.id])
+        url = reverse('class_-colors-detail', args=[self.class_types.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(ClassTypes.objects.count(), 0)
@@ -361,7 +361,7 @@ class ClassTypesAPITestCase(TestCase):
         )
 
     def test_create_class_types(self):
-        url = reverse('class-types-list-create')
+        url = reverse('class_-types-list-create')
         data = {
             'name': 'New ClassTypes',
         }
@@ -370,20 +370,20 @@ class ClassTypesAPITestCase(TestCase):
         self.assertEqual(ClassTypes.objects.count(), 2)
 
     def test_retrieve_class_types(self):
-        url = reverse('class-types-detail', args=[self.class_types.id])
+        url = reverse('class_-types-detail', args=[self.class_types.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], 'Test ClassTypes')
 
     def test_update_class_types(self):
-        url = reverse('class-types-detail', args=[self.class_types.id])
+        url = reverse('class_-types-detail', args=[self.class_types.id])
         data = {'name': 'Test ClassTypes2'}
         response = self.client.patch(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], 'Test ClassTypes2')
 
     def test_delete_class_types(self):
-        url = reverse('class-types-detail', args=[self.class_types.id])
+        url = reverse('class_-types-detail', args=[self.class_types.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(ClassTypes.objects.count(), 0)
