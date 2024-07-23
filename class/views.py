@@ -4,8 +4,6 @@ from .serializers import (ClassTypesSerializers, ClassColorsSerializers, ClassNu
 from .models import ClassNumber, ClassTypes, ClassColors, ClassCoin, CoinInfo, StudentCoin
 
 
-
-
 class CreateClassCoinList(generics.ListCreateAPIView):
     queryset = ClassCoin.objects.all()
     serializer_class = ClassCoinSerializers
