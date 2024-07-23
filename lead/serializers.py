@@ -8,6 +8,9 @@ from .models import Lead, LeadCall
 
 
 class LeadSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    name = serializers.CharField(max_length=255, required=False)
+    phone = serializers.CharField(max_length=255, required=False)
     subject = SubjectSerializer(required=False)
     branch = BranchSerializer(required=False)
 

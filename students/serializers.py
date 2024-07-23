@@ -7,6 +7,7 @@ from teachers.models import TeacherGroupStatistics
 from user.serializers import UserSerializer
 from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent, DeletedNewStudent)
 
+
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()
     subject = SubjectSerializer()
@@ -140,6 +141,7 @@ class DeletedStudentSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         deleted_student = DeletedStudent.objects.create(**validated_data)
+
         teacher_group_statistics = TeacherGroupStatistics.objects.get(teacher=validated_data.get('teacher'),
                                                                       group_reason=validated_data.get(
                                                                           'group_reason'))

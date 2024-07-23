@@ -8,6 +8,8 @@ class LocationSerializers(serializers.ModelSerializer):
     system = SystemSerializers(required=False)
     name = serializers.CharField(max_length=255, required=False)
     number = serializers.IntegerField(required=False)
+    id = serializers.IntegerField(required=False)
+
     class Meta:
         model = Location
         fields = ['id', 'name', 'number', 'system']
