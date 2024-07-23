@@ -4,6 +4,7 @@ from students.models import Student
 from datetime import datetime
 from teachers.models import TeacherSalary
 from .CalculateGroupOverallAttendance import calculate_group_attendances
+from teachers.models import TeacherBlackSalary
 
 
 def check_and_create_attendance_per_month(group_id, students, date):
@@ -30,8 +31,20 @@ def check_and_create_attendance_per_month(group_id, students, date):
         current_month_attendance.save()
 
     def calculate_and_create_attendance(student, current_month_attendance, charity_data=None):
+        student_dt = Student.objects.get(pk=student['id'])
+
         average = (student['homework'] + student['dictionary'] + student['active']) / 3
         salary_per_day = group.teacher_salary / 13
+        if student_dt.debt_status == 2:
+            black_salary, created = TeacherBlackSalary.objects.get_or_create(
+                teacher_id=teacher.id,
+                student_id=student['id'],
+                group_id=group_id,
+                month_date=month_date,
+                status=False
+            )
+            black_salary.black_salary += salary_per_day
+            black_salary.save()
         charity_per_day = charity_data.charity_sum / 13 if charity_data else 0
         if charity_per_day == 0:
             debt_per_day = group.price / 13
@@ -84,6 +97,13 @@ def check_and_create_attendance_per_month(group_id, students, date):
     current_salary, created = TeacherSalary.objects.get_or_create(month_date=month_date,
                                                                   branch_id=group.branch_id, teacher_id=teacher.id)
     current_salary.total_salary = salary
+    teacher_black_salaries = teacher.teacher_black_salary.filter(month_date=month_date)
+    overall_black_salary = 0
+    for teacher_black_salary in teacher_black_salaries:
+        overall_black_salary += teacher_black_salary.black_salary
+    current_salary.overall_black_salary = overall_black_salary
+    current_salary.total_salary = salary - current_salary.overall_black_salary
     current_salary.save()
+
     calculate_group_attendances(group_id, month_date)
     return errors if not status else {'msg': 'davomat muvaffaqqiyatli kiritildi'}

@@ -2,30 +2,30 @@
 from rest_framework import serializers
 
 from branch.serializers import BranchSerializer
-from students.serializers import StudentSerializer
-from .models import Task, Branch, StudentCallInfo
+from students.serializers import Student
+from .models import Task, Branch, StudentCallInfo, Group
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    branch = BranchSerializer()
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), many=True)
+    auth_group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True)
 
     class Meta:
         model = Task
         fields = ['id', 'name', 'auth_group', 'branch']
 
-    def create(self, validated_data):
-        branch_data = validated_data.pop('branch', None)
-        branch = Branch.objects.get(name=branch_data['name']) if isinstance(branch_data, dict) else None
-        task = Task.objects.create(
-            **validated_data,
-            branch=branch
-        )
-        return task
+
+class TaskGetSerializer(serializers.ModelSerializer):
+    branch = BranchSerializer(read_only=True)
+
+    class Meta:
+        model = Task
+        fields = ['id', 'name', 'auth_group', 'branch']
 
 
-class StudentCallInfoSerializers(serializers.ModelSerializer):
-    task = TaskSerializer(read_only=True)
-    student = StudentSerializer(read_only=True)
+class StudentCallInfoCreateUpdateDeleteSerializers(serializers.ModelSerializer):
+    task = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all(), many=True)
+    student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), many=True)
 
     class Meta:
         model = StudentCallInfo

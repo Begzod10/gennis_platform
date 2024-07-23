@@ -48,7 +48,7 @@ class BookOrder(models.Model):
     editor_status = models.BooleanField(null=True, default=False)
     deleted = models.BooleanField(default=False)
     reason = models.CharField(max_length=250)
-    day = models.DateTimeField(auto_now_add=True)
+    day = models.DateTimeField(auto_now_add=True, null=True)
 
 
 class CenterBalance(models.Model):

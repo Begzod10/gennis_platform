@@ -11,8 +11,8 @@ class Teacher(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True)
     color = models.CharField(max_length=50)
     total_students = models.IntegerField()
-    premium_rate = models.IntegerField()
-    class_type =models.IntegerField()
+    premium_rate = models.IntegerField(null=True)
+    class_type =models.IntegerField(null=True)
 
 
 class TeacherSalary(models.Model):
@@ -26,6 +26,15 @@ class TeacherSalary(models.Model):
 
     class Meta:
         ordering = ['id']
+
+
+class TeacherBlackSalary(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_black_salary')
+    black_salary = models.IntegerField(null=True)
+    group = models.ForeignKey('group.Group', on_delete=models.CASCADE)
+    student = models.ForeignKey('students.Student', on_delete=models.CASCADE)
+    month_date = models.DateTimeField()
+    status = models.BooleanField()
 
 
 class TeacherSalaryList(models.Model):
