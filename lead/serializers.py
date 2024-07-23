@@ -6,6 +6,9 @@ from .models import Lead, LeadCall
 
 
 class LeadSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    name = serializers.CharField(max_length=255, required=False)
+    phone = serializers.CharField(max_length=255, required=False)
     subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
 
@@ -15,6 +18,7 @@ class LeadSerializer(serializers.ModelSerializer):
 
 
 class LeadCallSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = LeadCall
         fields = ['id', 'lead', 'delay', 'comment']

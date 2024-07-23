@@ -45,6 +45,7 @@ urlpatterns = [
     path('Lead/', include('lead.urls')),
     path('Books/', include('books.urls')),
     path('Attendance/', include('attendances.urls')),
+    path('Tasks/', include('tasks.urls')),
 
     path('overhead/', include('overhead.urls')),
 
