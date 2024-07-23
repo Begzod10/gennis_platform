@@ -22,8 +22,8 @@ class ClassNumberSerializers(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     number = serializers.IntegerField(required=False)
     curriculum_hours = serializers.IntegerField(required=False)
-    class_types = serializers.PrimaryKeyRelatedField(queryset=ClassTypes.objects.all(), many=True)
-    subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)
+    class_types = serializers.PrimaryKeyRelatedField(queryset=ClassTypes.objects.all())
+    subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())
 
     class Meta:
         model = ClassNumber
@@ -58,7 +58,7 @@ class ClassCoinSerializers(serializers.ModelSerializer):
     given_coin = serializers.IntegerField(required=False)
     remaining_coin = serializers.IntegerField(required=False)
     month_date = serializers.DateField(required=False)
-    group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True)
+    group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
 
     class Meta:
         model = ClassCoin
@@ -81,8 +81,8 @@ class ClassCoinListSerializers(serializers.ModelSerializer):
 class StudentCoinSerializers(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     value = serializers.CharField(required=False)
-    class_coin = serializers.PrimaryKeyRelatedField(queryset=ClassCoin.objects.all(), many=True)
-    student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), many=True)
+    class_coin = serializers.PrimaryKeyRelatedField(queryset=ClassCoin.objects.all())
+    student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
 
     class Meta:
         model = StudentCoin
@@ -105,7 +105,7 @@ class CoinInfoSerializers(serializers.ModelSerializer):
     value = serializers.CharField(required=False)
     reason = serializers.CharField(required=False)
     day_date = serializers.DateField(required=False)
-    class_coin = serializers.PrimaryKeyRelatedField(queryset=ClassCoin.objects.all(), many=True)
+    class_coin = serializers.PrimaryKeyRelatedField(queryset=ClassCoin.objects.all())
 
     class Meta:
         model = CoinInfo

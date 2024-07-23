@@ -1,7 +1,6 @@
 from rest_framework import generics
-from .serializers import (ClassTypesSerializers, ClassColorsSerializers, ClassNumberSerializers, ClassCoinSerializers,
-                          StudentCoinSerializers, CoinInfoSerializers)
-from .models import ClassNumber, ClassTypes, ClassColors, ClassCoin, CoinInfo, StudentCoin
+from .serializers import (ClassTypesSerializers, ClassColorsSerializers)
+from .models import ClassTypes, ClassColors
 from user.functions.functions import check_auth
 from rest_framework.response import Response
 from permissions.functions.CheckUserPermissions import check_user_permissions

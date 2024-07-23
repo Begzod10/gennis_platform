@@ -1,12 +1,19 @@
 from django.urls import path
 
-from tasks.Api.createdelteupdate import TaskCreateView, TaskUpdateView, TaskDestroyView
-from tasks.Api.get import TaskRetrieveView
+from tasks.Api.createdelteupdate import TaskCreateView, TaskUpdateView, TaskDestroyView, StudentCallInfoCreateView, \
+    StudentCallInfoUpdateView, StudentCallInfoDestroyView
+from tasks.Api.get import TaskRetrieveView, TaskListView, CallListView, CallRetrieveView
 
 urlpatterns = [
     path('task_create/', TaskCreateView.as_view(), name='task-create'),
     path('task_update/', TaskUpdateView.as_view(), name='task-update'),
     path('task_delete/', TaskDestroyView.as_view(), name='task-destroy'),
-    # path('call_info/', StudentCallinfoCreateView.as_view(), name='call-list-create'),
+    path('tasks/', TaskListView.as_view(), name='task-all'),
     path('tasks/<int:pk>/', TaskRetrieveView.as_view(), name='task-detail'),
+    path('call_info_create/', StudentCallInfoCreateView.as_view(), name='call-create'),
+    path('call_info_update/', StudentCallInfoUpdateView.as_view(), name='call-update'),
+    path('call_info_delete/', StudentCallInfoDestroyView.as_view(), name='call-delete'),
+    path('call_info/', CallListView.as_view(), name='call-all'),
+    path('call_info/<int:pk>/', CallRetrieveView.as_view(), name='call-detail'),
+
 ]
