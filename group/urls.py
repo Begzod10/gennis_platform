@@ -1,11 +1,13 @@
 from django.urls import path
 
-from gennis.CreatGroups import CreatGroups, CreateGroupReasonList, GroupReasonRetrieveUpdateDestroyAPIView
-from gennis.GroupProfile import GroupProfile
-from gennis.DeleteGroups import DeleteGroups
-from gennis.AddToGroupApi import AddToGroupApi
-from gennis.TeacherGroupChange import TeacherGroupChange
-from gennis.MoveToGroupApi import MoveToGroupApi
+from .gennis.CreatGroups import CreatGroups, CreateGroupReasonList, GroupReasonRetrieveUpdateDestroyAPIView
+from .gennis.GroupProfile import GroupProfile
+from .gennis.DeleteGroups import DeleteGroups
+from .gennis.AddToGroupApi import AddToGroupApi
+from .gennis.TeacherGroupChange import TeacherGroupChange
+from .gennis.MoveToGroupApi import MoveToGroupApi
+
+
 
 urlpatterns = [
     path('groups/create/', CreatGroups.as_view(), name='create'),

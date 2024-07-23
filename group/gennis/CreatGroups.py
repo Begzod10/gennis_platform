@@ -30,7 +30,7 @@ class CreatGroups(APIView):
         group = creat_group(data.get('students'), data.get('teacher'), data['name'],
                             data['price'], data['branch'], data['language'],
                             data['teacher_salary'], data['attendance_days'],
-                            data['level'], data['subject'], data['system'])
+                            data['level'], data['subject'], data['system'], data['color'], data['class_number'])
         serializers = GroupSerializer(group)
         return Response({'data': serializers.data})
 

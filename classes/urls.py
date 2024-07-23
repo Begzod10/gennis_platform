@@ -7,14 +7,14 @@ from .views import (CreateClassTypesList, CreateClassColorsList, CreateClassNumb
                     CoinInfoRetrieveUpdateDestroyAPIView, StudentCoinRetrieveUpdateDestroyAPIView)
 
 urlpatterns = [
-    path('class_number/', CreateClassNumberList.as_view(), name='class-number-list-create'),
-    path('class_number/<int:pk>/', ClassNumberRetrieveUpdateDestroyAPIView.as_view(), name='class-number-detail'),
-    path('class_colors/', CreateClassColorsList.as_view(), name='class-colors-list-create'),
-    path('class_colors/<int:pk>/', ClassColorsRetrieveUpdateDestroyAPIView.as_view(), name='class-colors-detail'),
-    path('class_types/', CreateClassTypesList.as_view(), name='class-types-list-create'),
-    path('class_types/<int:pk>/', ClassTypesRetrieveUpdateDestroyAPIView.as_view(), name='class-types-detail'),
-    path('class_coin/', CreateClassCoinList.as_view(), name='class-coin-list-create'),
-    path('class_coin/<int:pk>/', ClassCoinRetrieveUpdateDestroyAPIView.as_view(), name='class-coin-detail'),
+    path('class_number/', CreateClassNumberList.as_view(), name='classes-number-list-create'),
+    path('class_number/<int:pk>/', ClassNumberRetrieveUpdateDestroyAPIView.as_view(), name='classes-number-detail'),
+    path('class_colors/', CreateClassColorsList.as_view(), name='classes-colors-list-create'),
+    path('class_colors/<int:pk>/', ClassColorsRetrieveUpdateDestroyAPIView.as_view(), name='classes-colors-detail'),
+    path('class_types/', CreateClassTypesList.as_view(), name='classes-types-list-create'),
+    path('class_types/<int:pk>/', ClassTypesRetrieveUpdateDestroyAPIView.as_view(), name='classes-types-detail'),
+    path('class_coin/', CreateClassCoinList.as_view(), name='classes-coin-list-create'),
+    path('class_coin/<int:pk>/', ClassCoinRetrieveUpdateDestroyAPIView.as_view(), name='classes-coin-detail'),
     path('coin_info/', CreateCoinInfoList.as_view(), name='coin-info-list-create'),
     path('coin_info/<int:pk>/', CoinInfoRetrieveUpdateDestroyAPIView.as_view(), name='coin-info-detail'),
     path('student_coin/', CreateStudentCoinList.as_view(), name='student-coin-list-create'),
