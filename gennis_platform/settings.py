@@ -59,7 +59,8 @@ INSTALLED_APPS = [
     'djoser',
     'django_cron',
     'corsheaders',
-    'tasks.apps.TasksConfig'
+    'tasks.apps.TasksConfig',
+    'flows.apps.FlowsConfig'
 ]
 
 MIDDLEWARE = ['corsheaders.middleware.CorsMiddleware', 'django.middleware.security.SecurityMiddleware',
