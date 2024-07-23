@@ -2,7 +2,8 @@
 from rest_framework import serializers
 
 from branch.serializers import BranchSerializer
-from .models import Task, Branch
+from students.serializers import StudentSerializer
+from .models import Task, Branch, StudentCallInfo
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -20,3 +21,12 @@ class TaskSerializer(serializers.ModelSerializer):
             branch=branch
         )
         return task
+
+
+class StudentCallInfoSerializers(serializers.ModelSerializer):
+    task = TaskSerializer(read_only=True)
+    student = StudentSerializer(read_only=True)
+
+    class Meta:
+        model = StudentCallInfo
+        fields = '__all__'
