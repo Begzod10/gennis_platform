@@ -5,29 +5,77 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from gennis_platform import settings
-from user.serializers import UserSerializer, CustomUser, UserSalaryListSerializers, CustomTokenObtainPairSerializer
+from .serializers import UserSerializer, UserSalaryListSerializers, CustomTokenObtainPairSerializer
 from rest_framework.response import Response
 from permissions.functions.CheckUserPermissions import check_user_permissions
+from user.functions.functions import check_auth
+from .models import CustomUser, UserSalaryList
 
 
 class UserListCreateView(generics.ListCreateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
 
+    def get(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['customuser', 'branch', 'language', 'auth_group', 'auth_permission']
+        permissions = check_user_permissions(user, table_names)
+
+        queryset = CustomUser.objects.all()
+        serializer = UserSerializer(queryset, many=True)
+        return Response({'users': serializer.data, 'permissions': permissions})
+
 
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
 
+    def retrieve(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['customuser', 'branch', 'language', 'auth_group', 'auth_permission']
+        permissions = check_user_permissions(user, table_names)
+        user = self.get_object()
+        user_data = self.get_serializer(user).data
+        return Response({'user': user_data, 'permissions': permissions})
+
 
 class UserSalaryListListCreateView(generics.ListCreateAPIView):
-    queryset = CustomUser.objects.all()
+    queryset = UserSalaryList.objects.all()
     serializer_class = UserSalaryListSerializers
+
+    def get(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['usersalarylist', 'usersalary', 'customautogroup', 'paymenttypes', 'branch', 'customuser']
+        permissions = check_user_permissions(user, table_names)
+
+        queryset = UserSalaryList.objects.all()
+        serializer = UserSalaryListSerializers(queryset, many=True)
+        return Response({'usersalarylists': serializer.data, 'permissions': permissions})
 
 
 class UserSalaryListDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserSalaryListSerializers
+
+    def retrieve(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['usersalarylist', 'usersalary', 'customautogroup', 'paymenttypes', 'branch', 'customuser']
+        permissions = check_user_permissions(user, table_names)
+        user_salary_list = self.get_object()
+        user_salary_list_data = self.get_serializer(user_salary_list).data
+        return Response({'usersalarylist': user_salary_list_data, 'permissions': permissions})
 
 
 class UserMe(APIView):
