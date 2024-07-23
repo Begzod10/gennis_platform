@@ -2,13 +2,14 @@
 from rest_framework import serializers
 
 from branch.serializers import BranchSerializer
-from students.serializers import Student
+from students.serializers import Student, StudentSerializer
+from user.models import CustomUser
 from .models import Task, Branch, StudentCallInfo, Group
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), many=True)
-    auth_group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), many=True)
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
+    auth_group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
 
     class Meta:
         model = Task
@@ -24,8 +25,18 @@ class TaskGetSerializer(serializers.ModelSerializer):
 
 
 class StudentCallInfoCreateUpdateDeleteSerializers(serializers.ModelSerializer):
-    task = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all(), many=True)
-    student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), many=True)
+    task = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all())
+    student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
+    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
+
+    class Meta:
+        model = StudentCallInfo
+        fields = ['id', 'student', 'task', 'delay_date', 'comment', 'user']
+
+
+class StudentCallInfoGetSerializers(serializers.ModelSerializer):
+    task = TaskSerializer(read_only=True)
+    student = StudentSerializer(read_only=True)
 
     class Meta:
         model = StudentCallInfo
