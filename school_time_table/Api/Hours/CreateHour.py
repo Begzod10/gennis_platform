@@ -1,7 +1,8 @@
 from rest_framework import generics
+from rest_framework.response import Response
 
-from ...models import Hours
-from ...serializers import HoursSerializers
+from ...models import Hours, ClassTimeTable
+from ...serializers import HoursSerializers, ClassTimeTableCreateUpdateSerializers, ClassTimeTableReadSerializers
 
 
 class HourListCreateView(generics.ListCreateAPIView):

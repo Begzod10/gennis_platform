@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from django.db.models import Q
 from rest_framework import serializers
 
 from branch.models import Branch
@@ -19,36 +19,19 @@ from teachers.serializers import TeacherSerializer
 from subjects.serializers import SubjectSerializer
 from flows.serializers import FlowsSerializer
 
+from .functions.checkStudentRoomTeacher import check_student_room_teacher
+
 
 class HoursSerializers(serializers.ModelSerializer):
     class Meta:
         model = Hours
         fields = ['start_time', 'end_time', 'name', 'order']
 
-    def create(self, validated_data):
-        start_time_str = validated_data['start_time']
-        start_time = datetime.strptime(start_time_str, "%H:%M").time()
-        end_time_str = validated_data['end_time']
-        end_time = datetime.strptime(end_time_str, "%H:%M").time()
-        return Hours.objects.create(**validated_data, start_time=start_time, end_time=end_time)
-
-    def update(self, instance, validated_data):
-        start_time_str = validated_data['start_time']
-        start_time = datetime.strptime(start_time_str, "%H:%M").time()
-        end_time_str = validated_data['end_time']
-        end_time = datetime.strptime(end_time_str, "%H:%M").time()
-        instance.start_time = start_time
-        instance.end_time = end_time
-        instance.name = validated_data.get('name', instance.name)
-        instance.order = validated_data.get('order', instance.order)
-        instance.save()
-        return instance
-
 
 class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
     week = serializers.PrimaryKeyRelatedField(queryset=WeekDays.objects.all())
-    room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all())
+    room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all(), allow_null=True, required=False)
     hours = serializers.PrimaryKeyRelatedField(queryset=Hours.objects.all())
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
@@ -59,6 +42,47 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
     class Meta:
         model = ClassTimeTable
         fields = ['id', 'group', 'week', 'room', 'hours', 'branch', 'teacher', 'subject', 'flow', 'name']
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        room = attrs.get('room')
+        if room == 0:
+            attrs['room'] = None
+        return attrs
+
+    def create(self, validated_data):
+        group = validated_data.get('group')
+        flow = validated_data.get('flow')
+        students = group.students.all() if group else flow.students.all() if flow else None
+        status, errors = check_student_room_teacher(students, validated_data['teacher'], validated_data['room'],
+                                                    validated_data['hours'], validated_data['week'])
+        if not status:
+            raise serializers.ValidationError({"detail": errors})
+        class_time_table = ClassTimeTable.objects.create(**validated_data)
+        class_time_table.students.add(*students)
+        return class_time_table
+
+    def update(self, instance, validated_data):
+        group = validated_data.get('group')
+        flow = validated_data.get('flow')
+        room = validated_data.get('room')
+        print(room, 'ascf')
+        students = group.students.all() if group else flow.students.all() if flow else None
+        status, errors = check_student_room_teacher(students, validated_data['teacher'], validated_data['room'],
+                                                    validated_data['hours'], validated_data['week'])
+        if not status:
+            raise serializers.ValidationError({"detail": errors})
+        instance.group = validated_data.get('group', instance.group)
+        instance.week = validated_data.get('week', instance.week)
+        instance.room = validated_data.get('room', instance.room)
+        instance.hours = validated_data.get('hours', instance.hours)
+        instance.branch = validated_data.get('branch', instance.branch)
+        instance.teacher = validated_data.get('teacher', instance.teacher)
+        instance.subject = validated_data.get('subject', instance.subject)
+        instance.flow = validated_data.get('flow', instance.flow)
+        instance.name = validated_data.get('name', instance.name)
+        instance.save()
+        return instance
 
 
 class ClassTimeTableReadSerializers(serializers.ModelSerializer):

@@ -7,8 +7,6 @@ from .gennis.AddToGroupApi import AddToGroupApi
 from .gennis.TeacherGroupChange import TeacherGroupChange
 from .gennis.MoveToGroupApi import MoveToGroupApi
 
-
-
 urlpatterns = [
     path('groups/create/', CreatGroups.as_view(), name='create'),
     path('groups/profile/<int:pk>/', GroupProfile.as_view(), name='profile'),
