@@ -42,12 +42,13 @@ class BookOrder(models.Model):
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='book_order_branch')
     collected_payment = models.ForeignKey(CollectedBookPayments, on_delete=models.CASCADE,
                                           related_name='book_order_collected_payment', null=True)
+
     count = models.IntegerField(null=True)
     admin_status = models.BooleanField(null=True, default=False)
     editor_status = models.BooleanField(null=True, default=False)
     deleted = models.BooleanField(default=False)
     reason = models.CharField(max_length=250)
-    day = models.DateTimeField(null=True)
+    day = models.DateTimeField(auto_now_add=True, null=True)
 
 
 class CenterBalance(models.Model):

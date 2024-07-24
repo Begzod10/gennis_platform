@@ -3,51 +3,50 @@ from django.utils.timezone import now
 from .models import Book, BookImage, CollectedBookPayments, BalanceOverhead, BookOrder, CenterBalance, CenterOrders
 from branch.models import Branch
 from payments.models import PaymentTypes
-
-
-class BookOrderSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = BookOrder
-        fields = '__all__'
-
-    def update(self, instance, validated_data):
-        admin_status = validated_data.pop('admin_status', None)
-        if admin_status and admin_status == True:
-            branch = validated_data.pop('branch', None)
-            payment_type = validated_data.pop('payment_type', None)
-            count = instance.count
-            price = instance.book.own_price
-            total_debt = count * price
-            collected_book_payments = CollectedBookPayments.objects.get(status=False)
-            if not collected_book_payments:
-                CollectedBookPayments.objects.create(branch=branch, payment_type=payment_type,
-                                                     total_debt=total_debt,
-                                                     month_date=validated_data.pop('month_date'))
-            else:
-                collected_book_payments.total_debt += total_debt
-                collected_book_payments.save()
-            instance.admin_status = True
-            instance.save()
-
-            return instance
+from branch.serializers import BranchSerializer
+from payments.serializers import PaymentTypesSerializers
+from user.serializers import UserSerializer
+from students.serializers import StudentSerializer
+from teachers.serializers import TeacherSerializer
+from group.serializers import GroupSerializer
 
 
 class BookSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    name = serializers.CharField(max_length=255, required=False)
+    desc = serializers.CharField(max_length=255, required=False)
+    price = serializers.IntegerField(required=False)
+    own_price = serializers.IntegerField(required=False)
+    share_price = serializers.IntegerField(required=False)
+    file = serializers.FileField(required=False)
+
     class Meta:
         model = Book
         fields = ['id', 'name', 'desc', 'price', 'own_price', 'share_price', 'file']
 
 
 class BookImageSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    book = BookSerializer(required=False)
+    image = serializers.ImageField(required=False)
+
     class Meta:
         model = BookImage
         fields = ['id', 'image', 'book']
 
 
 class CollectedBookPaymentsSerializers(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    branch = BranchSerializer(required=False)
+    payment_type = PaymentTypesSerializers(required=False)
+    total_debt = serializers.IntegerField(required=False)
+    month_date = serializers.DateTimeField(required=False)
+    received_date = serializers.DateTimeField(required=False)
+    status = serializers.BooleanField(required=False)
+
     class Meta:
         model = CollectedBookPayments
-        fields = '__all__'
+        fields = ['id', 'branch', 'payment_type', 'total_debt', 'month_date', 'received_date', 'status']
 
     def update(self, instance, validated_data):
         status = validated_data.pop('status', None)
@@ -85,10 +84,29 @@ class CollectedBookPaymentsSerializers(serializers.ModelSerializer):
             return instance
 
 
+class CenterBalanceSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    branch = BranchSerializer(required=False)
+    total_money = serializers.IntegerField(required=False)
+    remaining_money = serializers.IntegerField(required=False)
+    taken_money = serializers.IntegerField(required=False)
+
+    class Meta:
+        model = CenterBalance
+        fields = ['id', 'branch', 'total_money', 'remaining_money', 'taken_money']
+
+
 class BalanceOverheadSerializers(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    balance = CenterBalanceSerializer(required=False)
+    branch = BranchSerializer(required=False)
+    payment_type = PaymentTypesSerializers(required=False)
+    overhead_sum = serializers.IntegerField(required=False)
+    reason = serializers.CharField(required=False)
+
     class Meta:
         model = BalanceOverhead
-        fields = '__all__'
+        fields = ['id', 'branch', 'balance', 'payment_type', 'overhead_sum', 'reason']
 
     def create(self, validated_data):
         branch = Branch.objects.get(pk=validated_data.pop('branch', None).pk)
@@ -114,3 +132,44 @@ class BalanceOverheadSerializers(serializers.ModelSerializer):
         instance.balance.remaining_money += instance.overhead_sum
         instance.balance.save()
         return instance
+
+
+class BookOrderSerializers(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    book = BookSerializer(required=False)
+    user = UserSerializer(required=False)
+    student = StudentSerializer(required=False)
+    teacher = TeacherSerializer(required=False)
+    group = GroupSerializer(required=False)
+    branch = BranchSerializer(required=False)
+    collected_payment = CollectedBookPaymentsSerializers(required=False)
+    count = serializers.IntegerField(required=False)
+    admin_status = serializers.BooleanField(required=False)
+    editor_status = serializers.BooleanField(required=False)
+    reason = serializers.CharField(required=False)
+
+    class Meta:
+        model = BookOrder
+        fields = ['id', 'user', 'book', 'user', 'student', 'teacher', 'group', 'branch', 'collected_payment', 'count',
+                  'admin_status', 'editor_status', 'reason']
+
+    def update(self, instance, validated_data):
+        admin_status = validated_data.pop('admin_status', None)
+        if admin_status and admin_status == True:
+            branch = validated_data.pop('branch', None)
+            payment_type = validated_data.pop('payment_type', None)
+            count = instance.count
+            price = instance.book.own_price
+            total_debt = count * price
+            collected_book_payments = CollectedBookPayments.objects.get(status=False)
+            if not collected_book_payments:
+                CollectedBookPayments.objects.create(branch=branch, payment_type=payment_type,
+                                                     total_debt=total_debt,
+                                                     month_date=validated_data.pop('month_date'))
+            else:
+                collected_book_payments.total_debt += total_debt
+                collected_book_payments.save()
+            instance.admin_status = True
+            instance.save()
+
+            return instance

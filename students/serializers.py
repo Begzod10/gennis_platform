@@ -5,18 +5,22 @@ from subjects.serializers import Subject
 from subjects.serializers import SubjectSerializer
 from teachers.models import TeacherGroupStatistics
 from user.serializers import UserSerializer
-from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent,DeletedNewStudent)
+from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent, DeletedNewStudent)
 
 
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()
     subject = SubjectSerializer()
-    parents_number = serializers.CharField(write_only=True)
-    shift = serializers.CharField(write_only=True)
+    parents_number = serializers.CharField()
+    shift = serializers.CharField()
+    age = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Student
-        fields = ['id','user', 'subject', 'parents_number', 'shift']
+        fields = ['id', 'user', 'subject', 'parents_number', 'shift', 'age']
+
+    def get_age(self, obj):
+        return obj.user.calculate_age()
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -137,6 +141,7 @@ class DeletedStudentSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         deleted_student = DeletedStudent.objects.create(**validated_data)
+
         teacher_group_statistics = TeacherGroupStatistics.objects.get(teacher=validated_data.get('teacher'),
                                                                       group_reason=validated_data.get(
                                                                           'group_reason'))

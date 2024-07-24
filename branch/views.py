@@ -1,21 +1,39 @@
+from .serializers import (BranchSerializer)
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
-
-from gennis_platform.permission import IsAdminOrReadOnly
-from .serializers import (BranchSerializer, Branch)
+from .models import Branch
+from user.functions.functions import check_auth
+from rest_framework.response import Response
+from permissions.functions.CheckUserPermissions import check_user_permissions
 
 
 class CreateBranchList(generics.ListCreateAPIView):
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
-    # permission_classes = (
-    #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)
+
+    def get(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['branch', 'location']
+        permissions = check_user_permissions(user, table_names)
+
+        queryset = Branch.objects.all()
+        serializer = BranchSerializer(queryset, many=True)
+        return Response({'branches': serializer.data, 'permissions': permissions})
 
 
 class BranchRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
-    # permission_classes = (
-    #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)
-    #
 
+    def retrieve(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['branch', 'location']
+        permissions = check_user_permissions(user, table_names)
+        create_branches = self.get_object()
+        create_branches_data = self.get_serializer(create_branches).data
+        return Response({'branches': create_branches_data, 'permissions': permissions})

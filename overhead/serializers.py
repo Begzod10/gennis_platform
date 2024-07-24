@@ -4,11 +4,14 @@ from payments.serializers import PaymentTypesSerializers, PaymentTypes
 
 
 class OverheadSerializer(serializers.ModelSerializer):
-    payment = PaymentTypesSerializers()
+    id = serializers.IntegerField(required=False)
+    price = serializers.IntegerField(required=False)
+    name = serializers.CharField(required=False)
+    payment = PaymentTypesSerializers(required=False)
 
     class Meta:
         model = Overhead
-        fields = ['id', 'name', 'created', 'payment', 'price']
+        fields = ['id', 'name', 'payment', 'price']
 
     def create(self, validated_data):
         payment = validated_data.pop('payment')

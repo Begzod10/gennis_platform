@@ -3,9 +3,10 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from subjects.models import Subject, SubjectLevel
 from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
+from user.functions.functions import check_auth
+from permissions.functions.CheckUserPermissions import check_user_permissions
 
 
 class SyncSubjectsAndLevelsView(APIView):
@@ -48,26 +49,64 @@ class SyncSubjectsAndLevelsView(APIView):
 class SubjectList(generics.ListAPIView):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
-    # permission_classes = (
-    #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)  # login qilgan yoki yuq ligini va admin emasligini tekshiradi
+
+    def get(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['subject']
+        permissions = check_user_permissions(user, table_names)
+
+        queryset = Subject.objects.all()
+        serializer = SubjectSerializer(queryset, many=True)
+        return Response({'subjects': serializer.data, 'permissions': permissions})
 
 
 class SubjectLevelList(generics.ListAPIView):
     queryset = SubjectLevel.objects.all()
     serializer_class = SubjectLevelSerializer
-    # permission_classes = (
-    #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)  # login qilgan yoki yuq ligini va admin emasligini tekshiradi
+
+    def get(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['subjectlevel', 'subject']
+        permissions = check_user_permissions(user, table_names)
+
+        queryset = SubjectLevel.objects.all()
+        serializer = SubjectLevelSerializer(queryset, many=True)
+        return Response({'subjectlevels': serializer.data, 'permissions': permissions})
 
 
 class SubjectOne(generics.RetrieveAPIView):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
-    # permission_classes = (
-    #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)  # login qilgan yoki yuq ligini va admin emasligini tekshiradi
+
+    def retrieve(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['subject']
+        permissions = check_user_permissions(user, table_names)
+        subject = self.get_object()
+        subject_data = self.get_serializer(subject).data
+        return Response({'subject': subject_data, 'permissions': permissions})
 
 
 class SubjectLevelOne(generics.RetrieveAPIView):
     queryset = SubjectLevel.objects.all()
     serializer_class = SubjectLevelSerializer
-    # permission_classes = (
-    #     IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)  # login qilgan yoki yuq ligini va admin emasligini tekshiradi
+
+    def retrieve(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['subjectlevel', 'subject']
+        permissions = check_user_permissions(user, table_names)
+        subject_level = self.get_object()
+        subject_level_data = self.get_serializer(subject_level).data
+        return Response({'subjectlevel': subject_level_data, 'permissions': permissions})
