@@ -4,6 +4,7 @@ from capital.models import Capital
 from user.functions.functions import check_auth
 from rest_framework.response import Response
 from permissions.functions.CheckUserPermissions import check_user_permissions
+from capital.functions.creat_capital_term import creat_capital_term
 
 
 class CapitalRetrieveAPIView(generics.RetrieveAPIView):
@@ -36,4 +37,6 @@ class CapitalListView(generics.ListAPIView):
 
         queryset = Capital.objects.all()
         serializer = CapitalListSerializers(queryset, many=True)
+        for capital in serializer.data:
+            creat_capital_term(capital)
         return Response({'capitals': serializer.data, 'permissions': permissions})

@@ -21,9 +21,10 @@ class Capital(models.Model):
     term = models.DateTimeField()
     curriculum_hours = models.IntegerField()
     img = models.ImageField(upload_to='capital/images', null=True)
-    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
-    payment_type = models.ForeignKey(PaymentTypes, on_delete=models.SET_NULL, null=True)
-    category = models.ForeignKey(CapitalCategory, on_delete=models.SET_NULL, null=True)
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='capital_branch')
+    payment_type = models.ForeignKey(PaymentTypes, on_delete=models.SET_NULL, null=True,
+                                     related_name='capital_payment_type')
+    category = models.ForeignKey(CapitalCategory, on_delete=models.SET_NULL, null=True, related_name='capital_category')
     deleted = models.BooleanField(default=False)
 
     class Meta:
@@ -32,8 +33,8 @@ class Capital(models.Model):
 
 class CapitalTerm(models.Model):
     down_cost = models.IntegerField()
-    month_date = models.DateTimeField()
-    capital = models.ForeignKey(Capital, on_delete=models.SET_NULL, null=True)
+    month_date = models.DateTimeField(auto_now_add=True)
+    capital = models.ForeignKey(Capital, on_delete=models.SET_NULL, null=True, related_name='capital_term_capital')
 
     class Meta:
         ordering = ['id']
