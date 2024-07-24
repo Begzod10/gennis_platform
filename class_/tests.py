@@ -1,18 +1,38 @@
 from django.test import TestCase
+from rest_framework.test import APIClient
+from .models import ClassTypes, ClassNumber, ClassCoin, ClassColors, CoinInfo, StudentCoin
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APIClient
-
-from group.models import Group
-from students.models import Student
 from subjects.models import Subject
-from .models import ClassTypes, ClassNumber, ClassCoin, ClassColors, CoinInfo, StudentCoin
+from branch.models import Branch
+from students.models import Student
+import datetime
+from django.contrib.auth import get_user_model
+from language.models import Language
+from django.utils import timezone
+from group.models import Group
+
+User = get_user_model()
 
 
 class StudentCoinModelTest(TestCase):
     def setUp(self):
+        self.branch = Branch.objects.create(name='Main Branch', number=1)
+        self.language = Language.objects.create(name='English')
+        self.user = User.objects.create_user(
+            username='testusejnbvr',
+            password='testpass',
+            birth_date=timezone.make_aware(datetime.datetime(2000, 1, 1)),
+            branch=self.branch,
+            language=self.language
+        )
+        self.subject = Subject.objects.create(name='Mathematics', ball_number=1)
         self.group = Group.objects.create(name="New Group")
-        self.student = Student.objects.first()
+        self.student = Student.objects.create(
+            user=self.user,
+            subject=self.subject,
+            shift='1'
+        )
 
         self.class_coin = ClassCoin.objects.create(
             total_coin=3442,
@@ -47,6 +67,22 @@ class StudentCoinAPITestCase(TestCase):
             month_date="2024-07-12",
             group=self.group
         )
+        self.branch = Branch.objects.create(name='Main Branch', number=1)
+        self.language = Language.objects.create(name='English')
+        self.group = Group.objects.create(name='Test Group')
+        self.user = User.objects.create_user(
+            username='testusejnbvr',
+            password='testpass',
+            birth_date=timezone.make_aware(datetime.datetime(2000, 1, 1)),
+            branch=self.branch,
+            language=self.language
+        )
+        self.subject = Subject.objects.create(name='Mathematics', ball_number=1)
+        self.student = Student.objects.create(
+            user=self.user,
+            subject=self.subject,
+            shift='1'
+        )
 
         self.student_coin = StudentCoin.objects.create(
             value="Test StudentCoin",
@@ -55,31 +91,30 @@ class StudentCoinAPITestCase(TestCase):
         )
 
     def test_create_student_coin(self):
-        url = reverse('student-coin-list-create')
+        url = reverse('student-coin-create')
         data = {
             'value': 'New StudentCoin',
             'class_coin': self.class_coin.id,
-            # 'student': self.student.id,
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(StudentCoin.objects.count(), 2)
 
     def test_retrieve_student_coin(self):
-        url = reverse('student-coin-detail', args=[self.student_coin.id])
+        url = reverse('student-coin', args=[self.student_coin.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['value'], 'Test StudentCoin')
 
     def test_update_student_coin(self):
-        url = reverse('student-coin-detail', args=[self.student_coin.id])
+        url = reverse('student-coin-update', args=[self.student_coin.id])
         data = {'value': 'StudentCoin'}
         response = self.client.patch(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['value'], 'StudentCoin')
 
     def test_delete_student_coin(self):
-        url = reverse('student-coin-detail', args=[self.student_coin.id])
+        url = reverse('student-coin-delete', args=[self.student_coin.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(StudentCoin.objects.count(), 0)
@@ -132,7 +167,7 @@ class CoinInfoAPITestCase(TestCase):
         )
 
     def test_create_coin_info(self):
-        url = reverse('coin-info-list-create')
+        url = reverse('coin-info-create')
         data = {
             'value': 'New CoinInfo',
             'reason': 'New CoinInfo reason',
@@ -144,20 +179,20 @@ class CoinInfoAPITestCase(TestCase):
         self.assertEqual(CoinInfo.objects.count(), 2)
 
     def test_retrieve_coin_info(self):
-        url = reverse('coin-info-detail', args=[self.coin_info.id])
+        url = reverse('coin-info', args=[self.coin_info.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['value'], 'Test CoinInfo')
 
     def test_update_coin_info(self):
-        url = reverse('coin-info-detail', args=[self.coin_info.id])
+        url = reverse('coin-info-update', args=[self.coin_info.id])
         data = {'value': 'CoinInfo'}
         response = self.client.patch(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['value'], 'CoinInfo')
 
     def test_delete_coin_info(self):
-        url = reverse('coin-info-detail', args=[self.coin_info.id])
+        url = reverse('coin-info-delete', args=[self.coin_info.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(CoinInfo.objects.count(), 0)
@@ -197,7 +232,7 @@ class ClassCoinAPITestCase(TestCase):
         )
 
     def test_create_class_coin(self):
-        url = reverse('class_-coin-list-create')
+        url = reverse('class-coin-create')
         data = {
             'total_coin': 3442,
             'given_coin': 7686,
@@ -210,20 +245,20 @@ class ClassCoinAPITestCase(TestCase):
         self.assertEqual(ClassCoin.objects.count(), 2)
 
     def test_retrieve_class_coin(self):
-        url = reverse('class_-coin-detail', args=[self.class_coin.id])
+        url = reverse('class-coin', args=[self.class_coin.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['total_coin'], 3442)
 
     def test_update_class_coin(self):
-        url = reverse('class_-coin-detail', args=[self.class_coin.id])
+        url = reverse('class-coin-update', args=[self.class_coin.id])
         data = {'total_coin': 45654}
         response = self.client.patch(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['total_coin'], 45654)
 
     def test_delete_class_coin(self):
-        url = reverse('class_-coin-detail', args=[self.class_coin.id])
+        url = reverse('class-coin-delete', args=[self.class_coin.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(ClassCoin.objects.count(), 0)
@@ -263,7 +298,7 @@ class ClassNumberAPITestCase(TestCase):
         self.class_number.subjects.add(self.subjects)
 
     def test_create_class_number(self):
-        url = reverse('class_-number-list-create')
+        url = reverse('class-number-create')
         data = {
             'class_types': self.class_types.id,
             'subjects': [self.subjects.id],
@@ -275,20 +310,20 @@ class ClassNumberAPITestCase(TestCase):
         self.assertEqual(ClassNumber.objects.count(), 2)
 
     def test_retrieve_class_number(self):
-        url = reverse('class_-number-detail', args=[self.class_number.id])
+        url = reverse('class-number', args=[self.class_number.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['number'], 31312)
 
     def test_update_class_number(self):
-        url = reverse('class_-number-detail', args=[self.class_number.id])
+        url = reverse('class-number-update', args=[self.class_number.id])
         data = {'number': 345345}
         response = self.client.patch(url, data, format='json', content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['number'], 345345)
 
     def test_delete_class_number(self):
-        url = reverse('class_-number-detail', args=[self.class_number.id])
+        url = reverse('class-number-delete', args=[self.class_number.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(ClassNumber.objects.count(), 0)

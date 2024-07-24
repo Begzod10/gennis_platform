@@ -30,7 +30,6 @@ urlpatterns = [
     path('class_number_delete/<int:pk>/', ClassNumberDestroyView.as_view(), name='class-number-delete'),
     path('class_number/<int:pk>/', ClassNumberRetrieveAPIView.as_view(), name='class-number'),
     path('class_number_list/', ClassNumberListView.as_view(), name='class-number-list'),
-
     path('class_colors/', CreateClassColorsList.as_view(), name='class-colors-list-create'),
     path('class_colors/<int:pk>/', ClassColorsRetrieveUpdateDestroyAPIView.as_view(), name='class-colors-detail'),
     path('class_types/', CreateClassTypesList.as_view(), name='class-types-list-create'),
