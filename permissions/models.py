@@ -20,15 +20,20 @@ class Access(models.Model):
 
 
 class ManySystem(models.Model):
-    access = models.ForeignKey(Access, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='many_systems')
     system = models.ForeignKey(System, on_delete=models.CASCADE)
 
 
 class ManyLocation(models.Model):
-    access = models.ForeignKey(Access, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='many_locations')
     location = models.ForeignKey(Location, on_delete=models.CASCADE)
 
 
 class ManyBranch(models.Model):
-    access = models.ForeignKey(Access, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='many_branches')
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
+
+
+class DescriptionForTable(models.Model):
+    table_name = models.CharField()
+    description = models.CharField()

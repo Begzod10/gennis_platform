@@ -1,28 +1,39 @@
 from rest_framework import serializers
 
-from branch.models import Branch
-from language.models import Language
-from students.models import Student
-from teachers.serializers import TeacherSerializer
-from .models import Group
-from subjects.models import Subject, SubjectLevel
-from system.models import System
-
-
 from branch.serializers import BranchSerializer
+from language.models import Language
 from language.serializers import LanguageSerializers
-from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
+from students.models import StudentHistoryGroups
 from students.serializers import StudentSerializer
+from subjects.models import Subject, SubjectLevel
+from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
+from system.models import System
 from system.serializers import SystemSerializers
+from teachers.models import Teacher, TeacherHistoryGroups
+from teachers.serializers import TeacherSerializer
+from .models import Group, GroupReason
+
+
+class GroupReasonSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = GroupReason
+        fields = '__all__'
+
 
 class GroupSerializer(serializers.ModelSerializer):
-    # branch = BranchSerializer()
-    language = LanguageSerializers()
-    level = SubjectLevelSerializer()
-    subject = SubjectSerializer()
-    students = StudentSerializer(many=True)
-    teacher = TeacherSerializer(many=True)
-    system = SystemSerializers()
+    id = serializers.CharField(max_length=100, required=False)
+    name = serializers.CharField(max_length=100, required=False)
+    price = serializers.CharField(max_length=100, required=False)
+    status = serializers.CharField(max_length=100, required=False)
+    teacher_salary = serializers.CharField(max_length=100, required=False)
+    attendance_days = serializers.CharField(max_length=100, required=False)
+    branch = BranchSerializer(required=False)
+    language = LanguageSerializers(required=False)
+    level = SubjectLevelSerializer(required=False)
+    subject = SubjectSerializer(required=False)
+    students = StudentSerializer(many=True, required=False)
+    teacher = TeacherSerializer(many=True, required=False)
+    system = SystemSerializers(required=False)
 
     class Meta:
         model = Group
@@ -53,9 +64,15 @@ class GroupSerializer(serializers.ModelSerializer):
                                      attendance_days=validated_data['attendance_days'], status=False, deleted=False,
                                      level=level, subject=subject)
         for student in students_data:
+            teacher = Teacher.objects.get(teacher_data)
+            StudentHistoryGroups.objects.create(joined_day=group.created_date, student=student,
+                                                group=group, teacher=teacher)
+            TeacherHistoryGroups.objects.create(joined_day=group.created_date,
+                                                group=group, teacher=teacher)
             group.students.add(student)
 
         group.teacher.add(teacher_data)
+
         return group
 
     def update(self, instance, validated_data):

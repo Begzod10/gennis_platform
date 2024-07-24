@@ -1,51 +1,52 @@
-from django.shortcuts import render
-from rest_framework import generics, status
-from rest_framework.views import APIView
-from rest_framework.response import Response
-
-import jwt
 import json
 
+from django.shortcuts import get_object_or_404
+from rest_framework import generics
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from group.functions.createGroup import creat_group
+from group.models import Group, GroupReason
+from group.serializers import GroupSerializer, GroupReasonSerializers
 from students.models import Student
-from group.models import Group
-from teachers.models import Teacher
 from students.serializers import StudentSerializer
-from group.serializers import GroupSerializer
-from user.models import CustomUser
+from teachers.serializers import Teacher, TeacherSerializer
+
+
+class CreateGroupReasonList(generics.ListCreateAPIView):
+    queryset = GroupReason.objects.all()
+    serializer_class = GroupReasonSerializers
+
+
+class GroupReasonRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = GroupReason.objects.all()
+    serializer_class = GroupReasonSerializers
 
 
 class CreatGroups(APIView):
-    # def post(self, request):
-    #     data = json.loads(request.body)
-    #     students = data.get('students')
-    #     teacher = data.get('teacher')
-    #     group = Group.objects.create(name=data['name'], price=data['price'], branch_id=data['branch'],
-    #                                  language_id=data['language'], teacher_salary=data['teacher_salary'],
-    #                                  attendance_days=data['attendance_days'], status=False, deleted=False,
-    #                                  level_id=data['level'], subject_id=data['subject'])
-    #     for student in students:
-    #         st = Student.objects.get(pk=student)
-    #         group.students.add(st)
-    #     tch = Teacher.objects.get(pk=teacher)
-    #     group.teacher.add(tch)
-    #     serializers = GroupSerializer(group)
-    #     return Response({'data': serializers.data})
     def post(self, request):
-        serializer = GroupSerializer(data=request.data)
-        if serializer.is_valid():
-            group = serializer.save()
-            return Response({'data': GroupSerializer(group).data})
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        data = json.loads(request.body)
+        group = creat_group(data.get('students'), data.get('teacher'), data['name'],
+                            data['price'], data['branch'], data['language'],
+                            data['teacher_salary'], data['attendance_days'],
+                            data['level'], data['subject'], data['system'])
+        serializers = GroupSerializer(group)
+        return Response({'data': serializers.data})
 
     def get(self, request):
         groups = Group.objects.all()
         serializers = GroupSerializer(groups, many=True)
+
         return Response(serializers.data)
 
 
 class GroupProfile(generics.RetrieveUpdateAPIView):
-    queryset = Group
+    queryset = Group.objects.all()
     serializer_class = GroupSerializer
+    # user = CustomUser.objects.get(pk=1)
+    # table_names = ['group']
+    # check_user_permissions(user, table_names)
 
 
 class DeleteGroups(APIView):
@@ -61,6 +62,55 @@ class DeleteGroups(APIView):
         return Response({'data': serializer.data})
 
 
+class TeacherGroupChange(APIView):
+    def post(self, request, pk):
+        group = get_object_or_404(Group, pk=pk)
+        data = request.data
+        teacher_id = data.get('teacher')
+
+        if not teacher_id:
+            return Response({'error': 'Teacher ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        teacher = get_object_or_404(Teacher, pk=teacher_id)
+        statuss = False
+
+        if (group.group_time_table.start_time != teacher.group.group_time_table.start_time and
+                group.group_time_table.week != teacher.group.group_time_table.week and
+                group.group_time_table.room != teacher.group.group_time_table.room and
+                group.group_time_table.end_time != teacher.group.group_time_table.end_time):
+            statuss = True
+
+        if statuss:
+            teacher.group = None
+            teacher.save()
+            group.teacher.add(teacher)
+
+        serializer = GroupSerializer(group)
+        return Response({'data': serializer.data})
+
+    def get(self, request,pk):
+        start_time = request.query_params.get('start_time')
+        end_time = request.query_params.get('end_time')
+        week = request.query_params.get('week')
+        room = request.query_params.get('room')
+        teachers = Teacher.objects.all()
+        teacher_data = []
+
+        for teacher in teachers:
+            status = (start_time != teacher.group.group_time_table.start_time and
+                      week != teacher.group.group_time_table.week and
+                      room != teacher.group.group_time_table.room and
+                      end_time != teacher.group.group_time_table.end_time)
+            serializer = TeacherSerializer(teacher)
+            data = {
+                'teacher': serializer.data,
+                'status': status
+            }
+            teacher_data.append(data)
+
+        return Response(teacher_data)
+
+
 class AddToGroupApi(APIView):
     def post(self, request, pk):
         group = Group.objects.get(pk=pk)
@@ -68,7 +118,14 @@ class AddToGroupApi(APIView):
         students = data.get('students')
         for student in students:
             st = Student.objects.get(pk=student)
-            group.students.add(st)
+            st.total_payment_month += group.price
+            st.save()
+            status = False
+            for st_group in student.groups_student:
+                if group.group_time_table.start_time != st_group.group_time_table.start_time and group.group_time_table.week != st_group.group_time_table.week and group.group_time_table.room != st_group.group_time_table.room and group.group_time_table.end_time != st_group.group_time_table.end_time:
+                    status = True
+            if status:
+                group.students.add(st)
         serializer = GroupSerializer(group)
         return Response({'data': serializer.data})
 
@@ -104,5 +161,3 @@ class MoveToGroupApi(APIView):
         groups = Group.objects.filter(branch_id=group.branch_id, system_id=group.system_id)
         groups_serializers = GroupSerializer(groups, many=True)
         return Response({'groups': groups_serializers.data, 'group': group_serializer.data})
-
-# class

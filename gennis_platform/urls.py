@@ -23,25 +23,41 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
-from .swagger import urlpatterns as doc_urls
-
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+from .swagger import urlpatterns as doc_urls
+from user.views import CustomTokenObtainPairView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('user.urls')),
-    path('api/', include('system.urls')),
-    path('api/', include('location.urls')),
-    path('api/', include('language.urls')),
-    path('api/', include('branch.urls')),
-    path('api/', include('payments.urls')),
-    path('api/', include('students.urls')),
-    path('api/', include('teachers.urls')),
-    path('api/', include('subjects.urls')),
-    path('api/', include('group.urls')),
-    path('api/v1/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/v1/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/v1/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('Users/', include('user.urls')),
+    path('System/', include('system.urls')),
+    path('Location/', include('location.urls')),
+    path('Language/', include('language.urls')),
+    path('Branch/', include('branch.urls')),
+    path('Payments/', include('payments.urls')),
+    path('Students/', include('students.urls')),
+    path('Teachers/', include('teachers.urls')),
+    path('Class/', include('class.urls')),
+    path('Subjects/', include('subjects.urls')),
+    path('Group/', include('group.urls')),
+    path('Rooms/', include('rooms.urls')),
+    path('TimeTable/', include('time_table.urls')),
+    path('Attendance/', include('attendances.urls')),
+    path('Lead/', include('lead.urls')),
+    path('Books/', include('books.urls')),
+    path('Permissions/', include('permissions.urls')),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('Lead/', include('lead.urls')),
+    path('Books/', include('books.urls')),
+    path('Attendance/', include('attendances.urls')),
+
+    path('overhead/', include('overhead.urls')),
+
+
+
+    path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 ]
 urlpatterns += doc_urls
 

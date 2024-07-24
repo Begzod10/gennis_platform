@@ -1,6 +1,9 @@
 from django.urls import path
 
-from .views import *
+
+from .views import (
+    CreateLocationList, LocationRetrieveUpdateDestroyAPIView
+)
 
 urlpatterns = [
     path('location/', CreateLocationList.as_view(), name='location-list-create'),
