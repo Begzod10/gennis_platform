@@ -6,7 +6,7 @@ from students.models import Student
 
 class LessonPlan(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE)
-    teacher_id = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     date = models.DateField()
     objective = models.TextField(null=True, blank=True)
     main_lesson = models.TextField(null=True, blank=True)
@@ -19,5 +19,5 @@ class LessonPlan(models.Model):
 
 class LessonPlanStudents(models.Model):
     lesson_plan = models.ForeignKey(LessonPlan, on_delete=models.CASCADE)
-    student_id = models.ForeignKey(Student,on_delete=models.CASCADE)
+    student = models.ForeignKey(Student,on_delete=models.CASCADE)
     comment = models.TextField()
