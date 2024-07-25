@@ -7,7 +7,7 @@ from rooms.models import Room
 from .models import WeekDays, GroupTimeTable
 from group.models import Group
 from group.serializers import GroupSerializer
-from rooms.serializers import RoomSerializer
+from rooms.serializers import RoomCreateSerializer
 from branch.serializers import BranchSerializer
 
 
@@ -23,7 +23,7 @@ class WeekDaysSerializer(serializers.ModelSerializer):
 class GroupTimeTableSerializer(serializers.ModelSerializer):
     group = GroupSerializer()
     week = WeekDaysSerializer()
-    room = RoomSerializer()
+    room = RoomCreateSerializer()
     branch = BranchSerializer()
 
     class Meta:

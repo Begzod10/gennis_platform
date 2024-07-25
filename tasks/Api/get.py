@@ -1,13 +1,13 @@
 from django.utils import timezone
 from rest_framework import generics
 from rest_framework.response import Response
-
 from permissions.functions.CheckUserPermissions import check_user_permissions
 from students.models import Student, DeletedStudent, DeletedNewStudent
 from tasks.models import Task, StudentCallInfo, TaskStatistics, TaskStudent, TaskDailyStatistics
 from tasks.serializers import TaskGetSerializer, StudentCallInfoGetSerializers
 from user.functions.functions import check_auth
 
+from rest_framework.views import APIView
 
 class TaskListView(generics.ListAPIView):
     queryset = Task.objects.all()
@@ -75,7 +75,7 @@ class CallRetrieveView(generics.RetrieveAPIView):
         return Response({'calls': task_data, 'permissions': permissions})
 
 
-class CreateTask(generics.GenericAPIView):
+class CreateTask(APIView):
 
     def get(self, request, *args, **kwargs):
         user, auth_error = check_auth(request)

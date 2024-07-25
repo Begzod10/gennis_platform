@@ -6,8 +6,8 @@ from tasks.Api.get import TaskRetrieveView, TaskListView, CallListView, CallRetr
 
 urlpatterns = [
     path('task_create/', TaskCreateView.as_view(), name='task-create'),
-    path('task_update/', TaskUpdateView.as_view(), name='task-update'),
-    path('task_delete/', TaskDestroyView.as_view(), name='task-destroy'),
+    path('task_update/<int:pk>/', TaskUpdateView.as_view(), name='task-update'),
+    path('task_delete/<int:pk>/', TaskDestroyView.as_view(), name='task-destroy'),
     path('tasks/', TaskListView.as_view(), name='task-all'),
     path('tasks/<int:pk>/', TaskRetrieveView.as_view(), name='task-detail'),
     path('call_info_create/', StudentCallInfoCreateView.as_view(), name='call-create'),
