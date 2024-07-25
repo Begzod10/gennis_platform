@@ -41,6 +41,11 @@ class ObservationDaySerializers(serializers.ModelSerializer):
         model = ObservationDay
         fields = ['id', 'day', 'comment', 'average', 'user', 'group', 'teacher']
 
+    def delete(self, instance):
+        instance.deleted = True
+        instance.save()
+        return instance
+
 
 class ObservationDayListSerializers(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)

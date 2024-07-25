@@ -13,7 +13,7 @@ class ObservationInfo(models.Model):
 
 class ObservationOptions(models.Model):
     name = models.CharField(max_length=100)
-    value = models.IntegerField(max_length=100)
+    value = models.IntegerField()
 
     class Meta:
         ordering = ['id']
@@ -39,7 +39,7 @@ class ObservationStatistics(models.Model):
     observation_info = models.ForeignKey(ObservationInfo, on_delete=models.SET_NULL, null=True,
                                          related_name='observation_statistics_observation_info')
     observation_option = models.ForeignKey(ObservationOptions, on_delete=models.SET_NULL, null=True,
-                                           related_name='observation_statistics_')
+                                           related_name='observation_statistics_observation_option')
 
     class Meta:
         ordering = ['id']

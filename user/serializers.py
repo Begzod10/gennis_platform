@@ -31,7 +31,6 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        print(validated_data)
         branch_data = validated_data.pop('branch', None)
         language_data = validated_data.pop('language', None)
 
