@@ -48,7 +48,8 @@ class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
-                  'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system', 'class_number', 'color']
+                  'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system', 'class_number', 'color',
+                  'course_types']
 
     def create(self, validated_data):
         students_data = validated_data.pop('students')
