@@ -7,11 +7,21 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from group.functions.createGroup import creat_group
-from group.models import Group, GroupReason
-from group.serializers import GroupSerializer, GroupReasonSerializers
+from group.models import Group, GroupReason, CourseTypes
+from group.serializers import GroupSerializer, GroupReasonSerializers, CourseTypesSerializers
 from students.models import Student
 from students.serializers import StudentSerializer
 from teachers.serializers import Teacher, TeacherSerializer
+
+
+class CreateCourseTypesList(generics.ListCreateAPIView):
+    queryset = CourseTypes.objects.all()
+    serializer_class = CourseTypesSerializers
+
+
+class CourseTypesRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = CourseTypes.objects.all()
+    serializer_class = CourseTypesSerializers
 
 
 class CreateGroupReasonList(generics.ListCreateAPIView):
@@ -30,7 +40,8 @@ class CreatGroups(APIView):
         group = creat_group(data.get('students'), data.get('teacher'), data['name'],
                             data['price'], data['branch'], data['language'],
                             data['teacher_salary'], data['attendance_days'],
-                            data['level'], data['subject'], data['system'], data['color'], data['class_number'])
+                            data['level'], data['subject'], data['system'], data['color'], data['color'],
+                            data['course_types'])
         serializers = GroupSerializer(group)
         return Response({'data': serializers.data})
 

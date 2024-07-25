@@ -11,8 +11,14 @@ from system.models import System
 from system.serializers import SystemSerializers
 from teachers.models import Teacher, TeacherHistoryGroups
 from teachers.serializers import TeacherSerializer
-from .models import Group, GroupReason
+from .models import Group, GroupReason, CourseTypes
 from class_.models import ClassNumber, ClassColors
+
+
+class CourseTypesSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = CourseTypes
+        fields = '__all__'
 
 
 class GroupReasonSerializers(serializers.ModelSerializer):
@@ -37,6 +43,7 @@ class GroupSerializer(serializers.ModelSerializer):
     system = SystemSerializers(required=False)
     class_number = serializers.PrimaryKeyRelatedField(queryset=ClassNumber.objects.all(), required=False)
     color = serializers.PrimaryKeyRelatedField(queryset=ClassColors.objects.all(), required=False)
+    course_types = serializers.PrimaryKeyRelatedField(queryset=CourseTypes.objects.all(), required=False)
 
     class Meta:
         model = Group
@@ -63,7 +70,8 @@ class GroupSerializer(serializers.ModelSerializer):
                                      teacher_salary=validated_data['teacher_salary'],
                                      attendance_days=validated_data['attendance_days'], status=False, deleted=False,
                                      level=level, subject=subject, class_number=validated_data['class_number'],
-                                     color=validated_data['color'])
+                                     color=validated_data['color'],
+                                     course_types=validated_data['course_types'])
         for student in students_data:
             teacher = Teacher.objects.get(teacher_data)
             StudentHistoryGroups.objects.create(joined_day=group.created_date, student=student,
@@ -86,6 +94,7 @@ class GroupSerializer(serializers.ModelSerializer):
                 setattr(instance, attr, value)
                 instance.name = validated_data.get("name", instance.name)
                 instance.color = validated_data.get("color", instance.color)
+                instance.course_types = validated_data.get("course_types", instance.course_types)
                 instance.price = validated_data.get("price", instance.price)
                 instance.class_number = validated_data.get("class_number", instance.class_number)
                 instance.teacher_salary = validated_data.get("teacher_salary", instance.teacher_salary)
