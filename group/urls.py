@@ -6,6 +6,8 @@ from .gennis.DeleteGroups import DeleteGroups
 from .gennis.AddToGroupApi import AddToGroupApi
 from .gennis.TeacherGroupChange import TeacherGroupChange
 from .gennis.MoveToGroupApi import MoveToGroupApi
+from .gennis.DeleteStudentFromGroup import DeleteStudentFromGroup
+
 
 urlpatterns = [
     path('groups/create/', CreatGroups.as_view(), name='create'),
@@ -16,4 +18,5 @@ urlpatterns = [
     path('groups/move-to-group/<int:pk>/', MoveToGroupApi.as_view(), name='movie-to-group-api'),
     path('group_reason/', CreateGroupReasonList.as_view(), name='group-reason-list-create'),
     path('group_reason/<int:pk>/', GroupReasonRetrieveUpdateDestroyAPIView.as_view(), name='group-reason-detail'),
+    path('delete_student_from_group/<int:pk>/', DeleteStudentFromGroup.as_view(), name='delete_student_from_group'),
 ]

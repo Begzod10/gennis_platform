@@ -26,7 +26,6 @@ class Group(models.Model):
     system = models.ForeignKey(System, on_delete=models.CASCADE, null=True)
     class_number = models.ForeignKey('class_.ClassNumber', on_delete=models.CASCADE, null=True)
 
-
 class GroupReason(models.Model):
     name = models.CharField(max_length=255)
 

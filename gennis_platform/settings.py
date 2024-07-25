@@ -20,6 +20,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+
+SECRET_KEY = 'django-insecure-8!t!6$g#(34ro((m-7t$#(zek1=b=y2ltslop@w71$^6)wb_rc'
+
 SECRET_KEY = 'django-insecure-ic2opu2tndxc7=#h6l!u!o_0o8-olxsk6#@o8be165!6&j!o!j'
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -57,6 +60,7 @@ INSTALLED_APPS = [
     'lead.apps.LeadConfig',
     'books.apps.BooksConfig',
     'observation.apps.ObservationConfig',
+    'school_time_table.apps.SchoolTimeTableConfig',
     'drf_yasg',
     'djoser',
     'django_cron',
@@ -88,6 +92,10 @@ WSGI_APPLICATION = 'gennis_platform.wsgi.application'
 
 DATABASES = {'default': {'ENGINE': 'django.db.backends.postgresql', 'NAME': 'gennis_platform', 'USER': 'postgres',
                          'PASSWORD': '123', 'HOST': 'localhost', 'PORT': '5432'}}
+
+# Password validation
+# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

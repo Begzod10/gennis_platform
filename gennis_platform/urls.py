@@ -14,6 +14,11 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
+from django.contrib import admin
+from django.urls import path
+
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -51,6 +56,7 @@ urlpatterns = [
     path('Overhead/', include('overhead.urls')),
     path('Flow/', include('flows.urls')),
     path('Lesson_plan/', include('lesson_plan.urls')),
+    path('SchoolTimeTable/', include('school_time_table.urls')),
     path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
@@ -58,3 +64,4 @@ urlpatterns = [
 urlpatterns += doc_urls
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

@@ -12,6 +12,7 @@ from system.serializers import SystemSerializers
 from teachers.models import Teacher, TeacherHistoryGroups
 from teachers.serializers import TeacherSerializer
 from .models import Group, GroupReason
+from class_.models import ClassNumber, ClassColors
 
 
 class GroupReasonSerializers(serializers.ModelSerializer):
@@ -34,11 +35,13 @@ class GroupSerializer(serializers.ModelSerializer):
     students = StudentSerializer(many=True, required=False)
     teacher = TeacherSerializer(many=True, required=False)
     system = SystemSerializers(required=False)
+    class_number = serializers.PrimaryKeyRelatedField(queryset=ClassNumber.objects.all(), required=False)
+    color = serializers.PrimaryKeyRelatedField(queryset=ClassColors.objects.all(), required=False)
 
     class Meta:
         model = Group
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
-                  'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system']
+                  'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system', 'class_number', 'color']
 
     def create(self, validated_data):
         students_data = validated_data.pop('students')
@@ -50,10 +53,7 @@ class GroupSerializer(serializers.ModelSerializer):
         system_data = validated_data.pop('system')
         subject = Subject.objects.get(name=subject_data['name'])
         level = SubjectLevel.objects.get(name=level_data['name'])
-        print(validated_data)
-        # print(branch_data['name'])
-        # branch = Branch.objects.get(number=branch_data['name'])
-        # print(branch)
+
         system = System.objects.get(name=system_data['name'])
         language = Language.objects.get(name=language_data['name'])
         group = Group.objects.create(name=validated_data['name'], price=validated_data['price'],
@@ -62,7 +62,8 @@ class GroupSerializer(serializers.ModelSerializer):
                                      system=system,
                                      teacher_salary=validated_data['teacher_salary'],
                                      attendance_days=validated_data['attendance_days'], status=False, deleted=False,
-                                     level=level, subject=subject)
+                                     level=level, subject=subject, class_number=validated_data['class_number'],
+                                     color=validated_data['color'])
         for student in students_data:
             teacher = Teacher.objects.get(teacher_data)
             StudentHistoryGroups.objects.create(joined_day=group.created_date, student=student,
@@ -86,6 +87,7 @@ class GroupSerializer(serializers.ModelSerializer):
                 instance.name = validated_data.get("name", instance.name)
                 instance.color = validated_data.get("color", instance.color)
                 instance.price = validated_data.get("price", instance.price)
+                instance.class_number = validated_data.get("class_number", instance.class_number)
                 instance.teacher_salary = validated_data.get("teacher_salary", instance.teacher_salary)
                 instance.attendance_days = validated_data.get("attendance_days", instance.attendance_days)
                 subject = Subject.objects.get(name=subject_data['name'])
