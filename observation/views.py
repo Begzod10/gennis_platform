@@ -4,7 +4,7 @@ from .models import ObservationInfo, ObservationOptions
 from user.functions.functions import check_auth
 from rest_framework.response import Response
 from permissions.functions.CheckUserPermissions import check_user_permissions
-from functions.creat_observation import creat_observation_info, creat_observation_options
+from .functions.creat_observation import creat_observation_info, creat_observation_options
 
 
 class ObservationOptionsList(generics.ListAPIView):
