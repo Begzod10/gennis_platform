@@ -7,6 +7,11 @@ from branch.models import Branch
 from payments.models import PaymentTypes
 
 
+class BranchPayment(models.Model):
+
+    branch = models.ForeignKey(Branch, related_name='branch_payment_branch', on_delete=models.CASCADE)
+
+
 class Book(models.Model):
     name = models.CharField(max_length=250)
     desc = models.CharField(null=True)

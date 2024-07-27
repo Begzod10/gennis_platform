@@ -109,7 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [{'NAME': 'django.contrib.auth.password_validation.Us
 
 REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination', 'PAGE_SIZE': 2,
 
-                  'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer',
+                  'DEFAULT_RENDERER_CLASS   ES': ['rest_framework.renderers.JSONRenderer',
                                                'rest_framework.renderers.BrowsableAPIRenderer', ],
 
                   'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny', ],
@@ -151,6 +151,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
+
+
+
 STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_ROOT = BASE_DIR / 'media/'
 
