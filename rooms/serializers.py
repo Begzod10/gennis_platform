@@ -1,35 +1,56 @@
 from rest_framework import serializers
-from branch.serializers import BranchSerializer
+
+from branch.serializers import BranchSerializer, Branch
+from subjects.serializers import Subject, SubjectSerializer
 from .models import Room, RoomImages, RoomSubject
-from subjects.serializers import SubjectSerializer
 
 
-class RoomSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=False)
-    name = serializers.CharField(max_length=100, required=False)
-    branch = BranchSerializer(required=False)
-    seats_number = serializers.CharField(max_length=100, required=False)
-    electronic_board = serializers.BooleanField(required=False)
-    deleted = serializers.BooleanField(required=False)
+class RoomCreateSerializer(serializers.ModelSerializer):
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
 
     class Meta:
         model = Room
         fields = ['id', 'name', 'seats_number', 'electronic_board', 'deleted', 'branch']
 
 
-class RoomImagesSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=False)
+class RoomGetSerializer(serializers.ModelSerializer):
+    branch = BranchSerializer(required=False)
+
+    class Meta:
+        model = Room
+        fields = ['id', 'name', 'seats_number', 'electronic_board', 'deleted', 'branch']
+
+
+class RoomImagesGetSerializer(serializers.ModelSerializer):
     image = serializers.ImageField()
-    room = RoomSerializer(required=False)
+    room = RoomGetSerializer(required=False)
 
     class Meta:
         model = RoomImages
         fields = ['id', 'image', 'room']
 
 
-class RoomSubjectSerializer(serializers.ModelSerializer):
+class RoomImagesCreateSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField()
+    room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all())
+
+    class Meta:
+        model = RoomImages
+        fields = ['id', 'image', 'room']
+
+
+class RoomSubjectGetSerializer(serializers.ModelSerializer):
     subject = SubjectSerializer(required=False)
-    room = RoomSerializer(required=False)
+    room = RoomCreateSerializer(required=False)
+
+    class Meta:
+        model = RoomSubject
+        fields = ['subject', 'room']
+
+
+class RoomSubjectCreateSerializer(serializers.ModelSerializer):
+    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())
+    room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all())
 
     class Meta:
         model = RoomSubject

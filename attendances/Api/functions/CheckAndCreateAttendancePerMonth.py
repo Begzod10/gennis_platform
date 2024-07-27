@@ -1,16 +1,19 @@
-from group.models import Group
+from datetime import datetime,timedelta
+
 from attendances.models import AttendancePerMonth, AttendancePerDay
+from group.models import Group
 from students.models import Student
-from datetime import datetime
+from tasks.models import TaskStatistics, TaskStudent
+from teachers.models import TeacherBlackSalary
 from teachers.models import TeacherSalary
 from .CalculateGroupOverallAttendance import calculate_group_attendances
-from teachers.models import TeacherBlackSalary
-
+from lesson_plan.functions.utils import update_lesson_plan
 
 def check_and_create_attendance_per_month(group_id, students, date):
     group = Group.objects.get(pk=group_id)
     teacher = group.teacher.first()
     today = datetime.today()
+    tomorrow = today + timedelta(days=1)
     month_date = datetime.strptime(f"{today.year}-{today.month}", "%Y-%m")
     day = datetime.strptime(f"{today.year}-{date}", "%Y-%m-%d")
     errors = []
@@ -50,6 +53,7 @@ def check_and_create_attendance_per_month(group_id, students, date):
             debt_per_day = group.price / 13
         else:
             debt_per_day = (group.price / 13) - charity_per_day
+        update_lesson_plan(group_id)
         AttendancePerDay.objects.create(
             group_id=group_id,
             student_id=student['id'],
@@ -79,8 +83,21 @@ def check_and_create_attendance_per_month(group_id, students, date):
                 student.debt_status = 0
             elif student.total_payment_month > created.total_debt:
                 student.debt_status = 1
+                TeacherBlackSalary.objects.filter(student=student, status=False).update(status=True)
             elif student.total_payment_month < created.total_debt:
                 student.debt_status = 2
+                static, _ = TaskStatistics.objects.get_or_create(
+                    task__name="Qarzdor uquvchilar",
+                    day=tomorrow,
+                    defaults={'progress_num': 100, 'percentage': 0, 'completed_num': 0, 'user': 11}
+                )
+                TaskStudent.objects.get_or_create(
+                    task__name="Qarzdor uquvchilar",
+                    task_static=static,
+                    status=False,
+                    students=student
+                )
+
             student.save()
         try:
             AttendancePerDay.objects.get(group_id=group_id, teacher=teacher, day=day, student_id=student['id'])

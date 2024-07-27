@@ -6,8 +6,15 @@ from students.models import StudentHistoryGroups, Student
 from subjects.models import Subject, SubjectLevel
 from system.models import System
 from teachers.models import Teacher, TeacherHistoryGroups
-from .models import Group, GroupReason
+from .models import Group, GroupReason, CourseTypes
 from classes.models import ClassNumber, ClassColors
+
+
+class CourseTypesSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = CourseTypes
+        fields = '__all__'
+
 
 from branch.serializers import BranchSerializer
 from language.serializers import LanguageSerializers
@@ -40,29 +47,50 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
 
 
 class GroupSerializer(serializers.ModelSerializer):
-    branch = BranchSerializer()
-    language = LanguageSerializers()
-    level = SubjectLevelSerializer()
-    subject = SubjectSerializer()
-    students = StudentSerializer(many=True)
-    teacher = TeacherSerializer(many=True)
-    system = SystemSerializers()
+#     branch = BranchSerializer()
+#     language = LanguageSerializers()
+#     level = SubjectLevelSerializer()
+#     subject = SubjectSerializer()
+#     students = StudentSerializer(many=True)
+#     teacher = TeacherSerializer(many=True)
+#     system = SystemSerializers()
+#
+#     class_number = serializers.SerializerMethodField()
+#     color = serializers.SerializerMethodField()
+# =======
+    id = serializers.CharField(max_length=100, required=False)
+    name = serializers.CharField(max_length=100, required=False)
+    price = serializers.CharField(max_length=100, required=False)
+    status = serializers.CharField(max_length=100, required=False)
+    teacher_salary = serializers.CharField(max_length=100, required=False)
+    attendance_days = serializers.CharField(max_length=100, required=False)
+    branch = BranchSerializer(required=False)
+    language = LanguageSerializers(required=False)
+    level = SubjectLevelSerializer(required=False)
+    subject = SubjectSerializer(required=False)
+    students = StudentSerializer(many=True, required=False)
+    teacher = TeacherSerializer(many=True, required=False)
+    system = SystemSerializers(required=False)
+    class_number = serializers.PrimaryKeyRelatedField(queryset=ClassNumber.objects.all(), required=False)
+    color = serializers.PrimaryKeyRelatedField(queryset=ClassColors.objects.all(), required=False)
+    course_types = serializers.PrimaryKeyRelatedField(queryset=CourseTypes.objects.all(), required=False)
 
-    class_number = serializers.SerializerMethodField()
-    color = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
-                  'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system', 'class_number', 'color']
+                  'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system', 'class_number', 'color',
+                  'course_types']
 
     def get_class_number(self, obj):
         from classes.serializers import ClassNumberSerializers
         return ClassNumberSerializers(obj.class_number).data
 
+
     def get_color(self, obj):
         from classes.serializers import ClassColorsSerializers
         return ClassColorsSerializers(obj.color).data
+
 # class GroupSerializer(serializers.ModelSerializer):
 #     id = serializers.CharField(max_length=100, required=False)
 #     name = serializers.CharField(max_length=100, required=False)
@@ -140,3 +168,4 @@ class GroupSerializer(serializers.ModelSerializer):
 #                 instance.level = level
 #         instance.save()
 #         return instance
+

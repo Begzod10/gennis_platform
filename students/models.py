@@ -19,8 +19,6 @@ class Student(models.Model):
     representative_surname = models.CharField(null=True)
 
 
-
-
 class StudentCharity(models.Model):
     charity_sum = models.IntegerField()
     group = models.ForeignKey('group.Group', on_delete=models.SET_NULL, null=True, related_name='group_id_charity')

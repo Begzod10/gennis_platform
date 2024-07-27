@@ -2,7 +2,6 @@ from django.utils.timezone import now
 from django_cron import CronJobBase, Schedule
 
 from attendances.models import AttendancePerMonth
-from teachers.models import Teacher
 from teachers.models import Teacher, TeacherSalary
 from .models import CustomUser, UserSalary
 

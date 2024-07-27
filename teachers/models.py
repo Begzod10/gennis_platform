@@ -12,7 +12,7 @@ class Teacher(models.Model):
     color = models.CharField(max_length=50)
     total_students = models.IntegerField()
     premium_rate = models.IntegerField(null=True)
-    class_type =models.IntegerField(null=True)
+    class_type = models.IntegerField(null=True)
 
 
 class TeacherSalary(models.Model):

@@ -13,7 +13,7 @@ from flows.models import Flow
 
 from group.serializers import GroupSerializer
 from time_table.serializers import WeekDaysSerializer
-from rooms.serializers import RoomSerializer
+from rooms.serializers import RoomCreateSerializer
 from branch.serializers import BranchSerializer
 from teachers.serializers import TeacherSerializer
 from subjects.serializers import SubjectSerializer
@@ -86,7 +86,7 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
 class ClassTimeTableReadSerializers(serializers.ModelSerializer):
     group = GroupSerializer()
     week = WeekDaysSerializer()
-    room = RoomSerializer()
+    room = RoomCreateSerializer()
     hours = HoursSerializers()
     branch = BranchSerializer()
     teacher = TeacherSerializer()

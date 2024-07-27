@@ -19,7 +19,7 @@ class StudentCallInfo(models.Model):
     delay_date = models.DateField()
     comment = models.CharField()
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='user_call_info', on_delete=models.CASCADE)
-    student_tasks = models.ManyToManyField(Task)
+    student_tasks = models.ForeignKey('TaskStudent', related_name='student_task', on_delete=models.CASCADE)
 
 
 class TaskStatistics(models.Model):
@@ -37,3 +37,10 @@ class TaskDailyStatistics(models.Model):
     progress_num = models.IntegerField()
     percentage = models.IntegerField()
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='user_static_day', on_delete=models.CASCADE)
+
+
+class TaskStudent(models.Model):
+    task = models.ForeignKey(Task, related_name='task_static_student', on_delete=models.CASCADE)
+    task_static = models.ForeignKey(TaskStatistics, related_name='task_static_student_info', on_delete=models.CASCADE)
+    status = models.BooleanField()
+    students = models.ForeignKey(Student, related_name='task_student_isd', on_delete=models.CASCADE)

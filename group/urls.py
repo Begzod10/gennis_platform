@@ -1,13 +1,13 @@
 from django.urls import path
 
-from .gennis.CreatGroups import CreatGroups, CreateGroupReasonList, GroupReasonRetrieveUpdateDestroyAPIView
+from .gennis.CreatGroups import CreatGroups, CreateGroupReasonList, GroupReasonRetrieveUpdateDestroyAPIView, \
+    CreateCourseTypesList, CourseTypesRetrieveUpdateDestroyAPIView
 from .gennis.GroupProfile import GroupProfile
 from .gennis.DeleteGroups import DeleteGroups
 from .gennis.AddToGroupApi import AddToGroupApi
 from .gennis.TeacherGroupChange import TeacherGroupChange
 from .gennis.MoveToGroupApi import MoveToGroupApi
 from .gennis.DeleteStudentFromGroup import DeleteStudentFromGroup
-
 
 urlpatterns = [
     path('groups/create/', CreatGroups.as_view(), name='create'),
@@ -19,4 +19,6 @@ urlpatterns = [
     path('group_reason/', CreateGroupReasonList.as_view(), name='group-reason-list-create'),
     path('group_reason/<int:pk>/', GroupReasonRetrieveUpdateDestroyAPIView.as_view(), name='group-reason-detail'),
     path('delete_student_from_group/<int:pk>/', DeleteStudentFromGroup.as_view(), name='delete_student_from_group'),
+    path('course_types/', CreateCourseTypesList.as_view(), name='course-types-list-create'),
+    path('course_types/<int:pk>/', CourseTypesRetrieveUpdateDestroyAPIView.as_view(), name='course-types-detail'),
 ]

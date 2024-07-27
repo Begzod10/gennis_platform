@@ -52,19 +52,22 @@ INSTALLED_APPS = [
     'subjects.apps.SubjectsConfig',
     'teachers.apps.TeachersConfig',
     'rooms.apps.RoomsConfig',
+    'capital.apps.CapitalConfig',
     'overhead.apps.OverheadConfig',
     'attendances.apps.AttendancesConfig',
     'time_table.apps.TimeTableConfig',
     'lead.apps.LeadConfig',
     'classes.apps.ClassesConfig',
     'books.apps.BooksConfig',
+    'observation.apps.ObservationConfig',
     'school_time_table.apps.SchoolTimeTableConfig',
     'drf_yasg',
     'djoser',
     'django_cron',
     'corsheaders',
     'tasks.apps.TasksConfig',
-    'flows.apps.FlowsConfig'
+    'flows.apps.FlowsConfig',
+    'lesson_plan.apps.LessonPlanConfig'
 ]
 
 MIDDLEWARE = ['corsheaders.middleware.CorsMiddleware', 'django.middleware.security.SecurityMiddleware',

@@ -8,6 +8,10 @@ from system.models import System
 from teachers.models import Teacher
 
 
+class CourseTypes(models.Model):
+    name = models.CharField(max_length=255)
+
+
 class Group(models.Model):
     name = models.CharField(max_length=255)
     price = models.IntegerField(null=True)
@@ -25,6 +29,7 @@ class Group(models.Model):
     attendance_days = models.IntegerField(null=True)
     system = models.ForeignKey(System, on_delete=models.CASCADE, null=True)
     class_number = models.ForeignKey('classes.ClassNumber', on_delete=models.CASCADE, null=True)
+    course_types = models.ForeignKey(CourseTypes, on_delete=models.CASCADE, null=True)
 
 
 class GroupReason(models.Model):
