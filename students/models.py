@@ -9,7 +9,7 @@ from user.serializers import (CustomUser)
 
 class Student(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='student_user')
-    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True)
+    subject = models.ManyToManyField(Subject, blank=True)
     total_payment_month = models.IntegerField(null=True)
     extra_payment = models.CharField(null=True)
     shift = models.CharField(max_length=50, null=True)

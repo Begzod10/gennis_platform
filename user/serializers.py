@@ -1,26 +1,23 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-
-from branch.serializers import BranchSerializer
-from language.serializers import LanguageSerializers, Language
-from user.models import CustomUser, UserSalaryList, UserSalary, Branch
-
-from branch.serializers import BranchSerializer
-from language.serializers import LanguageSerializers
-
-
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from branch.serializers import BranchSerializer
+from language.serializers import Language
+from language.serializers import LanguageSerializers
+from user.models import CustomUser, UserSalaryList, UserSalary, Branch
 
 
 class UserSerializer(serializers.ModelSerializer):
     branch = BranchSerializer()
     language = LanguageSerializers()
+    age = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
                   'phone', 'age', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff']
+                  'branch', 'is_superuser', 'is_staff', 'age']
         extra_kwargs = {
             'password': {'write_only': True, 'required': True},
             'birth_date': {'required': False},
@@ -29,6 +26,9 @@ class UserSerializer(serializers.ModelSerializer):
             'is_superuser': {'required': False},
             'is_staff': {'required': False}
         }
+
+    def get_age(self, obj):
+        return obj.calculate_age()
 
     def create(self, validated_data):
         branch_data = validated_data.pop('branch', None)
@@ -44,7 +44,6 @@ class UserSerializer(serializers.ModelSerializer):
             father_name=validated_data.get('father_name'),
             password=validated_data.get('password'),
             phone=validated_data.get('phone'),
-            age=validated_data.get('age'),
             profile_img=validated_data.get('profile_img'),
             observer=validated_data.get('observer'),
             comment=validated_data.get('comment'),

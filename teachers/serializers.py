@@ -14,14 +14,11 @@ class TeacherGroupStatisticsSerializers(serializers.ModelSerializer):
 class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializer()
     subject = SubjectSerializer()
-    age = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Teacher
-        fields = ['user', 'subject', 'color', 'total_students', 'id', 'age']
+        fields = ['user', 'subject', 'color', 'total_students', 'id']
 
-    def get_age(self, obj):
-        return obj.user.calculate_age()
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
