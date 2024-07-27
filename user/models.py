@@ -9,6 +9,8 @@ from language.models import Language
 from django.conf import settings
 
 
+
+
 class CustomAutoGroup(models.Model):
     group = models.OneToOneField(Group, on_delete=models.CASCADE, related_name='custom_permission')
     salary = models.IntegerField(blank=True, null=True)
