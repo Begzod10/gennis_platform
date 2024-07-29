@@ -2,13 +2,9 @@ from rest_framework import serializers
 
 from subjects.serializers import SubjectSerializer
 from user.serializers import UserSerializer
-from .models import (Teacher, TeacherSalaryList, TeacherSalary, TeacherGroupStatistics, Subject)
-
-
-class TeacherGroupStatisticsSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = TeacherGroupStatistics
-        fields = '__all__'
+from system.models import System
+from system.serializers import SystemSerializers
+from .models import (Teacher, TeacherSalaryList, TeacherSalary, TeacherGroupStatistics, Subject, TeacherAttendance)
 
 
 class TeacherSerializer(serializers.ModelSerializer):
@@ -18,7 +14,6 @@ class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher
         fields = ['user', 'subject', 'color', 'total_students', 'id']
-
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -49,6 +44,36 @@ class TeacherSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class TeacherAttendanceSerializers(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
+    system = serializers.PrimaryKeyRelatedField(queryset=System.objects.all())
+    day = serializers.DateTimeField(required=False)
+    status = serializers.BooleanField(required=False)
+
+    class Meta:
+        model = TeacherAttendance
+        fields = ['id', 'teacher', 'system', 'day', 'status']
+
+
+class TeacherAttendanceListSerializers(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    teacher = TeacherSerializer(required=False)
+    system = SystemSerializers(required=False)
+    day = serializers.DateTimeField(required=False)
+    status = serializers.BooleanField(required=False)
+
+    class Meta:
+        model = TeacherAttendance
+        fields = ['id', 'teacher', 'system', 'day', 'status']
+
+
+class TeacherGroupStatisticsSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = TeacherGroupStatistics
+        fields = '__all__'
 
 
 class TeacherSalarySerializers(serializers.ModelSerializer):
