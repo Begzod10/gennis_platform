@@ -11,7 +11,7 @@ def check_user_permissions(user, table_names):
     user_permissions = user.groups.filter(permissions__content_type__model__in=table_names,
                                           authgroupsystem__system_id=system).values_list('permissions__codename',
                                                                                          flat=True)
-
+    print(user_permissions)
     return {pr: pr in user_permissions for pr in base_permissions}, {
         "system": many_systems,
         "many_branches": many_branches,

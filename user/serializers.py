@@ -1,7 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
 from branch.serializers import BranchSerializer
 from language.serializers import Language
 from language.serializers import LanguageSerializers

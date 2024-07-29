@@ -59,6 +59,36 @@ class CenterBalance(models.Model):
     month_date = models.DateTimeField(auto_now_add=True)
 
 
+class EditorBalance(models.Model):
+    payment_type = models.ForeignKey(PaymentTypes, on_delete=models.CASCADE,
+                                     related_name='editor_balance_payment_type')
+    balance = models.IntegerField(null=True)
+    payment_sum = models.IntegerField(null=True)
+    overhead_sum = models.IntegerField(null=True)
+    date = models.DateTimeField(auto_now_add=True)
+
+
+class BranchPayment(models.Model):
+    branch = models.ForeignKey(Branch, related_name='branch_payment_branch', on_delete=models.CASCADE)
+    book_order = models.ForeignKey(BookOrder, on_delete=models.CASCADE, related_name='branch_payment_book_order')
+    editor_balance = models.ForeignKey(EditorBalance, on_delete=models.CASCADE,
+                                       related_name='branch_payment_editor_balance')
+    payment_type = models.ForeignKey(PaymentTypes, on_delete=models.CASCADE,
+                                     related_name='branch_payment_payment_type')
+    payment_sum = models.IntegerField(null=True)
+
+
+class BookOverhead(models.Model):
+    name = models.CharField(max_length=250)
+    deleted_reason = models.CharField()
+    payment_type = models.ForeignKey(PaymentTypes, on_delete=models.CASCADE,
+                                     related_name='book_overhead_payment_type')
+    price = models.IntegerField(null=True)
+    deleted = models.BooleanField(default=False)
+    editor_balance = models.ForeignKey(EditorBalance, related_name='book_overhead_editor_balance',
+                                       on_delete=models.CASCADE)
+
+
 class CenterOrders(models.Model):
     balance = models.ForeignKey(CenterBalance, on_delete=models.CASCADE, related_name='center_orders_center_balance')
     order = models.ForeignKey(BookOrder, on_delete=models.CASCADE, related_name='center_balance_book_order')
