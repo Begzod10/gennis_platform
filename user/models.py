@@ -9,6 +9,8 @@ from language.models import Language
 from django.conf import settings
 
 
+
+
 class CustomAutoGroup(models.Model):
     group = models.OneToOneField(Group, on_delete=models.CASCADE, related_name='custom_permission')
     salary = models.IntegerField(blank=True, null=True)
@@ -24,10 +26,9 @@ class CustomUser(AbstractUser):
     father_name = models.CharField(max_length=200, blank=True, null=True)
     profile_img = models.ImageField(
         null=True, blank=True, upload_to='profiles/', default="")
-    birth_date = models.DateTimeField(null=True)
+    birth_date = models.DateField(null=True)
     registered_date = models.DateField(auto_now_add=True, )
     phone = models.CharField(max_length=200, blank=True, null=True)
-    age = models.CharField(max_length=200, blank=True, null=True)
     comment = models.CharField(max_length=200, blank=True, null=True)
     observer = models.BooleanField(default=False, null=True)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True)

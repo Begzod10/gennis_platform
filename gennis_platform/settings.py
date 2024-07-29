@@ -67,7 +67,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'tasks.apps.TasksConfig',
     'flows.apps.FlowsConfig',
-    'lesson_plan.apps.LessonPlanConfig'
+    'lesson_plan.apps.LessonPlanConfig',
+    'Calendar.apps.CalendarConfig'
 ]
 
 MIDDLEWARE = ['corsheaders.middleware.CorsMiddleware', 'django.middleware.security.SecurityMiddleware',

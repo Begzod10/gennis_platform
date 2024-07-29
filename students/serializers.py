@@ -6,36 +6,37 @@ from subjects.serializers import SubjectSerializer
 from teachers.models import TeacherGroupStatistics,TeacherBlackSalary
 from user.serializers import UserSerializer
 from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent, DeletedNewStudent)
-
-
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-    subject = SubjectSerializer()
+    subject = SubjectSerializer(many=True)
     parents_number = serializers.CharField()
     shift = serializers.CharField()
-    age = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Student
-        fields = ['id', 'user', 'subject', 'parents_number', 'shift', 'age']
-
-    def get_age(self, obj):
-        return obj.user.calculate_age()
+        fields = ['id', 'user', 'subject', 'parents_number', 'shift']
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
         subject_data = validated_data.pop('subject')
 
-        subject = Subject.objects.get(name=subject_data['name'])
         user_serializer = UserSerializer(data=user_data)
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
 
-        student = Student.objects.create(user=user, subject=subject, **validated_data)
+        subjects = []
+        for subj_data in subject_data:
+            subject, created = Subject.objects.get_or_create(**subj_data)
+            subjects.append(subject)
+
+        student = Student.objects.create(user=user, parents_number=validated_data.get('parents_number'), shift=validated_data.get('shift'))
+        student.subject.set(subjects)
         return student
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', None)
+        subject_data = validated_data.pop('subject', None)
+
         if user_data:
             user = instance.user
             for attr, value in user_data.items():
@@ -45,6 +46,14 @@ class StudentSerializer(serializers.ModelSerializer):
                     setattr(user, attr, value)
             user.save()
 
+        if subject_data:
+            subjects = []
+            for subj_data in subject_data:
+                subject, created = Subject.objects.get_or_create(**subj_data)
+                subjects.append(subject)
+            instance.subject.set(subjects)
+
+        # Update other fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
