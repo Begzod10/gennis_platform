@@ -4,7 +4,7 @@ import time
 
 from branch.models import Branch
 from rooms.models import Room
-from .models import WeekDays, GroupTimeTable
+from .models import WeekDays, GroupTimeTable, TimeTableArchive
 from group.models import Group
 from group.serializers import GroupSerializer
 from rooms.serializers import RoomCreateSerializer
@@ -18,6 +18,20 @@ class WeekDaysSerializer(serializers.ModelSerializer):
     class Meta:
         model = WeekDays
         fields = ['id', 'name']
+
+
+class TimeTableArchiveListSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(max_length=100, required=True)
+    group = GroupSerializer()
+    week = WeekDaysSerializer()
+    room = RoomCreateSerializer()
+    start_time = serializers.TimeField()
+    end_time = serializers.TimeField()
+    date = serializers.DateTimeField(required=False)
+
+    class Meta:
+        model = TimeTableArchive
+        fields = ['id', 'end_time', 'group', 'week', 'room', 'start_time', 'date']
 
 
 class GroupTimeTableSerializer(serializers.ModelSerializer):

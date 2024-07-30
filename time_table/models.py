@@ -1,7 +1,5 @@
 from django.db import models
-
 from branch.models import Branch
-# Create your models here.
 from group.models import Group
 from rooms.models import Room
 from students.models import Student
@@ -28,7 +26,7 @@ class TimeTableArchive(models.Model):
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
     start_time = models.TimeField()
     end_time = models.TimeField()
-    date = models.DateTimeField()
+    date = models.DateTimeField(auto_now_add=True)
 
 
 class StudentTimTableArchive(models.Model):

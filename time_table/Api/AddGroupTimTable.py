@@ -10,7 +10,7 @@ from time_table.models import GroupTimeTable
 from time_table.serializers import GroupTimeTableSerializer
 from time_table.functions.creatWeekDays import creat_week_days
 from time_table.functions.checkTime import check_time
-
+from time_table.functions.time_table_archive import creat_time_table_archive
 
 class GroupTimeTableList(APIView):
 
@@ -19,6 +19,8 @@ class GroupTimeTableList(APIView):
         data = json.loads(request.body)
         result = check_time(group_id, data['week']['id'], data['room']['id'], data['branch']['id'],
                             data['start_time'], data['end_time'])
+        creat_time_table_archive(group_id, data['week']['id'], data['room']['id'],
+                   data['start_time'], data['end_time'])
         if result == True:
             serializer = GroupTimeTableSerializer(data=data)
             serializer.is_valid(raise_exception=True)
