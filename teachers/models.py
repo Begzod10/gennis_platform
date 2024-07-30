@@ -6,6 +6,11 @@ from payments.models import PaymentTypes
 from subjects.models import Subject
 
 
+class TeacherSalaryType(models.Model):
+    name = models.CharField()
+    salary = models.IntegerField()
+
+
 class Teacher(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='teacher_user')
     subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True)
@@ -13,6 +18,7 @@ class Teacher(models.Model):
     total_students = models.IntegerField()
     premium_rate = models.IntegerField(null=True)
     class_type = models.IntegerField(null=True)
+    teacher_salary_type = models.ForeignKey(TeacherSalaryType, on_delete=models.SET_NULL, null=True)
 
 
 class TeacherSalary(models.Model):
@@ -22,7 +28,10 @@ class TeacherSalary(models.Model):
     remaining_salary = models.BigIntegerField(blank=True, null=True)
     taken_salary = models.BigIntegerField(blank=True, null=True)
     total_black_salary = models.BigIntegerField(blank=True, null=True)
+    percentage = models.IntegerField(default=50)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='branch_id_salary')
+    teacher_salary_type = models.ForeignKey(TeacherSalaryType, on_delete=models.SET_NULL, null=True)
+    worked_days = models.IntegerField(null=True)
 
     class Meta:
         ordering = ['id']

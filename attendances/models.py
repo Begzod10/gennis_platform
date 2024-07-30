@@ -17,6 +17,7 @@ class AttendancePerMonth(models.Model):
     total_charity = models.IntegerField(default=0)
     remaining_debt = models.IntegerField(default=0)
     payment = models.IntegerField(default=0)
+    system = models.ForeignKey('system.System', on_delete=models.CASCADE, null=True)
     # remaining_salary = models.IntegerField(default=0)
     # taken_salary = models.IntegerField(default=0)
 

@@ -1,6 +1,8 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from .models import TeacherGroupStatistics, Teacher, TeacherSalaryList, TeacherSalary
+from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
+
 from .serializers import (
     TeacherSerializer, TeacherSalaryListSerializers, TeacherGroupStatisticsSerializers, TeacherSalarySerializers
 )
@@ -28,6 +30,13 @@ class TeacherListCreateView(generics.ListCreateAPIView):
 class TeacherRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializer
+
+    def get_object(self):
+        pk = self.kwargs.get('pk')
+        obj = self.get_queryset().filter(pk=pk).first()
+        # self.check_object_permissions(self.request, obj)
+        calculate_teacher_salary(obj)
+        return super().get_object()
 
 
 class TeacherSalaryListCreateAPIView(generics.ListCreateAPIView):
