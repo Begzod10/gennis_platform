@@ -22,7 +22,7 @@ class RoomGetSerializer(serializers.ModelSerializer):
 
 
 class RoomImagesGetSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField()
+    image = serializers.CharField()
     room = RoomGetSerializer(read_only=True)
 
     class Meta:
