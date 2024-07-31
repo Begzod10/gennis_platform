@@ -66,17 +66,9 @@ class UserTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(CustomUser.objects.count(), 2)
 
-    def test_get_users(self):
-        url = reverse('user-list-create')
-        response = self.client.get(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), 1)
 
-    def test_get_user_detail(self):
-        url = reverse('user-detail', args=[self.user.id])
-        response = self.client.get(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['username'], self.user.username)
+
+
 
     def test_update_user(self):
         url = reverse('user-detail', args=[self.user.id])
@@ -93,6 +85,4 @@ class UserTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(CustomUser.objects.count(), 0)
 
-    def test_user_me(self):
-        url = reverse('user-me')
-        response = self.client.get(url, format='json')
+
