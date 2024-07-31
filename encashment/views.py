@@ -7,7 +7,7 @@ from books.serializers import BranchPaymentListSerializers
 from capital.models import Capital
 from capital.serializers import CapitalSerializers
 from overhead.models import Overhead
-from overhead.serializers import OverheadSerializer
+from overhead.serializers import OverheadSerializerGet
 from students.models import StudentPayment
 from students.serializers import StudentPaymentSerializer
 from teachers.models import TeacherSalaryList

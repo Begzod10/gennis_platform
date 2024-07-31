@@ -70,8 +70,11 @@ class RoomImagesListView(generics.ListAPIView):
 
 
 class RoomImagesRetrieveView(generics.RetrieveAPIView):
-    queryset = RoomImages.objects.all()
-    serializer_class = RoomGetSerializer
+    serializer_class = RoomImagesGetSerializer
+
+    def get_queryset(self):
+        room_id = self.kwargs.get('room_id')
+        return RoomImages.objects.filter(room_id=room_id)
 
     def retrieve(self, request, *args, **kwargs):
         user, auth_error = check_auth(request)
