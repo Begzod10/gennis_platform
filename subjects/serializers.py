@@ -9,8 +9,7 @@ class SubjectSerializer(serializers.ModelSerializer):
         model = Subject
         fields = ['id', 'name', 'ball_number']
 
-    def create(self, validated_data):
-        return Subject.objects.create(**validated_data)
+
 
 
 class SubjectLevelSerializer(serializers.ModelSerializer):
@@ -18,7 +17,6 @@ class SubjectLevelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SubjectLevel
-        fields = ['id', 'name', 'subject']
+        fields = '__all__'
 
-    def create(self, validated_data):
-        return SubjectLevel.objects.create(**validated_data)
+
