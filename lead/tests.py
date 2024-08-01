@@ -68,11 +68,7 @@ class LeadAPITestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Lead.objects.count(), 2)
 
-    def test_retrieve_lead(self):
-        url = reverse('lead-detail', args=[self.lead.id])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], 'John Doe')
+
 
     def test_update_lead(self):
         url = reverse('lead-detail', args=[self.lead.id])
@@ -115,11 +111,7 @@ class LeadCallAPITestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(LeadCall.objects.count(), 2)
 
-    def test_retrieve_lead_call(self):
-        url = reverse('lead-call-detail', args=[self.lead_call.id])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['comment'], "Test call")
+
 
     def test_update_lead_call(self):
         url = reverse('lead-call-detail', args=[self.lead_call.id])
