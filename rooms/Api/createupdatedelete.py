@@ -34,12 +34,12 @@ class RoomImagesCreateView(generics.CreateAPIView):
 
 class RoomImagesUpdateView(generics.UpdateAPIView):
     queryset = RoomImages.objects.all()
-    serializer_class = RoomCreateSerializer
+    serializer_class = RoomImagesCreateSerializer
 
 
 class RoomImagesDestroyView(generics.DestroyAPIView):
     queryset = RoomImages.objects.all()
-    serializer_class = RoomCreateSerializer
+    serializer_class = RoomImagesCreateSerializer
 
 
 class RoomSubjectCreateView(generics.CreateAPIView):

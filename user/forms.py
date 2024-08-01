@@ -16,11 +16,9 @@ class CustomUserCreationForm(UserCreationForm):
         super(CustomUserCreationForm, self).__init__(*args, **kwargs)
 
         for name, field in self.fields.items():
-<<<<<<< HEAD
             field.widget.attrs.update({'class_': 'input'})
-=======
             field.widget.attrs.update({'classes': 'input'})
->>>>>>> b4b11918a705370cf37a517f0de3866046970eff
+
 
 
 class ProfileForm(ModelForm):
@@ -33,8 +31,5 @@ class ProfileForm(ModelForm):
         super(ProfileForm, self).__init__(*args, **kwargs)
 
         for name, field in self.fields.items():
-<<<<<<< HEAD
             field.widget.attrs.update({'class_': 'input'})
-=======
             field.widget.attrs.update({'classes': 'input'})
->>>>>>> b4b11918a705370cf37a517f0de3866046970eff
