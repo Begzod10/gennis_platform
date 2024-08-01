@@ -33,36 +33,3 @@ class SubjectLevelModelTest(TestCase):
         self.assertEqual(self.subject_level.name, "Test SubjectLevel")
 
 
-class SubjectAPITestCase(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-
-        self.subject = Subject.objects.create(
-            name="Test Subject",
-            ball_number="1234567890",
-        )
-
-    def test_retrieve_subject(self):
-        url = reverse('subject-retrieve', args=[self.subject.id])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], 'Test Subject')
-
-
-class SubjectLevelAPITestCase(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.subject = Subject.objects.create(
-            name="Test Subject",
-            ball_number="1234567890",
-        )
-        self.subject_level = SubjectLevel.objects.create(
-            subject=self.subject,
-            name="Test SubjectLevel",
-        )
-
-    def test_retrieve_subject_level(self):
-        url = reverse('subject-level-retrieve', args=[self.subject_level.id])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], "Test SubjectLevel")

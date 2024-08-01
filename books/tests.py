@@ -141,9 +141,9 @@ class BookOrderTests(APITestCase):
         self.subject = Subject.objects.create(name='Mathematics', ball_number=1)
         self.student = Student.objects.create(
             user=self.user,
-            subject=self.subject,
             shift='1'
         )
+        self.student.subject.set([self.subject])
         self.teacher = Teacher.objects.create(
             user=self.user,
             subject=self.subject,
