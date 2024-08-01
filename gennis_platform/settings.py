@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-8!t!6$g#(34ro((m-7t$#(zek1=b=y2ltslop@w71$^6)wb_rc'
 
-SECRET_KEY = 'django-insecure-ic2opu2tndxc7=#h6l!u!o_0o8-olxsk6#@o8be165!6&j!o!j'
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -165,4 +165,3 @@ MEDIA_ROOT = BASE_DIR / 'media/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True
