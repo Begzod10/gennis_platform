@@ -35,10 +35,11 @@ class OverheadAPITest(APITestCase):
         update_payload = {
             'name': 'Office Rent Updated',
             'created': '2024-07-18T10:00:00Z',
-            'payment': self.payment_type.pk,  # Assuming you need the PK, not the name
+            'payment_id': self.payment_type.pk,
             'price': 20000
         }
         response = self.client.put(self.detail_url, update_payload, format='json')
+        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], update_payload['name'])
 

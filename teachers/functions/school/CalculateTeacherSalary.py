@@ -3,6 +3,7 @@ from Calendar.models import Years, Month, Day
 from teachers.models import TeacherSalary, TeacherSalaryType
 from django.db.models import Q
 
+
 def calculate_teacher_salary(teacher):
     today = datetime.now()
     working_days = Day.objects.filter(year__year=today.year, month__month_number=today.month).count()

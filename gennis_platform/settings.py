@@ -23,8 +23,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-8!t!6$g#(34ro((m-7t$#(zek1=b=y2ltslop@w71$^6)wb_rc'
 
-SECRET_KEY = 'django-insecure-ic2opu2tndxc7=#h6l!u!o_0o8-olxsk6#@o8be165!6&j!o!j'
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -33,50 +31,29 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'user.apps.UserConfig',
-    'system.apps.SystemConfig',
-    'location.apps.LocationConfig',
-    'branch.apps.BranchConfig',
-    'permissions.apps.PermissionsConfig',
-    'language.apps.LanguageConfig',
-    'group.apps.GroupConfig',
-    'payments.apps.PaymentsConfig',
-    'students.apps.StudentsConfig',
-    'subjects.apps.SubjectsConfig',
-    'teachers.apps.TeachersConfig',
-    'rooms.apps.RoomsConfig',
-    'capital.apps.CapitalConfig',
-    'overhead.apps.OverheadConfig',
-    'attendances.apps.AttendancesConfig',
-    'time_table.apps.TimeTableConfig',
-    'lead.apps.LeadConfig',
-    'classes.apps.ClassesConfig',
-    'books.apps.BooksConfig',
-    'observation.apps.ObservationConfig',
-    'school_time_table.apps.SchoolTimeTableConfig',
-    'drf_yasg',
-    'djoser',
-    'django_cron',
-    'corsheaders',
-    'tasks.apps.TasksConfig',
-    'flows.apps.FlowsConfig',
-    'lesson_plan.apps.LessonPlanConfig',
-    'Calendar.apps.CalendarConfig',
-    'encashment.apps.EncashmentConfig'
+INSTALLED_APPS = ['django.contrib.admin', 'django.contrib.auth', 'django.contrib.contenttypes',
+    'django.contrib.sessions', 'django.contrib.messages', 'django.contrib.staticfiles', 'user.apps.UserConfig',
+    'system.apps.SystemConfig', 'location.apps.LocationConfig', 'branch.apps.BranchConfig',
+    'permissions.apps.PermissionsConfig', 'language.apps.LanguageConfig', 'group.apps.GroupConfig',
+    'payments.apps.PaymentsConfig', 'students.apps.StudentsConfig', 'subjects.apps.SubjectsConfig',
+    'teachers.apps.TeachersConfig', 'rooms.apps.RoomsConfig', 'capital.apps.CapitalConfig',
+    'overhead.apps.OverheadConfig', 'attendances.apps.AttendancesConfig', 'time_table.apps.TimeTableConfig',
+    'lead.apps.LeadConfig', 'classes.apps.ClassesConfig', 'books.apps.BooksConfig',
+    'observation.apps.ObservationConfig', 'school_time_table.apps.SchoolTimeTableConfig', 'drf_yasg', 'djoser',
+    'django_cron', 'corsheaders', 'tasks.apps.TasksConfig', 'flows.apps.FlowsConfig',
+    'lesson_plan.apps.LessonPlanConfig', 'Calendar.apps.CalendarConfig', 'encashment.apps.EncashmentConfig']
+
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-MIDDLEWARE = ['corsheaders.middleware.CorsMiddleware', 'django.middleware.security.SecurityMiddleware',
-              'django.contrib.sessions.middleware.SessionMiddleware', 'django.middleware.common.CommonMiddleware',
-              'django.middleware.csrf.CsrfViewMiddleware', 'django.contrib.auth.middleware.AuthenticationMiddleware',
-              'django.contrib.messages.middleware.MessageMiddleware',
-              'django.middleware.clickjacking.XFrameOptionsMiddleware', ]
 
 ROOT_URLCONF = 'gennis_platform.urls'
 
@@ -112,7 +89,7 @@ AUTH_PASSWORD_VALIDATORS = [{'NAME': 'django.contrib.auth.password_validation.Us
 REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination', 'PAGE_SIZE': 2,
 
                   'DEFAULT_RENDERER_CLASS   ES': ['rest_framework.renderers.JSONRenderer',
-                                               'rest_framework.renderers.BrowsableAPIRenderer', ],
+                                                  'rest_framework.renderers.BrowsableAPIRenderer', ],
 
                   'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny', ],
 
@@ -153,8 +130,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
-
-
 
 STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_ROOT = BASE_DIR / 'media/'
