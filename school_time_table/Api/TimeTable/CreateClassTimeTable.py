@@ -10,7 +10,6 @@ from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTable
 from group.serializers import GroupSerializer
 
 
-
 class CreateClassTimeTable(generics.ListCreateAPIView):
     queryset = ClassTimeTable
     serializer_class = ClassTimeTableCreateUpdateSerializers

@@ -2,9 +2,8 @@ from group.models import Group
 from rooms.models import Room
 
 
-def check_time(group_id, week_id, room_id, branch_id, start_time, end_time):
+def check_time(group, week_id, room, start_time, end_time):
     status = True
-    group = Group.objects.get(pk=group_id)
     students = group.students.filter(group__grouptimetable__start_time__gte=start_time,
                                      group__grouptimetable__end_time=end_time,
                                      group__grouptimetable__week=week_id)
@@ -22,12 +21,10 @@ def check_time(group_id, week_id, room_id, branch_id, start_time, end_time):
     if teacher:
         status = False
         msg.append({'msg': 'bu voxtda teacherda dars mavjud'})
-    room = Room.objects.get(pk=room_id)
     if room.grouptimetable_set.all():
-
         room_time_table = room.grouptimetable_set.filter(week__grouptimetable=week_id,
-                                                      start_time__gte=start_time,
-                                                      end_time__lte=end_time)
+                                                         start_time__gte=start_time,
+                                                         end_time__lte=end_time)
         if room_time_table:
             status = False
             msg.append({'msg': 'bu voxtda roomda dars mavjud'})

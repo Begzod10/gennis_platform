@@ -25,7 +25,7 @@ from .functions.checkStudentRoomTeacher import check_student_room_teacher
 class HoursSerializers(serializers.ModelSerializer):
     class Meta:
         model = Hours
-        fields = ['start_time', 'end_time', 'name', 'order']
+        fields = ['id', 'start_time', 'end_time', 'name', 'order']
 
 
 class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):

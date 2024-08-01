@@ -23,8 +23,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-8!t!6$g#(34ro((m-7t$#(zek1=b=y2ltslop@w71$^6)wb_rc'
 
-
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -60,11 +58,11 @@ INSTALLED_APPS = [
     'classes.apps.ClassesConfig',
     'books.apps.BooksConfig',
     'observation.apps.ObservationConfig',
+    'corsheaders',
     'school_time_table.apps.SchoolTimeTableConfig',
     'drf_yasg',
     'djoser',
     'django_cron',
-    'corsheaders',
     'tasks.apps.TasksConfig',
     'flows.apps.FlowsConfig',
     'lesson_plan.apps.LessonPlanConfig',
@@ -109,10 +107,10 @@ AUTH_PASSWORD_VALIDATORS = [{'NAME': 'django.contrib.auth.password_validation.Us
                             {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
                             {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', }, ]
 
-REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination', 'PAGE_SIZE': 2,
+REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination', 'PAGE_SIZE': 50,
 
                   'DEFAULT_RENDERER_CLASS   ES': ['rest_framework.renderers.JSONRenderer',
-                                               'rest_framework.renderers.BrowsableAPIRenderer', ],
+                                                  'rest_framework.renderers.BrowsableAPIRenderer', ],
 
                   'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny', ],
 
@@ -154,8 +152,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 
-
-
 STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_ROOT = BASE_DIR / 'media/'
 
@@ -163,5 +159,5 @@ MEDIA_ROOT = BASE_DIR / 'media/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
