@@ -58,11 +58,11 @@ INSTALLED_APPS = [
     'classes.apps.ClassesConfig',
     'books.apps.BooksConfig',
     'observation.apps.ObservationConfig',
+    'corsheaders',
     'school_time_table.apps.SchoolTimeTableConfig',
     'drf_yasg',
     'djoser',
     'django_cron',
-    'corsheaders',
     'tasks.apps.TasksConfig',
     'flows.apps.FlowsConfig',
     'lesson_plan.apps.LessonPlanConfig',
@@ -113,7 +113,7 @@ AUTH_PASSWORD_VALIDATORS = [{'NAME': 'django.contrib.auth.password_validation.Us
                             {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
                             {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', }, ]
 
-REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination', 'PAGE_SIZE': 2,
+REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination', 'PAGE_SIZE': 50,
 
                   'DEFAULT_RENDERER_CLASS   ES': ['rest_framework.renderers.JSONRenderer',
                                                   'rest_framework.renderers.BrowsableAPIRenderer', ],

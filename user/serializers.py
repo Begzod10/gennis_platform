@@ -132,3 +132,5 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['admin'] = user_data.get('is_staff', False)
 
         return data
+
+
