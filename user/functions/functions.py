@@ -1,7 +1,7 @@
 import jwt
 
 from gennis_platform import settings
-from user.serializers import UserSerializer, CustomUser
+from user.serializers import UserSerializerRead, CustomUser
 
 
 def check_auth(request):

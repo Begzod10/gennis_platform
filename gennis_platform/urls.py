@@ -17,7 +17,7 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path
-
+from schema_graph.views import Schema
 
 from django.conf import settings
 from django.conf.urls.static import static
@@ -25,7 +25,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 from .swagger import urlpatterns as doc_urls
-from user.views import CustomTokenObtainPairView
+from user.Api.write import CustomTokenObtainPairView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -47,7 +47,7 @@ urlpatterns = [
     path('Lead/', include('lead.urls')),
     path('Books/', include('books.urls')),
     path('Permissions/', include('permissions.urls')),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('Api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('Lead/', include('lead.urls')),
     path('Books/', include('books.urls')),
     path('Attendance/', include('attendances.urls')),
@@ -59,11 +59,11 @@ urlpatterns = [
     path('SchoolTimeTable/', include('school_time_table.urls')),
     path('Calendar/', include('Calendar.urls')),
     path('Encashment/', include('encashment.urls')),
-    path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path("schema/", Schema.as_view()),
+    path('Api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('Api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('Api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 ]
 urlpatterns += doc_urls
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-

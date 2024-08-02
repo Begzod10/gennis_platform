@@ -9,14 +9,17 @@ from system.models import System
 class LocationAPITestCase(APITestCase):
 
     def setUp(self):
-        self.system = System.objects.create(name='Test System',number=1)
+        self.system = System.objects.create(name='Test System', number=1)
         self.location = Location.objects.create(
             name='Test Location',
             number=1,
             system=self.system
         )
-        self.list_url = reverse('location-list-create')
-        self.detail_url = reverse('location-detail', kwargs={'pk': self.location.pk})
+        self.list_url = reverse('location-list')
+        self.create_url = reverse('location-create')
+        self.delete_url = reverse('location-delete', kwargs={'pk': self.location.pk})
+        self.update_url = reverse('location-update', kwargs={'pk': self.location.pk})
+        self.get_url = reverse('location', kwargs={'pk': self.location.pk})
 
     def test_create_location(self):
         location_data = {
@@ -27,7 +30,7 @@ class LocationAPITestCase(APITestCase):
                 'number': self.system.number
             }
         }
-        response = self.client.post(self.list_url, location_data, format='json')
+        response = self.client.post(self.create_url, location_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_list_locations(self):
@@ -36,7 +39,7 @@ class LocationAPITestCase(APITestCase):
         self.assertEqual(len(response.data['results']), 1)
 
     def test_retrieve_location(self):
-        response = self.client.get(self.detail_url)
+        response = self.client.get(self.get_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], self.location.name)
 
@@ -49,12 +52,12 @@ class LocationAPITestCase(APITestCase):
                 'number': self.system.number
             }
         }
-        response = self.client.put(self.detail_url, data, format='json')
+        response = self.client.put(self.update_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.location.refresh_from_db()
         self.assertEqual(self.location.name, 'Updated Location')
 
     def test_delete_location(self):
-        response = self.client.delete(self.detail_url)
+        response = self.client.delete(self.delete_url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Location.objects.count(), 0)

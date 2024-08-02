@@ -22,7 +22,9 @@ class BranchTests(APITestCase):
             number=2,
             location=self.location
         )
-        self.create_url = reverse('branch-list-create')
+        self.list_url = reverse('branch-list')
+        self.create_url = reverse('branch-create')
+        self.delete_url = reverse('branch-delete', kwargs={'pk': self.location.pk})
 
     def test_create_branch(self):
         self.branch_data = {
@@ -45,18 +47,18 @@ class BranchTests(APITestCase):
         self.assertEqual(Branch.objects.get(id=response.data['id']).name, self.branch_data['name'])
 
     def test_list_branches(self):
-        response = self.client.get(self.create_url, format='json')
+        response = self.client.get(self.list_url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
 
     def test_retrieve_branch(self):
-        url = reverse('branch-detail', kwargs={'pk': self.branch.id})
+        url = reverse('branch', kwargs={'pk': self.branch.id})
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], self.branch.name)
 
     def test_update_branch(self):
-        url = reverse('branch-detail', kwargs={'pk': self.branch.id})
+        url = reverse('branch-update', kwargs={'pk': self.branch.id})
         updated_data = {
             'name': 'Updated Branch',
             'number': '3',
@@ -76,7 +78,7 @@ class BranchTests(APITestCase):
         self.assertEqual(self.branch.name, updated_data['name'])
 
     def test_delete_branch(self):
-        url = reverse('branch-detail', kwargs={'pk': self.branch.id})
+        url = reverse('branch-delete', kwargs={'pk': self.branch.id})
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Branch.objects.count(), 0)

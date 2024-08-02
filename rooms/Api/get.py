@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from permissions.functions.CheckUserPermissions import check_user_permissions
 from rooms.models import Room, RoomImages, RoomSubject
 from rooms.serializers import RoomGetSerializer, RoomImagesGetSerializer, RoomSubjectGetSerializer
-from time_table.serializers import GroupTimeTable, GroupTimeTableSerializer
+from time_table.serializers import GroupTimeTable, GroupTimeTableReadSerializer
 from user.functions.functions import check_auth
 
 
@@ -31,7 +31,7 @@ class RoomRetrieveView(generics.RetrieveAPIView):
 
     def get_group_time_tables(self, room_id):
         time_tables = GroupTimeTable.objects.filter(room_id=room_id)
-        serializer = GroupTimeTableSerializer(time_tables, many=True)
+        serializer = GroupTimeTableReadSerializer(time_tables, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
@@ -70,21 +70,21 @@ class RoomImagesListView(generics.ListAPIView):
 
 
 class RoomImagesRetrieveView(generics.RetrieveAPIView):
+    queryset = RoomImages.objects.all()
     serializer_class = RoomImagesGetSerializer
 
-    def get_queryset(self):
-        room_id = self.kwargs.get('room_id')
-        return RoomImages.objects.filter(room_id=room_id)
-
-    def retrieve(self, request, *args, **kwargs):
+    def retrieve(self, request, pk, *args, **kwargs):
         user, auth_error = check_auth(request)
         if auth_error:
             return Response(auth_error)
 
         table_names = ['roomimages', 'room']
         permissions = check_user_permissions(user, table_names)
-        room_images = self.get_object()
-        room_images_data = self.get_serializer(room_images).data
+
+        room_images = RoomImages.objects.filter(room_id=pk)
+
+        room_images_data = self.get_serializer(room_images, many=True).data
+
         return Response({'roomimages': room_images_data, 'permissions': permissions})
 
 

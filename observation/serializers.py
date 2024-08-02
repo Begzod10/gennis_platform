@@ -5,7 +5,7 @@ from group.serializers import GroupSerializer
 from teachers.models import Teacher
 from teachers.serializers import TeacherSerializer
 from user.models import CustomUser
-from user.serializers import UserSerializer
+from user.serializers import UserSerializerRead
 from .models import ObservationStatistics, ObservationDay, ObservationOptions, ObservationInfo
 
 
@@ -52,7 +52,7 @@ class ObservationDayListSerializers(serializers.ModelSerializer):
     day = serializers.CharField(required=False)
     comment = serializers.CharField(required=False)
     average = serializers.IntegerField(required=False)
-    user = UserSerializer(required=False)
+    user = UserSerializerRead(required=False)
     group = GroupSerializer(required=False)
     teacher = TeacherSerializer(required=False)
 

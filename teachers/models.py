@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-
+from system.models import System
 from branch.models import Branch
 from payments.models import PaymentTypes
 from subjects.models import Subject
@@ -19,6 +19,17 @@ class Teacher(models.Model):
     premium_rate = models.IntegerField(null=True)
     class_type = models.IntegerField(null=True)
     teacher_salary_type = models.ForeignKey(TeacherSalaryType, on_delete=models.SET_NULL, null=True)
+
+
+class TeacherAttendance(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True,
+                                related_name='teacher_attendance_teacher')
+    day = models.DateTimeField(null=True)
+    status = models.BooleanField(null=True)
+    system = models.ForeignKey(System, on_delete=models.SET_NULL, null=True, related_name='teacher_attendance_system')
+
+    class Meta:
+        ordering = ['id']
 
 
 class TeacherSalary(models.Model):

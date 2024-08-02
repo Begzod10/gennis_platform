@@ -5,7 +5,7 @@ from permissions.models import Access, ManyBranch, ManyLocation, ManySystem
 from system.models import System
 from system.serializers import SystemSerializers
 from location.serializers import LocationSerializers
-from user.serializers import UserSerializer
+from user.serializers import UserSerializerRead
 from django.contrib.auth.models import Permission
 from user.models import CustomUser
 from location.models import Location
@@ -36,7 +36,7 @@ class AuthGroupSystemSerializer(serializers.ModelSerializer):
 class AccessSerializer(serializers.ModelSerializer):
     group = GroupSerializer(read_only=True)
     system = SystemSerializers(read_only=True)
-    User = UserSerializer(read_only=True)
+    User = UserSerializerRead(read_only=True)
 
     class Meta:
         model = Access
