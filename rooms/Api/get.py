@@ -70,6 +70,7 @@ class RoomImagesListView(generics.ListAPIView):
 
 
 class RoomImagesRetrieveView(generics.RetrieveAPIView):
+    queryset = RoomImages.objects.all()
     serializer_class = RoomImagesGetSerializer
 
     def retrieve(self, request, pk, *args, **kwargs):

@@ -5,14 +5,14 @@ from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from subjects.serializers import SubjectSerializer
 from system.models import System
 from system.serializers import SystemSerializers
-from .models import (Teacher, TeacherSalaryList, TeacherSalary, TeacherGroupStatistics, Subject, TeacherAttendance)
-from user.serializers import UserSerializerWrite, UserSerializerRead
+from user.serializers import UserSerializerWrite, UserSerializerRead,Language
 from .models import (Teacher, TeacherSalaryList, TeacherSalary, TeacherGroupStatistics, Subject, TeacherSalaryType)
+from .models import (TeacherAttendance)
 
 
 class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializerWrite()
-    subject = SubjectSerializer()
+    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())
 
     class Meta:
         model = Teacher
@@ -20,16 +20,15 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
-
-        subject_data = validated_data.pop('subject')
-
-        subject = Subject.objects.get(name=subject_data['name'])
+        if isinstance(user_data.get('language'), Language):
+            user_data['language'] = user_data['language'].id
+        if isinstance(user_data.get('branch'), Branch):
+            user_data['branch'] = user_data['branch'].id
 
         user_serializer = UserSerializerWrite(data=user_data)
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
-
-        teacher = Teacher.objects.create(user=user, **validated_data, subject=subject)
+        teacher = Teacher.objects.create(user=user, **validated_data)
         return teacher
 
     def update(self, instance, validated_data):
