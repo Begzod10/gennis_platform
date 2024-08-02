@@ -18,7 +18,7 @@ from .serializers import (StudentSerializer,
 from .utils import user_contract_folder
 
 
-class StudentListCreateView(APIView):
+class StudentListView(APIView):
     def get(self, request, *args, **kwargs):
         deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
@@ -38,12 +38,6 @@ class StudentListCreateView(APIView):
 
         return Response(data)
 
-    def post(self, request, *args, **kwargs):
-        student_serializer = StudentSerializer(data=request.data)
-        if student_serializer.is_valid():
-            student_serializer.save()
-            return Response(student_serializer.data, status=201)
-        return Response(student_serializer.errors, status=400)
 
 
 class CreateContractView(APIView):

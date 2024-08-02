@@ -1,23 +1,23 @@
 from rest_framework import generics
-from branch.serializers import BranchSerializer
-from branch.models import Branch
+from students.serializers import DeletedStudentSerializer, StudentPaymentSerializer, StudentCharitySerializer, \
+    StudentHistoryGroupsSerializer, StudentSerializer
+from students.models import DeletedStudent, StudentPayment, StudentCharity, StudentHistoryGroups, DeletedNewStudent, \
+    Student
+from rest_framework.response import Response
+from rest_framework import status
 
 
-class BranchCreateView(generics.CreateAPIView):
-    queryset = Branch.objects.all()
-    serializer_class = BranchSerializer
+class StudentCreateView(generics.CreateAPIView):
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer
 
 
-class BranchUpdateView(generics.UpdateAPIView):
-    queryset = Branch.objects.all()
-    serializer_class = BranchSerializer
+class StudentUpdateView(generics.UpdateAPIView):
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer
 
 
-class BranchDestroyView(generics.DestroyAPIView):
-    queryset = Branch.objects.all()
-    serializer_class = BranchSerializer
-
-class StudentRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+class StudentDestroyView(generics.DestroyAPIView):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
 
@@ -27,17 +27,47 @@ class StudentRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         return Response({"detail": "Student was deleted successfully"}, status=status.HTTP_200_OK)
 
 
-class StudentHistoryGroupsRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+class StudentHistoryGroupsCreateView(generics.CreateAPIView):
     queryset = StudentHistoryGroups.objects.all()
     serializer_class = StudentHistoryGroupsSerializer
 
 
-class StudentCharityRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+class StudentHistoryGroupsUpdateView(generics.UpdateAPIView):
+    queryset = StudentHistoryGroups.objects.all()
+    serializer_class = StudentHistoryGroupsSerializer
+
+
+class StudentHistoryGroupsDestroyView(generics.DestroyAPIView):
+    queryset = StudentHistoryGroups.objects.all()
+    serializer_class = StudentHistoryGroupsSerializer
+
+
+class StudentCharityCreateView(generics.CreateAPIView):
     queryset = StudentCharity.objects.all()
     serializer_class = StudentCharitySerializer
 
 
-class StudentPaymentRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+class StudentCharityUpdateView(generics.UpdateAPIView):
+    queryset = StudentCharity.objects.all()
+    serializer_class = StudentCharitySerializer
+
+
+class StudentCharityDestroyView(generics.DestroyAPIView):
+    queryset = StudentCharity.objects.all()
+    serializer_class = StudentCharitySerializer
+
+
+class StudentPaymentCreateView(generics.CreateAPIView):
+    queryset = StudentPayment.objects.all()
+    serializer_class = StudentPaymentSerializer
+
+
+class StudentPaymentUpdateView(generics.UpdateAPIView):
+    queryset = StudentPayment.objects.all()
+    serializer_class = StudentPaymentSerializer
+
+
+class StudentPaymentDestroyView(generics.DestroyAPIView):
     queryset = StudentPayment.objects.all()
     serializer_class = StudentPaymentSerializer
 

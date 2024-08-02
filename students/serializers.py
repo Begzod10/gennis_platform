@@ -11,10 +11,11 @@ from group.models import Group, GroupReason
 from branch.models import Branch
 from payments.models import PaymentTypes
 from payments.serializers import PaymentTypesSerializers
+from language.models import Language
 
 
 class StudentSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
+    user = UserSerializerWrite()
     subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)
     parents_number = serializers.CharField()
     shift = serializers.CharField()
@@ -25,6 +26,10 @@ class StudentSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
+        if isinstance(user_data.get('language'), Language):
+            user_data['language'] = user_data['language'].id
+        if isinstance(user_data.get('branch'), Branch):
+            user_data['branch'] = user_data['branch'].id
         subject_data = validated_data.pop('subject')
 
         user_serializer = UserSerializerWrite(data=user_data)
