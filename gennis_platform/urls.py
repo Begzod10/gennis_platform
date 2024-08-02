@@ -25,7 +25,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 from .swagger import urlpatterns as doc_urls
-from user.views import CustomTokenObtainPairView
+from user.Api.write import CustomTokenObtainPairView
 
 urlpatterns = [
     path('admin/', admin.site.urls),

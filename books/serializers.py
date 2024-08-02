@@ -6,7 +6,7 @@ from branch.models import Branch
 from payments.models import PaymentTypes
 from branch.serializers import BranchSerializer
 from payments.serializers import PaymentTypesSerializers
-from user.serializers import UserSerializer
+from user.serializers import
 from students.serializers import StudentSerializer
 from teachers.serializers import TeacherSerializer
 from group.serializers import GroupSerializer
