@@ -58,12 +58,12 @@ INSTALLED_APPS = [
     'classes.apps.ClassesConfig',
     'books.apps.BooksConfig',
     'observation.apps.ObservationConfig',
+    'corsheaders',
     'school_time_table.apps.SchoolTimeTableConfig',
     'drf_yasg',
     'schema_graph',
     'djoser',
     'django_cron',
-    'corsheaders',
     'tasks.apps.TasksConfig',
     'flows.apps.FlowsConfig',
     'lesson_plan.apps.LessonPlanConfig',
@@ -71,11 +71,17 @@ INSTALLED_APPS = [
     'encashment.apps.EncashmentConfig'
 ]
 
-MIDDLEWARE = ['corsheaders.middleware.CorsMiddleware', 'django.middleware.security.SecurityMiddleware',
-              'django.contrib.sessions.middleware.SessionMiddleware', 'django.middleware.common.CommonMiddleware',
-              'django.middleware.csrf.CsrfViewMiddleware', 'django.contrib.auth.middleware.AuthenticationMiddleware',
-              'django.contrib.messages.middleware.MessageMiddleware',
-              'django.middleware.clickjacking.XFrameOptionsMiddleware', ]
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
 
 ROOT_URLCONF = 'gennis_platform.urls'
 
@@ -108,10 +114,10 @@ AUTH_PASSWORD_VALIDATORS = [{'NAME': 'django.contrib.auth.password_validation.Us
                             {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
                             {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', }, ]
 
-REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination', 'PAGE_SIZE': 2,
+REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination', 'PAGE_SIZE': 50,
 
                   'DEFAULT_RENDERER_CLASS   ES': ['rest_framework.renderers.JSONRenderer',
-                                               'rest_framework.renderers.BrowsableAPIRenderer', ],
+                                                  'rest_framework.renderers.BrowsableAPIRenderer', ],
 
                   'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny', ],
 
@@ -152,8 +158,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
-
-
 
 STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_ROOT = BASE_DIR / 'media/'

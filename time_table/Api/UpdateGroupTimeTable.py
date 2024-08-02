@@ -1,24 +1,20 @@
-from rest_framework.views import APIView
-import json
 from rest_framework.response import Response
 
 from time_table.models import GroupTimeTable
+from rest_framework import generics
+from time_table.serializers import GroupTimeTableCreateUpdateSerializer, GroupTimeTableReadSerializer
 
-from time_table.serializers import GroupTimeTableSerializer
-from time_table.functions.checkTime import check_time
 
+class GroupTimeTableUpdate(generics.RetrieveUpdateAPIView):
+    queryset = GroupTimeTable.objects.all()
+    serializer_class = GroupTimeTableCreateUpdateSerializer
 
-class GroupTimeTableUpdate(APIView):
+    def update(self, request, *args, **kwargs):
+        write_serializer = self.get_serializer(data=request.data, partial=True)
+        write_serializer.is_valid(raise_exception=True)
+        self.perform_update(write_serializer)
 
-    def patch(self, request, pk):
-        data = json.loads(request.body)
-        result = check_time(data['group']['id'], data['week']['id'], data['room']['id'], data['branch']['id'],
-                            data['start_time'], data['end_time'])
-        if result == True:
-            instance = GroupTimeTable.objects.get(pk=pk)
-            serializer = GroupTimeTableSerializer(data=data, instance=instance)
-            serializer.is_valid()
-            serializer.save()
-            return Response({"data": serializer.data})
-        else:
-            return Response(result)
+        instance = GroupTimeTable.objects.get(pk=write_serializer.data['id'])
+        read_serializer = GroupTimeTableReadSerializer(instance)
+
+        return Response(read_serializer.data)

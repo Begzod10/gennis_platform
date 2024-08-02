@@ -4,10 +4,10 @@ from attendances.models import AttendancePerMonth
 from subjects.serializers import Subject
 from subjects.serializers import SubjectSerializer
 from teachers.models import TeacherGroupStatistics,TeacherBlackSalary
-from user.serializers import UserSerializer
+from user.serializers import UserSerializerWrite
 from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent, DeletedNewStudent)
 class StudentSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
+    user = UserSerializerWrite()
     subject = SubjectSerializer(many=True)
     parents_number = serializers.CharField()
     shift = serializers.CharField()
@@ -20,7 +20,7 @@ class StudentSerializer(serializers.ModelSerializer):
         user_data = validated_data.pop('user')
         subject_data = validated_data.pop('subject')
 
-        user_serializer = UserSerializer(data=user_data)
+        user_serializer = UserSerializerWrite(data=user_data)
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
 

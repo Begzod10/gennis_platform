@@ -1,14 +1,17 @@
 from rest_framework import serializers
 
+from branch.serializers import BranchSerializer, Branch
+from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from subjects.serializers import SubjectSerializer
-from user.serializers import UserSerializer
 from system.models import System
 from system.serializers import SystemSerializers
 from .models import (Teacher, TeacherSalaryList, TeacherSalary, TeacherGroupStatistics, Subject, TeacherAttendance)
+from user.serializers import UserSerializerWrite, UserSerializerRead
+from .models import (Teacher, TeacherSalaryList, TeacherSalary, TeacherGroupStatistics, Subject, TeacherSalaryType)
 
 
 class TeacherSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
+    user = UserSerializerWrite()
     subject = SubjectSerializer()
 
     class Meta:
@@ -22,7 +25,7 @@ class TeacherSerializer(serializers.ModelSerializer):
 
         subject = Subject.objects.get(name=subject_data['name'])
 
-        user_serializer = UserSerializer(data=user_data)
+        user_serializer = UserSerializerWrite(data=user_data)
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
 
@@ -76,38 +79,75 @@ class TeacherGroupStatisticsSerializers(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class TeacherSalarySerializers(serializers.ModelSerializer):
+class TeacherSalaryTypeSerializerRead(serializers.ModelSerializer):
+    class Meta:
+        model = TeacherSalaryType
+        fields = "__all__"
+
+
+class TeacherSerializerRead(serializers.ModelSerializer):
+    user = UserSerializerRead(read_only=True)
+    subject = SubjectSerializer(read_only=True)
+    teacher_salary_type = TeacherSalaryTypeSerializerRead(read_only=True)
+
+    class Meta:
+        model = Teacher
+        fields = "__all__"
+
+
+class TeacherSalaryReadSerializers(serializers.ModelSerializer):
+    teacher = TeacherSerializerRead(read_only=True)
+    branch = BranchSerializer(read_only=True)
+    teacher_salary_type = TeacherSalaryTypeSerializerRead(read_only=True)
+
     class Meta:
         model = TeacherSalary
         fields = '__all__'
 
 
-class TeacherSalaryListSerializers(serializers.ModelSerializer):
+class TeacherSalaryCreateSerializers(serializers.ModelSerializer):
+    teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
+    teacher_salary_type = serializers.PrimaryKeyRelatedField(queryset=TeacherSalaryType.objects.all())
+
+    class Meta:
+        model = TeacherSalary
+        fields = '__all__'
+
+
+class TeacherGroupStatisticsReadSerializers(serializers.ModelSerializer):
+    teacher = TeacherSerializer(read_only=True)
+    reason = serializers.SerializerMethodField()
+    branch = BranchSerializer(read_only=True)
+
+    class Meta:
+        model = TeacherGroupStatistics
+        fields = '__all__'
+
+    def get_reason(self, obj):
+        from group.serializers import GroupReasonSerializers
+        return GroupReasonSerializers(obj.reason).data
+
+
+class TeacherSalaryListReadSerializers(serializers.ModelSerializer):
+    teacher = TeacherSerializerRead(read_only=True)
+    salary_id = TeacherSalaryReadSerializers(read_only=True)
+    payment = PaymentTypesSerializers(read_only=True)
+
+    branch = BranchSerializer(read_only=True)
+
     class Meta:
         model = TeacherSalaryList
         fields = '__all__'
 
-    def create(self, validated_data):
-        payment_id = validated_data.get('payment')
 
-        teacher_salary = validated_data.get('salary_id')
-        teacher_salary.taken_salary += validated_data.get('salary')
-        teacher_salary.remaining_salary -= validated_data.get('salary')
-        teacher_salary.save()
+class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
+    teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
+    salary_id = serializers.PrimaryKeyRelatedField(queryset=TeacherSalary.objects.all())
+    payment = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
 
-        teacher_salary_list = TeacherSalaryList.objects.create(
-            teacher=validated_data.get('teacher'),
-            salary_id=validated_data.get('salary_id'),
-            payment=payment_id,
-            branch=validated_data.get('branch'),
-            salary=validated_data.get('salary'),
-            date=validated_data.get('date'),
-            comment=validated_data.get('comment', ''),
-            deleted=validated_data.get('deleted'),
-        )
-        return teacher_salary_list
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
 
-    def update(self, instance, validated_data):
-        instance.payment = validated_data.get('payment', instance.payment)
-        instance.save()
-        return instance
+    class Meta:
+        model = TeacherSalaryList
+        fields = '__all__'

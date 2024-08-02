@@ -6,7 +6,7 @@ from branch.models import Branch
 from payments.models import PaymentTypes
 from branch.serializers import BranchSerializer
 from payments.serializers import PaymentTypesSerializers
-from user.serializers import UserSerializer
+from user.serializers import UserSerializerRead
 from students.serializers import StudentSerializer
 from teachers.serializers import TeacherSerializer
 from group.serializers import GroupSerializer
@@ -240,7 +240,7 @@ class BookOrderSerializers(serializers.ModelSerializer):
 class BookOrderListSerializers(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     book = BookSerializer(required=False)
-    user = UserSerializer(required=False)
+    user = UserSerializerRead(required=False)
     student = StudentSerializer(required=False)
     teacher = TeacherSerializer(required=False)
     group = GroupSerializer(required=False)
