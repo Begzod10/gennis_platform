@@ -2,8 +2,8 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
+from django.utils import timezone
 from .models import Lead, LeadCall, Subject, Branch
-from django.contrib.auth.models import User
 
 class LeadModelTest(TestCase):
     def setUp(self):
@@ -23,6 +23,7 @@ class LeadModelTest(TestCase):
         self.assertEqual(self.lead.subject, self.subject)
         self.assertEqual(self.lead.branch, self.branch)
 
+
 class LeadCallModelTest(TestCase):
     def setUp(self):
         self.subject = Subject.objects.create(name="Math", ball_number=10)
@@ -35,14 +36,15 @@ class LeadCallModelTest(TestCase):
         )
         self.lead_call = LeadCall.objects.create(
             lead=self.lead,
-            delay="2024-07-12",
+            delay=timezone.now().date(),
             comment="Test call"
         )
 
     def test_lead_call_creation(self):
         self.assertEqual(self.lead_call.lead, self.lead)
-        self.assertEqual(self.lead_call.delay, "2024-07-12")
+        self.assertEqual(self.lead_call.delay, timezone.now().date())
         self.assertEqual(self.lead_call.comment, "Test call")
+
 
 class LeadAPITestCase(TestCase):
     def setUp(self):
@@ -67,8 +69,8 @@ class LeadAPITestCase(TestCase):
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Lead.objects.count(), 2)
-
-
+        self.assertEqual(response.data['name'], 'Jane Doe')
+        self.assertEqual(response.data['phone'], '0987654321')
 
     def test_update_lead(self):
         url = reverse('lead-detail', args=[self.lead.id])
@@ -83,6 +85,7 @@ class LeadAPITestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Lead.objects.count(), 0)
 
+
 class LeadCallAPITestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -96,7 +99,7 @@ class LeadCallAPITestCase(TestCase):
         )
         self.lead_call = LeadCall.objects.create(
             lead=self.lead,
-            delay="2024-07-12",
+            delay=timezone.now().date(),
             comment="Test call"
         )
 
@@ -104,14 +107,14 @@ class LeadCallAPITestCase(TestCase):
         url = reverse('lead-call-list-create')
         data = {
             'lead': self.lead.id,
-            'delay': "2024-07-15",
+            'delay': timezone.now().date(),
             'comment': "New test call"
         }
         response = self.client.post(url, data, format='json')
+        print(rex)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(LeadCall.objects.count(), 2)
-
-
+        self.assertEqual(response.data['comment'], 'New test call')
 
     def test_update_lead_call(self):
         url = reverse('lead-call-detail', args=[self.lead_call.id])
