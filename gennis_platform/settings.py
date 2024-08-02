@@ -23,8 +23,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-8!t!6$g#(34ro((m-7t$#(zek1=b=y2ltslop@w71$^6)wb_rc'
 
-SECRET_KEY = 'django-insecure-ic2opu2tndxc7=#h6l!u!o_0o8-olxsk6#@o8be165!6&j!o!j'
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -62,13 +60,15 @@ INSTALLED_APPS = [
     'observation.apps.ObservationConfig',
     'school_time_table.apps.SchoolTimeTableConfig',
     'drf_yasg',
+    'schema_graph',
     'djoser',
     'django_cron',
     'corsheaders',
     'tasks.apps.TasksConfig',
     'flows.apps.FlowsConfig',
     'lesson_plan.apps.LessonPlanConfig',
-    'Calendar.apps.CalendarConfig'
+    'Calendar.apps.CalendarConfig',
+    'encashment.apps.EncashmentConfig'
 ]
 
 MIDDLEWARE = ['corsheaders.middleware.CorsMiddleware', 'django.middleware.security.SecurityMiddleware',

@@ -28,11 +28,11 @@ class TeacherAttendance(models.Model):
 
 class TeacherSalary(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_id_salary')
-    month_date = models.DateTimeField(null=True)
-    total_salary = models.IntegerField(blank=True, null=True)
-    remaining_salary = models.IntegerField(blank=True, null=True)
-    taken_salary = models.IntegerField(blank=True, null=True)
-    total_black_salary = models.IntegerField(blank=True, null=True)
+    month_date = models.DateField(null=True)
+    total_salary = models.BigIntegerField(blank=True, null=True)
+    remaining_salary = models.BigIntegerField(blank=True, null=True)
+    taken_salary = models.BigIntegerField(blank=True, null=True)
+    total_black_salary = models.BigIntegerField(blank=True, null=True)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='branch_id_salary')
 
     class Meta:

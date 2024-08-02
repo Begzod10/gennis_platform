@@ -11,8 +11,8 @@ class LeadSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     name = serializers.CharField(max_length=255, required=False)
     phone = serializers.CharField(max_length=255, required=False)
-    subject = SubjectSerializer(required=False)
-    branch = BranchSerializer(required=False)
+    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
 
     class Meta:
         model = Lead
@@ -47,8 +47,20 @@ class LeadSerializer(serializers.ModelSerializer):
         return instance
 
 
+class LeadListSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    name = serializers.CharField(max_length=255, required=False)
+    phone = serializers.CharField(max_length=255, required=False)
+    subject = SubjectSerializer(required=False)
+    branch = BranchSerializer(required=False)
+
+    class Meta:
+        model = Lead
+        fields = ['id', 'name', 'phone', 'subject', 'branch']
+
+
 class LeadCallSerializer(serializers.ModelSerializer):
-    lead = LeadSerializer()
+    lead = serializers.PrimaryKeyRelatedField(queryset=Lead.objects.all())
 
     class Meta:
         model = LeadCall
@@ -72,3 +84,11 @@ class LeadCallSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
+class LeadCallListSerializer(serializers.ModelSerializer):
+    lead = LeadSerializer()
+
+    class Meta:
+        model = LeadCall
+        fields = ['id', 'lead', 'delay', 'comment']

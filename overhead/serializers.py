@@ -2,16 +2,17 @@ from rest_framework import serializers
 from .models import Overhead
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
 
-
+from branch.models import Branch
 class OverheadSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     price = serializers.IntegerField(required=False)
     name = serializers.CharField(required=False)
     payment = PaymentTypesSerializers(required=False)
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
 
     class Meta:
         model = Overhead
-        fields = ['id', 'name', 'payment', 'price']
+        fields = ['id', 'name', 'payment', 'price','branch']
 
     def create(self, validated_data):
         payment = validated_data.pop('payment')
