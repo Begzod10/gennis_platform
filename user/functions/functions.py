@@ -22,6 +22,5 @@ def check_auth(request):
         user = CustomUser.objects.get(id=user_id)
     except CustomUser.DoesNotExist:
         return None, {'error': 'User not found'}
-    print(user.groups)
     return user, None
 

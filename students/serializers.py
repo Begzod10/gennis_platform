@@ -4,7 +4,7 @@ from subjects.serializers import Subject
 from subjects.serializers import SubjectSerializer
 from teachers.models import TeacherGroupStatistics, TeacherBlackSalary, Teacher
 from teachers.serializers import TeacherSerializer
-from user.serializers import UserSerializerWrite, CustomUser
+from user.serializers import UserSerializerWrite, CustomUser,UserSerializerRead
 from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent, DeletedNewStudent)
 from group.serializers import GroupSerializer, GroupReasonSerializers
 from group.models import Group, GroupReason
@@ -74,7 +74,7 @@ class StudentSerializer(serializers.ModelSerializer):
 
 
 class StudentListSerializer(serializers.ModelSerializer):
-    user = UserSerializerWrite()
+    user = UserSerializerRead()
     subject = SubjectSerializer(many=True)
     parents_number = serializers.CharField()
     shift = serializers.CharField()
