@@ -1,4 +1,4 @@
-from rest_framework import serializers, status, settings
+from rest_framework import serializers
 from branch.models import Branch
 from language.models import Language
 from students.models import Student
@@ -8,10 +8,8 @@ from teachers.models import Teacher
 from .models import Group, GroupReason, CourseTypes
 from classes.models import ClassNumber, ClassColors
 from time_table.models import GroupTimeTable
-
 from branch.serializers import BranchSerializer
 from language.serializers import LanguageSerializers
-from students.serializers import StudentSerializer
 from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
 from system.serializers import SystemSerializers
 from teachers.serializers import TeacherSerializer
@@ -102,7 +100,6 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                             status = False
                             break
                     if status:
-
                         instance.students.add(student)
                         create_school_student_debts(instance, instance.students.all())
             elif update_method == "remove_students":
@@ -118,7 +115,6 @@ class GroupSerializer(serializers.ModelSerializer):
     language = LanguageSerializers()
     level = SubjectLevelSerializer()
     subject = SubjectSerializer()
-    students = StudentSerializer(many=True)
     teacher = TeacherSerializer(many=True)
     system = SystemSerializers()
     course_types = CourseTypesSerializers()
@@ -128,6 +124,10 @@ class GroupSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
                   'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system', 'class_number', 'color',
                   'course_types']
+
+    def get_students(self, obj):
+        from students.serializers import StudentListSerializer
+        return StudentListSerializer(obj.students.all(), many=True).data
 
     def get_class_number(self, obj):
         from classes.serializers import ClassNumberSerializers
