@@ -29,25 +29,6 @@ class BranchSerializer(serializers.ModelSerializer):
                   'director_fio', 'location_text', 'district', 'bank_sheet', 'inn',
                   'bank', 'mfo', 'campus_name', 'address', 'year']
 
-    def create(self, validated_data):
-        location_data = validated_data.pop('location')
-        location = Location.objects.get(name=location_data['name'])
-        branch = Branch.objects.create(**validated_data, location=location)
-
-        return branch
-
-    def update(self, instance, validated_data):
-        location_data = validated_data.pop('location', None)
-        if location_data:
-            location = Location.objects.get(name=location_data['name'])
-            instance.location = location
-
-        instance.name = validated_data.get('name', instance.name)
-        instance.number = validated_data.get('number', instance.number)
-        instance.save()
-
-        return instance
-
 
 class BranchListSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
