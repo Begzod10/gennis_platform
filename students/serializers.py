@@ -217,7 +217,7 @@ class DeletedNewStudentSerializer(serializers.ModelSerializer):
 
 
 class DeletedNewStudentListSerializer(serializers.ModelSerializer):
-    student = StudentSerializer(read_only=True)
+    student = StudentListSerializer(read_only=True)
 
     class Meta:
         model = DeletedNewStudent
@@ -263,7 +263,7 @@ class DeletedStudentSerializer(serializers.ModelSerializer):
 
 
 class DeletedStudentListSerializer(serializers.ModelSerializer):
-    student = StudentSerializer(required=True)
+    student = StudentListSerializer(required=True)
     group = GroupSerializer(required=True)
     teacher = TeacherSerializer(required=True)
     group_reason = GroupReasonSerializers(required=True)
