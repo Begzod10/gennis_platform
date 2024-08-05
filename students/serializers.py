@@ -4,7 +4,7 @@ from subjects.serializers import Subject
 from subjects.serializers import SubjectSerializer
 from teachers.models import TeacherGroupStatistics, TeacherBlackSalary, Teacher
 from teachers.serializers import TeacherSerializer
-from user.serializers import UserSerializerWrite, CustomUser
+from user.serializers import UserSerializerWrite, CustomUser,UserSerializerRead
 from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent, DeletedNewStudent)
 from group.serializers import GroupSerializer, GroupReasonSerializers
 from group.models import Group, GroupReason
@@ -74,14 +74,14 @@ class StudentSerializer(serializers.ModelSerializer):
 
 
 class StudentListSerializer(serializers.ModelSerializer):
-    user = UserSerializerWrite()
+    user = UserSerializerRead(read_only=True)
     subject = SubjectSerializer(many=True)
     parents_number = serializers.CharField()
     shift = serializers.CharField()
 
     class Meta:
         model = Student
-        fields = ['id', 'user', 'subject', 'parents_number', 'shift']
+        fields = '__all__'
 
 
 class StudentHistoryGroupsSerializer(serializers.ModelSerializer):
@@ -217,7 +217,7 @@ class DeletedNewStudentSerializer(serializers.ModelSerializer):
 
 
 class DeletedNewStudentListSerializer(serializers.ModelSerializer):
-    student = StudentSerializer(read_only=True)
+    student = StudentListSerializer(read_only=True)
 
     class Meta:
         model = DeletedNewStudent
@@ -263,7 +263,7 @@ class DeletedStudentSerializer(serializers.ModelSerializer):
 
 
 class DeletedStudentListSerializer(serializers.ModelSerializer):
-    student = StudentSerializer(required=True)
+    student = StudentListSerializer(required=True)
     group = GroupSerializer(required=True)
     teacher = TeacherSerializer(required=True)
     group_reason = GroupReasonSerializers(required=True)

@@ -29,6 +29,10 @@ class UserUpdateView(generics.UpdateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializerWrite
 
+    def partial_update(self, request, *args, **kwargs):
+        print(request.data)
+        return Response('adad')
+
 
 class UserDestroyView(generics.DestroyAPIView):
     queryset = CustomUser.objects.all()
