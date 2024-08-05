@@ -74,14 +74,14 @@ class StudentSerializer(serializers.ModelSerializer):
 
 
 class StudentListSerializer(serializers.ModelSerializer):
-    user = UserSerializerRead()
+    user = UserSerializerRead(read_only=True)
     subject = SubjectSerializer(many=True)
     parents_number = serializers.CharField()
     shift = serializers.CharField()
 
     class Meta:
         model = Student
-        fields = ['id', 'user', 'subject', 'parents_number', 'shift']
+        fields = '__all__'
 
 
 class StudentHistoryGroupsSerializer(serializers.ModelSerializer):
