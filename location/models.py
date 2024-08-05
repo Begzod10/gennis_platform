@@ -3,9 +3,6 @@ from system.models import System
 
 
 class Location(models.Model):
-    name = models.CharField()
-    number = models.IntegerField()
-    system = models.ForeignKey(System, on_delete=models.CASCADE, blank=True, null=True)
-
-    # def __str__(self):
-    #     return self.name
+    name = models.CharField(max_length=255)
+    number = models.CharField(null=True, default=None)
+    system = models.ForeignKey(System, on_delete=models.CASCADE, null=True, blank=True)
