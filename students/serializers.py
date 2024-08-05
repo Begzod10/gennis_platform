@@ -36,14 +36,12 @@ class StudentSerializer(serializers.ModelSerializer):
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
 
-        subjects = []
-        for subj_data in subject_data:
-            subject, created = Subject.objects.get_or_create(**subj_data)
-            subjects.append(subject)
+
+
 
         student = Student.objects.create(user=user, parents_number=validated_data.get('parents_number'),
                                          shift=validated_data.get('shift'))
-        student.subject.set(subjects)
+        student.subject.set(subject_data)
         return student
 
     def update(self, instance, validated_data):
