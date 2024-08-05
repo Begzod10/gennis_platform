@@ -5,7 +5,7 @@ from location.models import Location
 
 class Branch(models.Model):
     name = models.CharField(max_length=255)
-    number = models.IntegerField()
+    number = models.CharField(null=True)
     location = models.ForeignKey(Location, on_delete=models.CASCADE, blank=True, null=True)
     location_text = models.CharField(max_length=255, null=True)
     map_link = models.CharField(null=True)
@@ -21,6 +21,7 @@ class Branch(models.Model):
     campus_name = models.CharField(max_length=255, null=True)
     address = models.CharField(max_length=255, null=True)
     year = models.DateField(null=True)
+    old_id =models.IntegerField(unique=True)
 
     # def __str__(self):
     #     return self.name
