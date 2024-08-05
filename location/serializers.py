@@ -5,22 +5,16 @@ from .models import Location
 
 
 class LocationSerializers(serializers.ModelSerializer):
-    system = serializers.PrimaryKeyRelatedField(queryset=System.objects.all(), required=False)
-    name = serializers.CharField(max_length=255, required=False)
-    number = serializers.CharField(required=False)
-    id = serializers.IntegerField(required=False)
+    system = serializers.PrimaryKeyRelatedField(queryset=System.objects.all())
 
     class Meta:
         model = Location
-        fields = ['id', 'name', 'number', 'system', 'old_id']
+        fields = '__all__'
 
 
 class LocationListSerializers(serializers.ModelSerializer):
-    system = SystemSerializers(required=False)
-    name = serializers.CharField(max_length=255, required=False)
-    number = serializers.IntegerField(required=False)
-    id = serializers.IntegerField(required=False)
+    system = SystemSerializers(read_only=True)
 
     class Meta:
         model = Location
-        fields = ['id', 'name', 'number', 'system']
+        fields = '__all__'
