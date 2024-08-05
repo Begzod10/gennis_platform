@@ -6,15 +6,10 @@ from .models import Location
 
 class LocationSerializers(serializers.ModelSerializer):
     system = serializers.PrimaryKeyRelatedField(queryset=System.objects.all())
-    name = serializers.CharField(max_length=255, required=False)
-    number = serializers.IntegerField(required=False)
-    id = serializers.IntegerField(required=False)
 
     class Meta:
         model = Location
-        fields = ['id', 'name', 'number', 'system','old_id']
-
-
+        fields = '__all__'
 
 
 class LocationListSerializers(serializers.ModelSerializer):
