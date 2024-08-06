@@ -18,6 +18,7 @@ class Student(models.Model):
     representative_name = models.CharField(null=True)
     representative_surname = models.CharField(null=True)
     old_id = models.IntegerField(null=True, unique=True)
+    old_money = models.BigIntegerField(null=True)
 
 
 class StudentCharity(models.Model):
