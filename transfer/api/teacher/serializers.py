@@ -5,11 +5,11 @@ from user.serializers import CustomUser
 
 
 class TeacherSerializerTransfer(serializers.ModelSerializer):
-    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())
+    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(),many=True)
 
     class Meta:
         model = Teacher
-        fields = ['user', 'subject', 'color', 'total_students']
+        fields = ['user', 'subject', 'color', 'total_students','old_id']
 
     def create(self, validated_data):
         user_data = validated_data.get('user')
@@ -19,6 +19,7 @@ class TeacherSerializerTransfer(serializers.ModelSerializer):
 
         teacher = Teacher.objects.create(user=user, **validated_data)
         for subject in subject_data:
+            print(subject_data)
             subject = Subject.objects.get(Subject.old_id == subject)
             teacher.subject.set(subject)
 

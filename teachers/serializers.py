@@ -12,7 +12,7 @@ from .models import (TeacherAttendance)
 
 class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializerWrite()
-    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())
+    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)
 
     class Meta:
         model = Teacher
