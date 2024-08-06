@@ -31,6 +31,7 @@ class Group(models.Model):
     system = models.ForeignKey(System, on_delete=models.CASCADE, null=True)
     class_number = models.ForeignKey('classes.ClassNumber', on_delete=models.CASCADE, null=True)
     course_types = models.ForeignKey(CourseTypes, on_delete=models.CASCADE, null=True)
+    old_id = models.IntegerField(null=True, unique=True)
 
 
 class GroupReason(models.Model):
@@ -69,3 +70,7 @@ class AttendancePerDay(models.Model):
     activeness_ball = models.IntegerField()
     average = models.IntegerField()
     status = models.IntegerField()
+
+
+class GroupTest(models.Model):
+    name = models.CharField()
