@@ -1,10 +1,15 @@
 from rest_framework import generics
 from students.serializers import DeletedStudentSerializer, StudentPaymentSerializer, StudentCharitySerializer, \
-    StudentHistoryGroupsSerializer, StudentSerializer
+    StudentHistoryGroupsSerializer, StudentSerializer, StudentSerializer2
 from students.models import DeletedStudent, StudentPayment, StudentCharity, StudentHistoryGroups, DeletedNewStudent, \
     Student
 from rest_framework.response import Response
 from rest_framework import status
+
+
+class StudentCreateView2(generics.CreateAPIView):
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer2
 
 
 class StudentCreateView(generics.CreateAPIView):
