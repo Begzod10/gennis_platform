@@ -20,6 +20,7 @@ class BranchListAPIView(generics.ListAPIView):
 
         queryset = Branch.objects.all()
         serializer = BranchListSerializer(queryset, many=True)
+        print(serializer.data)
         return Response({'branches': serializer.data, 'permissions': permissions})
 
 
@@ -37,5 +38,3 @@ class BranchRetrieveAPIView(generics.RetrieveAPIView):
         create_branches = self.get_object()
         create_branches_data = self.get_serializer(create_branches).data
         return Response({'branches': create_branches_data, 'permissions': permissions})
-
-

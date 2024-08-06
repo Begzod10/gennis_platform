@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+<<<<<<< HEAD
   <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.9 (gennis_platform) (3)" project-jdk-type="Python SDK" />
+=======
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.9 (gennis_platform)" project-jdk-type="Python SDK" />
+>>>>>>> dd99afb4d789e2a52f076908853eb70dc2b11902
 </project>

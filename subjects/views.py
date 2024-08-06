@@ -46,7 +46,7 @@ class SyncSubjectsAndLevelsView(APIView):
             return Response({'error': f'Server error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class SubjectList(generics.ListAPIView):
+class CreateSubjectList(generics.ListCreateAPIView):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
 
@@ -63,24 +63,7 @@ class SubjectList(generics.ListAPIView):
         return Response({'subjects': serializer.data, 'permissions': permissions})
 
 
-class SubjectLevelList(generics.ListAPIView):
-    queryset = SubjectLevel.objects.all()
-    serializer_class = SubjectLevelSerializer
-
-    def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['subjectlevel', 'subject']
-        permissions = check_user_permissions(user, table_names)
-
-        queryset = SubjectLevel.objects.all()
-        serializer = SubjectLevelSerializer(queryset, many=True)
-        return Response({'subjectlevels': serializer.data, 'permissions': permissions})
-
-
-class SubjectOne(generics.RetrieveAPIView):
+class SubjectRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
 
@@ -94,19 +77,3 @@ class SubjectOne(generics.RetrieveAPIView):
         subject = self.get_object()
         subject_data = self.get_serializer(subject).data
         return Response({'subject': subject_data, 'permissions': permissions})
-
-
-class SubjectLevelOne(generics.RetrieveAPIView):
-    queryset = SubjectLevel.objects.all()
-    serializer_class = SubjectLevelSerializer
-
-    def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['subjectlevel', 'subject']
-        permissions = check_user_permissions(user, table_names)
-        subject_level = self.get_object()
-        subject_level_data = self.get_serializer(subject_level).data
-        return Response({'subjectlevel': subject_level_data, 'permissions': permissions})

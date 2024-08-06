@@ -1,14 +1,17 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
 from branch.serializers import BranchSerializer
 from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch
+from werkzeug.security import generate_password_hash, check_password_hash
+from django.contrib.auth.hashers import make_password, check_password
+from rest_framework.exceptions import AuthenticationFailed
 
 
 class UserSerializerWrite(serializers.ModelSerializer):
+    old_id = serializers.IntegerField(required=False)
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all())
 
@@ -16,7 +19,7 @@ class UserSerializerWrite(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
                   'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff']
+                  'branch', 'is_superuser', 'is_staff', 'old_id']
         extra_kwargs = {
             'password': {'write_only': True, 'required': True},
             'birth_date': {'required': False},
@@ -27,8 +30,12 @@ class UserSerializerWrite(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
+        # user = super().create(validated_data)
+        # user.set_password(validated_data['password'])
+        # user.save()
+        # return user
         user = super().create(validated_data)
-        user.set_password(validated_data['password'])
+        user.password = validated_data['password']
         user.save()
         return user
 
@@ -116,12 +123,24 @@ class UserSalaryListSerializersRead(serializers.ModelSerializer):
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
-        data = super().validate(attrs)
-        refresh = self.get_token(self.user)
-
-        data['refresh'] = str(refresh)
-        data['access'] = str(refresh.access_token)
-        user_data = UserSerializerWrite(self.user).data
-        data['admin'] = user_data.get('is_staff', False)
-
-        return data
+        username = attrs.get('username')
+        password = attrs.get('password')
+        user = CustomUser.objects.get(username=username)
+        if user.password.startswith('sha256$'):
+            if check_password_hash(user.password, password):
+                new_password = make_password(password)
+                user.password = new_password
+                user.save()
+                data = super().validate(attrs)
+                refresh = self.get_token(self.user)
+                data['refresh'] = str(refresh)
+                data['access'] = str(refresh.access_token)
+                return data
+            else:
+                raise AuthenticationFailed("No active account found with the given credentials")
+        else:
+            data = super().validate(attrs)
+            refresh = self.get_token(self.user)
+            data['refresh'] = str(refresh)
+            data['access'] = str(refresh.access_token)
+            return data

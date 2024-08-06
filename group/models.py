@@ -10,6 +10,7 @@ from teachers.models import Teacher
 
 class CourseTypes(models.Model):
     name = models.CharField(max_length=255)
+    old_id = models.IntegerField(null=True, unique=True)
 
 
 class Group(models.Model):

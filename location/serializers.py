@@ -15,7 +15,6 @@ class LocationSerializers(serializers.ModelSerializer):
 class LocationListSerializers(serializers.ModelSerializer):
     system = SystemSerializers(read_only=True)
 
-
     class Meta:
         model = Location
         fields = '__all__'

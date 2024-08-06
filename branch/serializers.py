@@ -7,7 +7,6 @@ from .models import Branch
 class BranchSerializer(serializers.ModelSerializer):
     location = serializers.PrimaryKeyRelatedField(queryset=Location.objects.all())
 
-
     class Meta:
         model = Branch
         fields = '__all__'
@@ -17,7 +16,7 @@ class BranchListSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     location = LocationListSerializers(required=False)
     name = serializers.CharField(max_length=255, required=False)
-    number = serializers.IntegerField(required=False)
+    number = serializers.CharField(required=False)
     map_link = serializers.CharField(required=False)
     code = serializers.IntegerField(required=False)
     phone_number = serializers.CharField(max_length=20, required=False)
@@ -31,9 +30,10 @@ class BranchListSerializer(serializers.ModelSerializer):
     campus_name = serializers.CharField(max_length=255, required=False)
     address = serializers.CharField(max_length=255, required=False)
     year = serializers.DateField(required=False)
+    old_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = Branch
         fields = ['id', 'name', 'number', 'location', 'map_link', 'code', 'phone_number',
                   'director_fio', 'location_text', 'district', 'bank_sheet', 'inn',
-                  'bank', 'mfo', 'campus_name', 'address', 'year']
+                  'bank', 'mfo', 'campus_name', 'address', 'year', 'old_id']

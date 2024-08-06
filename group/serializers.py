@@ -19,6 +19,8 @@ from .functions.CreateSchoolStudentDebts import create_school_student_debts
 
 
 class CourseTypesSerializers(serializers.ModelSerializer):
+    old_id = serializers.IntegerField(required=False)
+
     class Meta:
         model = CourseTypes
         fields = '__all__'
