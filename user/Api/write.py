@@ -30,6 +30,8 @@ class UserUpdateView(generics.UpdateAPIView):
     serializer_class = UserSerializerWrite
 
 
+
+
 class UserDestroyView(generics.DestroyAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializerWrite

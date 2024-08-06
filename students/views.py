@@ -13,8 +13,8 @@ from rest_framework.views import APIView
 from branch.models import Branch
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent
 from .serializers import StudentCharity
-from .serializers import (StudentSerializer,
-                          DeletedStudentSerializer, DeletedNewStudentSerializer)
+from .serializers import (StudentListSerializer,
+                          DeletedStudentListSerializer, DeletedNewStudentListSerializer)
 from .utils import user_contract_folder
 
 
@@ -23,12 +23,12 @@ class StudentListView(APIView):
         deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_student_ids).exclude(id__in=deleted_new_student_ids)
-        student_serializer = StudentSerializer(active_students, many=True)
+        student_serializer = StudentListSerializer(active_students, many=True)
 
         deleted_students = DeletedStudent.objects.all()
-        deleted_student_serializer = DeletedStudentSerializer(deleted_students, many=True)
+        deleted_student_serializer = DeletedStudentListSerializer(deleted_students, many=True)
         delete_new_students = DeletedNewStudent.objects.exclude(id__in=deleted_student_ids)
-        delete_new_student_serializer = DeletedNewStudentSerializer(delete_new_students, many=True)
+        delete_new_student_serializer = DeletedNewStudentListSerializer(delete_new_students, many=True)
 
         data = {
             'new_students': student_serializer.data,

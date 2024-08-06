@@ -9,25 +9,24 @@ class TypeDaySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class DaySerializer(serializers.ModelSerializer):
-    type_day = TypeDaySerializer(many=True, read_only=True)
-
+class YearsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Day
+        model = Years
         fields = '__all__'
 
 
 class MonthSerializer(serializers.ModelSerializer):
-    days = DaySerializer(many=True, read_only=True)
+    years = YearsSerializer()
 
     class Meta:
         model = Month
         fields = '__all__'
 
 
-class YearsSerializer(serializers.ModelSerializer):
-    months = MonthSerializer(many=True, read_only=True)
+class DaySerializer(serializers.ModelSerializer):
+    type_id = TypeDaySerializer()
+    month = MonthSerializer()
 
     class Meta:
-        model = Years
+        model = Day
         fields = '__all__'
