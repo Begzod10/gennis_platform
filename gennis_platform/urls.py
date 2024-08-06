@@ -57,6 +57,7 @@ urlpatterns = [
     path('Lesson_plan/', include('lesson_plan.urls')),
     path('SchoolTimeTable/', include('school_time_table.urls')),
     path('Calendar/', include('Calendar.urls')),
+    path('Transfer/', include('transfer.urls')),
     path('Encashment/', include('encashment.urls')),
     path("schema/", Schema.as_view()),
     path('Api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
