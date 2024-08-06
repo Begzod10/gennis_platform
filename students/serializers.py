@@ -4,7 +4,7 @@ from subjects.serializers import Subject
 from subjects.serializers import SubjectSerializer
 from teachers.models import TeacherGroupStatistics, TeacherBlackSalary, Teacher
 from teachers.serializers import TeacherSerializer
-from user.serializers import UserSerializerWrite, CustomUser,UserSerializerRead
+from user.serializers import UserSerializerWrite, CustomUser, UserSerializerRead
 from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent, DeletedNewStudent)
 from group.serializers import GroupSerializer, GroupReasonSerializers
 from group.models import Group, GroupReason
@@ -12,6 +12,15 @@ from branch.models import Branch
 from payments.models import PaymentTypes
 from payments.serializers import PaymentTypesSerializers
 from language.models import Language
+
+
+class StudentSerializer2(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), many=True)
+    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)
+
+    class Meta:
+        model = Student
+        fields = ['id', 'user', 'subject', 'parents_number', 'shift']
 
 
 class StudentSerializer(serializers.ModelSerializer):
@@ -35,9 +44,6 @@ class StudentSerializer(serializers.ModelSerializer):
         user_serializer = UserSerializerWrite(data=user_data)
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
-
-
-
 
         student = Student.objects.create(user=user, parents_number=validated_data.get('parents_number'),
                                          shift=validated_data.get('shift'))
