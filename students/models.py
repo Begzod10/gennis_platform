@@ -17,6 +17,7 @@ class Student(models.Model):
     parents_number = models.CharField(max_length=250, null=True)
     representative_name = models.CharField(null=True)
     representative_surname = models.CharField(null=True)
+    old_id = models.IntegerField(null=True, unique=True)
 
 
 class StudentCharity(models.Model):
