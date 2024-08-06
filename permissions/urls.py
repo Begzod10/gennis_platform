@@ -2,7 +2,7 @@ from django.urls import path
 
 from .Api.Tables import Tables
 from .Api.DescriptionTables import DescriptionTables
-from .Api.CreatGroupAndAddPermissions import CreatGroupAndAddPermissions
+from .Api.CreatGroupAndAddPermissions import CreatGroupAndAddPermissions,GetAllJobs
 from .Api.AddUserJob import AddUserGroup
 from .Api.AddPermissionManagersAndDirectors import AddPermissionManagersAndDirectors
 
@@ -14,4 +14,6 @@ urlpatterns = [
     path('add_user_job/', AddUserGroup.as_view(), name='add_user_job'),
     path('add_permissions_managers_and_directors/', AddPermissionManagersAndDirectors.as_view(),
          name='add_permissions_managers_and_directors'),
+    path('get_all_groups/', GetAllJobs.as_view(),
+         name='get_all_groups'),
 ]

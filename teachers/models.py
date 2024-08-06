@@ -13,12 +13,13 @@ class TeacherSalaryType(models.Model):
 
 class Teacher(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='teacher_user')
-    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True)
+    subject = models.ManyToManyField(Subject, blank=True)
     color = models.CharField(max_length=50)
     total_students = models.IntegerField()
     premium_rate = models.IntegerField(null=True)
     class_type = models.IntegerField(null=True)
     teacher_salary_type = models.ForeignKey(TeacherSalaryType, on_delete=models.SET_NULL, null=True)
+    old_id =models.IntegerField(unique=True)
 
 
 class TeacherAttendance(models.Model):
