@@ -9,6 +9,7 @@ from user.models import CustomUser, UserSalaryList, UserSalary, Branch
 
 
 class UserSerializerWrite(serializers.ModelSerializer):
+    old_id = serializers.IntegerField(required=False)
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all())
 
@@ -16,7 +17,7 @@ class UserSerializerWrite(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
                   'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff']
+                  'branch', 'is_superuser', 'is_staff', 'old_id']
         extra_kwargs = {
             'password': {'write_only': True, 'required': True},
             'birth_date': {'required': False},

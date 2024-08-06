@@ -9,8 +9,6 @@ from language.models import Language
 from django.conf import settings
 
 
-
-
 class CustomAutoGroup(models.Model):
     group = models.OneToOneField(Group, on_delete=models.CASCADE, related_name='custom_permission')
     salary = models.IntegerField(blank=True, null=True)
@@ -33,6 +31,7 @@ class CustomUser(AbstractUser):
     observer = models.BooleanField(default=False, null=True)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True)
     language = models.ForeignKey(Language, on_delete=models.CASCADE, null=True)
+    old_id = models.IntegerField(null=True, unique=True)
     groups = models.ManyToManyField(
         Group,
         related_name='custom_user_set',  # related_name'ni o'zgartiring
