@@ -1,17 +1,14 @@
 import json
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-
-from .functions.PlatformTables import platform_tables
-
-from ..models import DescriptionForTable, AuthGroupSystem
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from system.models import System
-
 from system.serializers import SystemSerializers
+from .functions.PlatformTables import platform_tables
+from ..models import AuthGroupSystem
 
 
 class CreatGroupAndAddPermissions(APIView):
@@ -33,3 +30,9 @@ class CreatGroupAndAddPermissions(APIView):
         systems = System.objects.all()
         serializers = SystemSerializers(systems, many=True)
         return Response({'tables': platform_tables(), 'systems': serializers.data})
+
+
+class GetAllJobs(APIView):
+    def get(self, request):
+        groups = Group.objects.all()
+        return Response(groups)
