@@ -21,7 +21,5 @@ class Branch(models.Model):
     campus_name = models.CharField(max_length=255, null=True)
     address = models.CharField(max_length=255, null=True)
     year = models.DateField(null=True)
-    old_id =models.IntegerField(unique=True)
+    old_id = models.IntegerField(unique=True)
 
-    # def __str__(self):
-    #     return self.name
