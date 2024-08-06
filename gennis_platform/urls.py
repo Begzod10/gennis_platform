@@ -47,7 +47,6 @@ urlpatterns = [
     path('Lead/', include('lead.urls')),
     path('Books/', include('books.urls')),
     path('Permissions/', include('permissions.urls')),
-    path('Api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('Lead/', include('lead.urls')),
     path('Books/', include('books.urls')),
     path('Attendance/', include('attendances.urls')),
