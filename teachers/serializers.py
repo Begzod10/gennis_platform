@@ -5,20 +5,21 @@ from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from subjects.serializers import SubjectSerializer
 from system.models import System
 from system.serializers import SystemSerializers
-from user.serializers import UserSerializerWrite, UserSerializerRead,Language
+from user.serializers import UserSerializerWrite, UserSerializerRead, Language
 from .models import (Teacher, TeacherSalaryList, TeacherSalary, TeacherGroupStatistics, Subject, TeacherSalaryType)
 from .models import (TeacherAttendance)
 
 
 class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializerWrite()
-    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())
+    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)
 
     class Meta:
         model = Teacher
         fields = ['user', 'subject', 'color', 'total_students', 'id']
 
     def create(self, validated_data):
+        print(validated_data)
         user_data = validated_data.pop('user')
         subject_data = validated_data.pop('subject')
         if isinstance(user_data.get('language'), Language):

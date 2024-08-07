@@ -19,7 +19,7 @@ class Teacher(models.Model):
     premium_rate = models.IntegerField(null=True)
     class_type = models.IntegerField(null=True)
     teacher_salary_type = models.ForeignKey(TeacherSalaryType, on_delete=models.SET_NULL, null=True)
-    old_id =models.IntegerField(unique=True)
+    old_id = models.IntegerField(unique=True, null=True)
 
 
 class TeacherAttendance(models.Model):
