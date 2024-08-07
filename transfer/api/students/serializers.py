@@ -2,23 +2,28 @@ from rest_framework import serializers
 from subjects.serializers import Subject
 from user.serializers import CustomUser
 from students.models import Student
+from django.db import transaction
 
 
 class StudentSerializerTransfer(serializers.ModelSerializer):
+    subject = serializers.SlugRelatedField(queryset=Subject.objects.all(), slug_field='old_id', many=True)
+    user = serializers.SlugRelatedField(queryset=CustomUser.objects.all(), slug_field='old_id')
+
     class Meta:
         model = Student
-        fields = ['id', 'parents_number', 'shift', 'representative_name',
-                  'representative_surname',
-                  'old_id', 'extra_payment', 'old_money']
+        fields = '__all__'
 
+    @transaction.atomic
     def create(self, validated_data):
-        user_data = validated_data.get('old_user_id')
-        subject_data = validated_data.get('id_subjects')
-        user = CustomUser.objects.filter(old_id=user_data).first()
+        user_data = validated_data.pop('user')
+        subject_data = validated_data.pop('subject', [])
+
+        user = CustomUser.objects.get(old_id=user_data.old_id)
+
         student = Student.objects.create(user=user, **validated_data)
-        subjects = []
+
+        student.subject.clear()
         for subject in subject_data:
-            subject = Subject.objects.get(Subject.old_id == subject)
-            subjects.append(subject.id)
-        student.subject.set(subjects)
+            subject_instance = Subject.objects.get(old_id=subject.old_id)
+            student.subject.add(subject_instance)
         return student

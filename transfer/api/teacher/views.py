@@ -9,3 +9,4 @@ from transfer.api.teacher.serializers import (
 class TeacherCreateView(generics.CreateAPIView):
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializerTransfer
+
