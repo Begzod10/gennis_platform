@@ -14,16 +14,6 @@ from payments.serializers import PaymentTypesSerializers
 from language.models import Language
 
 
-class StudentSerializer2(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), many=True)
-    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)
-
-    class Meta:
-        model = Student
-        fields = ['id', 'user', 'subject', 'parents_number', 'shift', 'representative_name', 'representative_surname',
-                  'old_id', 'extra_payment', 'old_money']
-
-
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializerWrite()
     subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)

@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.db import models
-from system.models import System
+
 from branch.models import Branch
 from payments.models import PaymentTypes
 from subjects.models import Subject
+from system.models import System
 
 
 class TeacherSalaryType(models.Model):
@@ -14,8 +15,8 @@ class TeacherSalaryType(models.Model):
 class Teacher(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='teacher_user')
     subject = models.ManyToManyField(Subject, blank=True)
-    color = models.CharField(max_length=50)
-    total_students = models.IntegerField()
+    color = models.CharField(max_length=50, null=True)
+    total_students = models.IntegerField(null=True)
     premium_rate = models.IntegerField(null=True)
     class_type = models.IntegerField(null=True)
     teacher_salary_type = models.ForeignKey(TeacherSalaryType, on_delete=models.SET_NULL, null=True)
