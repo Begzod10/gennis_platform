@@ -49,7 +49,7 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AttendancePerDay
         fields = ['id', 'status', 'debt_per_day', 'salary_per_day', 'charity_per_day', 'day',
-                  'homework_ball', 'dictionary_ball', 'activeness_ball', 'average', 'teacher', 'student',
+                  'homework_ball', 'dictionary_ball', 'activeness_ball', 'average', 'teachers', 'students',
                   'status', 'group', 'attendance_per_month', 'date']
 
     def create(self, validated_data):

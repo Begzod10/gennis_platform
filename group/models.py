@@ -72,5 +72,3 @@ class AttendancePerDay(models.Model):
     status = models.IntegerField()
 
 
-class GroupTest(models.Model):
-    name = models.CharField()
