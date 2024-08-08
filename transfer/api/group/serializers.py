@@ -16,7 +16,7 @@ class TransferGroupCreateUpdateSerializer(serializers.ModelSerializer):
     subject = serializers.SlugRelatedField(queryset=Subject.objects.all(), slug_field='old_id')
     students = serializers.SlugRelatedField(queryset=Student.objects.all(), slug_field='old_id', many=True)
     teacher = serializers.SlugRelatedField(queryset=Teacher.objects.all(), slug_field='old_id', many=True)
-    course_types = serializers.SlugRelatedField(queryset=CourseTypes.objects.all(), slug_field='old_id', required=False)
+    course_type = serializers.SlugRelatedField(queryset=CourseTypes.objects.all(), slug_field='old_id', required=False)
 
     class Meta:
         model = Group
