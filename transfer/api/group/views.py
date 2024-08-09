@@ -3,12 +3,12 @@ from rest_framework.response import Response
 
 from group.models import Group, GroupReason, CourseTypes
 from group.serializers import GroupSerializer
-from .serializers import GroupCreateUpdateSerializer
+from .serializers import TransferGroupCreateUpdateSerializer
 
 
 class TransferCreatGroups(generics.ListCreateAPIView):
     queryset = Group.objects.all()
-    serializer_class = GroupCreateUpdateSerializer
+    serializer_class = TransferGroupCreateUpdateSerializer
 
     def create(self, request, *args, **kwargs):
         write_serializer = self.get_serializer(data=request.data, partial=True)
