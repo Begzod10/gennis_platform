@@ -11,4 +11,3 @@ class SubjectLevel(models.Model):
     name = models.CharField(max_length=250, blank=False, null=False)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='levels')
     old_id = models.IntegerField(null=True, unique=True)
-

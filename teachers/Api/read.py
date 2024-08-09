@@ -35,6 +35,8 @@ class TeacherRetrieveView(generics.RetrieveAPIView):
         pk = self.kwargs.get('pk')
         obj = self.get_queryset().filter(pk=pk).first()
         # self.check_object_permissions(self.request, obj)
+
+
         calculate_teacher_salary(obj)
         return super().get_object()
 
