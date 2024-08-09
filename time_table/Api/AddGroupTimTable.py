@@ -33,14 +33,9 @@ class GroupTimeTableList(generics.ListCreateAPIView):
             return Response(result)
 
     def get(self, request, group_id):
+        creat_week_days()
         group = Group.objects.get(pk=group_id)
         time_table = group.grouptimetable_set.all()
         serializers = GroupTimeTableReadSerializer(data=time_table, many=True)
         serializers.is_valid()
         return Response({"data": serializers.data})
-        write_serializer = self.get_serializer(data=request.data, partial=True)
-        write_serializer.is_valid(raise_exception=True)
-        self.perform_create(write_serializer)
-        instance = GroupTimeTable.objects.get(pk=write_serializer.data['id'])
-        read_serializer = GroupTimeTableReadSerializer(instance)
-        return Response(read_serializer.data)

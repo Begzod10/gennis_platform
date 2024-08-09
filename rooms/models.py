@@ -10,11 +10,13 @@ class Room(models.Model):
     branch = models.ForeignKey(Branch, related_name='branch_id', on_delete=models.SET_NULL, null=True)
     electronic_board = models.BooleanField()
     deleted = models.BooleanField()
+    old_id = models.IntegerField(null=True)
 
 
 class RoomImages(models.Model):
     image = models.ImageField(upload_to='room_images')
     room = models.ForeignKey(Room, related_name='room_id', on_delete=models.SET_NULL, null=True)
+    old_id = models.IntegerField(null=True)
 
 
 class RoomSubject(models.Model):

@@ -5,4 +5,6 @@ urlpatterns = [
     path('groups/', include('transfer.api.group.urls')),
     path('teachers/', include('transfer.api.teacher.urls')),
     path('attendance/', include('transfer.api.attendance.urls')),
+    path('rooms/', include('transfer.api.room.urls')),
+    path('time_table/', include('transfer.api.time_table.urls')),
 ]
