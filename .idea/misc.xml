@@ -1,4 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+<<<<<<< HEAD
   <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.9 (drf-turon)" project-jdk-type="Python SDK" />
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.9 (gennis_platform)" project-jdk-type="Python SDK" />
+=======
+=======
+>>>>>>> a94211ca3f1f06dfe6f7c1c76672703a8b293dc9
+<<<<<<< HEAD
+<<<<<<< HEAD
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.9 (gennis_platform) (3)" project-jdk-type="Python SDK" />
+=======
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.9 (gennis_platform)" project-jdk-type="Python SDK" />
+>>>>>>> dd99afb4d789e2a52f076908853eb70dc2b11902
+=======
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.9 (drf-turon)" project-jdk-type="Python SDK" />
+>>>>>>> a087a4a6a17e49e21fde207c1506d2057c03ce9a
+<<<<<<< HEAD
+>>>>>>> dce4afc44666f199ae80d62e238096d8f11115b0
+=======
+=======
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.9 (gennis_platform)" project-jdk-type="Python SDK" />
+>>>>>>> da8335d034595c2e9ee6226399a2f5a58a8cb48f
+>>>>>>> a94211ca3f1f06dfe6f7c1c76672703a8b293dc9
+>>>>>>> a93d327429efafec90ac0d70fbed20fde8a05f81
 </project>
