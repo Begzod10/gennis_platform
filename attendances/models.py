@@ -21,7 +21,9 @@ class AttendancePerMonth(models.Model):
     old_id = models.IntegerField(null=True, unique=True)
     remaining_salary = models.IntegerField(default=0)
     taken_salary = models.IntegerField(default=0)
-
+    present_days = models.IntegerField(default=0)
+    absent_days = models.IntegerField(default=0)
+    scored_days = models.IntegerField(default=0)
 
 
 class AttendancePerDay(models.Model):
@@ -38,6 +40,9 @@ class AttendancePerDay(models.Model):
     activeness_ball = models.IntegerField()
     average = models.IntegerField()
     status = models.BooleanField(default=False)
+    old_id = models.IntegerField(null=True, unique=True)
+    reason = models.CharField()
+    teacher_ball = models.IntegerField()
 
 
 class GroupAttendancesPerMonth(models.Model):
