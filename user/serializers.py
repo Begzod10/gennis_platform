@@ -147,3 +147,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             data['refresh'] = str(refresh)
             data['access'] = str(refresh.access_token)
             return data
+
+
+class Employeers(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = '__all__'

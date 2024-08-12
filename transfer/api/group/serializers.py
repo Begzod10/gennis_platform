@@ -22,4 +22,4 @@ class TransferGroupCreateUpdateSerializer(serializers.ModelSerializer):
         model = Group
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
                   'deleted', 'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system', 'class_number',
-                  'color', 'course_types', 'class_number', 'update_method', 'time_table', 'old_id']
+                  'color', 'course_type', 'class_number', 'old_id']

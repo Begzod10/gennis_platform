@@ -1,5 +1,4 @@
 from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView
 
 from user.Api.read import (
 
@@ -7,7 +6,9 @@ from user.Api.read import (
     UserDetailView,
     UserSalaryListListView,
     UserSalaryListDetailView,
-    UserMe
+    UserMe,
+    EmployeersListView,
+    EmployerRetrieveView
 )
 from user.Api.write import (
     UserCreateView,
@@ -16,8 +17,6 @@ from user.Api.write import (
     UserSalaryListCreateView,
     UserSalaryListUpdateView,
     UserSalaryListDestroyView,
-    CustomTokenObtainPairView,
-
 )
 
 urlpatterns = [
@@ -32,4 +31,7 @@ urlpatterns = [
     path('salaries/', UserSalaryListListView.as_view(), name='salary-list'),
     path('salaries/<int:pk>/', UserSalaryListDetailView.as_view(), name='salary-detail'),
     path('users/me/', UserMe.as_view(), name='user-me'),
+    path('employeers/', EmployeersListView.as_view(), name='employer-list'),
+    path('employers/<int:pk>/', EmployerRetrieveView.as_view(), name='employer-retrieve'),
+
 ]
