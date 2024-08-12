@@ -41,8 +41,8 @@ class AttendancePerDay(models.Model):
     average = models.IntegerField()
     status = models.BooleanField(default=False)
     old_id = models.IntegerField(null=True, unique=True)
-    reason = models.CharField()
-    teacher_ball = models.IntegerField()
+    reason = models.CharField(null=True)
+    teacher_ball = models.IntegerField(null=True)
 
 
 class GroupAttendancesPerMonth(models.Model):
