@@ -18,7 +18,7 @@ class TransferAttendancePerMonthSerializer(serializers.ModelSerializer):
         model = AttendancePerMonth
         fields = ['id', 'status', 'total_debt', 'total_salary', 'ball_percentage', 'month_date',
                   'total_charity', 'remaining_debt', 'payment', 'remaining_salary', 'student',
-                  'taken_salary', 'group']
+                  'taken_salary', 'group', 'old_id', 'system']
 
 
 class TransferAttendancePerDaySerializer(serializers.ModelSerializer):
@@ -31,10 +31,11 @@ class TransferAttendancePerDaySerializer(serializers.ModelSerializer):
         model = AttendancePerDay
         fields = ['id', 'status', 'debt_per_day', 'salary_per_day', 'charity_per_day', 'day',
                   'homework_ball', 'dictionary_ball', 'activeness_ball', 'average', 'teacher', 'student',
-                  'status', 'group', 'month_date']
+                  'status', 'group', 'month_date', 'old_id']
 
     def create(self, validated_data):
-        attendance_per_month = AttendancePerMonth.objects.get(month_date=validated_data['month_date'])
+        month_date = validated_data.pop('month_date')
+        attendance_per_month = AttendancePerMonth.objects.get(month_date=month_date)
         attendance_per_day = AttendancePerDay.objects.create(**validated_data,
                                                              attendance_per_month=attendance_per_month)
         return attendance_per_day

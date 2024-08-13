@@ -29,7 +29,23 @@ class TransferCreatAttendancePerDay(generics.ListCreateAPIView):
         write_serializer = self.get_serializer(data=request.data, partial=True)
         write_serializer.is_valid(raise_exception=True)
         self.perform_create(write_serializer)
-
+        print(write_serializer.data)
         instance = AttendancePerDay.objects.get(pk=write_serializer.data['id'])
         read_serializer = AttendancePerDaySerializer(instance)
         return Response(read_serializer.data)
+
+
+
+# from rest_framework import generics
+# from attendances.models import AttendancePerMonth, AttendancePerDay
+# from .serializers import TransferAttendancePerMonthSerializer, TransferAttendancePerDaySerializer
+#
+#
+# class AttendancePerDayCreateView(generics.CreateAPIView):
+#     queryset = AttendancePerDay.objects.all()
+#     serializer_class = TransferAttendancePerDaySerializer
+#
+#
+# class AttendancePerMonthCreateView(generics.CreateAPIView):
+#     queryset = AttendancePerMonth.objects.all()
+#     serializer_class = TransferAttendancePerMonthSerializer
