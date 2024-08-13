@@ -44,14 +44,14 @@ class CapitalTerm(models.Model):
 class OldCapital(models.Model):
     name = models.CharField(max_length=100)
     price = models.IntegerField()
-    by_who = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='old_capital_user')
+    by_who = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='old_capital_user',
+                               null=True)
     added_date = models.DateTimeField(auto_now_add=False)
     img = models.ImageField(upload_to='old_capital/images', null=True)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='old_capital_branch')
     payment_type = models.ForeignKey(PaymentTypes, on_delete=models.SET_NULL, null=True,
                                      related_name='old_capital_payment_type')
     old_id = models.IntegerField(null=True, unique=True)
-    deleted = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['id']

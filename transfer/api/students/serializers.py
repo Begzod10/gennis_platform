@@ -33,7 +33,7 @@ class StudentSerializerTransfer(serializers.ModelSerializer):
         return student
 
 
-class StudentHistoryGroupCreateSerializer(serializers.ModelSerializer):
+class StudentHistoryGroupCreateSerializerTransfer(serializers.ModelSerializer):
     student = serializers.SlugRelatedField(queryset=Student.objects.all(), slug_field='old_id')
     group = serializers.SlugRelatedField(queryset=Group.objects.all(), slug_field='old_id')
     teacher = serializers.SlugRelatedField(queryset=Teacher.objects.all(), slug_field='old_id')
@@ -43,7 +43,7 @@ class StudentHistoryGroupCreateSerializer(serializers.ModelSerializer):
         fields = ['id', 'student', 'group', 'teacher', 'reason', 'joined_day', 'left_day', 'old_id']
 
 
-class StudentCharitySerializer(serializers.ModelSerializer):
+class StudentCharitySerializerTransfer(serializers.ModelSerializer):
     student = serializers.SlugRelatedField(queryset=StudentHistoryGroups.objects.all(), slug_field='old_id')
     group = serializers.SlugRelatedField(queryset=Group.objects.all(), slug_field='old_id')
     branch = serializers.SlugRelatedField(queryset=Branch.objects.all(), slug_field='old_id')
