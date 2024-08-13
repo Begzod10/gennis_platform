@@ -137,13 +137,14 @@ class StudentCharityListSerializer(serializers.ModelSerializer):
 
 class StudentPaymentSerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     payment_type = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
     payment_sum = serializers.IntegerField(required=False)
     status = serializers.BooleanField(required=False)
 
     class Meta:
         model = StudentPayment
-        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status']
+        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status','branch']
 
     def create(self, validated_data):
         print(validated_data)

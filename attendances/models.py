@@ -6,9 +6,8 @@ from group.models import Group
 
 
 class AttendancePerMonth(models.Model):
-    # teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
     status = models.IntegerField(default=False)
     total_debt = models.IntegerField(default=0)
     total_salary = models.IntegerField(default=0)

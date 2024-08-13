@@ -1,13 +1,14 @@
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from werkzeug.security import check_password_hash
+
 from branch.serializers import BranchSerializer
 from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch
-from werkzeug.security import generate_password_hash, check_password_hash
-from django.contrib.auth.hashers import make_password, check_password
-from rest_framework.exceptions import AuthenticationFailed
 
 
 class UserSerializerWrite(serializers.ModelSerializer):
@@ -40,12 +41,14 @@ class UserSerializerWrite(serializers.ModelSerializer):
         return user
 
     def update(self, instance, validated_data):
+        # user = super().update(instance, validated_data)
+        # user.set_password(validated_data['password'])
+        # user.save()
         user = super().update(instance, validated_data)
-        try:
-            user.set_password(validated_data['password'])
+        if 'password' in validated_data:
+            user.password = (validated_data['password'])
             user.save()
-        except KeyError:
-            pass
+
         return user
 
 

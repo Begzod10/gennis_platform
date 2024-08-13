@@ -1,9 +1,10 @@
 from rest_framework import serializers
-from .models import CapitalCategory, Capital
+from .models import CapitalCategory, Capital, OldCapital
 from branch.serializers import BranchSerializer
 from branch.models import Branch
 from payments.serializers import PaymentTypesSerializers
 from payments.models import PaymentTypes
+from user.serializers import UserSerializerWrite, CustomUser, UserSerializerRead
 
 
 class CapitalCategorySerializers(serializers.ModelSerializer):
@@ -80,3 +81,28 @@ class CapitalTermListSerializers(serializers.ModelSerializer):
     class Meta:
         model = Capital
         fields = ['id', 'down_cost', 'month_date', 'capital']
+
+
+class OldCapitalSerializers(serializers.ModelSerializer):
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
+    payment_type = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
+    by_who = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
+
+    class Meta:
+        model = OldCapital
+        fields = '__all__'
+
+    def delete(self, instance):
+        instance.deleted = True
+        instance.save()
+        return instance
+
+
+class OldCapitalListSerializers(serializers.ModelSerializer):
+    by_who = UserSerializerRead(read_only=True)
+    branch = BranchSerializer(required=False)
+    payment_type = PaymentTypesSerializers(required=False)
+
+    class Meta:
+        model = OldCapital
+        fields = '__all__'

@@ -11,13 +11,13 @@ from attendances.models import AttendancePerDay, AttendancePerMonth
 
 class TransferAttendancePerMonthSerializer(serializers.ModelSerializer):
     student = serializers.SlugRelatedField(queryset=Student.objects.all(), slug_field='old_id')
-    teacher = serializers.SlugRelatedField(queryset=Teacher.objects.all(), slug_field='old_id')
-    group = serializers.SlugRelatedField(queryset=Group.objects.all(), slug_field='old_id')
+    group = serializers.SlugRelatedField(queryset=Group.objects.all(), slug_field='old_id', required=False,
+                                         allow_null=True)
 
     class Meta:
         model = AttendancePerMonth
         fields = ['id', 'status', 'total_debt', 'total_salary', 'ball_percentage', 'month_date',
-                  'total_charity', 'remaining_debt', 'payment', 'remaining_salary', 'teacher', 'student',
+                  'total_charity', 'remaining_debt', 'payment', 'remaining_salary', 'student',
                   'taken_salary', 'group']
 
 

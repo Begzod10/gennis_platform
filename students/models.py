@@ -4,7 +4,7 @@ from django.db import models
 from payments.models import PaymentTypes
 from subjects.models import Subject
 from teachers.models import Teacher
-from user.serializers import (CustomUser)
+from user.serializers import (CustomUser, Branch)
 
 
 class Student(models.Model):
@@ -32,9 +32,11 @@ class StudentPayment(models.Model):
     student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True)
     payment_type = models.ForeignKey(PaymentTypes, on_delete=models.SET_NULL, null=True)
     payment_sum = models.IntegerField()
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
     added_data = models.DateTimeField(auto_now_add=True)
     status = models.BooleanField()
     deleted = models.BooleanField(default=False)
+    old_id = models.IntegerField(unique=True, null=True)
 
 
 class DeletedNewStudent(models.Model):
