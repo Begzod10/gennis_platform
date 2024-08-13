@@ -32,3 +32,19 @@ class TransferStaffsSalaryList(serializers.ModelSerializer):
     class Meta:
         model = UserSalaryList
         fields = '__all__'
+
+
+class TransferUserJobs(serializers.Serializer):
+    user_id = serializers.SlugRelatedField(
+        queryset=CustomUser.objects.all(), slug_field='old_id'
+    )
+    group_id = serializers.SlugRelatedField(
+        queryset=Group.objects.all(), slug_field='name'
+    )
+
+    def create(self, validated_data):
+        user = validated_data['user_id']
+        group = validated_data['group_id']
+        user.groups.add(group)
+
+        return user
