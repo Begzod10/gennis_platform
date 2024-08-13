@@ -37,6 +37,7 @@ class TeacherRetrieveView(generics.RetrieveAPIView):
         self.check_object_permissions(self.request, obj)
 
         # calculate_teacher_salary(obj)  # eror bergani uchun yopdim
+
         return obj
 
 

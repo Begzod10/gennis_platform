@@ -1,8 +1,12 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from students.models import Student, DeletedNewStudent
+from branch.models import Branch
+from group.models import Group
+from students.models import DeletedNewStudent
+from students.models import Student, StudentHistoryGroups, StudentCharity
 from subjects.serializers import Subject
+from teachers.models import Teacher
 from user.serializers import CustomUser
 
 
@@ -31,8 +35,28 @@ class StudentSerializerTransfer(serializers.ModelSerializer):
 
 
 class TransferDeletedNewStudentSerializer(serializers.ModelSerializer):
-    student = serializers.SlugRelatedField(queryset=Student.objects.all(),slug_field='old_id')
+    student = serializers.SlugRelatedField(queryset=Student.objects.all(), slug_field='old_id')
 
     class Meta:
         model = DeletedNewStudent
         fields = '__all__'
+
+
+class StudentHistoryGroupCreateSerializerTransfer(serializers.ModelSerializer):
+    student = serializers.SlugRelatedField(queryset=Student.objects.all(), slug_field='old_id')
+    group = serializers.SlugRelatedField(queryset=Group.objects.all(), slug_field='old_id')
+    teacher = serializers.SlugRelatedField(queryset=Teacher.objects.all(), slug_field='old_id')
+
+    class Meta:
+        model = StudentHistoryGroups
+        fields = ['id', 'student', 'group', 'teacher', 'reason', 'joined_day', 'left_day', 'old_id']
+
+
+class StudentCharitySerializerTransfer(serializers.ModelSerializer):
+    student = serializers.SlugRelatedField(queryset=StudentHistoryGroups.objects.all(), slug_field='old_id')
+    group = serializers.SlugRelatedField(queryset=Group.objects.all(), slug_field='old_id')
+    branch = serializers.SlugRelatedField(queryset=Branch.objects.all(), slug_field='old_id')
+
+    class Meta:
+        model = StudentCharity
+        fields = ['id', 'charity_sum', 'added_data', 'student', 'old_id', 'branch', 'group']

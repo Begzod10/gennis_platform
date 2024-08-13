@@ -26,6 +26,8 @@ class StudentCharity(models.Model):
     group = models.ForeignKey('group.Group', on_delete=models.SET_NULL, null=True, related_name='group_id_charity')
     added_data = models.DateTimeField(auto_now_add=True)
     student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, related_name='charity_student_id')
+    old_id = models.IntegerField(null=True)
+    branch = models.ForeignKey('branch.Branch', on_delete=models.SET_NULL, null=True)
 
 
 class StudentPayment(models.Model):
@@ -52,6 +54,7 @@ class StudentHistoryGroups(models.Model):
     reason = models.CharField(max_length=50)
     joined_day = models.DateTimeField()
     left_day = models.DateTimeField()
+    old_id = models.IntegerField(null=True)
 
 
 class DeletedStudent(models.Model):

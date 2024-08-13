@@ -1,10 +1,16 @@
 from django.urls import path
 
 from .views import (CreateCapitalCategoryList, CapitalCategoryRetrieveUpdateDestroyAPIView)
-from .api.get import CapitalRetrieveAPIView, CapitalListView
-from .api.createdeleteupdate import CapitalCreateView, CapitalUpdateView, CapitalDestroyView
+from .api.get import CapitalRetrieveAPIView, CapitalListView, OldCapitalListView, OldCapitalRetrieveAPIView
+from .api.createdeleteupdate import CapitalCreateView, CapitalUpdateView, CapitalDestroyView, OldCapitalCreateView, \
+    OldCapitalUpdateView, OldCapitalDestroyView
 
 urlpatterns = [
+    path('old_capital_create/', OldCapitalCreateView.as_view(), name='old-capital-create'),
+    path('old_capital_update/<int:pk>/', OldCapitalUpdateView.as_view(), name='old-capital-update'),
+    path('old_capital_delete/<int:pk>/', OldCapitalDestroyView.as_view(), name='old-capital-delete'),
+    path('old_capital/<int:pk>/', OldCapitalRetrieveAPIView.as_view(), name='old-capital'),
+    path('old_capital_list/', OldCapitalListView.as_view(), name='old-capital-list'),
     path('capital_create/', CapitalCreateView.as_view(), name='capital-create'),
     path('capital_update/<int:pk>/', CapitalUpdateView.as_view(), name='capital-update'),
     path('capital_delete/<int:pk>/', CapitalDestroyView.as_view(), name='capital-delete'),
