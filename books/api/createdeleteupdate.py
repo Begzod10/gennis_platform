@@ -1,10 +1,25 @@
 from rest_framework import generics
-from books.models import BookOrder, CollectedBookPayments, BalanceOverhead, BookOverhead
+from books.models import BookOrder, CollectedBookPayments, BalanceOverhead, BookOverhead, BookImage
 from books.serializers import BookOrderSerializers, BalanceOverheadSerializers, CollectedBookPaymentsSerializers, \
-    BookOverheadSerializers
+    BookOverheadSerializers, BookImageSerializer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 import json
+
+
+class BookImageCreateView(generics.CreateAPIView):
+    queryset = BookImage.objects.all()
+    serializer_class = BookImageSerializer
+
+
+class BookImageUpdateView(generics.UpdateAPIView):
+    queryset = BookImage.objects.all()
+    serializer_class = BookImageSerializer
+
+
+class BookImageDestroyView(generics.DestroyAPIView):
+    queryset = BookImage.objects.all()
+    serializer_class = BookImageSerializer
 
 
 class BookOverheadCreateView(generics.CreateAPIView):

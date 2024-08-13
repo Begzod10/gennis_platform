@@ -47,7 +47,6 @@ class OldCapital(models.Model):
     by_who = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='old_capital_user',
                                null=True)
     added_date = models.DateTimeField(auto_now_add=False)
-    img = models.ImageField(upload_to='old_capital/images', null=True)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='old_capital_branch')
     payment_type = models.ForeignKey(PaymentTypes, on_delete=models.SET_NULL, null=True,
                                      related_name='old_capital_payment_type')
