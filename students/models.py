@@ -41,7 +41,7 @@ class StudentPayment(models.Model):
 
 class DeletedNewStudent(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student_new')
-    created = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add=False)
     comment = models.CharField(null=True)
 
 

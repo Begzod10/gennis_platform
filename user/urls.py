@@ -17,6 +17,7 @@ from user.Api.write import (
     UserSalaryListCreateView,
     UserSalaryListUpdateView,
     UserSalaryListDestroyView,
+UsernameCheck
 )
 
 urlpatterns = [
@@ -33,5 +34,6 @@ urlpatterns = [
     path('users/me/', UserMe.as_view(), name='user-me'),
     path('employeers/', EmployeersListView.as_view(), name='employer-list'),
     path('employers/<int:pk>/', EmployerRetrieveView.as_view(), name='employer-retrieve'),
+    path('username-check/', UsernameCheck.as_view(), name='username-check'),
 
 ]

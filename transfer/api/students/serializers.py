@@ -1,8 +1,9 @@
+from django.db import transaction
 from rest_framework import serializers
+
+from students.models import Student, DeletedNewStudent
 from subjects.serializers import Subject
 from user.serializers import CustomUser
-from students.models import Student
-from django.db import transaction
 
 
 class StudentSerializerTransfer(serializers.ModelSerializer):
@@ -27,3 +28,11 @@ class StudentSerializerTransfer(serializers.ModelSerializer):
             subject_instance = Subject.objects.get(old_id=subject.old_id)
             student.subject.add(subject_instance)
         return student
+
+
+class TransferDeletedNewStudentSerializer(serializers.ModelSerializer):
+    student = serializers.SlugRelatedField(queryset=Student.objects.all(),slug_field='old_id')
+
+    class Meta:
+        model = DeletedNewStudent
+        fields = '__all__'

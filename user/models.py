@@ -1,17 +1,20 @@
-from django.db import models
-from django.contrib.auth.models import User, Group, Permission
-from django.utils import timezone
-from django.contrib.auth.models import AbstractUser
 from datetime import datetime
-from branch.models import Branch
-from payments.models import PaymentTypes
-from language.models import Language
+
 from django.conf import settings
+from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import User, Group, Permission
+from django.db import models
+
+from branch.models import Branch
+from language.models import Language
+from payments.models import PaymentTypes
 
 
 class CustomAutoGroup(models.Model):
-    group = models.OneToOneField(Group, on_delete=models.CASCADE, related_name='custom_permission')
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='custom_permission')
     salary = models.IntegerField(blank=True, null=True)
+    old_id = models.IntegerField(blank=True, null=True, unique=True)
+    user = models.ForeignKey('user.CustomUser', blank=True, null=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.group.name} - Salary: {self.salary}"
@@ -72,10 +75,11 @@ class CustomUser(AbstractUser):
 class UserSalary(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     permission = models.ForeignKey(CustomAutoGroup, on_delete=models.SET_NULL, null=True)
-    date = models.DateTimeField(auto_now_add=True)
+    date = models.DateTimeField(auto_now_add=False)  # true bo'lishi kerak baza kochirish uchun false qilingan
     total_salary = models.IntegerField(blank=True, null=True)
     taken_salary = models.IntegerField(blank=True, null=True)
     remaining_salary = models.IntegerField(blank=True, null=True)
+    old_id = models.IntegerField(blank=True, null=True, unique=True)
 
     class Meta:
         ordering = ['id']
