@@ -11,6 +11,7 @@ from attendances.models import AttendancePerDay, AttendancePerMonth
 
 class TransferAttendancePerMonthSerializer(serializers.ModelSerializer):
     student = serializers.SlugRelatedField(queryset=Student.objects.all(), slug_field='old_id')
+    teacher = serializers.SlugRelatedField(queryset=Teacher.objects.all(), slug_field='old_id')
     group = serializers.SlugRelatedField(queryset=Group.objects.all(), slug_field='old_id', required=False,
                                          allow_null=True)
 

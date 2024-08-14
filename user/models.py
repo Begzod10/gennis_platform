@@ -75,7 +75,7 @@ class CustomUser(AbstractUser):
 class UserSalary(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     permission = models.ForeignKey(CustomAutoGroup, on_delete=models.SET_NULL, null=True)
-    date = models.DateTimeField(auto_now_add=False)  # true bo'lishi kerak baza kochirish uchun false qilingan
+    date = models.DateTimeField(auto_now_add=True)  # true bo'lishi kerak baza kochirish uchun false qilingan
     total_salary = models.IntegerField(blank=True, null=True)
     taken_salary = models.IntegerField(blank=True, null=True)
     remaining_salary = models.IntegerField(blank=True, null=True)
