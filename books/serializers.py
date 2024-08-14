@@ -19,6 +19,7 @@ from django.utils.timezone import now
 
 class BookSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
+    old_id = serializers.IntegerField(required=False)
     name = serializers.CharField(max_length=255, required=False)
     desc = serializers.CharField(max_length=255, required=False)
     price = serializers.IntegerField(required=False)
@@ -28,17 +29,29 @@ class BookSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Book
-        fields = ['id', 'name', 'desc', 'price', 'own_price', 'share_price', 'file']
+        fields = ['id', 'name', 'desc', 'price', 'own_price', 'share_price', 'file', 'old_id']
 
 
 class BookImageSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
-    book = BookSerializer(required=False)
+    book = serializers.PrimaryKeyRelatedField(queryset=Book.objects.all())
     image = serializers.ImageField(required=False)
+    old_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = BookImage
-        fields = ['id', 'image', 'book']
+        fields = ['id', 'image', 'book', 'old_id']
+
+
+class BookImageListSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    book = BookSerializer(required=False)
+    image = serializers.ImageField(required=False)
+    old_id = serializers.IntegerField(required=False)
+
+    class Meta:
+        model = BookImage
+        fields = ['id', 'image', 'book', 'old_id']
 
 
 class CollectedBookPaymentsSerializers(serializers.ModelSerializer):

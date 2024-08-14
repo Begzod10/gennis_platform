@@ -1,12 +1,45 @@
 from rest_framework import generics
 from books.models import BookOrder, CollectedBookPayments, BalanceOverhead, CenterBalance, BookOverhead, BranchPayment, \
-    EditorBalance
+    EditorBalance, BookImage
 from books.serializers import BookOrderListSerializers, BalanceOverheadListSerializers, \
     CollectedBookPaymentsListSerializers, BranchPaymentListSerializers, \
-    CenterBalanceListSerializer, BookOverheadListSerializers, EditorBalanceListSerializers
+    CenterBalanceListSerializer, BookOverheadListSerializers, EditorBalanceListSerializers, BookImageListSerializer
 from user.functions.functions import check_auth
 from rest_framework.response import Response
 from permissions.functions.CheckUserPermissions import check_user_permissions
+
+
+# class BookImageListView(generics.ListAPIView):
+#     queryset = BookImage.objects.all()
+#     serializer_class = BookImageListSerializer
+#
+#     def get(self, request, *args, **kwargs):
+#         user, auth_error = check_auth(request)
+#         if auth_error:
+#             return Response(auth_error)
+#
+#         table_names = ['bookimage', 'book']
+#         permissions = check_user_permissions(user, table_names)
+#
+#         queryset = BookImage.objects.all()
+#         serializer = BookImageListSerializer(queryset, many=True)
+#         return Response({'bookimages': serializer.data, 'permissions': permissions})
+
+
+class BookImageRetrieveView(generics.RetrieveAPIView):
+    queryset = BookImage.objects.all()
+    serializer_class = BookImageListSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['bookimage', 'book']
+        permissions = check_user_permissions(user, table_names)
+        book_image = self.get_object()
+        book_image_data = self.get_serializer(book_image).data
+        return Response({'bookimage': book_image_data, 'permissions': permissions})
 
 
 class EditorBalanceListView(generics.ListAPIView):
