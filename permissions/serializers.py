@@ -10,12 +10,7 @@ from django.contrib.auth.models import Permission
 from user.models import CustomUser
 from location.models import Location
 from branch.models import Branch
-
-
-class GroupSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Group
-        fields = ['id', 'name']
+from .models import AuthGroupSystem
 
 
 class PermissionsSerializer(serializers.ModelSerializer):
@@ -24,13 +19,21 @@ class PermissionsSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'content_type_id', 'codename']
 
 
-class AuthGroupSystemSerializer(serializers.ModelSerializer):
-    group = GroupSerializer(read_only=True)
-    system = SystemSerializers(read_only=True)
+class GroupSerializer(serializers.ModelSerializer):
+    permissions = PermissionsSerializer(read_only=True, many=True)
 
     class Meta:
         model = Group
-        fields = ['id', 'group', 'system']
+        fields = ['id', 'name', 'permissions']
+
+
+class AuthGroupSystemSerializer(serializers.ModelSerializer):
+    group = GroupSerializer(read_only=True)
+    system_id = SystemSerializers(read_only=True)
+
+    class Meta:
+        model = AuthGroupSystem
+        fields = ['id', 'group', 'system_id']
 
 
 class AccessSerializer(serializers.ModelSerializer):

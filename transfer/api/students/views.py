@@ -1,5 +1,5 @@
 from rest_framework import generics
-from .serializers import StudentSerializerTransfer, StudentHistoryGroupCreateSerializer, StudentCharitySerializer
+from .serializers import StudentSerializerTransfer, StudentHistoryGroupCreateSerializer, TransferStudentCharitySerializer
 from students.models import Student, StudentHistoryGroups, StudentCharity
 
 
@@ -15,4 +15,4 @@ class StudentHistoryGroupView(generics.CreateAPIView):
 
 class StudentCharityView(generics.CreateAPIView):
     queryset = StudentCharity.objects.all()
-    serializer_class = StudentCharitySerializer
+    serializer_class = TransferStudentCharitySerializer

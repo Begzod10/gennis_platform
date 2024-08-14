@@ -13,7 +13,6 @@ class AddUserGroup(APIView):
         user = CustomUser.objects.get(pk=11)
         group = Group.objects.get(pk=data['job_id'])
         user.groups.add(group)
-
         return Response({'job': ''})
 
     def get(self, request):
