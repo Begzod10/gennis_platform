@@ -1,10 +1,12 @@
-from rest_framework import generics
+from rest_framework import generics, mixins
+from rest_framework.response import Response
+
+from permissions.functions.CheckUserPermissions import check_user_permissions
+from students.models import StudentPayment, StudentHistoryGroups, StudentCharity, Student
 from students.serializers import StudentPaymentListSerializer, StudentHistoryGroupsListSerializer, \
     StudentCharityListSerializer, StudentListSerializer
-from students.models import StudentPayment, StudentHistoryGroups, StudentCharity, Student
+from subjects.serializers import SubjectSerializer
 from user.functions.functions import check_auth
-from rest_framework.response import Response
-from permissions.functions.CheckUserPermissions import check_user_permissions
 
 
 class StudentRetrieveAPIView(generics.RetrieveAPIView):
@@ -135,3 +137,34 @@ class StudentPaymentAPIView(generics.RetrieveAPIView):
         create_branches = self.get_object()
         create_branches_data = self.get_serializer(create_branches).data
         return Response({'branches': create_branches_data, 'permissions': permissions})
+
+
+class FilteredStudentsListView(mixins.ListModelMixin, generics.GenericAPIView):
+    serializer_class = SubjectSerializer
+
+    def get_queryset(self):
+        location_id = self.kwargs['branch_id']
+        students = Student.objects.filter(
+            user__branch_id=location_id,
+            user__isnull=False,
+            subject__isnull=False,
+            deleted_student_student_new__isnull=True
+        ).select_related('user').prefetch_related('subject').order_by('-id')
+
+        subjects_with_students = {}
+        i=0
+        for student in students:
+            i+=1
+            print(StudentListSerializer(student).data)
+            for subject in student.subject.all():
+                if subject.id not in subjects_with_students:
+                    subjects_with_students[subject.id] = {
+                        "id": subject.id,
+                        "name": subject.name,
+                        "students": []
+                    }
+                subjects_with_students[subject.id]["students"].append(StudentListSerializer(student).data)
+        return list(subjects_with_students.values())
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

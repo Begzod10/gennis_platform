@@ -16,13 +16,12 @@ from lesson_plan.functions.utils import update_lesson_plan
 
 class AttendancePerMonthSerializer(serializers.ModelSerializer):
     student = StudentSerializer()
-    teacher = TeacherSerializer()
     group = GroupSerializer()
 
     class Meta:
         model = AttendancePerMonth
         fields = ['id', 'status', 'total_debt', 'total_salary', 'ball_percentage', 'month_date',
-                  'total_charity', 'remaining_debt', 'payment', 'remaining_salary', 'teacher', 'student',
+                  'total_charity', 'remaining_debt', 'payment', 'remaining_salary', 'student',
                   'taken_salary', 'group']
 
 

@@ -9,7 +9,6 @@ def calculate_teacher_salary(teacher):
     working_days = Day.objects.filter(year__year=today.year, month__month_number=today.month).count()
     month_date = datetime(today.year, today.month, 1)
     date_strp = datetime.strptime(str(month_date), "%Y-%m-%d %H:%M:%S")
-
     salary, _ = TeacherSalary.objects.get_or_create(
         teacher=teacher,
         month_date=date_strp,

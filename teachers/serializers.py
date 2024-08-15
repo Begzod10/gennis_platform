@@ -89,7 +89,7 @@ class TeacherSalaryTypeSerializerRead(serializers.ModelSerializer):
 
 class TeacherSerializerRead(serializers.ModelSerializer):
     user = UserSerializerRead(read_only=True)
-    subject = SubjectSerializer(read_only=True)
+    subject = SubjectSerializer(many=True)
     teacher_salary_type = TeacherSalaryTypeSerializerRead(read_only=True)
 
     class Meta:

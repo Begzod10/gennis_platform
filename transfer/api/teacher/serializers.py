@@ -1,7 +1,7 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from teachers.models import (Teacher, Subject)
+from teachers.models import (Teacher, Subject, Branch)
 from user.serializers import CustomUser
 
 
@@ -27,4 +27,19 @@ class TeacherSerializerTransfer(serializers.ModelSerializer):
             subject_instance = Subject.objects.get(old_id=subject.old_id)
             teacher.subject.add(subject_instance)
 
+        return teacher
+
+
+class TeacherBranchSerializer(serializers.Serializer):
+    teacher_id = serializers.SlugRelatedField(
+        queryset=Teacher.objects.all(), slug_field='old_id'
+    )
+    branch_id = serializers.SlugRelatedField(
+        queryset=Branch.objects.all(), slug_field='old_id'
+    )
+
+    def create(self, validated_data):
+        teacher = validated_data['teacher_id']
+        branch = validated_data['branch_id']
+        teacher.branches.add(branch)
         return teacher

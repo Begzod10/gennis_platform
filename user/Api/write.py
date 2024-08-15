@@ -1,5 +1,7 @@
 from rest_framework import generics
+from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from permissions.functions.CheckUserPermissions import check_user_permissions
@@ -30,8 +32,6 @@ class UserUpdateView(generics.UpdateAPIView):
     serializer_class = UserSerializerWrite
 
 
-
-
 class UserDestroyView(generics.DestroyAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializerWrite
@@ -54,3 +54,16 @@ class UserSalaryListDestroyView(generics.DestroyAPIView):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+
+class UsernameCheck(APIView):
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username', None)
+        if username:
+            try:
+                user = CustomUser.objects.get(username=username)
+                return Response({'exists': True}, status=status.HTTP_200_OK)
+            except CustomUser.DoesNotExist:
+                return Response({'exists': False}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Username not provided'}, status=status.HTTP_400_BAD_REQUEST)

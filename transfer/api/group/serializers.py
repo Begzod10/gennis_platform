@@ -12,7 +12,8 @@ from classes.models import ClassNumber, ClassColors
 class TransferGroupCreateUpdateSerializer(serializers.ModelSerializer):
     branch = serializers.SlugRelatedField(queryset=Branch.objects.all(), slug_field='old_id')
     language = serializers.SlugRelatedField(queryset=Language.objects.all(), slug_field='old_id')
-    level = serializers.SlugRelatedField(queryset=SubjectLevel.objects.all(), slug_field='old_id')
+    level = serializers.SlugRelatedField(queryset=SubjectLevel.objects.all(), slug_field='old_id', required=False,
+                                         allow_null=True)
     subject = serializers.SlugRelatedField(queryset=Subject.objects.all(), slug_field='old_id')
     students = serializers.SlugRelatedField(queryset=Student.objects.all(), slug_field='old_id', many=True)
     teacher = serializers.SlugRelatedField(queryset=Teacher.objects.all(), slug_field='old_id', many=True)
@@ -23,3 +24,4 @@ class TransferGroupCreateUpdateSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
                   'deleted', 'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system', 'class_number',
                   'color', 'course_types', 'class_number', 'old_id']
+
