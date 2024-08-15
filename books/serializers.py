@@ -1,18 +1,18 @@
 from rest_framework import serializers
 from django.utils.timezone import now
 from .models import Book, BookImage, CollectedBookPayments, BalanceOverhead, BookOrder, CenterBalance, CenterOrders, \
-    BranchPayment, EditorBalance, BookOverhead
+    BranchPayment, EditorBalance, BookOverhead, UserBook
 from branch.models import Branch
 from payments.models import PaymentTypes
 from branch.serializers import BranchSerializer
 from payments.serializers import PaymentTypesSerializers
-from user.serializers import UserSerializerRead
+from user.serializers import UserSerializerRead, UserSalaryListSerializersRead
 from students.serializers import StudentSerializer
-from teachers.serializers import TeacherSerializer
+from teachers.serializers import TeacherSerializer, TeacherSalaryListReadSerializers
 from group.serializers import GroupSerializer
-from user.models import CustomUser
+from user.models import CustomUser, UserSalary
 from students.models import Student
-from teachers.models import Teacher
+from teachers.models import Teacher, TeacherSalary
 from group.models import Group
 from django.utils.timezone import now
 
@@ -202,8 +202,36 @@ class BookOrderSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = BookOrder
-        fields = ['id', 'user', 'book', 'user', 'student', 'teacher', 'group', 'branch', 'collected_payment', 'count',
+        fields = ['id', 'user', 'book', 'student', 'teacher', 'group', 'branch', 'collected_payment', 'count',
                   'admin_status', 'editor_status', 'reason', 'old_id']
+
+    def create(self, validated_data):
+        book_order = BookOrder.objects.create(**validated_data)
+        if not validated_data['student'] and not validated_data['teacher'] and not validated_data['group']:
+            user = CustomUser.objects.get(pk=validated_data['user'])
+            if user.teacher_user:
+                user.teacher_user.teacher_id_salary.remaining_salary -= validated_data['payment_sum']
+                user.teacher_user.teacher_id_salary.taken_salary += validated_data['payment_sum']
+                UserBook.objects.create(
+                    user=validated_data['user'],
+                    branch=validated_data['branch'],
+                    teacher_salary=user.teacher_user.teacher_id_salary,
+                    book_order=book_order,
+                    payment_sum=validated_data['payment_sum'],
+                )
+
+            else:
+                user_salary = UserSalary.objects.get(user=user)
+                user_salary.remaining_salary -= validated_data['payment_sum']
+                user_salary.taken_salary += validated_data['payment_sum']
+                UserBook.objects.create(
+                    user=validated_data['user'],
+                    branch=validated_data['branch'],
+                    user_salary=user_salary,
+                    book_order=book_order,
+                    payment_sum=validated_data['payment_sum'],
+                )
+        return book_order
 
     def update(self, instance, validated_data):
         for attr, value in validated_data.items():
@@ -346,3 +374,32 @@ class BookOverheadSerializers(serializers.ModelSerializer):
         editor_balance.balance -= price
         editor_balance.save()
         return book_overhead
+
+
+class UserBookSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
+    book_order = serializers.PrimaryKeyRelatedField(queryset=BookOrder.objects.all())
+    teacher_salary = serializers.PrimaryKeyRelatedField(queryset=TeacherSalary.objects.all())
+    user_salary = serializers.PrimaryKeyRelatedField(queryset=UserSalary.objects.all())
+
+    def delete(self, instance):
+        return instance
+
+    class Meta:
+        model = UserBook
+        fields = '__all__'
+
+
+class UserBookListSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    user = UserSerializerRead(required=False)
+    branch = BranchSerializer(required=False)
+    book_order = BookOrderListSerializers(required=False)
+    teacher_salary = TeacherSalaryListReadSerializers(required=False)
+    user_salary = UserSalaryListSerializersRead(required=False)
+
+    class Meta:
+        model = UserBook
+        fields = '__all__'

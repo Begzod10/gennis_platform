@@ -7,13 +7,16 @@ from .views import (
 from .api.get import BookOrderListView, BookOrderRetrieveView, CollectedBookPaymentsRetrieveView, \
     BookOverheadRetrieveView, BookOverheadListView, BalanceOverheadListView, BalanceOverheadRetrieveView, \
     CenterBalanceListView, CenterBalanceRetrieveView, BranchPaymentListView, BranchPaymentRetrieveView, \
-    EditorBalanceListView, EditorBalanceRetrieveView, BookImageRetrieveView
+    EditorBalanceListView, EditorBalanceRetrieveView, BookImageRetrieveView, UserBookRetrieveView, UserBookListView
 from .api.createdeleteupdate import BookOrderDestroyView, BookOrderCreateView, BookOrderUpdateView, \
     CollectedBookPaymentsUpdateView, BookOverheadUpdateView, BalanceOverheadUpdateView, BalanceOverheadCreateView, \
     BookOverheadDestroyView, BookOverheadCreateView, BalanceOverheadDestroyView, BookImageCreateView, \
-    BookImageUpdateView, BookImageDestroyView
+    BookImageUpdateView, BookImageDestroyView, UserBookDestroyView
 
 urlpatterns = [
+    path('user_book_delete/<int:pk>/', UserBookDestroyView.as_view(), name='user-book-delete'),
+    path('user_book/<int:pk>/', UserBookRetrieveView.as_view(), name='user-book'),
+    path('user_book_list/', UserBookListView.as_view(), name='user-book-list'),
     path('editor_balance/<int:pk>/', EditorBalanceRetrieveView.as_view(), name='editor-balance'),
     path('editor_balance_list/', EditorBalanceListView.as_view(), name='editor-balance-list'),
     path('branch_payment/<int:pk>/', BranchPaymentRetrieveView.as_view(), name='branch-payment'),
