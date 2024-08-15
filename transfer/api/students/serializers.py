@@ -1,12 +1,13 @@
+from django.db import transaction
 from rest_framework import serializers
 
 from branch.models import Branch
+from group.models import Group
+from students.models import DeletedNewStudent
+from students.models import Student, StudentHistoryGroups, StudentCharity
 from subjects.serializers import Subject
 from teachers.models import Teacher
 from user.serializers import CustomUser
-from students.models import Student, StudentHistoryGroups, StudentCharity
-from django.db import transaction
-from group.models import Group
 
 
 class StudentSerializerTransfer(serializers.ModelSerializer):
@@ -31,6 +32,14 @@ class StudentSerializerTransfer(serializers.ModelSerializer):
             subject_instance = Subject.objects.get(old_id=subject.old_id)
             student.subject.add(subject_instance)
         return student
+
+
+class TransferDeletedNewStudentSerializer(serializers.ModelSerializer):
+    student = serializers.SlugRelatedField(queryset=Student.objects.all(), slug_field='old_id')
+
+    class Meta:
+        model = DeletedNewStudent
+        fields = '__all__'
 
 
 class StudentHistoryGroupCreateSerializerTransfer(serializers.ModelSerializer):

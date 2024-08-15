@@ -9,7 +9,7 @@ from gennis_platform import settings
 from permissions.functions.CheckUserPermissions import check_user_permissions
 from user.functions.functions import check_auth
 from user.models import CustomUser, UserSalaryList
-from user.serializers import UserSerializerRead, UserSalaryListSerializersRead
+from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers
 
 
 class UserListCreateView(generics.ListAPIView):
@@ -103,3 +103,23 @@ class UserMe(APIView):
         table_names = ['customuser']
         permissions = check_user_permissions(user, table_names)
         return Response({'user': serializer.data, 'permissions': permissions})
+
+
+class EmployeersListView(generics.ListAPIView):
+    serializer_class = Employeers
+
+    def get_queryset(self):
+        return CustomUser.objects.filter(
+            student_user__isnull=True,
+            teacher_user__isnull=True
+        )
+
+
+class EmployerRetrieveView(generics.RetrieveAPIView):
+    serializer_class = Employeers
+
+    def get_queryset(self):
+        return CustomUser.objects.filter(
+            student_user__isnull=True,
+            teacher_user__isnull=True
+        )

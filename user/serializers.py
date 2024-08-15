@@ -67,6 +67,7 @@ class UserSerializerRead(serializers.ModelSerializer):
         return obj.calculate_age()
 
 
+
 class UserSalaryListSerializers(serializers.ModelSerializer):
     # user = UserSerializer(read_only=True)
     # branch = BranchSerializer(read_only=True    )
@@ -147,3 +148,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             data['refresh'] = str(refresh)
             data['access'] = str(refresh.access_token)
             return data
+
+
+class Employeers(serializers.ModelSerializer):
+    age = serializers.SerializerMethodField(required=False)
+
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
+                  'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
+                  'branch','age']
+
+    def get_age(self, obj):
+        return obj.calculate_age()

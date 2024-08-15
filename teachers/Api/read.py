@@ -34,8 +34,10 @@ class TeacherRetrieveView(generics.RetrieveAPIView):
     def get_object(self):
         pk = self.kwargs.get('pk')
         obj = self.get_queryset().filter(pk=pk).first()
-        # self.check_object_permissions(self.request, obj)
-        # calculate_teacher_salary(obj)
+        self.check_object_permissions(self.request, obj)
+
+        # calculate_teacher_salary(obj)  # eror bergani uchun yopdim
+
         return obj
 
 

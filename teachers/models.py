@@ -21,6 +21,7 @@ class Teacher(models.Model):
     class_type = models.IntegerField(null=True)
     teacher_salary_type = models.ForeignKey(TeacherSalaryType, on_delete=models.SET_NULL, null=True)
     old_id = models.IntegerField(unique=True, null=True)
+    branches = models.ManyToManyField(Branch, blank=True)
 
 
 class TeacherAttendance(models.Model):
@@ -53,7 +54,7 @@ class TeacherSalary(models.Model):
 class TeacherBlackSalary(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_black_salary')
     black_salary = models.IntegerField(null=True)
-    group = models.ForeignKey('group.Group', on_delete=models.CASCADE)
+    group = models.ForeignKey('group.Group', on_delete=models.CASCADE, null=True)
     student = models.ForeignKey('students.Student', on_delete=models.CASCADE)
     month_date = models.DateTimeField()
     status = models.BooleanField()

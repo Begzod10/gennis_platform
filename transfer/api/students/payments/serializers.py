@@ -7,7 +7,7 @@ from students.models import (Student, StudentPayment)
 from teachers.models import TeacherBlackSalary
 
 
-class StudentPaymentSerializer(serializers.ModelSerializer):
+class StudentPaymentSerializerTransfer(serializers.ModelSerializer):
     student = serializers.SlugRelatedField(queryset=Student.objects.all(), slug_field='old_id')
     branch = serializers.SlugRelatedField(queryset=Branch.objects.all(), slug_field='old_id')
     payment_type = serializers.SlugRelatedField(queryset=PaymentTypes.objects.all(), slug_field='old_id')
@@ -19,7 +19,6 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
         fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'branch']
 
     def create(self, validated_data):
-        print(validated_data)
         attendance_per_months = AttendancePerMonth.objects.get(student=validated_data.get('student'),
                                                                status=False).all()
         student = Student.objects.get(pk=validated_data.get('student'))
@@ -56,10 +55,3 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
             student.debt_status = 2
         student.save()
         return student_payment
-
-    def delete(self, instance):
-        instance.deleted = True
-        instance.save()
-        instance.student.extra_payment -= instance.payment_sum
-        instance.student.extra_payment.save()
-        return instance
