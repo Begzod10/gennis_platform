@@ -62,10 +62,11 @@ class CollectedBookPaymentsSerializers(serializers.ModelSerializer):
     month_date = serializers.DateTimeField(required=False)
     received_date = serializers.DateTimeField(required=False)
     status = serializers.BooleanField(required=False)
+    old_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = CollectedBookPayments
-        fields = ['id', 'branch', 'payment_type', 'total_debt', 'month_date', 'received_date', 'status']
+        fields = ['id', 'branch', 'payment_type', 'total_debt', 'month_date', 'received_date', 'status', 'old_id']
 
     def update(self, instance, validated_data):
         status = validated_data.pop('status', None)
@@ -111,10 +112,11 @@ class CollectedBookPaymentsListSerializers(serializers.ModelSerializer):
     month_date = serializers.DateTimeField(required=False)
     received_date = serializers.DateTimeField(required=False)
     status = serializers.BooleanField(required=False)
+    old_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = CollectedBookPayments
-        fields = ['id', 'branch', 'payment_type', 'total_debt', 'month_date', 'received_date', 'status']
+        fields = ['id', 'branch', 'payment_type', 'total_debt', 'month_date', 'received_date', 'status', 'old_id']
 
 
 class CenterBalanceListSerializer(serializers.ModelSerializer):
@@ -123,10 +125,11 @@ class CenterBalanceListSerializer(serializers.ModelSerializer):
     total_money = serializers.IntegerField(required=False)
     remaining_money = serializers.IntegerField(required=False)
     taken_money = serializers.IntegerField(required=False)
+    old_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = CenterBalance
-        fields = ['id', 'branch', 'total_money', 'remaining_money', 'taken_money']
+        fields = ['id', 'branch', 'total_money', 'remaining_money', 'taken_money', 'old_id']
 
 
 class BalanceOverheadSerializers(serializers.ModelSerializer):
@@ -136,10 +139,11 @@ class BalanceOverheadSerializers(serializers.ModelSerializer):
     payment_type = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
     overhead_sum = serializers.IntegerField(required=False)
     reason = serializers.CharField(required=False)
+    old_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = BalanceOverhead
-        fields = ['id', 'branch', 'balance', 'payment_type', 'overhead_sum', 'reason']
+        fields = ['id', 'branch', 'balance', 'payment_type', 'overhead_sum', 'reason', 'old_id']
 
     def create(self, validated_data):
         branch = Branch.objects.get(pk=validated_data.pop('branch', None).pk)
@@ -174,10 +178,11 @@ class BalanceOverheadListSerializers(serializers.ModelSerializer):
     payment_type = PaymentTypesSerializers(required=False)
     overhead_sum = serializers.IntegerField(required=False)
     reason = serializers.CharField(required=False)
+    old_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = BalanceOverhead
-        fields = ['id', 'branch', 'balance', 'payment_type', 'overhead_sum', 'reason']
+        fields = ['id', 'branch', 'balance', 'payment_type', 'overhead_sum', 'reason', 'old_id']
 
 
 class BookOrderSerializers(serializers.ModelSerializer):
@@ -193,11 +198,12 @@ class BookOrderSerializers(serializers.ModelSerializer):
     admin_status = serializers.BooleanField(required=False)
     editor_status = serializers.BooleanField(required=False)
     reason = serializers.CharField(required=False)
+    old_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = BookOrder
         fields = ['id', 'user', 'book', 'user', 'student', 'teacher', 'group', 'branch', 'collected_payment', 'count',
-                  'admin_status', 'editor_status', 'reason']
+                  'admin_status', 'editor_status', 'reason', 'old_id']
 
     def update(self, instance, validated_data):
         for attr, value in validated_data.items():
@@ -263,11 +269,12 @@ class BookOrderListSerializers(serializers.ModelSerializer):
     admin_status = serializers.BooleanField(required=False)
     editor_status = serializers.BooleanField(required=False)
     reason = serializers.CharField(required=False)
+    old_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = BookOrder
         fields = ['id', 'user', 'book', 'user', 'student', 'teacher', 'group', 'branch', 'collected_payment', 'count',
-                  'admin_status', 'editor_status', 'reason']
+                  'admin_status', 'editor_status', 'reason', 'old_id']
 
 
 class EditorBalanceListSerializers(serializers.ModelSerializer):
@@ -276,10 +283,11 @@ class EditorBalanceListSerializers(serializers.ModelSerializer):
     balance = serializers.IntegerField(required=False)
     payment_sum = serializers.IntegerField(required=False)
     overhead_sum = serializers.IntegerField(required=False)
+    old_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = EditorBalance
-        fields = ['id', 'payment_type', 'balance', 'payment_sum', 'overhead_sum']
+        fields = ['id', 'payment_type', 'balance', 'payment_sum', 'overhead_sum', 'old_id']
 
 
 class BranchPaymentListSerializers(serializers.ModelSerializer):
@@ -289,10 +297,11 @@ class BranchPaymentListSerializers(serializers.ModelSerializer):
     branch = BranchSerializer(required=False)
     payment_type = PaymentTypesSerializers(required=False)
     payment_sum = serializers.IntegerField(required=False)
+    old_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = BranchPayment
-        fields = ['id', 'book_order', 'editor_balance', 'branch', 'payment_type', 'payment_sum']
+        fields = ['id', 'book_order', 'editor_balance', 'branch', 'payment_type', 'payment_sum', 'old_id']
 
 
 class BookOverheadListSerializers(serializers.ModelSerializer):
@@ -302,10 +311,11 @@ class BookOverheadListSerializers(serializers.ModelSerializer):
     price = serializers.IntegerField(required=False)
     name = serializers.CharField(required=False)
     deleted_reason = serializers.CharField(required=False)
+    old_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = BookOverhead
-        fields = ['id', 'editor_balance', 'payment_type', 'price', 'name', 'deleted_reason']
+        fields = ['id', 'editor_balance', 'payment_type', 'price', 'name', 'deleted_reason', 'old_id']
 
 
 class BookOverheadSerializers(serializers.ModelSerializer):
@@ -315,10 +325,11 @@ class BookOverheadSerializers(serializers.ModelSerializer):
     price = serializers.IntegerField(required=False)
     name = serializers.CharField(required=False)
     deleted_reason = serializers.CharField(required=False)
+    old_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = BookOverhead
-        fields = ['id', 'editor_balance', 'payment_type', 'price', 'name', 'deleted_reason']
+        fields = ['id', 'editor_balance', 'payment_type', 'price', 'name', 'deleted_reason', 'old_id']
 
     def create(self, validated_data):
         editor_balance = EditorBalance.objects.get(pk=validated_data.pop('editor_balance', None).pk)
