@@ -13,12 +13,9 @@ from .functions.checkTime import check_time
 
 
 class WeekDaysSerializer(serializers.ModelSerializer):
-    id = serializers.CharField(max_length=100, required=True)
-    name = serializers.CharField(max_length=100, required=False)
-
     class Meta:
         model = WeekDays
-        fields = ['id', 'name']
+        fields = ['id', 'name_uz']
 
 
 class TimeTableArchiveListSerializer(serializers.ModelSerializer):
@@ -46,6 +43,7 @@ class GroupTimeTableCreateUpdateSerializer(serializers.ModelSerializer):
         fields = ['id', 'group', 'week', 'room', 'start_time', 'end_time', 'branch']
 
     def create(self, validated_data):
+
         result = check_time(validated_data.get('group'), validated_data.get('week').id, validated_data.get('room'),
                             validated_data.get('start_time'),
                             validated_data.get('end_time'))
