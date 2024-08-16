@@ -1,11 +1,14 @@
 from rest_framework import generics
+from rest_framework.exceptions import NotFound
+from rest_framework.response import Response
 
-from teachers.functions.school.CalculateTeacherSalary import calculate_teacher_salary
+from permissions.functions.CheckUserPermissions import check_user_permissions
 from teachers.models import TeacherGroupStatistics, Teacher, TeacherSalaryList, TeacherSalary
 from teachers.serializers import (
     TeacherSerializerRead, TeacherSalaryListReadSerializers, TeacherGroupStatisticsReadSerializers,
     TeacherSalaryReadSerializers
 )
+from user.functions.functions import check_auth
 
 
 class TeacherGroupStatisticsListView(generics.ListAPIView):
@@ -61,8 +64,26 @@ class TeacherSalaryListAPIView(generics.ListAPIView):
 
 
 class TeacherSalaryDetailAPIView(generics.RetrieveAPIView):
-    queryset = TeacherSalaryList.objects.all()
-    serializer_class = TeacherSalaryListReadSerializers
+    queryset = TeacherSalary.objects.all()
+    serializer_class = TeacherSalaryReadSerializers
+
+    def retrieve(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['teacher', 'paymenttypes', 'branch', 'customuser']
+        permissions = check_user_permissions(user, table_names)
+        user_salary_list = self.get_object()
+        user_salary_list_data = self.get_serializer(user_salary_list,many=True).data
+        return Response({'usersalary': user_salary_list_data, 'permissions': permissions})
+
+    def get_object(self):
+        user_id = self.kwargs.get('pk')
+        try:
+            return TeacherSalary.objects.get(user_id=user_id)
+        except TeacherSalary.DoesNotExist:
+            raise NotFound('TeacherSalary not found for the given teacher_id')
 
 
 class TeacherSalaryListView(generics.ListAPIView):

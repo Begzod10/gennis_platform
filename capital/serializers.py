@@ -8,9 +8,8 @@ from user.serializers import UserSerializerWrite, CustomUser, UserSerializerRead
 
 
 class CapitalCategorySerializers(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=False)
-    name = serializers.CharField(required=False)
-    id_number = serializers.CharField(required=False)
+    name = serializers.CharField(required=True)
+    id_number = serializers.CharField(required=True)
     img = serializers.ImageField(required=False)
 
     class Meta:
