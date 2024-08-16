@@ -19,7 +19,7 @@ class TransferAttendancePerMonthSerializer(serializers.ModelSerializer):
         model = AttendancePerMonth
         fields = ['id', 'status', 'total_debt', 'total_salary', 'ball_percentage', 'month_date',
                   'total_charity', 'remaining_debt', 'payment', 'remaining_salary', 'student',
-                  'taken_salary', 'group', 'old_id', 'system']
+                  'taken_salary', 'group', 'old_id', 'system','teacher']
 
 
 class TransferAttendancePerDaySerializer(serializers.ModelSerializer):

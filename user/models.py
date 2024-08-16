@@ -92,9 +92,10 @@ class UserSalaryList(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
     salary = models.IntegerField(blank=True, null=True)
-    date = models.DateTimeField(null=False)
+    date = models.DateTimeField(null=False,auto_now_add=True)
     comment = models.CharField(max_length=100, blank=True, null=True)
     deleted = models.BooleanField(default=False, null=True)
+    old_id = models.IntegerField(null=True,blank=True,unique=True)
 
     class Meta:
-        ordering = ['id']
+        ordering = ['date']

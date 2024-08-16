@@ -42,6 +42,7 @@ class CreateMonthly(CronJobBase):
                                                                month_date__month=current_month).first()
 
                 if attendance:
+                    print(attendance)
                     TeacherSalary.objects.create(
                         teacher=teacher,
                         total_salary=attendance.total_salary,

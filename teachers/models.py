@@ -37,7 +37,7 @@ class TeacherAttendance(models.Model):
 
 class TeacherSalary(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_id_salary')
-    month_date = models.DateField(null=True)
+    month_date = models.DateField(null=True,auto_now_add=True)
     total_salary = models.BigIntegerField(blank=True, null=True)
     remaining_salary = models.BigIntegerField(blank=True, null=True)
     taken_salary = models.BigIntegerField(blank=True, null=True)

@@ -11,7 +11,7 @@ from permissions.functions.CheckUserPermissions import check_user_permissions
 from user.functions.functions import check_auth
 from user.models import CustomUser, UserSalaryList
 from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalarySerializers, \
-    UserSalary
+    UserSalary,CustomAutoGroup
 
 
 class UserListCreateView(generics.ListAPIView):
@@ -115,23 +115,18 @@ class UserMe(APIView):
 
 
 class EmployeersListView(generics.ListAPIView):
+    queryset = CustomAutoGroup.objects.all()
     serializer_class = Employeers
 
-    def get_queryset(self):
-        return CustomUser.objects.filter(
-            student_user__isnull=True,
-            teacher_user__isnull=True
-        )
+
 
 
 class EmployerRetrieveView(generics.RetrieveAPIView):
+    queryset = CustomAutoGroup.objects.all()
+
     serializer_class = Employeers
 
-    def get_queryset(self):
-        return CustomUser.objects.filter(
-            student_user__isnull=True,
-            teacher_user__isnull=True
-        )
+
 
 
 class UserSalaryMonthView(generics.RetrieveAPIView):
