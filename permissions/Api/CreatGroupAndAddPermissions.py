@@ -9,13 +9,13 @@ from system.models import System
 from system.serializers import SystemSerializers
 from .functions.PlatformTables import platform_tables
 from ..models import AuthGroupSystem
+from ..serializers import GroupSerializer, AuthGroupSystemSerializer
 
 
-class CreatGroupAndAddPermissions(APIView):
-    def post(self, request):
+class AddPermissions(APIView):
+    def post(self, request, pk):
         data = json.loads(request.body)
-        group = Group.objects.create(name=data['name'])
-        AuthGroupSystem.objects.create(group_id=group.pk, system_id_id=data['system_id'])
+        group = Group.objects.get(pk=pk)
         for permission in data['permissions']:
             permission = Permission.objects.get(pk=permission['id'])
             group.permissions.add(permission)
@@ -27,12 +27,54 @@ class CreatGroupAndAddPermissions(APIView):
         } for pms in group.permissions.all()]})
 
     def get(self, request):
+        return Response({'tables': platform_tables()})
+
+
+class JobProfile(APIView):
+    def post(self, request, pk):
+        data = json.loads(request.body)
+        group = Group.objects.get(pk=pk)
+        for permission in data['permissions']:
+            permission = Permission.objects.get(pk=permission)
+            group.permissions.add(permission)
+
+        return Response({'job': group.name, 'permissions': [{
+            'name': pms.name,
+            'content_type_id': pms.content_type_id,
+            'codename': pms.codename
+        } for pms in group.permissions.all()]})
+
+    def delete(self, request, pk):
+        data = json.loads(request.body)
+        group = Group.objects.get(pk=pk)
+        permission = Permission.objects.get(pk=data['id'])
+        group.permissions.remove(permission)
+        return Response({'job': group.name, 'permissions': [{
+            'name': pms.name,
+            'content_type_id': pms.content_type_id,
+            'codename': pms.codename
+        } for pms in group.permissions.all()]})
+
+    def get(self, request, pk):
+        print(pk)
+        auth_group_systems = AuthGroupSystem.objects.filter(group_id=pk)
+        groups_serializers = AuthGroupSystemSerializer(auth_group_systems, many=True)
+        return Response({'job': groups_serializers.data})
+
+
+class Jobs(APIView):
+    def post(self, request):
+        data = json.loads(request.body)
+        group = Group.objects.create(name=data['name'])
+        AuthGroupSystem.objects.create(group_id=group.pk, system_id_id=data['system_id'])
+        serializers = GroupSerializer(group)
+        return Response({'job': serializers.data})
+
+    def get(self, request):
         systems = System.objects.all()
         serializers = SystemSerializers(systems, many=True)
-        return Response({'tables': platform_tables(), 'systems': serializers.data})
-
-
-class GetAllJobs(APIView):
-    def get(self, request):
         groups = Group.objects.all()
-        return Response(groups)
+        group_ids = [group.pk for group in groups]
+        auth_group_systems = AuthGroupSystem.objects.filter(group_id__in=group_ids)
+        groups_serializers = AuthGroupSystemSerializer(auth_group_systems, many=True)
+        return Response({'systems': serializers.data, 'jobs': groups_serializers.data})

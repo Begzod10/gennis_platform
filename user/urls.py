@@ -38,4 +38,5 @@ urlpatterns = [
     path('username-check/', UsernameCheck.as_view(), name='username-check'),
     path('user-salary/<int:pk>/', UserSalaryMonthView.as_view(), name='usersalary-check'),
 
+
 ]

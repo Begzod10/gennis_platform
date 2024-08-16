@@ -1,12 +1,46 @@
 from rest_framework import generics
 from books.models import BookOrder, CollectedBookPayments, BalanceOverhead, CenterBalance, BookOverhead, BranchPayment, \
-    EditorBalance, BookImage
+    EditorBalance, BookImage, UserBook
 from books.serializers import BookOrderListSerializers, BalanceOverheadListSerializers, \
     CollectedBookPaymentsListSerializers, BranchPaymentListSerializers, \
-    CenterBalanceListSerializer, BookOverheadListSerializers, EditorBalanceListSerializers, BookImageListSerializer
+    CenterBalanceListSerializer, BookOverheadListSerializers, EditorBalanceListSerializers, BookImageListSerializer, \
+    UserBookListSerializer
 from user.functions.functions import check_auth
 from rest_framework.response import Response
 from permissions.functions.CheckUserPermissions import check_user_permissions
+
+
+class UserBookListView(generics.ListAPIView):
+    queryset = UserBook.objects.all()
+    serializer_class = UserBookListSerializer
+
+    def get(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['user', 'branch', 'bookorder', 'teachersalary', 'usersalary']
+        permissions = check_user_permissions(user, table_names)
+
+        queryset = UserBook.objects.all()
+        serializer = UserBookListSerializer(queryset, many=True)
+        return Response({'userbooks': serializer.data, 'permissions': permissions})
+
+
+class UserBookRetrieveView(generics.RetrieveAPIView):
+    queryset = UserBook.objects.all()
+    serializer_class = UserBookListSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['user', 'branch', 'bookorder', 'teachersalary', 'usersalary']
+        permissions = check_user_permissions(user, table_names)
+        user_book = self.get_object()
+        user_book_data = self.get_serializer(user_book).data
+        return Response({'userbook': user_book_data, 'permissions': permissions})
 
 
 # class BookImageListView(generics.ListAPIView):

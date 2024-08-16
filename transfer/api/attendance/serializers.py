@@ -37,6 +37,7 @@ class TransferAttendancePerDaySerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         month_date = validated_data.pop('month_date')
         attendance_per_month = AttendancePerMonth.objects.get(month_date=month_date)
-        attendance_per_day = AttendancePerDay.objects.create(**validated_data,
-                                                             attendance_per_month=attendance_per_month)
-        return attendance_per_day
+        if attendance_per_month:
+            attendance_per_day = AttendancePerDay.objects.create(**validated_data,
+                                                                 attendance_per_month=attendance_per_month)
+            return attendance_per_day
