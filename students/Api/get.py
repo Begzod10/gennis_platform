@@ -183,7 +183,6 @@ class FilteredStudentsListView(APIView):
             'rooms': [],
         }
         time_tables = json.loads(request.body)
-        print(time_tables)
         for time_table in time_tables:
             room = Room.objects.get(id=time_table['room'])
             room_time_table = room.grouptimetable_set.filter(week_id=time_table['week'],
@@ -198,7 +197,6 @@ class FilteredStudentsListView(APIView):
                 subject__student__isnull=False
                 # deleted_student_student_new__isnull=True
             )
-            print(students)
             for student in students:
                 student_data = StudentListSerializer(student).data
                 time_table_st = student.group_time_table.filter(week_id=time_table['week'],
@@ -221,8 +219,9 @@ class FilteredStudentsListView(APIView):
                             "name": subject.name,
                             "students": []
                         }
-                    subjects_with_students[subject.id]["students"].append(student_data)
-            teachers = Teacher.objects.all()
+                    if not student_data in subjects_with_students[subject.id]["students"]:
+                        subjects_with_students[subject.id]["students"].append(student_data)
+            teachers = Teacher.objects.filter(user__branch_id=location_id)
             for teacher in teachers:
                 teacher_data = TeacherSerializerRead(teacher).data
                 time_table_tch = teacher.group_time_table.filter(week_id=time_table['week'],
@@ -238,6 +237,7 @@ class FilteredStudentsListView(APIView):
                         'status': True,
                         'reason': ''
                     }
-                teachers_list.append(teacher_data)
+                if not teacher_data in teachers_list:
+                    teachers_list.append(teacher_data)
         return Response(
             {'subjects_with_students': subjects_with_students.values(), 'teachers': teachers_list, 'errors': errors})

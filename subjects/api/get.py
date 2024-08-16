@@ -6,6 +6,15 @@ from subjects.serializers import SubjectLevelListSerializer
 from permissions.functions.CheckUserPermissions import check_user_permissions
 
 
+class LevelsForSubject(generics.ListAPIView):
+    # queryset = SubjectLevel.objects.all()
+    serializer_class = SubjectLevelListSerializer
+
+    def get_queryset(self):
+        pk = self.kwargs.get('pk')
+        return SubjectLevel.objects.filter(id=pk)
+
+
 class SubjectLevelListAPIView(generics.ListAPIView):
     queryset = SubjectLevel.objects.all()
     serializer_class = SubjectLevelListSerializer
