@@ -16,6 +16,10 @@ from user.models import CustomUser
 
 from ..models import ManySystem, ManyBranch, ManyLocation
 from ..serializers import ManySystemSerializer, ManyLocationSerializer, ManyBranchSerializer
+from branch.models import Branch
+from branch.serializers import BranchSerializer
+from location.models import Location
+from location.serializers import LocationSerializers
 
 
 class AddPermissionManagersAndDirectors(APIView):
@@ -29,3 +33,13 @@ class AddPermissionManagersAndDirectors(APIView):
                     serializer.is_valid(raise_exception=True)
                     serializer.save()
         return Response({'message': 'Dostuplar muvaffaqqiyatli berildi!'})
+
+    def get(self, request):
+        systems = System.objects.all()
+        system_serializer = SystemSerializers(systems, many=True)
+        branches = Branch.objects.all()
+        branches_serializer = BranchSerializer(branches, many=True)
+        locations = Location.objects.all()
+        locations_serializer = LocationSerializers(locations, many=True)
+        return Response({'systems': system_serializer.data, 'branches': branches_serializer.data,
+                         'locations': locations_serializer.data})

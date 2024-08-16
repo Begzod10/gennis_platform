@@ -22,6 +22,7 @@ class Teacher(models.Model):
     teacher_salary_type = models.ForeignKey(TeacherSalaryType, on_delete=models.SET_NULL, null=True)
     old_id = models.IntegerField(unique=True, null=True)
     branches = models.ManyToManyField(Branch, blank=True)
+    group_time_table = models.ManyToManyField('time_table.GroupTimeTable', blank=True)
 
 
 class TeacherAttendance(models.Model):

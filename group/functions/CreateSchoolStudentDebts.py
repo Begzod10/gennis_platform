@@ -15,7 +15,7 @@ def create_school_student_debts(group, students):
             print(month_date)
             per_month = AttendancePerMonth.objects.create(month_date=month_date, student=student,
                                                           total_debt=group.price, group=group,
-                                                          teacher=group.teacher.first(), system=group.system)
+                                                           system=group.system)
             print(per_month)
 
 

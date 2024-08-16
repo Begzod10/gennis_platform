@@ -1,3 +1,5 @@
+import pprint
+
 from rest_framework import serializers
 from branch.models import Branch
 from language.models import Language
@@ -53,6 +55,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                   'color', 'course_types', 'class_number', 'update_method', 'time_table']
 
     def create(self, validated_data):
+        pprint.pprint(validated_data)
         time_tables = validated_data.get('time_table')
         status, errors = check_time_table(time_tables, validated_data.get('subject'))
         if status == False:
@@ -66,9 +69,10 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                          language=validated_data.get('language'),
                                          level=validated_data.get('level'), subject=validated_data.get('subject'),
                                          system=validated_data.get('branch').location.system,
-                                         color=validated_data.get('color'),
-                                         class_number=validated_data.get('class_number'),
-                                         course_types=validated_data.get('course_types'))
+                                         # color=validated_data.get('color'),
+                                         # class_number=validated_data.get('class_number'),
+                                         course_types=validated_data.get('course_types')
+                                         )
             group.students.set(validated_data.get('students'))
             group.teacher.set(validated_data.get('teacher'))
             GroupTimeTable.objects.bulk_create(

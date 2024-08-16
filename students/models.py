@@ -19,6 +19,7 @@ class Student(models.Model):
     representative_surname = models.CharField(null=True)
     old_id = models.IntegerField(null=True, unique=True)
     old_money = models.BigIntegerField(null=True)
+    group_time_table = models.ManyToManyField('time_table.GroupTimeTable', blank=True)
 
 
 class StudentCharity(models.Model):
