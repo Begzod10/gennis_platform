@@ -9,7 +9,8 @@ def check_time_table(time_tables, subject):
         'students': [],
     }
     for time_table in time_tables:
-        room = Room.objects.get(id=time_table['room'])
+        print(time_table)
+        room = Room.objects.get(id=int(time_table['room']))
         room_time_table = room.grouptimetable_set.filter(week_id=time_table['week'],
                                                          start_time__gte=time_table['start_time'],
                                                          end_time__lte=time_table['end_time']).first()
