@@ -193,7 +193,6 @@ class BookOrderTests(APITestCase):
 
     def test_delete_book_order(self):
         response = self.client.delete(self.url_delete)
-        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
 

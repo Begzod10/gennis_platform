@@ -86,7 +86,6 @@ class GroupTests(APITestCase):
     #     updated_data = self.group_data.copy()
     #     updated_data['name'] = 'New group'
     #     response = self.client.put(url, updated_data, format='json')
-    #     print(response.data)
     #     self.assertEqual(response.status_code, status.HTTP_200_OK)
     #     self.user.refresh_from_db()
     #     self.assertEqual(self.user.username, 'New group')

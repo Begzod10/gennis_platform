@@ -29,7 +29,6 @@ class TransferCreatAttendancePerDay(generics.ListCreateAPIView):
         write_serializer = self.get_serializer(data=request.data, partial=True)
         write_serializer.is_valid(raise_exception=True)
         self.perform_create(write_serializer)
-        print(write_serializer.data)
         instance = AttendancePerDay.objects.get(pk=write_serializer.data['id'])
         read_serializer = AttendancePerDaySerializer(instance)
         return Response(read_serializer.data)

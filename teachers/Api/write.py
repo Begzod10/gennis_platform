@@ -25,24 +25,13 @@ class TeacherDestroyView(generics.DestroyAPIView):
 class TeacherSalaryCreateAPIView(generics.CreateAPIView):
     serializer_class = TeacherSalaryListCreateSerializers
 
-    def perform_create(self, serializer):
-        serializer.save()
+
 
 
 class TeacherSalaryDeleteAPIView(generics.DestroyAPIView):
     queryset = TeacherSalaryList.objects.all()
     serializer_class = TeacherSalaryListCreateSerializers
 
-    def delete(self, request, *args, **kwargs):
-        list = self.get_object()
-        list.deleted = True
-        list.save()
-        teacher_salary = list.salary_id
-        teacher_salary.taken_salary -= list.salary
-        teacher_salary.remaining_salary += list.salary
-        teacher_salary.save()
-
-        return Response({"detail": "List salary was deleted successfully"}, status=status.HTTP_200_OK)
 
 
 class TeacherSalaryUpdateAPIView(generics.UpdateAPIView):
@@ -50,8 +39,3 @@ class TeacherSalaryUpdateAPIView(generics.UpdateAPIView):
     serializer_class = TeacherSalaryListCreateSerializers
 
 
-class TeacherSalaryCreateAPIView(generics.CreateAPIView):
-    serializer_class = TeacherSalaryCreateSerializers
-
-    def perform_create(self, serializer):
-        serializer.save()

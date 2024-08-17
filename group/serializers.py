@@ -55,7 +55,6 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                   'color', 'course_types', 'class_number', 'update_method', 'time_table']
 
     def create(self, validated_data):
-        pprint.pprint(validated_data)
         time_tables = validated_data.get('time_table')
         # status, errors = check_time_table(time_tables, validated_data.get('subject'))
         # if status == False:

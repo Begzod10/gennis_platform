@@ -111,7 +111,6 @@ class LeadCallAPITestCase(TestCase):
             'comment': "New test call"
         }
         response = self.client.post(url, data, format='json')
-        print(rex)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(LeadCall.objects.count(), 2)
         self.assertEqual(response.data['comment'], 'New test call')

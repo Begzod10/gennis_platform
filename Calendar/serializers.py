@@ -25,7 +25,6 @@ class MonthSerializer(serializers.ModelSerializer):
 
 class DaySerializer(serializers.ModelSerializer):
     type_id = TypeDaySerializer()
-    month = MonthSerializer()
 
     class Meta:
         model = Day

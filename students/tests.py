@@ -64,7 +64,6 @@
 #             'parents_number': '1231'
 #         }
 #         response = self.client.post(url, data, format='json')
-#         print(response.data)
 #         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 #         self.assertEqual(Student.objects.count(), 2)
 #
@@ -86,7 +85,6 @@
 #     #         'payment_sum': 200,
 #     #         'status': False
 #     #     }
-#     #     print(data)
 #     #
 #     #     response = self.client.post(url, data, format='json')
 #     #     self.assertEqual(response.status_code, status.HTTP_201_CREATED)

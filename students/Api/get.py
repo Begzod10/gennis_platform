@@ -159,7 +159,6 @@ class StudentPaymentAPIView(generics.RetrieveAPIView):
 #         i = 0
 #         for student in students:
 #             i += 1
-#             print(StudentListSerializer(student).data)
 #             for subject in student.subject.all():
 #                 if subject.id not in subjects_with_students:
 #                     subjects_with_students[subject.id] = {
