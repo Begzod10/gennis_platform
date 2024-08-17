@@ -12,7 +12,7 @@ class LevelsForSubject(generics.ListAPIView):
 
     def get_queryset(self):
         pk = self.kwargs.get('pk')
-        return SubjectLevel.objects.filter(id=pk)
+        return SubjectLevel.objects.filter(subject_id=pk).all()
 
 
 class SubjectLevelListAPIView(generics.ListAPIView):
