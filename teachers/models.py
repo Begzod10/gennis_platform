@@ -73,6 +73,7 @@ class TeacherSalaryList(models.Model):
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='branch_id_salary_list')
     deleted = models.BooleanField(default='false')
     salary = models.IntegerField()
+    old_id = models.IntegerField(blank=True, null=True, unique=True)
 
     class Meta:
         ordering = ['id']
