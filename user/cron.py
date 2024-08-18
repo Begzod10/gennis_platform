@@ -9,7 +9,7 @@ from .models import CustomUser, UserSalary
 
 
 class CreateMonthly(CronJobBase):
-    RUN_EVERY_MINS = 1
+    RUN_EVERY_MINS = 60*24
     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
     code = 'user.create_monthly'
 
