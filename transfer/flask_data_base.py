@@ -4,9 +4,10 @@ engine = create_engine('postgresql://postgres:123@localhost:5432/gennis')
 
 metadata = MetaData()
 metadata.reflect(bind=engine)
-users = Table('attendancehistorystudent', metadata, autoload_with=engine)
+attendancehistorystudent = Table('attendancehistorystudent', metadata, autoload_with=engine)
 month_date = Table('calendarmonth', metadata, autoload_with=engine)
 group = Table('groups', metadata, autoload_with=engine)
+users = Table('users', metadata, autoload_with=engine)
 
 
 def get_month(id):
@@ -25,14 +26,12 @@ def get_group(id):
     return row_dict
 
 
-with engine.connect() as conn:
-    result = conn.execute(users.select()).fetchall()
-
-
 def get_AttendancePerMonths():
     list = []
+    with engine.connect() as conn:
+        result = conn.execute(attendancehistorystudent.select()).fetchall()
     for row in result:
-        row_dict = dict(zip(users.columns.keys(), row))
+        row_dict = dict(zip(attendancehistorystudent.columns.keys(), row))
         if row_dict['group_id']:
             info = {
                 'old_id': row_dict['id'],
@@ -53,3 +52,33 @@ def get_AttendancePerMonths():
             list.append(info)
     return list
 
+
+def get_users():
+    list = []
+    with engine.connect() as conn:
+        result = conn.execute(users.select()).fetchall()
+    for row in result:
+        user = dict(zip(users.columns.keys(), row))
+        print(user)
+        info = {
+            'old_id': user['id'],
+            "name": user['name'],
+            "surname": user['surname'],
+            "username": user['username'],
+            "father_name": user['father_name'],
+            "password": user['password'],
+            # "phone": phone,
+            "observer": user['observer'],
+            "comment": user['comment'],
+            "birth_date": f"{user['born_year']}-{user['born_month']}-{user['born_day']}",
+            "language": user['education_language'],
+            "branch": user['location_id'],
+            "is_superuser": False,
+            "is_staff": False,
+        }
+        # list.append(info)
+        break
+    return list
+
+
+get_users()
