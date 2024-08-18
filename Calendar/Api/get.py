@@ -57,15 +57,18 @@ class CalendarView(APIView):
                     types = []
                     for day in days_serialized:
                         day_type = day['type_id']['type']
+                        day_color = day['type_id']['color']
+
                         type_exists = False
                         for type_obj in types:
-                            if type_obj['type'] == day_type:
+                            if type_obj['type'] == day_type and type_obj['color'] == day_color:
                                 type_obj['days'].append(day)
                                 type_exists = True
                                 break
                         if not type_exists:
                             types.append({
                                 'type': day_type,
+                                'color': day_color,
                                 'days': [day]
                             })
 
@@ -81,9 +84,6 @@ class CalendarView(APIView):
                     })
 
         return Response(list_days, status=status.HTTP_200_OK)
-
-
-
 
 
 class TypeDayListView(generics.ListAPIView):
