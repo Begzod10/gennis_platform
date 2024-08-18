@@ -1,7 +1,8 @@
 from django.core.management.base import BaseCommand
 
+from transfer.api.attendance.flask_data_base import get_AttendancePerMonths
+from transfer.api.attendance.serializers import TransferAttendancePerMonthSerializer
 from transfer.api.teacher.uitils import TeacherDataTransfer
-from transfer.api.user.flask_data_base import get_users
 
 db_url = 'postgresql://postgres:123@localhost:5432/gennis'
 
@@ -29,11 +30,10 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('Branch and salary transfer completed successfully!'))
         except Exception as e:
             self.stdout.write(self.style.ERROR(f'Error during transfer process: {e}'))
-        list = get_users()
-        # list = get_AttendancePerMonths()
-        # for info in list:
-        #     serializer = TransferAttendancePerMonthSerializer(data=info)
-        #     if serializer.is_valid():
-        #         serializer.save()
-        #     else:
-        #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+        list = get_AttendancePerMonths()
+        for info in list:
+            serializer = TransferAttendancePerMonthSerializer(data=info)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))

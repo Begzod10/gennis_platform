@@ -166,11 +166,4 @@ class TeacherDataTransfer:
 
 if __name__ == "__main__":
     db_url = 'postgresql://postgres:123@localhost:5432/gennis'
-    teacher_data_transfer = TeacherDataTransfer(db_url)
-    teacher_data_transfer.transfer_teachers()
-    teacher_data_transfer._transfer_individual_teacher()
-    teacher_data_transfer._transfer_related_data()
-    teacher_data_transfer.transfer_teacher_branches()
-    teacher_data_transfer.transfer_teacher_salaries()
-    teacher_data_transfer.transfer_teacher_salaries_list()
-    teacher_data_transfer.transfer_teacher_black_salaries()
+
