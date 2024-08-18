@@ -147,7 +147,6 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
         fields = ['id', 'student', 'payment_type', 'payment_sum', 'status','branch']
 
     def create(self, validated_data):
-        print(validated_data)
         attendance_per_months = AttendancePerMonth.objects.get(student=validated_data.get('student'),
                                                                status=False).all()
         student = Student.objects.get(pk=validated_data.get('student'))

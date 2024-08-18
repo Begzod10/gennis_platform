@@ -34,7 +34,6 @@ class RoomTests(APITestCase):
             'deleted': 'False'
         }
         response = self.client.post(self.room_url, data, format='json')
-        # print(response.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Room.objects.count(), 2)
         self.assertEqual(Room.objects.latest('id').name, 'New Room')

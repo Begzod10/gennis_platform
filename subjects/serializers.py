@@ -27,3 +27,5 @@ class SubjectLevelListSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubjectLevel
         fields = '__all__'
+
+

@@ -1,4 +1,5 @@
 import jwt
+from django.db.models.query import QuerySet as queryset
 from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework.exceptions import NotFound
@@ -11,7 +12,7 @@ from permissions.functions.CheckUserPermissions import check_user_permissions
 from user.functions.functions import check_auth
 from user.models import CustomUser, UserSalaryList
 from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalarySerializers, \
-    UserSalary,CustomAutoGroup
+    UserSalary, CustomAutoGroup
 
 
 class UserListCreateView(generics.ListAPIView):
@@ -119,14 +120,10 @@ class EmployeersListView(generics.ListAPIView):
     serializer_class = Employeers
 
 
-
-
 class EmployerRetrieveView(generics.RetrieveAPIView):
     queryset = CustomAutoGroup.objects.all()
 
     serializer_class = Employeers
-
-
 
 
 class UserSalaryMonthView(generics.RetrieveAPIView):
@@ -141,7 +138,10 @@ class UserSalaryMonthView(generics.RetrieveAPIView):
         table_names = ['usersalary', 'customautogroup', 'paymenttypes', 'branch', 'customuser']
         permissions = check_user_permissions(user, table_names)
         user_salary_list = self.get_object()
-        user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
+        if isinstance(user_salary_list, queryset):
+            user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
+        else:
+            user_salary_list_data = self.get_serializer(user_salary_list).data
         return Response({'usersalary': user_salary_list_data, 'permissions': permissions})
 
     def get_object(self):

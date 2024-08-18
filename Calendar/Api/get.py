@@ -5,11 +5,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from Calendar.models import Years, Month, Day, TypeDay
-from Calendar.serializers import TypeDaySerializer
+from Calendar.serializers import DaySerializer, TypeDaySerializer
 from permissions.functions.CheckUserPermissions import check_user_permissions
 from user.functions.functions import check_auth
 
-from Calendar.serializers import YearsSerializer, MonthSerializer, DaySerializer, TypeDaySerializer
 
 class CalendarView(APIView):
 
@@ -43,7 +42,8 @@ class CalendarView(APIView):
                                     day_str = str(day)
                                     weeks_id = calendar.weekday(year, month, day)
                                     day_name = calendar.day_name[weeks_id]
-                                    type_day_instance = TypeDay.objects.get(id=1 if day_name == 'Sunday' else 2)
+                                    type_day_instance = TypeDay.objects.get(
+                                        type='Dam' if day_name == 'Sunday' else 'Ish kuni')
                                     day_object = Day.objects.get_or_create(
                                         day_number=day_str,
                                         month=month_data,
@@ -54,10 +54,26 @@ class CalendarView(APIView):
 
                         days_serialized = DaySerializer(days_list, many=True).data
 
+                    types = []
+                    for day in days_serialized:
+                        day_type = day['type_id']['type']
+                        type_exists = False
+                        for type_obj in types:
+                            if type_obj['type'] == day_type:
+                                type_obj['days'].append(day)
+                                type_exists = True
+                                break
+                        if not type_exists:
+                            types.append({
+                                'type': day_type,
+                                'days': [day]
+                            })
+
                     month_obj = {
                         'month_number': month_data.month_number,
                         'month_name': month_data.month_name,
-                        'days': days_serialized
+                        'days': days_serialized,
+                        'types': types
                     }
                     list_days['calendar'].append({
                         'year': year_data.year,
@@ -65,6 +81,10 @@ class CalendarView(APIView):
                     })
 
         return Response(list_days, status=status.HTTP_200_OK)
+
+
+
+
 
 class TypeDayListView(generics.ListAPIView):
     queryset = TypeDay.objects.all()

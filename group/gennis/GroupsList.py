@@ -6,34 +6,9 @@ from group.serializers import GroupSerializer, GroupReasonSerializers, CourseTyp
     GroupCreateUpdateSerializer
 
 
-class CreateCourseTypesList(generics.ListCreateAPIView):
-    queryset = CourseTypes.objects.all()
-    serializer_class = CourseTypesSerializers
-
-
-class CourseTypesRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = CourseTypes.objects.all()
-    serializer_class = CourseTypesSerializers
-
-
-class CreateGroupReasonList(generics.ListCreateAPIView):
-    queryset = GroupReason.objects.all()
-    serializer_class = GroupReasonSerializers
-
-
-class GroupReasonRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = GroupReason.objects.all()
-    serializer_class = GroupReasonSerializers
-
-
 class CreatGroups(generics.ListCreateAPIView):
     queryset = Group.objects.all()
     serializer_class = GroupCreateUpdateSerializer
-
-    def get_serializer_class(self):
-        if self.request.method == 'GET':
-            return GroupSerializer
-        return GroupCreateUpdateSerializer
 
     def create(self, request, *args, **kwargs):
         write_serializer = self.get_serializer(data=request.data, partial=True)
