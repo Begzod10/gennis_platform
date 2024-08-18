@@ -4,7 +4,7 @@ engine = create_engine('postgresql://postgres:123@localhost:5432/gennis')
 
 metadata = MetaData()
 metadata.reflect(bind=engine)
-users = Table('attendancehistorystudent', metadata, autoload_with=engine)
+attendancehistorystudent = Table('attendancehistorystudent', metadata, autoload_with=engine)
 month_date = Table('calendarmonth', metadata, autoload_with=engine)
 group = Table('groups', metadata, autoload_with=engine)
 
@@ -25,14 +25,12 @@ def get_group(id):
     return row_dict
 
 
-with engine.connect() as conn:
-    result = conn.execute(users.select()).fetchall()
-
-
 def get_AttendancePerMonths():
     list = []
+    with engine.connect() as conn:
+        result = conn.execute(attendancehistorystudent.select()).fetchall()
     for row in result:
-        row_dict = dict(zip(users.columns.keys(), row))
+        row_dict = dict(zip(attendancehistorystudent.columns.keys(), row))
         if row_dict['group_id']:
             info = {
                 'old_id': row_dict['id'],
@@ -52,4 +50,3 @@ def get_AttendancePerMonths():
             }
             list.append(info)
     return list
-
