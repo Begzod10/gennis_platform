@@ -20,7 +20,6 @@ class BranchListAPIView(generics.ListAPIView):
 
         queryset = Branch.objects.all()
         serializer = BranchListSerializer(queryset, many=True)
-        print(serializer.data)
         return Response({'branches': serializer.data, 'permissions': permissions})
 
 

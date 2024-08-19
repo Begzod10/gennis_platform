@@ -5,6 +5,6 @@ class UserConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'user'
 
-    # def ready(self):
-    #     from user.cron import CreateMonthly
-    #     CreateMonthly().do()
+    def ready(self):
+        from user.cron import CreateMonthly
+        CreateMonthly().do()

@@ -12,11 +12,9 @@ def create_school_student_debts(group, students):
     for student in students:
         for date in datas:
             month_date = date.strftime("%Y-%m-%d")
-            print(month_date)
             per_month = AttendancePerMonth.objects.create(month_date=month_date, student=student,
                                                           total_debt=group.price, group=group,
                                                            system=group.system)
-            print(per_month)
 
 
 def generate_months(start_year, start_month, end_year, end_month):

@@ -1,5 +1,5 @@
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -7,8 +7,8 @@ from werkzeug.security import check_password_hash
 
 from branch.serializers import BranchSerializer
 from language.serializers import LanguageSerializers, Language
-from payments.serializers import PaymentTypesSerializers
-from user.models import CustomUser, UserSalaryList, UserSalary, Branch
+from payments.serializers import PaymentTypesSerializers, PaymentTypes
+from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
 
 
 class UserSerializerWrite(serializers.ModelSerializer):
@@ -67,29 +67,30 @@ class UserSerializerRead(serializers.ModelSerializer):
         return obj.calculate_age()
 
 
-
 class UserSalaryListSerializers(serializers.ModelSerializer):
-    # user = UserSerializer(read_only=True)
-    # branch = BranchSerializer(read_only=True    )
+    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
+    user_salary = serializers.PrimaryKeyRelatedField(queryset=UserSalary.objects.all())
+    payment_types = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
 
     class Meta:
         model = UserSalaryList
         fields = '__all__'
 
     def create(self, validated_data):
-        branch = Branch.objects.get(pk=validated_data.get('branch_id'))
-        user = User.objects.get(pk=validated_data.get('user_id'))
-        user_salary = UserSalary.objects.get(pk=validated_data.get('user_salary_id'))
+        branch = validated_data.get('branch')
+        user = validated_data.get('user')
+        user_salary = validated_data.get('user_salary')
+        payment_types = validated_data.get('payment_types')
         user_salary.taken_salary += validated_data.get('salary')
         user_salary.remaining_salary -= validated_data.get('salary')
         user_salary.save()
-        user = UserSalaryList.objects.create_user(
+        user = UserSalaryList.objects.create(
             user_salary=user_salary,
-            payment_types=validated_data['payment_types'],
+            payment_types=payment_types,
             user=user,
             branch=branch,
             salary=validated_data.get('salary'),
-            date=validated_data.get('date'),
             comment=validated_data.get('comment', ''),
         )
         return user
@@ -108,10 +109,22 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
         return instance
 
 
-class UserSalarySerializers(serializers.ModelSerializer):
+class CustomAutoGroupSerializers(serializers.ModelSerializer):
     class Meta:
-        model = UserSalaryList
+        model = CustomAutoGroup
         fields = '__all__'
+
+
+class UserSalarySerializers(serializers.ModelSerializer):
+    permission = CustomAutoGroupSerializers(read_only=True)
+    date = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserSalary
+        fields = '__all__'
+
+    def get_date(self, obj):
+        return obj.date.strftime('%Y-%m')
 
 
 class UserSalaryListSerializersRead(serializers.ModelSerializer):
@@ -150,14 +163,31 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             return data
 
 
+class GroupSeriliazers(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields = '__all__'
+
+
 class Employeers(serializers.ModelSerializer):
-    age = serializers.SerializerMethodField(required=False)
+    user = UserSerializerRead(read_only=True)
+    group = GroupSeriliazers(read_only=True)
 
     class Meta:
-        model = CustomUser
-        fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
-                  'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch','age']
+        model = CustomAutoGroup
+        fields = '__all__'
 
-    def get_age(self, obj):
-        return obj.calculate_age()
+
+class UserSalaryListSerializersRead(serializers.ModelSerializer):
+    user = UserSerializerWrite(read_only=True)
+    branch = BranchSerializer(read_only=True)
+    user_salary = UserSalarySerializers(read_only=True)
+    payment_types = PaymentTypesSerializers(read_only=True)
+    date = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = UserSalaryList
+        fields = '__all__'
+
+    def get_date(self, obj):
+        return obj.date.strftime('%Y-%m-%d %H:%M')

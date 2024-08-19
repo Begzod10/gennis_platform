@@ -5,6 +5,17 @@ from group.serializers import GroupSerializer
 from attendances.models import AttendancePerMonth, AttendancePerDay
 from attendances.serializers import AttendancePerMonthSerializer, AttendancePerDaySerializer
 from .serializers import TransferAttendancePerMonthSerializer, TransferAttendancePerDaySerializer
+from transfer.api.attendance.flask_data_base import get_AttendancePerMonths
+
+
+def attendance(self):
+    list = get_AttendancePerMonths()
+    for info in list:
+        serializer = TransferAttendancePerMonthSerializer(data=info)
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
 
 
 class TransferCreatAttendancePerMonth(generics.ListCreateAPIView):
@@ -29,12 +40,9 @@ class TransferCreatAttendancePerDay(generics.ListCreateAPIView):
         write_serializer = self.get_serializer(data=request.data, partial=True)
         write_serializer.is_valid(raise_exception=True)
         self.perform_create(write_serializer)
-        print(write_serializer.data)
         instance = AttendancePerDay.objects.get(pk=write_serializer.data['id'])
         read_serializer = AttendancePerDaySerializer(instance)
         return Response(read_serializer.data)
-
-
 
 # from rest_framework import generics
 # from attendances.models import AttendancePerMonth, AttendancePerDay

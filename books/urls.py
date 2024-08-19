@@ -3,18 +3,20 @@ from django.urls import path
 from .views import (
     BookListCreateView,
     BookRetrieveUpdateDestroyView,
-    BookImageListCreateView,
-    BookImageRetrieveUpdateDestroyView,
 )
 from .api.get import BookOrderListView, BookOrderRetrieveView, CollectedBookPaymentsRetrieveView, \
     BookOverheadRetrieveView, BookOverheadListView, BalanceOverheadListView, BalanceOverheadRetrieveView, \
     CenterBalanceListView, CenterBalanceRetrieveView, BranchPaymentListView, BranchPaymentRetrieveView, \
-    EditorBalanceListView, EditorBalanceRetrieveView
+    EditorBalanceListView, EditorBalanceRetrieveView, BookImageRetrieveView, UserBookRetrieveView, UserBookListView
 from .api.createdeleteupdate import BookOrderDestroyView, BookOrderCreateView, BookOrderUpdateView, \
     CollectedBookPaymentsUpdateView, BookOverheadUpdateView, BalanceOverheadUpdateView, BalanceOverheadCreateView, \
-    BookOverheadDestroyView, BookOverheadCreateView, BalanceOverheadDestroyView
+    BookOverheadDestroyView, BookOverheadCreateView, BalanceOverheadDestroyView, BookImageCreateView, \
+    BookImageUpdateView, BookImageDestroyView, UserBookDestroyView
 
 urlpatterns = [
+    path('user_book_delete/<int:pk>/', UserBookDestroyView.as_view(), name='user-book-delete'),
+    path('user_book/<int:pk>/', UserBookRetrieveView.as_view(), name='user-book'),
+    path('user_book_list/', UserBookListView.as_view(), name='user-book-list'),
     path('editor_balance/<int:pk>/', EditorBalanceRetrieveView.as_view(), name='editor-balance'),
     path('editor_balance_list/', EditorBalanceListView.as_view(), name='editor-balance-list'),
     path('branch_payment/<int:pk>/', BranchPaymentRetrieveView.as_view(), name='branch-payment'),
@@ -36,13 +38,14 @@ urlpatterns = [
     path('book_order_delete/<int:pk>/', BookOrderDestroyView.as_view(), name='book-order-delete'),
     path('book_order/<int:pk>/', BookOrderRetrieveView.as_view(), name='book-order'),
     path('book_order_list/', BookOrderListView.as_view(), name='book-order-list'),
+    path('book_images_create/', BookImageCreateView.as_view(), name='book-image-create'),
+    path('book_images_update/<int:pk>/', BookImageUpdateView.as_view(), name='book-image-update'),
+    path('book_images_delete/<int:pk>/', BookImageDestroyView.as_view(), name='book-image-delete'),
+    path('book_images/<int:pk>/', BookImageRetrieveView.as_view(), name='book-image'),
     path('collected_book_payments_update/<int:pk>/', CollectedBookPaymentsUpdateView.as_view(),
          name='collected-book-payments-update'),
     path('collected_book_payments/<int:pk>/', CollectedBookPaymentsRetrieveView.as_view(),
          name='collected-book-payments'),
     path('books/', BookListCreateView.as_view(), name='book-list-create'),
     path('books/<int:pk>/', BookRetrieveUpdateDestroyView.as_view(), name='book-retrieve-update-destroy'),
-    path('book_images/', BookImageListCreateView.as_view(), name='book-image-list-create'),
-    path('book_images/<int:pk>/', BookImageRetrieveUpdateDestroyView.as_view(),
-         name='book-image-retrieve-update-destroy'),
 ]

@@ -75,14 +75,14 @@ class CustomUser(AbstractUser):
 class UserSalary(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     permission = models.ForeignKey(CustomAutoGroup, on_delete=models.SET_NULL, null=True)
-    date = models.DateTimeField(auto_now_add=False)  # true bo'lishi kerak baza kochirish uchun false qilingan
+    date = models.DateTimeField(auto_now_add=True)  # true bo'lishi kerak baza kochirish uchun false qilingan
     total_salary = models.IntegerField(blank=True, null=True)
     taken_salary = models.IntegerField(blank=True, null=True)
     remaining_salary = models.IntegerField(blank=True, null=True)
     old_id = models.IntegerField(blank=True, null=True, unique=True)
 
     class Meta:
-        ordering = ['id']
+        ordering = ['-date']
 
 
 class UserSalaryList(models.Model):
@@ -92,9 +92,10 @@ class UserSalaryList(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
     salary = models.IntegerField(blank=True, null=True)
-    date = models.DateTimeField(null=False)
+    date = models.DateTimeField(null=False,auto_now_add=True)
     comment = models.CharField(max_length=100, blank=True, null=True)
     deleted = models.BooleanField(default=False, null=True)
+    old_id = models.IntegerField(null=True,blank=True,unique=True)
 
     class Meta:
-        ordering = ['id']
+        ordering = ['-date']

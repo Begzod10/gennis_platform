@@ -19,7 +19,6 @@ class TeacherSerializer(serializers.ModelSerializer):
         fields = ['user', 'subject', 'color', 'total_students', 'id']
 
     def create(self, validated_data):
-        print(validated_data)
         user_data = validated_data.pop('user')
         subject_data = validated_data.pop('subject')
         if isinstance(user_data.get('language'), Language):
@@ -107,13 +106,15 @@ class TeacherSalaryReadSerializers(serializers.ModelSerializer):
         fields = '__all__'
 
 
+
+
 class TeacherSalaryCreateSerializers(serializers.ModelSerializer):
     teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
-    teacher_salary_type = serializers.PrimaryKeyRelatedField(queryset=TeacherSalaryType.objects.all())
+    salary_id = serializers.PrimaryKeyRelatedField(queryset=TeacherSalary.objects.all())
 
     class Meta:
-        model = TeacherSalary
+        model = TeacherSalaryList
         fields = '__all__'
 
 
@@ -134,6 +135,8 @@ class TeacherGroupStatisticsReadSerializers(serializers.ModelSerializer):
 class TeacherSalaryListReadSerializers(serializers.ModelSerializer):
     teacher = TeacherSerializerRead(read_only=True)
     salary_id = TeacherSalaryReadSerializers(read_only=True)
+    date = serializers.SerializerMethodField(read_only=True)
+
     payment = PaymentTypesSerializers(read_only=True)
 
     branch = BranchSerializer(read_only=True)
@@ -142,14 +145,69 @@ class TeacherSalaryListReadSerializers(serializers.ModelSerializer):
         model = TeacherSalaryList
         fields = '__all__'
 
+    def get_date(self, obj):
+        return obj.date.strftime('%Y-%m-%d %H:%M')
+
 
 class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
     teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
     salary_id = serializers.PrimaryKeyRelatedField(queryset=TeacherSalary.objects.all())
     payment = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
-
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
 
     class Meta:
         model = TeacherSalaryList
         fields = '__all__'
+
+    def create(self, validated_data):
+        teacher = validated_data.get('teacher')
+        salary_id = validated_data.get('salary_id')
+        salary_amount = validated_data.get('salary')
+
+        if salary_id:
+            salary_id.taken_salary += salary_amount
+            salary_id.remaining_salary -= salary_amount
+            salary_id.save()
+
+        teacher_salary_list = TeacherSalaryList.objects.create(
+            teacher=teacher,
+            salary_id=salary_id,
+            payment=validated_data.get('payment'),
+            branch=validated_data.get('branch'),
+            salary=salary_amount,
+            deleted=False,
+            comment=validated_data.get('comment', ''),
+        )
+        return teacher_salary_list
+
+    def update(self, instance, validated_data):
+        salary_id = validated_data.get('salary_id', instance.salary_id)
+        salary_amount = validated_data.get('salary', instance.salary)
+
+        if salary_id != instance.salary_id:
+            if instance.salary_id:
+                instance.salary_id.taken_salary -= instance.salary
+                instance.salary_id.remaining_salary += instance.salary
+                instance.salary_id.save()
+            salary_id.taken_salary += salary_amount
+            salary_id.remaining_salary -= salary_amount
+            salary_id.save()
+
+        instance.teacher = validated_data.get('teacher', instance.teacher)
+        instance.salary_id = salary_id
+        instance.payment = validated_data.get('payment', instance.payment)
+        instance.branch = validated_data.get('branch', instance.branch)
+        instance.salary = salary_amount
+        instance.comment = validated_data.get('comment', instance.comment)
+        instance.save()
+        return instance
+
+    def delete(self, instance):
+        if instance.salary_id:
+            instance.salary_id.taken_salary -= instance.salary
+            instance.salary_id.remaining_salary += instance.salary
+            instance.salary_id.save()
+
+        instance.deleted = True
+        instance.save()
+        return instance

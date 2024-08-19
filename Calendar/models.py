@@ -10,6 +10,9 @@ class Years(models.Model):
     def __str__(self):
         return str(self.year)
 
+    class Meta:
+        ordering = ['id']
+
 
 class Month(models.Model):
     month_number = models.IntegerField()
@@ -22,6 +25,9 @@ class Month(models.Model):
     def __str__(self):
         return self.month_name
 
+    class Meta:
+        ordering = ['id']
+
 
 class Day(models.Model):
     day_number = models.IntegerField()
@@ -30,11 +36,8 @@ class Day(models.Model):
     year = models.ForeignKey(Years, related_name='days', on_delete=models.CASCADE)
     type_id = models.ForeignKey('TypeDay', on_delete=models.CASCADE)
 
-    def add(self):
-        self.save()
-
-    def __str__(self):
-        return self.day_name
+    class Meta:
+        ordering = ['id']
 
 
 class TypeDay(models.Model):
@@ -44,5 +47,5 @@ class TypeDay(models.Model):
     def add(self):
         self.save()
 
-    def __str__(self):
-        return self.type
+    class Meta:
+        ordering = ['id']

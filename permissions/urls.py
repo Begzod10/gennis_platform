@@ -11,6 +11,7 @@ urlpatterns = [
     path('description_for_table/', DescriptionTables.as_view(), name='description_for_table'),
     path('add_permissions/<int:pk>', AddPermissions.as_view(),
          name='add_permissions'),
+
     path('add_user_job/', AddUserGroup.as_view(), name='add_user_job'),
     path('add_permissions_managers_and_directors/', AddPermissionManagersAndDirectors.as_view(),
          name='add_permissions_managers_and_directors'),

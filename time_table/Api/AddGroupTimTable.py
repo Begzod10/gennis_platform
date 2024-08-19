@@ -14,6 +14,7 @@ class GroupTimeTableList(generics.ListCreateAPIView):
 
     def get_queryset(self):
         id = self.request.query_params.get('id')
+        creat_week_days()
         return GroupTimeTable.objects.filter(group_id=id)
 
     def create(self, request, *args, **kwargs):

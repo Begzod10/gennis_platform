@@ -20,6 +20,13 @@ class SystemList(generics.ListAPIView):
         table_names = ['system']
         permissions = check_user_permissions(user, table_names)
 
+        # list = get_AttendancePerMonths()
+        # for info in list:
+        #     serializer = TransferAttendancePerMonthSerializer(data=info)
+        #     if serializer.is_valid():
+        #         serializer.save()
+
+
         queryset = System.objects.all()
         serializer = SystemSerializers(queryset, many=True)
         return Response({'systems': serializer.data, 'permissions': permissions})

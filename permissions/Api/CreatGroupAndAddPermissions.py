@@ -56,7 +56,6 @@ class JobProfile(APIView):
         } for pms in group.permissions.all()]})
 
     def get(self, request, pk):
-        print(pk)
         auth_group_systems = AuthGroupSystem.objects.filter(group_id=pk)
         groups_serializers = AuthGroupSystemSerializer(auth_group_systems, many=True)
         return Response({'job': groups_serializers.data})

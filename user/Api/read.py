@@ -1,6 +1,8 @@
 import jwt
+from django.db.models.query import QuerySet as queryset
 from django.http import JsonResponse
 from rest_framework import generics
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,7 +11,8 @@ from gennis_platform import settings
 from permissions.functions.CheckUserPermissions import check_user_permissions
 from user.functions.functions import check_auth
 from user.models import CustomUser, UserSalaryList
-from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers
+from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalarySerializers, \
+    UserSalary, CustomAutoGroup
 
 
 class UserListCreateView(generics.ListAPIView):
@@ -63,7 +66,7 @@ class UserSalaryListListView(generics.ListAPIView):
 
 
 class UserSalaryListDetailView(generics.RetrieveAPIView):
-    queryset = CustomUser.objects.all()
+    queryset = UserSalaryList.objects.all()
     serializer_class = UserSalaryListSerializersRead
 
     def retrieve(self, request, *args, **kwargs):
@@ -74,8 +77,15 @@ class UserSalaryListDetailView(generics.RetrieveAPIView):
         table_names = ['usersalarylist', 'usersalary', 'customautogroup', 'paymenttypes', 'branch', 'customuser']
         permissions = check_user_permissions(user, table_names)
         user_salary_list = self.get_object()
-        user_salary_list_data = self.get_serializer(user_salary_list).data
+        user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
         return Response({'usersalarylist': user_salary_list_data, 'permissions': permissions})
+
+    def get_object(self):
+        user_id = self.kwargs.get('pk')
+        try:
+            return UserSalaryList.objects.filter(user_salary_id=user_id).all()
+        except UserSalaryList.DoesNotExist:
+            raise NotFound('UserSalary not found for the given user_id')
 
 
 class UserMe(APIView):
@@ -106,20 +116,37 @@ class UserMe(APIView):
 
 
 class EmployeersListView(generics.ListAPIView):
+    queryset = CustomAutoGroup.objects.all()
     serializer_class = Employeers
-
-    def get_queryset(self):
-        return CustomUser.objects.filter(
-            student_user__isnull=True,
-            teacher_user__isnull=True
-        )
 
 
 class EmployerRetrieveView(generics.RetrieveAPIView):
+    queryset = CustomAutoGroup.objects.all()
+
     serializer_class = Employeers
 
-    def get_queryset(self):
-        return CustomUser.objects.filter(
-            student_user__isnull=True,
-            teacher_user__isnull=True
-        )
+
+class UserSalaryMonthView(generics.RetrieveAPIView):
+    queryset = UserSalary.objects.all()
+    serializer_class = UserSalarySerializers
+
+    def retrieve(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['usersalary', 'customautogroup', 'paymenttypes', 'branch', 'customuser']
+        permissions = check_user_permissions(user, table_names)
+        user_salary_list = self.get_object()
+        if isinstance(user_salary_list, queryset):
+            user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
+        else:
+            user_salary_list_data = self.get_serializer(user_salary_list).data
+        return Response({'usersalary': user_salary_list_data, 'permissions': permissions})
+
+    def get_object(self):
+        user_id = self.kwargs.get('pk')
+        try:
+            return UserSalary.objects.filter(user_id=user_id).all()
+        except UserSalary.DoesNotExist:
+            raise NotFound('UserSalary not found for the given user_id')
