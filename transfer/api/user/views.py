@@ -1,11 +1,27 @@
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
-
 from transfer.api.user.serializers import (
     TransferStaffs, TransferStaffsSalary, UserSalary, UserSalaryList, TransferStaffsSalaryList, TransferUserJobs
 )
 from user.models import CustomAutoGroup
+import time
+from transfer.api.user.serializers import TransferUserSerializer
+from transfer.api.user.flask_data_base import get_users
+
+
+def users(self):
+    start = time.time()
+    list = get_users()
+    for info in list:
+        serializer = TransferUserSerializer(data=info)
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    end = time.time()
+    print(f"Run time users: {(end - start) * 10 ** 3:.03f}ms")
+    return True
 
 
 class StaffTransferView(generics.CreateAPIView):

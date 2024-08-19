@@ -5,6 +5,19 @@ engine = create_engine('postgresql://postgres:123@localhost:5432/gennis')
 metadata = MetaData()
 metadata.reflect(bind=engine)
 users = Table('users', metadata, autoload_with=engine)
+phones = Table('phonelist', metadata, autoload_with=engine)
+
+
+def get_phones_by_user(id):
+    query = select(phones).where(phones.c.id == int(id))
+    with engine.connect() as conn:
+        result = conn.execute(query).fetchone()
+    row_dict = dict(zip(phones.columns.keys(), result))
+    phone = 0
+    for number in row_dict:
+        if number.personal != None and number.personal == True:
+            phone = number.phone
+    return phone
 
 
 def get_users():
@@ -13,7 +26,7 @@ def get_users():
         result = conn.execute(users.select()).fetchall()
     for row in result:
         user = dict(zip(users.columns.keys(), row))
-        print(user)
+        phone = get_phones_by_user(user['id'])
         info = {
             'old_id': user['id'],
             "name": user['name'],
@@ -21,7 +34,7 @@ def get_users():
             "username": user['username'],
             "father_name": user['father_name'],
             "password": user['password'],
-            # "phone": phone,
+            "phone": phone,
             "observer": user['observer'],
             "comment": user['comment'],
             "birth_date": f"{user['born_year']}-{user['born_month']}-{user['born_day']}",
@@ -30,6 +43,7 @@ def get_users():
             "is_superuser": False,
             "is_staff": False,
         }
+        print(info)
         # list.append(info)
         break
     return list
