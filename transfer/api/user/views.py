@@ -8,6 +8,28 @@ from user.models import CustomAutoGroup
 import time
 from transfer.api.user.serializers import TransferUserSerializer
 from transfer.api.user.flask_data_base import get_users
+import random
+from user.models import CustomUser
+from datetime import datetime
+
+
+def check_user_name(username):
+    username += str(random.randint(1, 10))
+    try:
+        user = CustomUser.objects.get(username=username)
+        if user:
+            username += str(random.randint(1, 10))
+            username = check_user_name(username)
+    except CustomUser.DoesNotExist:
+        return username
+
+
+def validate_and_convert_date(date_str):
+    try:
+        parsed_date = datetime.strptime(date_str, '%d-%m-%Y')
+        return parsed_date.strftime('%Y-%m-%d')
+    except ValueError:
+        return None
 
 
 def users(self):
@@ -15,6 +37,17 @@ def users(self):
     list = get_users()
     for info in list:
         serializer = TransferUserSerializer(data=info)
+        if not serializer.is_valid():
+            try:
+                if serializer.errors['username']:
+                    username = info['username']
+                    username = check_user_name(username)
+                    info['username'] = username
+                    serializer = TransferUserSerializer(data=info)
+            except KeyError:
+                if serializer.errors['birth_date']:
+                    info['birth_date'] = validate_and_convert_date(info['birth_date'])
+                    serializer = TransferUserSerializer(data=info)
         if serializer.is_valid():
             serializer.save()
         else:
@@ -27,16 +60,6 @@ def users(self):
 class StaffTransferView(generics.CreateAPIView):
     queryset = CustomAutoGroup.objects.all()
     serializer_class = TransferStaffs
-
-
-class StaffSalaryTransferView(generics.CreateAPIView):
-    queryset = UserSalary.objects.all()
-    serializer_class = TransferStaffsSalary
-
-
-class StaffSalaryListTransferView(generics.CreateAPIView):
-    queryset = UserSalaryList.objects.all()
-    serializer_class = TransferStaffsSalaryList
 
 
 class UserJobsTransfer(generics.GenericAPIView):

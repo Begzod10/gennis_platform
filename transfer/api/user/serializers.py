@@ -39,8 +39,8 @@ class TransferStaffs(serializers.ModelSerializer):
 
 
 class TransferStaffsSalary(serializers.ModelSerializer):
-    permission = serializers.SlugRelatedField(queryset=CustomAutoGroup.objects.all(), slug_field='old_id')
-    user = serializers.SlugRelatedField(queryset=CustomUser.objects.all(), slug_field='old_id')
+    user = OldIdRelatedField(queryset=CustomUser.objects.all())
+    permission = OldIdRelatedField(queryset=CustomAutoGroup.objects.all())
 
     class Meta:
         model = UserSalary
@@ -48,11 +48,11 @@ class TransferStaffsSalary(serializers.ModelSerializer):
 
 
 class TransferStaffsSalaryList(serializers.ModelSerializer):
-    permission = serializers.SlugRelatedField(queryset=CustomAutoGroup.objects.all(), slug_field='old_id')
-    user = serializers.SlugRelatedField(queryset=CustomUser.objects.all(), slug_field='old_id')
-    user_salary = serializers.SlugRelatedField(queryset=UserSalary.objects.all(), slug_field='old_id')
-    payment_types = serializers.SlugRelatedField(queryset=PaymentTypes.objects.all(), slug_field='old_id')
-    branch = serializers.SlugRelatedField(queryset=Branch.objects.all(), slug_field='old_id')
+    user = OldIdRelatedField(queryset=CustomUser.objects.all())
+    permission = OldIdRelatedField(queryset=CustomAutoGroup.objects.all())
+    user_salary = OldIdRelatedField(queryset=UserSalary.objects.all())
+    payment_types = OldIdRelatedField(queryset=PaymentTypes.objects.all())
+    branch = OldIdRelatedField(queryset=Branch.objects.all())
 
     class Meta:
         model = UserSalaryList
