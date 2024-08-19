@@ -82,7 +82,7 @@ class UserSalary(models.Model):
     old_id = models.IntegerField(blank=True, null=True, unique=True)
 
     class Meta:
-        ordering = ['id']
+        ordering = ['-date']
 
 
 class UserSalaryList(models.Model):
@@ -98,4 +98,4 @@ class UserSalaryList(models.Model):
     old_id = models.IntegerField(null=True,blank=True,unique=True)
 
     class Meta:
-        ordering = ['date']
+        ordering = ['-date']

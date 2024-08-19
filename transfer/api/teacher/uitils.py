@@ -29,6 +29,9 @@ class TeacherDataTransfer:
         self.teacher_salaries_table = Table('teachersalaries', self.metadata, autoload_with=self.engine)
         self.teacher_black_salary_table = Table('teacher_black_salary', self.metadata, autoload_with=self.engine)
         self.teachers_table = Table('teachers', self.metadata, autoload_with=self.engine)
+        self.month_date = Table('calendarmonth', self.metadata, autoload_with=self.engine)
+        self.day_date = Table('calendarday', self.metadata, autoload_with=self.engine)
+        self.subjects_table = Table('teacher_subject', self.metadata, autoload_with=self.engine)  # Add this line
 
     def row_to_dict(self, row, table):
         return {column.name: getattr(row, column.name) for column in table.columns}
@@ -53,6 +56,16 @@ class TeacherDataTransfer:
             logging.error(f"Error fetching multiple records from {table.name}: {e}")
             return []
 
+    def fetch_teacher_subjects(self, teacher_id):
+        try:
+            query = select(self.subjects_table).where(self.subjects_table.c.teacher_id == int(teacher_id))
+            with self.engine.connect() as conn:
+                result = conn.execute(query).fetchall()
+            return [row['id'] for row in result]
+        except Exception as e:
+            logging.error(f"Error fetching subjects for teacher {teacher_id}: {e}")
+            return []
+
     def transfer_teachers(self):
         try:
             with self.engine.connect() as conn:
@@ -60,27 +73,27 @@ class TeacherDataTransfer:
 
             for row in teachers_result:
                 row_dict = self.row_to_dict(row, self.teachers_table)
+                print(row_dict)
                 self._transfer_individual_teacher(row_dict)
         except Exception as e:
             logging.error(f"Error transferring teachers: {e}")
 
-    def _transfer_individual_teacher(self, row_dict):
+    def _transfer_individual_teacher(self, teacher):
         try:
-            subject_ids = row_dict.get('subject_ids', [])
-
             teacher_data = {
-                'old_id': row_dict['id'],
-                'user': row_dict['user_id'],
-                'subject': subject_ids,
-                'color': row_dict['table_color'],
-                'total_students': row_dict['total_students'],
+                'old_id': teacher.id,
+                'user': teacher.user_id,
+                'subject': [subject.id for subject in teacher.subject],
+                'color': teacher.table_color,
+                'total_students': teacher.total_students,
             }
             serializer = TransferTeacherSerializer(data=teacher_data)
             if serializer.is_valid():
                 serializer.save()
-                self._transfer_related_data(row_dict['id'])
+                self._transfer_related_data(teacher.id)
             else:
                 logging.error(f"Invalid teacher data: {serializer.errors}")
+
         except Exception as e:
             logging.error(f"Error transferring individual teacher: {e}")
 
@@ -89,6 +102,20 @@ class TeacherDataTransfer:
         self.transfer_teacher_salaries(teacher_id)
         self.transfer_teacher_salaries_list(teacher_id)
         self.transfer_teacher_black_salaries(teacher_id)
+
+    def get_month(self, id):
+        query = select(self.month_date).where(self.month_date.c.id == int(id))
+        with self.engine.connect() as conn:
+            result = conn.execute(query).fetchone()
+        row_dict = dict(zip(self.month_date.columns.keys(), result))
+        return row_dict
+
+    def get_day(self, id):
+        query = select(self.day_date).where(self.day_date.c.id == int(id))
+        with self.engine.connect() as conn:
+            result = conn.execute(query).fetchone()
+        row_dict = dict(zip(self.day_date.columns.keys(), result))
+        return row_dict
 
     def transfer_teacher_branches(self, teacher_id):
         branches = self.fetch_multiple_records(self.branches_table, self.branches_table.c.id, teacher_id)
@@ -112,7 +139,7 @@ class TeacherDataTransfer:
                 "teacher": salary['teacher_id'],
                 "branch": salary['location_id'],
                 "teacher_salary_type": salary.get('salary_type_id'),
-                "month_date": salary.get('month_date'),
+                "month_date": self.get_month(salary['calendar_month'])['date'].strftime("%Y-%m-%d"),
                 "total_salary": salary['total_salary'],
                 "remaining_salary": salary['remaining_salary'],
                 "taken_salary": salary['taken_money'],
@@ -130,6 +157,12 @@ class TeacherDataTransfer:
         salary_list = self.fetch_multiple_records(self.teacher_salaries_table, self.teacher_salaries_table.c.teacher_id,
                                                   teacher_id)
         for salary in salary_list:
+            if salary['calendar_day']:
+                day = self.get_day(salary['calendar_day'])['date'].strftime("%Y-%m-%d")
+            else:
+                day = None
+                logging.warning(f"Missing 'calendar_day' for salary ID {salary['id']}")
+
             salary_list_data = {
                 "teacher": salary['teacher_id'],
                 "salary_id": salary['salary_location_id'],
@@ -137,7 +170,9 @@ class TeacherDataTransfer:
                 "branch": salary['location_id'],
                 "comment": salary['reason'],
                 "deleted": False,
-                "salary": salary['payment_sum']
+                "salary": salary['payment_sum'],
+                "date": day
+
             }
             serializer = TransferTeacherListCreateSerializer(data=salary_list_data)
             if serializer.is_valid():
@@ -164,6 +199,40 @@ class TeacherDataTransfer:
                 logging.error(f"Invalid black salary data: {serializer.errors}")
 
 
-if __name__ == "__main__":
-    db_url = 'postgresql://postgres:123@localhost:5432/gennis'
+db_url = 'postgresql://postgres:123@localhost:5432/gennis'
 
+
+def teachers(self):
+    teacher_data_transfer = TeacherDataTransfer(db_url)
+    # teacher_data_transfer.transfer_teachers()
+
+    self.stdout.write(self.style.NOTICE('Starting the branch and salary transfer process...'))
+
+    try:
+        with teacher_data_transfer.engine.connect() as conn:
+            teachers_result = conn.execute(teacher_data_transfer.teachers_table.select()).fetchall()
+
+        for row in teachers_result:
+            teacher_id = row.id
+
+            teacher_data_transfer.transfer_teacher_branches(teacher_id)
+            self.stdout.write(self.style.SUCCESS('Branch  transfer completed successfully!'))
+        for row in teachers_result:
+            teacher_id = row.id
+            teacher_data_transfer.transfer_teacher_salaries(teacher_id)
+            self.stdout.write(self.style.SUCCESS('Salary  transfer completed successfully!'))
+
+        for row in teachers_result:
+            teacher_id = row.id
+            teacher_data_transfer.transfer_teacher_salaries_list(teacher_id)
+            self.stdout.write(self.style.SUCCESS('Salary List  transfer completed successfully!'))
+        for row in teachers_result:
+            teacher_id = row.id
+
+            teacher_data_transfer.transfer_teacher_black_salaries(teacher_id)
+            self.stdout.write(self.style.SUCCESS('Black Salary  transfer completed successfully!'))
+
+
+
+    except Exception as e:
+        self.stdout.write(self.style.ERROR(f'Error during transfer process: {e}'))
