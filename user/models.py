@@ -32,8 +32,8 @@ class CustomUser(AbstractUser):
     phone = models.CharField(max_length=200, blank=True, null=True)
     comment = models.CharField(max_length=200, blank=True, null=True)
     observer = models.BooleanField(default=False, null=True)
-    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True)
-    language = models.ForeignKey(Language, on_delete=models.CASCADE, null=True)
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
+    language = models.ForeignKey(Language, on_delete=models.SET_NULL, null=True)
     old_id = models.IntegerField(null=True, unique=True)
     groups = models.ManyToManyField(
         Group,
@@ -92,10 +92,10 @@ class UserSalaryList(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
     salary = models.IntegerField(blank=True, null=True)
-    date = models.DateTimeField(null=False,auto_now_add=True)
+    date = models.DateTimeField(null=False, auto_now_add=True)
     comment = models.CharField(max_length=100, blank=True, null=True)
     deleted = models.BooleanField(default=False, null=True)
-    old_id = models.IntegerField(null=True,blank=True,unique=True)
+    old_id = models.IntegerField(null=True, blank=True, unique=True)
 
     class Meta:
         ordering = ['-date']
