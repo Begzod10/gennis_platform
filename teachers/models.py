@@ -88,6 +88,7 @@ class TeacherGroupStatistics(models.Model):
                                related_name='branch_id_teacher_group_statistics')
     number_students = models.IntegerField()
     percentage = models.IntegerField()
+    date = models.DateTimeField(null=True, auto_now_add=False)  # true bolishi kerak
 
     class Meta:
         ordering = ['id']
