@@ -57,10 +57,6 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         pprint.pprint(validated_data)
         time_tables = validated_data.get('time_table')
-        # status, errors = check_time_table(time_tables, validated_data.get('subject'))
-        # if status == False:
-        #     raise serializers.ValidationError({"detail": errors})
-        # try:
         group = Group.objects.create(name=validated_data.get('name'), price=validated_data.get('price'),
                                      status=validated_data.get('status'),
                                      teacher_salary=validated_data.get('teacher_salary'),
@@ -75,11 +71,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                      )
         group.students.set(validated_data.get('students'))
         group.teacher.set(validated_data.get('teacher'))
-        # GroupTimeTable.objects.bulk_create(
-        #     [GroupTimeTable(week_id=time_table['week'], start_time=time_table['start_time'],
-        #                     end_time=time_table['end_time'], room_id=time_table['room'], group=group,
-        #                     branch_id=time_table['branch']) for time_table in
-        #      time_tables])
+
         for time_table in time_tables:
             group_time_table = GroupTimeTable.objects.create(week_id=time_table['week'],
                                                              start_time=time_table['start_time'],
@@ -91,8 +83,6 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
             for teacher in group.teacher.all():
                 teacher.group_time_table.add(group_time_table)
         create_school_student_debts(group, group.students.all())
-        # except TypeError and AttributeError:
-        #     raise serializers.ValidationError({"detail": "darslik vaqti to'gri keldi ma'lumotlarni kiriting !"})
         return group
 
     def update(self, instance, validated_data):
@@ -121,7 +111,6 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
             elif update_method == "remove_students":
                 for student in students:
                     instance.students.remove(student)
-
         instance.save()
         return instance
 

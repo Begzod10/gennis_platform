@@ -21,3 +21,12 @@ class GroupTimeTableSerializerTransfer(serializers.ModelSerializer):
     class Meta:
         model = GroupTimeTable
         fields = ['id', 'group', 'week', 'room', 'start_time', 'end_time', 'branch', 'old_id']
+
+    def create(self, validated_data):
+        group = validated_data.get('group')
+        group_time_table = GroupTimeTable.objects.create(**validated_data)
+        for student in group.students.all():
+            student.group_time_table.add(group_time_table)
+        for teacher in group.teacher.all():
+            teacher.group_time_table.add(group_time_table)
+        return group_time_table
