@@ -1,6 +1,7 @@
 import calendar
 
 from rest_framework import status, generics
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -11,6 +12,7 @@ from user.functions.functions import check_auth
 
 
 class CalendarView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, current_year, next_year):
         list_days = {'calendar': []}
@@ -87,6 +89,8 @@ class CalendarView(APIView):
 
 
 class TypeDayListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = TypeDay.objects.all()
     serializer_class = TypeDaySerializer
 
@@ -104,6 +108,8 @@ class TypeDayListView(generics.ListAPIView):
 
 
 class TypeDayDetailView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = TypeDay.objects.all()
     serializer_class = TypeDaySerializer
 

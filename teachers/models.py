@@ -38,11 +38,11 @@ class TeacherAttendance(models.Model):
 
 class TeacherSalary(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_id_salary')
-    month_date = models.DateField(null=True,auto_now_add=True)
-    total_salary = models.BigIntegerField(blank=True, null=True)
-    remaining_salary = models.BigIntegerField(blank=True, null=True)
-    taken_salary = models.BigIntegerField(blank=True, null=True)
-    total_black_salary = models.BigIntegerField(blank=True, null=True)
+    month_date = models.DateField(null=True, auto_now_add=False)  # true qilish kk
+    total_salary = models.BigIntegerField(blank=True, null=True, default=0)
+    remaining_salary = models.BigIntegerField(blank=True, null=True, default=0)
+    taken_salary = models.BigIntegerField(blank=True, null=True, default=0)
+    total_black_salary = models.BigIntegerField(blank=True, null=True, default=0)
     percentage = models.IntegerField(default=50)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='branch_id_salary')
     teacher_salary_type = models.ForeignKey(TeacherSalaryType, on_delete=models.SET_NULL, null=True)
@@ -50,7 +50,7 @@ class TeacherSalary(models.Model):
     old_id = models.IntegerField(blank=True, null=True, unique=True)
 
     class Meta:
-        ordering = ['id']
+        ordering = ['-month_date']
 
 
 class TeacherBlackSalary(models.Model):
@@ -68,14 +68,15 @@ class TeacherSalaryList(models.Model):
                                   related_name='salary_id_salary_list')
     payment = models.ForeignKey(PaymentTypes, on_delete=models.SET_NULL, null=True,
                                 related_name='payment_id_salary_list')
-    date = models.DateTimeField(auto_now_add=True)
+    date = models.DateTimeField(auto_now_add=True, null=True)  # true qilish kerak
     comment = models.CharField(max_length=300)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='branch_id_salary_list')
-    deleted = models.BooleanField(default='false')
-    salary = models.IntegerField()
+    deleted = models.BooleanField(default=False)
+    salary = models.IntegerField(default=0)
+    old_id = models.IntegerField(blank=True, null=True, unique=True)
 
     class Meta:
-        ordering = ['id']
+        ordering = ['-date']
 
 
 class TeacherGroupStatistics(models.Model):
@@ -87,6 +88,7 @@ class TeacherGroupStatistics(models.Model):
                                related_name='branch_id_teacher_group_statistics')
     number_students = models.IntegerField()
     percentage = models.IntegerField()
+    date = models.DateTimeField(null=True, auto_now_add=False)  # true bolishi kerak
 
     class Meta:
         ordering = ['id']

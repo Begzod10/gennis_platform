@@ -106,6 +106,8 @@ class TeacherSalaryReadSerializers(serializers.ModelSerializer):
         fields = '__all__'
 
 
+
+
 class TeacherSalaryCreateSerializers(serializers.ModelSerializer):
     teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
@@ -133,6 +135,8 @@ class TeacherGroupStatisticsReadSerializers(serializers.ModelSerializer):
 class TeacherSalaryListReadSerializers(serializers.ModelSerializer):
     teacher = TeacherSerializerRead(read_only=True)
     salary_id = TeacherSalaryReadSerializers(read_only=True)
+    date = serializers.SerializerMethodField(read_only=True)
+
     payment = PaymentTypesSerializers(read_only=True)
 
     branch = BranchSerializer(read_only=True)
@@ -141,12 +145,14 @@ class TeacherSalaryListReadSerializers(serializers.ModelSerializer):
         model = TeacherSalaryList
         fields = '__all__'
 
+    def get_date(self, obj):
+        return obj.date.strftime('%Y-%m-%d %H:%M')
+
 
 class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
     teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
     salary_id = serializers.PrimaryKeyRelatedField(queryset=TeacherSalary.objects.all())
     payment = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
-
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
 
     class Meta:
@@ -169,6 +175,7 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
             payment=validated_data.get('payment'),
             branch=validated_data.get('branch'),
             salary=salary_amount,
+            deleted=False,
             comment=validated_data.get('comment', ''),
         )
         return teacher_salary_list
