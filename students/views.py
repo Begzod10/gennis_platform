@@ -43,8 +43,68 @@ class DeletedFromRegistered(APIView):
     def get(self, request, *args, **kwargs):
         deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
         delete_new_students = DeletedNewStudent.objects.exclude(id__in=deleted_student_ids)
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            delete_new_students = delete_new_students.filter(branch_id=branch_id)
+        if location_id is not None:
+            delete_new_students = delete_new_students.filter(location_id=location_id)
         delete_new_student_serializer = DeletedNewStudentListSerializer(delete_new_students, many=True)
-        return Response(delete_new_student_serializer)
+        return Response(delete_new_student_serializer.data)
+
+
+class DeletedGroupStudents(APIView):
+    def get(self, request, *args, **kwargs):
+        deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
+        active_students = Student.objects.exclude(id__in=deleted_new_student_ids)
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            active_students = active_students.filter(branch_id=branch_id)
+        if location_id is not None:
+            active_students = active_students.filter(location_id=location_id)
+        student_serializer = StudentListSerializer(active_students, many=True)
+        return Response(student_serializer.data)
+
+
+class NewRegisteredStudents(APIView):
+    def get(self, request, *args, **kwargs):
+        deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
+        deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
+        active_students = Student.objects.exclude(id__in=deleted_student_ids) \
+            .exclude(id__in=deleted_new_student_ids) \
+            .filter(groups_student__isnull=True).distinct()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            active_students = active_students.filter(branch_id=branch_id)
+        if location_id is not None:
+            active_students = active_students.filter(location_id=location_id)
+        student_serializer = StudentListSerializer(active_students, many=True)
+
+        return Response(student_serializer.data)
+
+
+class ActiveStudents(APIView):
+    def get(self, request, *args, **kwargs):
+        deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
+        deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
+        active_students = Student.objects.exclude(id__in=deleted_student_ids) \
+            .exclude(id__in=deleted_new_student_ids) \
+            .filter(groups_student__isnull=False).distinct()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            active_students = active_students.filter(branch_id=branch_id)
+        if location_id is not None:
+            active_students = active_students.filter(location_id=location_id)
+        student_serializer = StudentListSerializer(active_students, many=True)
+
+        return Response(student_serializer.data)
 
 
 class CreateContractView(APIView):

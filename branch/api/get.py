@@ -57,6 +57,6 @@ class BranchForLocations(generics.ListAPIView):
             serializer = BranchListSerializer(branches.first())
         else:
             serializer = BranchListSerializer(branches, many=True)
-        return Response({'branches': serializer.data})
+        return Response(serializer.data)
 
 

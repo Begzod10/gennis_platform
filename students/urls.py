@@ -1,13 +1,16 @@
 from django.urls import path
 
-from .views import (CreateContractView, UploadPDFContractView, StudentListView)
-from .Api.get import StudentCharityAPIView, StudentPaymentAPIView, StudentHistoryGroupsAPIView, \
-    StudentCharityListAPIView, StudentPaymentListAPIView, StudentHistoryGroupsListAPIView, StudentRetrieveAPIView,FilteredStudentsListView
 from .Api.createdeleteupdate import StudentCreateView, StudentCharityCreateView, \
     StudentPaymentCreateView, \
     StudentDestroyView, StudentCharityUpdateView, StudentPaymentUpdateView, StudentCharityDestroyView, \
     StudentPaymentDestroyView, StudentUpdateView, StudentHistoryGroupsCreateView, StudentHistoryGroupsDestroyView, \
     StudentHistoryGroupsUpdateView, DeletedStudentDestroy
+from .Api.get import StudentCharityAPIView, StudentPaymentAPIView, StudentHistoryGroupsAPIView, \
+    StudentCharityListAPIView, StudentPaymentListAPIView, StudentHistoryGroupsListAPIView, StudentRetrieveAPIView, \
+    FilteredStudentsListView
+from .views import (CreateContractView, UploadPDFContractView, StudentListView, DeletedFromRegistered,
+                    DeletedGroupStudents, NewRegisteredStudents, ActiveStudents
+                    )
 
 urlpatterns = [
     path('student_history_groups_create/', StudentHistoryGroupsCreateView.as_view(),
@@ -38,4 +41,9 @@ urlpatterns = [
     path('upload_pdf_contract/<int:user_id>/', UploadPDFContractView.as_view(), name='upload_pdf_contract'),
     path('api/filter_students_subject/<int:branch_id>/', FilteredStudentsListView.as_view(),
          name='get_filtered_students_list'),
+
+    path('deleted-from-registered/', DeletedFromRegistered.as_view(), name='deleted-from-registered'),
+    path('deleted-group-students/', DeletedGroupStudents.as_view(), name='deleted-group-students'),
+    path('new-registered-students/', NewRegisteredStudents.as_view(), name='new-registered-students'),
+    path('active-students/', ActiveStudents.as_view(), name='active-students'),
 ]
