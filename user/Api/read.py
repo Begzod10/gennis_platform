@@ -132,6 +132,7 @@ class UserMe(APIView):
 class EmployeersListView(generics.ListAPIView):
     queryset = CustomAutoGroup.objects.all()
     serializer_class = Employeers
+
     def get_queryset(self):
         queryset = CustomAutoGroup.objects.all()
         location_id = self.request.query_params.get('location_id', None)
@@ -175,3 +176,25 @@ class UserSalaryMonthView(generics.RetrieveAPIView):
             return UserSalary.objects.filter(user_id=user_id).all()
         except UserSalary.DoesNotExist:
             raise NotFound('UserSalary not found for the given user_id')
+
+
+class UsersWithJob(APIView):
+    def get(self, request, *args, **kwargs):
+        queryset = CustomUser.objects.all()
+        serializer = UserSerializerRead(queryset, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        job = request.data['job']
+        if not job:
+            return Response({"error": "Job parameter is required."}, status=400)
+
+        jobs = CustomUser.objects.filter(groups__id=job)
+        if jobs.exists():
+            if jobs.count() == 1:
+                serializer = UserSerializerRead(jobs.first())
+            else:
+                serializer = UserSerializerRead(jobs, many=True)
+            return Response(serializer.data)
+        else:
+            return Response({"error": "No users found with the specified job."}, status=404)
