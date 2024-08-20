@@ -8,4 +8,4 @@ class SystemSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = System
-        fields = '__all__'
+        fields = ['id', 'name', 'number']

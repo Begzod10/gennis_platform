@@ -37,3 +37,14 @@ class BranchRetrieveAPIView(generics.RetrieveAPIView):
         create_branches = self.get_object()
         create_branches_data = self.get_serializer(create_branches).data
         return Response({'branches': create_branches_data, 'permissions': permissions})
+
+
+class BranchForLocations(generics.ListAPIView):
+    serializer_class = BranchListSerializer
+    queryset = Branch.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        locations = request.data.get('locations')
+        branches = Branch.objects.filter(location__in=locations)
+        serializer = BranchListSerializer(data=branches)
+        return Response({'branches': serializer.data})

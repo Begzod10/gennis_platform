@@ -1,6 +1,6 @@
 from rest_framework import generics
-from teachers.models import TeacherAttendance
-from teachers.serializers import TeacherAttendanceListSerializers
+from teachers.models import TeacherAttendance, Teacher
+from teachers.serializers import TeacherAttendanceListSerializers, TeacherSerializer, TeacherSerializerRead
 from user.functions.functions import check_auth
 from rest_framework.response import Response
 from permissions.functions.CheckUserPermissions import check_user_permissions
@@ -37,3 +37,11 @@ class TeacherAttendanceRetrieveView(generics.RetrieveAPIView):
         teacher_attendance = self.get_object()
         teacher_attendance_data = self.get_serializer(teacher_attendance).data
         return Response({'teacherattendance': teacher_attendance_data, 'permissions': permissions})
+
+
+class TeachersForBranches(generics.ListAPIView):
+    serializer_class = TeacherSerializerRead
+
+    def get_queryset(self):
+        pk = self.kwargs.get('pk')
+        return Teacher.objects.filter(branches__in=[pk])

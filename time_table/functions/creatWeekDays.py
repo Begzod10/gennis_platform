@@ -14,4 +14,4 @@ def creat_week_days():
     return True
 
 
-
+creat_week_days()

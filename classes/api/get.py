@@ -1,7 +1,7 @@
 from rest_framework import generics
 from classes.serializers import (ClassCoinListSerializers, CoinInfoListSerializers, StudentCoinListSerializers,
-                                 ClassNumberListSerializers)
-from classes.models import ClassNumber, ClassCoin, CoinInfo, StudentCoin
+                                 ClassNumberListSerializers, ClassColorsSerializers)
+from classes.models import ClassNumber, ClassCoin, CoinInfo, StudentCoin, ClassColors
 from user.functions.functions import check_auth
 from rest_framework.response import Response
 from permissions.functions.CheckUserPermissions import check_user_permissions
@@ -137,3 +137,8 @@ class ClassNumberListView(generics.ListAPIView):
         queryset = ClassNumber.objects.all()
         serializer = ClassNumberListSerializers(queryset, many=True)
         return Response({'classnumbers': serializer.data, 'permissions': permissions})
+
+
+class ClassColorsView(generics.ListAPIView):
+    queryset = ClassColors.objects.all()
+    serializer_class = ClassColorsSerializers

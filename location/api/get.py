@@ -37,3 +37,17 @@ class LocationRetrieveAPIView(generics.RetrieveAPIView):
         locations = self.get_object()
         location_data = self.get_serializer(locations).data
         return Response({'locations': location_data, 'permissions': permissions})
+
+
+class LocationsForSystem(generics.ListAPIView):
+    serializer_class = LocationListSerializers
+    queryset = Location.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        systems = request.data
+        locations = Location.objects.filter(system__in=systems)
+        serializer = LocationListSerializers(data=locations)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors)

@@ -11,6 +11,7 @@ from user.models import CustomUser
 from location.models import Location
 from branch.models import Branch
 from .models import AuthGroupSystem
+from branch.serializers import BranchListSerializer
 
 
 class PermissionsSerializer(serializers.ModelSerializer):
@@ -64,6 +65,15 @@ class ManySystemSerializer(serializers.ModelSerializer):
         return ManySystem.objects.create(**validated_data)
 
 
+class ManySystemRead(serializers.ModelSerializer):
+    user = UserSerializerRead(read_only=True)
+    system = SystemSerializers(read_only=True)
+
+    class Meta:
+        model = ManySystem
+        fields = ['id', 'user', 'system']
+
+
 class ManyLocationSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
     location = serializers.PrimaryKeyRelatedField(queryset=Location.objects.all())
@@ -82,6 +92,15 @@ class ManyLocationSerializer(serializers.ModelSerializer):
         return ManyLocation.objects.create(**validated_data)
 
 
+class ManyLocationRead(serializers.ModelSerializer):
+    user = UserSerializerRead(read_only=True)
+    location = LocationSerializers(read_only=True)
+
+    class Meta:
+        model = ManyLocation
+        fields = ['id', 'user', 'location']
+
+
 class ManyBranchSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
@@ -98,3 +117,12 @@ class ManyBranchSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return ManyBranch.objects.create(**validated_data)
+
+
+class ManyBranchRead(serializers.ModelSerializer):
+    user = UserSerializerRead(read_only=True)
+    branch = BranchListSerializer(read_only=True)
+
+    class Meta:
+        model = ManyLocation
+        fields = ['id', 'user', 'branch']

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .api.get import LocationRetrieveAPIView, LocationListAPIView
+from .api.get import LocationRetrieveAPIView, LocationListAPIView, LocationsForSystem
 from .api.createdeleteupdate import LocationCreateView, LocationDestroyView, LocationUpdateView
 
 urlpatterns = [
@@ -9,4 +9,5 @@ urlpatterns = [
     path('location_delete/<int:pk>/', LocationDestroyView.as_view(), name='location-delete'),
     path('location/<int:pk>/', LocationRetrieveAPIView.as_view(), name='location'),
     path('location_list/', LocationListAPIView.as_view(), name='location-list'),
+    path('location_for_system/', LocationsForSystem.as_view(), name='location_for_system'),
 ]
