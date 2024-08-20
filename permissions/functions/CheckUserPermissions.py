@@ -1,8 +1,5 @@
-from django.contrib.auth.models import Permission
-from system.serializers import SystemSerializers
-from branch.serializers import BranchListSerializer
-from location.serializers import LocationListSerializers
-from system.models import System
+from django.contrib.auth.models import Permission, Group
+
 from ..serializers import ManySystemRead, ManyLocationRead, ManyBranchRead
 
 
@@ -19,9 +16,13 @@ def check_user_permissions(user, table_names):
     user_permissions = user.groups.filter(permissions__content_type__model__in=table_names,
                                           authgroupsystem__system_id=system).values_list('permissions__codename',
                                                                                          flat=True)
-
+    roles = Group.objects.all()
+    jobs = []
+    for role in roles:
+        jobs.append({role.name: role.name in user.groups.values_list('name', flat=True)})
     return {pr: pr in user_permissions for pr in base_permissions}, {
         "system": system_serializers.data,
         "many_branches": branch_serializers.data,
-        "many_locations": location_serializers.data
+        "many_locations": location_serializers.data,
+        'jobs': jobs
     }
