@@ -17,4 +17,4 @@ class LocationListSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = Location
-        fields = '__all__'
+        fields = ['id', 'name', 'number', 'system']

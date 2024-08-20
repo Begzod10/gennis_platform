@@ -20,6 +20,13 @@ class OverheadListView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = Overhead.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = OverheadSerializerGet(queryset, many=True)
         return Response({'overheads': serializer.data, 'permissions': permissions})
 

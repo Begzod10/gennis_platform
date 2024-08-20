@@ -37,3 +37,19 @@ class LocationRetrieveAPIView(generics.RetrieveAPIView):
         locations = self.get_object()
         location_data = self.get_serializer(locations).data
         return Response({'locations': location_data, 'permissions': permissions})
+
+
+class LocationsForSystem(generics.ListAPIView):
+    serializer_class = LocationListSerializers
+    queryset = Location.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        systems = request.data.get('systems', [])
+        locations = Location.objects.filter(system__in=systems)
+
+        if locations.count() == 1:
+            serializer = LocationListSerializers(locations.first())
+        else:
+            serializer = LocationListSerializers(locations, many=True)
+
+        return Response(serializer.data)

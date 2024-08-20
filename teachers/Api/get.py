@@ -1,6 +1,6 @@
 from rest_framework import generics
-from teachers.models import TeacherAttendance
-from teachers.serializers import TeacherAttendanceListSerializers
+from teachers.models import TeacherAttendance, Teacher
+from teachers.serializers import TeacherAttendanceListSerializers, TeacherSerializer, TeacherSerializerRead
 from user.functions.functions import check_auth
 from rest_framework.response import Response
 from permissions.functions.CheckUserPermissions import check_user_permissions
@@ -19,6 +19,13 @@ class TeacherAttendanceListView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = TeacherAttendance.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = TeacherAttendanceListSerializers(queryset, many=True)
         return Response({'teacherattendances': serializer.data, 'permissions': permissions})
 
@@ -37,3 +44,11 @@ class TeacherAttendanceRetrieveView(generics.RetrieveAPIView):
         teacher_attendance = self.get_object()
         teacher_attendance_data = self.get_serializer(teacher_attendance).data
         return Response({'teacherattendance': teacher_attendance_data, 'permissions': permissions})
+
+
+class TeachersForBranches(generics.ListAPIView):
+    serializer_class = TeacherSerializerRead
+
+    def get_queryset(self):
+        pk = self.kwargs.get('pk')
+        return Teacher.objects.filter(branches__in=[pk])

@@ -22,6 +22,13 @@ class TaskListView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = Task.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = TaskGetSerializer(queryset, many=True)
         return Response({'tasks': serializer.data, 'permissions': permissions})
 
@@ -55,6 +62,13 @@ class CallListView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = Task.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = TaskGetSerializer(queryset, many=True)
         return Response({'calls': serializer.data, 'permissions': permissions})
 

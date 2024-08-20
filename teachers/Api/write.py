@@ -26,16 +26,11 @@ class TeacherSalaryCreateAPIView(generics.CreateAPIView):
     serializer_class = TeacherSalaryListCreateSerializers
 
 
-
-
 class TeacherSalaryDeleteAPIView(generics.DestroyAPIView):
     queryset = TeacherSalaryList.objects.all()
     serializer_class = TeacherSalaryListCreateSerializers
 
 
-
 class TeacherSalaryUpdateAPIView(generics.UpdateAPIView):
     queryset = TeacherSalaryList.objects.all()
     serializer_class = TeacherSalaryListCreateSerializers
-
-

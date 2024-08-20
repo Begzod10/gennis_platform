@@ -36,6 +36,13 @@ class OldCapitalListView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = OldCapital.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = OldCapitalListSerializers(queryset, many=True)
         return Response({'old_capitals': serializer.data, 'permissions': permissions})
 
@@ -69,6 +76,13 @@ class CapitalListView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = Capital.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = CapitalListSerializers(queryset, many=True)
         for capital in serializer.data:
             creat_capital_term(capital)

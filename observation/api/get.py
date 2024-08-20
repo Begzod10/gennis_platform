@@ -35,6 +35,13 @@ class ObservationStatisticsListView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = ObservationStatistics.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = ObservationStatisticsListSerializers(queryset, many=True)
         return Response({'observationstatistics': serializer.data, 'permissions': permissions})
 
@@ -68,5 +75,12 @@ class ObservationDayListView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = ObservationDay.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = ObservationDayListSerializers(queryset, many=True)
         return Response({'observationdays': serializer.data, 'permissions': permissions})

@@ -48,7 +48,7 @@ class UserSalaryListUpdateView(generics.UpdateAPIView):
 
 
 class UserSalaryListDestroyView(generics.DestroyAPIView):
-    queryset = CustomUser.objects.all()
+    queryset = UserSalaryList.objects.all()
     serializer_class = UserSalaryListSerializers
 
 

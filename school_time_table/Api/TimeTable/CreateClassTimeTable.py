@@ -8,6 +8,7 @@ from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTable
     ClassTimeTableLessonsSerializer
 
 from group.serializers import GroupSerializer
+from time_table.functions.creatWeekDays import creat_week_days
 
 
 class CreateClassTimeTable(generics.ListCreateAPIView):
@@ -25,13 +26,30 @@ class CreateClassTimeTable(generics.ListCreateAPIView):
         return Response(read_serializer.data)
 
 
-class Classes(generics.RetrieveUpdateAPIView):
+# class Classes(generics.RetrieveUpdateAPIView):
+#     queryset = Group.objects.filter(class_number__isnull=False)
+#     serializer_class = GroupSerializer
+#
+
+class Classes(generics.ListAPIView):
     queryset = Group.objects.filter(class_number__isnull=False)
     serializer_class = GroupSerializer
+    def get_queryset(self):
+        queryset = Group.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
+
+        return queryset
 
 
 class ClassTimeTableLessonsView(APIView):
     def get(self, request, pk):
+        creat_week_days()
         group = Group.objects.get(id=pk)
         serializer = ClassTimeTableLessonsSerializer(context={'group': group})
         data = {

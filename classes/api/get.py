@@ -1,7 +1,7 @@
 from rest_framework import generics
 from classes.serializers import (ClassCoinListSerializers, CoinInfoListSerializers, StudentCoinListSerializers,
-                                 ClassNumberListSerializers)
-from classes.models import ClassNumber, ClassCoin, CoinInfo, StudentCoin
+                                 ClassNumberListSerializers, ClassColorsSerializers)
+from classes.models import ClassNumber, ClassCoin, CoinInfo, StudentCoin, ClassColors
 from user.functions.functions import check_auth
 from rest_framework.response import Response
 from permissions.functions.CheckUserPermissions import check_user_permissions
@@ -84,6 +84,13 @@ class ClassCoinListView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = ClassCoin.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = ClassCoinListSerializers(queryset, many=True)
         return Response({'classcoins': serializer.data, 'permissions': permissions})
 
@@ -101,6 +108,13 @@ class CoinInfoListView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = CoinInfo.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = CoinInfoListSerializers(queryset, many=True)
         return Response({'coininfos': serializer.data, 'permissions': permissions})
 
@@ -118,6 +132,13 @@ class StudentCoinListView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = StudentCoin.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = StudentCoinListSerializers(queryset, many=True)
         return Response({'studentcoins': serializer.data, 'permissions': permissions})
 
@@ -135,5 +156,28 @@ class ClassNumberListView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = ClassNumber.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = ClassNumberListSerializers(queryset, many=True)
         return Response({'classnumbers': serializer.data, 'permissions': permissions})
+
+
+class ClassColorsView(generics.ListAPIView):
+    queryset = ClassColors.objects.all()
+    serializer_class = ClassColorsSerializers
+    def get_queryset(self):
+        queryset = ClassColors.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
+
+        return queryset

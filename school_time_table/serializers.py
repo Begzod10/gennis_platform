@@ -192,7 +192,6 @@ class ClassTimeTableLessonsSerializer(serializers.Serializer):
                         }
                     })
             time_tables.append(info)
-
         return time_tables
 
     def get_hours_list(self, obj):

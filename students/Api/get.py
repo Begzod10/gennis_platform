@@ -45,6 +45,13 @@ class StudentCharityListAPIView(generics.ListAPIView):
             queryset = StudentCharity.objects.filter(student_id=student_id)
         else:
             queryset = StudentCharity.objects.all()
+            location_id = self.request.query_params.get('location_id', None)
+            branch_id = self.request.query_params.get('branch_id', None)
+
+            if branch_id is not None:
+                queryset = queryset.filter(branch_id=branch_id)
+            if location_id is not None:
+                queryset = queryset.filter(location_id=location_id)
         serializer = StudentCharityListSerializer(queryset, many=True)
         return Response({'studentcharitys': serializer.data, 'permissions': permissions})
 
@@ -90,6 +97,13 @@ class StudentHistoryGroupsListAPIView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = StudentHistoryGroups.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = StudentHistoryGroupsListSerializer(queryset, many=True)
         return Response({'studenthistorygroups': serializer.data, 'permissions': permissions})
 
@@ -123,6 +137,13 @@ class StudentPaymentListAPIView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = StudentPayment.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = StudentPaymentListSerializer(queryset, many=True)
         return Response({'branches': serializer.data, 'permissions': permissions})
 

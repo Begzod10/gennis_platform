@@ -29,6 +29,17 @@ class TeacherGroupStatisticsListView(generics.ListAPIView):
 class TeacherListView(generics.ListAPIView):
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializerRead
+    def get_queryset(self):
+        queryset = Teacher.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
+
+        return queryset
 
 
 class TeacherRetrieveView(generics.RetrieveAPIView):

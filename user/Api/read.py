@@ -28,6 +28,13 @@ class UserListCreateView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = CustomUser.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = UserSerializerRead(queryset, many=True)
         return Response({'users': serializer.data, 'permissions': permissions})
 
@@ -61,6 +68,13 @@ class UserSalaryListListView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = UserSalaryList.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = UserSalaryListSerializersRead(queryset, many=True)
         return Response({'usersalarylists': serializer.data, 'permissions': permissions})
 
@@ -118,6 +132,17 @@ class UserMe(APIView):
 class EmployeersListView(generics.ListAPIView):
     queryset = CustomAutoGroup.objects.all()
     serializer_class = Employeers
+    def get_queryset(self):
+        queryset = CustomAutoGroup.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
+
+        return queryset
 
 
 class EmployerRetrieveView(generics.RetrieveAPIView):

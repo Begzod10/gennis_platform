@@ -39,6 +39,13 @@ class StudentListView(APIView):
         return Response(data)
 
 
+class DeletedFromRegistered(APIView):
+    def get(self, request, *args, **kwargs):
+        deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
+        delete_new_students = DeletedNewStudent.objects.exclude(id__in=deleted_student_ids)
+        delete_new_student_serializer = DeletedNewStudentListSerializer(delete_new_students, many=True)
+        return Response(delete_new_student_serializer)
+
 
 class CreateContractView(APIView):
     permission_classes = [IsAuthenticated]
