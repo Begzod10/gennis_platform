@@ -51,6 +51,17 @@ class UserSalaryListDestroyView(generics.DestroyAPIView):
     queryset = UserSalaryList.objects.all()
     serializer_class = UserSalaryListSerializers
 
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.deleted = True
+        instance.save()
+
+        user_salary = instance.user_salary
+        user_salary.taken_salary -= instance.salary
+        user_salary.remaining_salary += instance.salary
+        user_salary.save()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer

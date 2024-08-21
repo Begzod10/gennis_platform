@@ -5,9 +5,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
-
+from rest_framework_simplejwt.views import TokenRefreshView
+from user.serializers import CustomUserSerializer
 from permissions.functions.CheckUserPermissions import check_user_permissions
 
 
@@ -35,18 +35,14 @@ class CustomTokenRefreshView(TokenRefreshView):
 
     def post(self, request, *args, **kwargs):
         refresh_token = request.data.get("refresh")
-
         if not refresh_token:
             return Response({"detail": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         user, auth_error = self.get_user_from_refresh_token(refresh_token)
-
         if auth_error:
             return Response(auth_error, status=status.HTTP_401_UNAUTHORIZED)
 
-        table_names = ['teacherattendance', 'teacher', 'system']
-        permissions = check_user_permissions(user, table_names)
-
+        permissions = check_user_permissions(user, ['teacherattendance', 'teacher', 'system'])
         serializer = self.get_serializer(data=request.data)
 
         try:
@@ -54,23 +50,14 @@ class CustomTokenRefreshView(TokenRefreshView):
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        access_token = serializer.validated_data.get('access')
-        data = None
-
-        response_data = {
-            "username": user.username,
-            "surname": user.surname.title(),
-            "name": user.name.title(),
-            "id": user.id,
-            "access_token": str(access_token),
+        user_serializer = CustomUserSerializer(user)
+        response_data = user_serializer.data
+        response_data.update({
+            "access_token": str(serializer.validated_data.get('access')),
+            "access": str(serializer.validated_data.get('access')),
             "refresh_token": str(RefreshToken.for_user(user)),
-            "role": user.groups if user.groups else "",
-            "profile_photo": user.photo_profile.url if user.photo_profile else None,
-            "observer": user.observer,
-            "location_id": user.location_id,
-            # "teacher_info": data.convert_json() if data else {},
-            'access': access_token,
             'permissions': permissions
-        }
+        })
 
         return Response(response_data, status=status.HTTP_200_OK)
+

@@ -59,7 +59,7 @@ class UserDetailView(generics.RetrieveAPIView):
 
 
 class UserSalaryListListView(generics.ListAPIView):
-    queryset = UserSalaryList.objects.all()
+    queryset = UserSalaryList.objects.filter(deleted=False).all()
     serializer_class = UserSalaryListSerializersRead
 
     def get(self, request, *args, **kwargs):

@@ -51,14 +51,14 @@ class UserSerializerWrite(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        # user = super().create(validated_data)
-        # user.set_password(validated_data['password'])
-        # user.save()
-        # return user
         user = super().create(validated_data)
-        user.password = validated_data['password']
+        user.set_password(validated_data['password'])
         user.save()
         return user
+        # user = super().create(validated_data)
+        # user.password = validated_data['password']
+        # user.save()
+        # return user
 
     def send_data(self, user_data):
         url = 'https://example.com/api/update_user_info'
@@ -115,13 +115,7 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
         instance.save()
         return instance
 
-    def delete(self, instance):
-        instance.deleted = True
-        instance.save()
-        instance.user_salary.taken_salary -= instance.salary
-        instance.user_salary.remaining_salary += instance.salary
-        instance.user_salary.save()
-        return instance
+
 
 
 class CustomAutoGroupSerializers(serializers.ModelSerializer):
@@ -206,3 +200,17 @@ class UserSalaryListSerializersRead(serializers.ModelSerializer):
 
     def get_date(self, obj):
         return obj.date.strftime('%Y-%m-%d %H:%M')
+
+
+class CustomUserSerializer(serializers.ModelSerializer):
+    groups = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field='name'
+    )
+    profile_photo = serializers.ImageField(use_url=True,required=False, allow_null=True)
+    location_id = serializers.CharField(source='branch_id')
+
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'surname', 'name', 'id', 'groups', 'profile_photo', 'location_id')
