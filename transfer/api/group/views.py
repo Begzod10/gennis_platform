@@ -1,20 +1,17 @@
-from rest_framework import generics
-from rest_framework.response import Response
-
-from group.models import Group, GroupReason, CourseTypes
-from group.serializers import GroupSerializer
 from .serializers import TransferGroupCreateUpdateSerializer
+from transfer.api.group.flask_data_base import get_groups
+import time
 
 
-class TransferCreatGroups(generics.ListCreateAPIView):
-    queryset = Group.objects.all()
-    serializer_class = TransferGroupCreateUpdateSerializer
-
-    def create(self, request, *args, **kwargs):
-        write_serializer = self.get_serializer(data=request.data, partial=True)
-        write_serializer.is_valid(raise_exception=True)
-        self.perform_create(write_serializer)
-
-        instance = Group.objects.get(pk=write_serializer.data['id'])
-        read_serializer = GroupSerializer(instance)
-        return Response(read_serializer.data)
+def groups(self):
+    start = time.time()
+    list = get_groups()
+    for info in list:
+        serializer = TransferGroupCreateUpdateSerializer(data=info)
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    end = time.time()
+    print(f"Run time attendance: {(end - start) * 10 ** 3:.03f}ms")
+    return True

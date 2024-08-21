@@ -35,16 +35,14 @@ class TransferAttendancePerMonthSerializer(serializers.ModelSerializer):
 
 
 class TransferAttendancePerDaySerializer(serializers.ModelSerializer):
-    student = serializers.SlugRelatedField(queryset=Student.objects.all(), slug_field='old_id')
-    teacher = serializers.SlugRelatedField(queryset=Teacher.objects.all(), slug_field='old_id')
-    group = serializers.SlugRelatedField(queryset=Group.objects.all(), slug_field='old_id')
+    student = OldIdRelatedField(queryset=Student.objects.all())
+    teacher = OldIdRelatedField(queryset=Teacher.objects.all(), required=False, allow_null=True)
+    group = OldIdRelatedField(queryset=Group.objects.all(), required=False, allow_null=True)
     month_date = serializers.JSONField(required=False, default=None)
 
     class Meta:
         model = AttendancePerDay
-        fields = ['id', 'status', 'debt_per_day', 'salary_per_day', 'charity_per_day', 'day',
-                  'homework_ball', 'dictionary_ball', 'activeness_ball', 'average', 'teacher', 'student',
-                  'status', 'group', 'month_date', 'old_id']
+        fields = '__all__'
 
     def create(self, validated_data):
         month_date = validated_data.pop('month_date')

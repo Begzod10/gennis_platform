@@ -41,7 +41,7 @@ class AttendancePerDay(models.Model):
     average = models.IntegerField(null=True)
     status = models.BooleanField(default=False)
     old_id = models.IntegerField(null=True, unique=True)
-    reason = models.CharField(null=True)
+    reason = models.CharField(null=True, blank=True)
     teacher_ball = models.IntegerField(null=True)
 
 

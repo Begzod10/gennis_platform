@@ -2,21 +2,16 @@ from django.db import models
 
 
 class Subject(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-    ball_number = models.IntegerField(default=0)
+    name = models.CharField(max_length=250, blank=False, null=False)
+    ball_number = models.IntegerField(null=True)
+    old_id = models.IntegerField(null=True, unique=True)
     classroom_id = models.IntegerField()
     disabled = models.BooleanField(default=False)
-    old_id = models.IntegerField(null=True, unique=True)
-
-
-    def __str__(self):
-        return self.name
 
 
 class SubjectLevel(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=250, blank=False, null=False)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='levels')
+    old_id = models.IntegerField(null=True, unique=True)
     classroom_id = models.IntegerField()
     disabled = models.BooleanField(default=False)
-    old_id = models.IntegerField(null=True, unique=True)
-

@@ -3,4 +3,3 @@ import django
 
 django.setup()
 
-print(get_commands())

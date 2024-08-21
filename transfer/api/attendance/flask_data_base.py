@@ -85,6 +85,5 @@ def get_attendancedays():
             'month_date': get_day(attendance['calendar_day'])['date'].strftime("%Y-%m-%d"),
             'teacher_ball': attendance['teacher_ball'],
         }
-        print(info)
         list.append(info)
     return list
