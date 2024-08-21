@@ -58,7 +58,7 @@ class TeacherBlackSalary(models.Model):
     black_salary = models.IntegerField(null=True)
     group = models.ForeignKey('group.Group', on_delete=models.CASCADE, null=True)
     student = models.ForeignKey('students.Student', on_delete=models.CASCADE)
-    month_date = models.DateTimeField()
+    month_date = models.DateTimeField(null=True)
     status = models.BooleanField()
 
 

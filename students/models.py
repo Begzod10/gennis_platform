@@ -46,9 +46,10 @@ class DeletedNewStudent(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student_new')
     created = models.DateTimeField(auto_now_add=False)
     comment = models.CharField(null=True)
+    old_id = models.IntegerField(unique=True, null=True)
 
 
-class StudentHistoryGroups(models.Model):
+class  StudentHistoryGroups(models.Model):
     student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, related_name='student_student_history')
     group = models.ForeignKey('group.Group', on_delete=models.SET_NULL, null=True, related_name='group_student_history')
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_student_history')
@@ -65,6 +66,7 @@ class DeletedStudent(models.Model):
     group_reason = models.ForeignKey('group.GroupReason', on_delete=models.SET_NULL, null=True,
                                      related_name='deleted_student_group_reason')
     deleted_date = models.DateTimeField(auto_now_add=True)
+    old_id = models.IntegerField(unique=True, null=True)
 
 
 class ContractStudent(models.Model):
@@ -77,4 +79,5 @@ class ContractStudent(models.Model):
     passport_series = models.CharField(max_length=255)
     given_time = models.CharField(max_length=255)
     contract = models.FileField(upload_to='contracts')
+    old_id = models.IntegerField(unique=True, null=True)
     year = models.DateField(null=True)  # Add this field

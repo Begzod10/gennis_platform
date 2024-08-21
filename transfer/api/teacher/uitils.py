@@ -184,14 +184,15 @@ class TeacherDataTransfer:
         black_salaries = self.fetch_multiple_records(self.teacher_black_salary_table,
                                                      self.teacher_black_salary_table.c.teacher_id, teacher_id)
         for black_salary in black_salaries:
-            black_salary_data = {
+            self.status_ = {
                 "teacher": black_salary['teacher_id'],
                 "group": black_salary.get('group_id'),
                 "student": black_salary['student_id'],
                 "black_salary": black_salary['total_salary'],
-                "month_date": black_salary.get('month_date'),
+                "month_date": self.get_month(black_salary['calendar_month'])['date'].strftime("%Y-%m-%d"),
                 "status": black_salary['status']
             }
+            black_salary_data = self.status_
             serializer = TransferTeacherBlackSalaryCreateSerializer(data=black_salary_data)
             if serializer.is_valid():
                 serializer.save()
@@ -216,21 +217,21 @@ def teachers(self):
             teacher_id = row.id
 
             teacher_data_transfer.transfer_teacher_branches(teacher_id)
-            self.stdout.write(self.style.SUCCESS('Branch  transfer completed successfully!'))
+        self.stdout.write(self.style.SUCCESS('Branch  transfer completed successfully!'))
         for row in teachers_result:
             teacher_id = row.id
             teacher_data_transfer.transfer_teacher_salaries(teacher_id)
-            self.stdout.write(self.style.SUCCESS('Salary  transfer completed successfully!'))
+        self.stdout.write(self.style.SUCCESS('Salary  transfer completed successfully!'))
 
         for row in teachers_result:
             teacher_id = row.id
             teacher_data_transfer.transfer_teacher_salaries_list(teacher_id)
-            self.stdout.write(self.style.SUCCESS('Salary List  transfer completed successfully!'))
+        self.stdout.write(self.style.SUCCESS('Salary List  transfer completed successfully!'))
         for row in teachers_result:
             teacher_id = row.id
 
             teacher_data_transfer.transfer_teacher_black_salaries(teacher_id)
-            self.stdout.write(self.style.SUCCESS('Black Salary  transfer completed successfully!'))
+        self.stdout.write(self.style.SUCCESS('Black Salary  transfer completed successfully!'))
 
 
 

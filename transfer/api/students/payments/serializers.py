@@ -1,16 +1,34 @@
+from attendances.models import AttendancePerMonth
+from payments.models import PaymentTypes
+from students.models import (StudentPayment)
+from teachers.models import TeacherBlackSalary
+from students.models import Student
+from branch.models import Branch
 from rest_framework import serializers
 
-from attendances.models import AttendancePerMonth
-from branch.models import Branch
-from payments.models import PaymentTypes
-from students.models import (Student, StudentPayment)
-from teachers.models import TeacherBlackSalary
+
+class OldIdRelatedField(serializers.RelatedField):
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            old_id = data.get('old_id')
+            if old_id is None:
+                raise serializers.ValidationError("old_id is required.")
+            try:
+                return self.get_queryset().get(old_id=old_id)
+            except self.get_queryset().model.DoesNotExist:
+                raise serializers.ValidationError(f"Object with old_id {old_id} does not exist.")
+        raise serializers.ValidationError("Expected a dictionary with an 'old_id'.")
+
+    def to_representation(self, value):
+        return {
+            'old_id': value.old_id,
+        }
 
 
 class StudentPaymentSerializerTransfer(serializers.ModelSerializer):
-    student = serializers.SlugRelatedField(queryset=Student.objects.all(), slug_field='old_id')
-    branch = serializers.SlugRelatedField(queryset=Branch.objects.all(), slug_field='old_id')
-    payment_type = serializers.SlugRelatedField(queryset=PaymentTypes.objects.all(), slug_field='old_id')
+    student = OldIdRelatedField(queryset=Student.objects.all(), many=False)
+    branch = OldIdRelatedField(queryset=Branch.objects.all(), many=False)
+    payment_type = OldIdRelatedField(queryset=PaymentTypes.objects.all(), many=False)
     payment_sum = serializers.IntegerField(required=False)
     status = serializers.BooleanField(required=False)
 

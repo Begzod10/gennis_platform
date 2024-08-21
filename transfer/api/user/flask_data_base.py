@@ -30,21 +30,20 @@ def get_salaries():
     with engine.connect() as conn:
         result = conn.execute(staffsalaries.select()).fetchall()
     for row in result:
-        user = dict(zip(users.columns.keys(), row))
-        phone = get_phones_by_user(user['id'])
-        # info = {
-        #     "permission": staff.staff_id,
-        #     "user": staff.staff.user.id,
-        #     "user_salary": staff.salary_id,
-        #     "payment_types": staff.payment_type_id,
-        #     "branch": staff.location_id,
-        #     "salary": staff.payment_sum,
-        #     "date": year_str,
-        #     "comment": staff.reason,
-        #     "deleted": False,
-        #     'old_id': staff.id
-        # }
-        # print(info)
+        staff_salaries = dict(zip(staffsalaries.columns.keys(), row))
+        print(staff_salaries)
+        info = {
+            "user": staff_salaries['id'],
+            "permission": staff_salaries['id'],
+            "user_salary": staff_salaries['id'],
+            "payment_types": staff_salaries['id'],
+            "branch": staff_salaries['id'],
+            "salary": staff_salaries['id'],
+            "comment": staff_salaries['id'],
+            "deleted": staff_salaries['id'],
+            "old_id": staff_salaries['id']
+        }
+        print(info)
         # list.append(info)
         break
     return list
