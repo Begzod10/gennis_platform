@@ -1,3 +1,4 @@
+import requests
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Group
 from rest_framework import serializers
@@ -9,6 +10,25 @@ from branch.serializers import BranchSerializer
 from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
+
+
+class UserSerializerRead(serializers.ModelSerializer):
+    branch = BranchSerializer(read_only=True)
+    language = LanguageSerializers(read_only=True)
+    age = serializers.SerializerMethodField(required=False)
+    job = serializers.SerializerMethodField(required=False)
+
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
+                  'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
+                  'branch', 'is_superuser', 'is_staff', 'age', 'job']
+
+    def get_age(self, obj):
+        return obj.calculate_age()
+
+    def get_job(self, obj):
+        return [group.name for group in obj.groups.all()]
 
 
 class UserSerializerWrite(serializers.ModelSerializer):
@@ -40,6 +60,15 @@ class UserSerializerWrite(serializers.ModelSerializer):
         user.save()
         return user
 
+    def send_data(self, user_data):
+        url = 'https://example.com/api/update_user_info'
+        try:
+            response = requests.post(url, json={"user": user_data})
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            raise serializers.ValidationError({"error": str(e)})
+
     def update(self, instance, validated_data):
         # user = super().update(instance, validated_data)
         # user.set_password(validated_data['password'])
@@ -48,28 +77,10 @@ class UserSerializerWrite(serializers.ModelSerializer):
         if 'password' in validated_data:
             user.password = (validated_data['password'])
             user.save()
-
+        user_data = UserSerializerRead(user).data
+        self.send_data(user_data)
         return user
 
-
-class UserSerializerRead(serializers.ModelSerializer):
-    branch = BranchSerializer(read_only=True)
-    language = LanguageSerializers(read_only=True)
-    age = serializers.SerializerMethodField(required=False)
-    job = serializers.SerializerMethodField(required=False)
-
-
-    class Meta:
-        model = CustomUser
-        fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
-                  'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff', 'age','job']
-
-    def get_age(self, obj):
-        return obj.calculate_age()
-
-    def get_job(self, obj):
-        return [group.name for group in obj.groups.all()]
 
 class UserSalaryListSerializers(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
@@ -132,7 +143,7 @@ class UserSalarySerializers(serializers.ModelSerializer):
 
 
 class UserSalaryListSerializersRead(serializers.ModelSerializer):
-    user = UserSerializerWrite(read_only=True)
+    user = UserSerializerRead(read_only=True)
     branch = BranchSerializer(read_only=True)
     user_salary = UserSalarySerializers(read_only=True)
     payment_types = PaymentTypesSerializers
@@ -183,7 +194,7 @@ class Employeers(serializers.ModelSerializer):
 
 
 class UserSalaryListSerializersRead(serializers.ModelSerializer):
-    user = UserSerializerWrite(read_only=True)
+    user = UserSerializerRead(read_only=True)
     branch = BranchSerializer(read_only=True)
     user_salary = UserSalarySerializers(read_only=True)
     payment_types = PaymentTypesSerializers(read_only=True)

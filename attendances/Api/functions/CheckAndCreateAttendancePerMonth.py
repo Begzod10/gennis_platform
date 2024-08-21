@@ -1,5 +1,5 @@
 from datetime import datetime,timedelta
-
+from gennis_platform.settings import classroom_server
 from attendances.models import AttendancePerMonth, AttendancePerDay
 from group.models import Group
 from students.models import Student
@@ -8,7 +8,7 @@ from teachers.models import TeacherBlackSalary
 from teachers.models import TeacherSalary
 from .CalculateGroupOverallAttendance import calculate_group_attendances
 from lesson_plan.functions.utils import update_lesson_plan
-
+import requests
 def check_and_create_attendance_per_month(group_id, students, date):
     group = Group.objects.get(pk=group_id)
     teacher = group.teacher.first()
@@ -121,6 +121,12 @@ def check_and_create_attendance_per_month(group_id, students, date):
     current_salary.overall_black_salary = overall_black_salary
     current_salary.total_salary = salary - current_salary.overall_black_salary
     current_salary.save()
-
+    requests.post(f"{classroom_server}/api/update_student_balance", json={
+        "platform_id": student.user.id,
+        "balance": student.user.balance,
+        "teacher_id": student.user_id,
+        "salary": student.user.balance,
+        "debtor": student.debtor
+    })
     calculate_group_attendances(group_id, month_date)
     return errors if not status else {'msg': 'davomat muvaffaqqiyatli kiritildi'}

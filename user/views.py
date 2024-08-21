@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from permissions.functions.CheckUserPermissions import check_user_permissions
 
@@ -54,8 +55,20 @@ class CustomTokenRefreshView(TokenRefreshView):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         access_token = serializer.validated_data.get('access')
+        data = None
 
         response_data = {
+            "username": user.username,
+            "surname": user.surname.title(),
+            "name": user.name.title(),
+            "id": user.id,
+            "access_token": str(access_token),
+            "refresh_token": str(RefreshToken.for_user(user)),
+            "role": user.groups if user.groups else "",
+            "profile_photo": user.photo_profile.url if user.photo_profile else None,
+            "observer": user.observer,
+            "location_id": user.location_id,
+            # "teacher_info": data.convert_json() if data else {},
             'access': access_token,
             'permissions': permissions
         }

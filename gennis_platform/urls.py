@@ -22,6 +22,8 @@ from django.urls import path, include
 from rest_framework_simplejwt.views import TokenVerifyView
 from schema_graph.views import Schema
 
+from group.gennis.AddToGroupApi import UpdateGroupDataAPIView,GetGroupDataAPIView
+from user.Api.read import GetUserAPIView, SetObserverView
 from user.Api.write import CustomTokenObtainPairView
 from user.views import CustomTokenRefreshView
 from .swagger import urlpatterns as doc_urls
@@ -62,6 +64,11 @@ urlpatterns = [
     path('Api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('Api/token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('Api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('api/get_user/', GetUserAPIView.as_view(), name='get_user'),
+    path('api/set_observer/<int:user_id>/', SetObserverView.as_view(), name='set_observer'),
+    path('api/update_group_datas/', UpdateGroupDataAPIView.as_view(), name='update_group_datas'),
+    path('api/get_group_datas/<int:group_id>/', GetGroupDataAPIView.as_view(), name='get_group_datas'),
+
 ]
 urlpatterns += doc_urls
 

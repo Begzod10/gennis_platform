@@ -1,18 +1,21 @@
 import jwt
+import requests
 from django.db.models.query import QuerySet as queryset
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from gennis_platform.settings import classroom_server
 from gennis_platform import settings
 from permissions.functions.CheckUserPermissions import check_user_permissions
+from subjects.models import Subject as Subjects
+from subjects.serializers import SubjectSerializer
 from user.functions.functions import check_auth
 from user.models import CustomUser, UserSalaryList
-from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalarySerializers, \
-    UserSalary, CustomAutoGroup
+from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalary, CustomAutoGroup
 
 
 class UserListCreateView(generics.ListAPIView):
@@ -154,7 +157,7 @@ class EmployerRetrieveView(generics.RetrieveAPIView):
 
 class UserSalaryMonthView(generics.RetrieveAPIView):
     queryset = UserSalary.objects.all()
-    serializer_class = UserSalarySerializers
+    serializer_class = UserSalaryListSerializersRead
 
     def retrieve(self, request, *args, **kwargs):
         user, auth_error = check_auth(request)
@@ -198,3 +201,50 @@ class UsersWithJob(APIView):
             return Response(serializer.data)
         else:
             return Response({"error": "No users found with the specified job."}, status=404)
+
+
+class SetObserverView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        user = get_object_or_404(CustomUser, id=user_id)
+
+        user.observer = not user.observer
+        user.save()
+
+        action = "given" if user.observer else "taken"
+        response_message = f"Permission was {action}"
+
+        requests.get(f"{classroom_server}/api/set_observer/{user.id}")
+
+        # Return a response
+        return Response({
+            "msg": response_message,
+            "success": True
+        })
+
+
+class GetUserAPIView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        user = CustomUser.objects.get(user_id=request.user.id)
+        user_serializer = UserSerializerRead(user)
+
+        subjects = Subjects.objects.all().order_by('id')
+        subject_list = [SubjectSerializer(sub).data for sub in subjects]
+
+        jwt_payload_handler = settings.SIMPLE_JWT['JWT_PAYLOAD_HANDLER']
+        jwt_encode_handler = settings.SIMPLE_JWT['JWT_ENCODE_HANDLER']
+
+        payload = jwt_payload_handler(request.user)
+        access_token = jwt_encode_handler(payload)
+        refresh_token = jwt_encode_handler(payload)
+
+        response_data = {
+            "data": user_serializer.data,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "subject_list": subject_list,
+        }
+
+        return Response(response_data)

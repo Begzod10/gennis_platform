@@ -10,7 +10,8 @@ from user.Api.read import (
     EmployeersListView,
     EmployerRetrieveView,
     UserSalaryMonthView,
-UsersWithJob
+    UsersWithJob,
+    SetObserverView
 )
 from user.Api.write import (
     UserCreateView,
