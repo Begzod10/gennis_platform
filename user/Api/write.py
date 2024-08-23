@@ -61,7 +61,8 @@ class UserSalaryListDestroyView(generics.DestroyAPIView):
         user_salary.remaining_salary += instance.salary
         user_salary.save()
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"msg": " salary deleted successfully"}, status=status.HTTP_200_OK)
+
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer

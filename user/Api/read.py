@@ -8,8 +8,9 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from gennis_platform.settings import classroom_server
+
 from gennis_platform import settings
+from gennis_platform.settings import classroom_server
 from permissions.functions.CheckUserPermissions import check_user_permissions
 from subjects.models import Subject as Subjects
 from subjects.serializers import SubjectSerializer
@@ -70,7 +71,31 @@ class UserSalaryListListView(generics.ListAPIView):
         table_names = ['usersalarylist', 'usersalary', 'customautogroup', 'paymenttypes', 'branch', 'customuser']
         permissions = check_user_permissions(user, table_names)
 
-        queryset = UserSalaryList.objects.all()
+        queryset = UserSalaryList.objects.filter(deleted=False).all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
+        serializer = UserSalaryListSerializersRead(queryset, many=True)
+        return Response({'usersalarylists': serializer.data, 'permissions': permissions})
+
+
+class DeletedUserSalaryListListView(generics.ListAPIView):
+    queryset = UserSalaryList.objects.filter(deleted=True).all()
+    serializer_class = UserSalaryListSerializersRead
+
+    def get(self, request, *args, **kwargs):
+        user, auth_error = check_auth(request)
+        if auth_error:
+            return Response(auth_error)
+
+        table_names = ['usersalarylist', 'usersalary', 'customautogroup', 'paymenttypes', 'branch', 'customuser']
+        permissions = check_user_permissions(user, table_names)
+
+        queryset = UserSalaryList.objects.filter(deleted=True).all()
         location_id = self.request.query_params.get('location_id', None)
         branch_id = self.request.query_params.get('branch_id', None)
 

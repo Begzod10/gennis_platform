@@ -75,7 +75,7 @@ class NewRegisteredStudents(APIView):
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_student_ids) \
             .exclude(id__in=deleted_new_student_ids) \
-            .filter(groups_student__isnull=True).distinct()
+            .filter(groups_student__isnull=True).distinct()[:100]
         location_id = self.request.query_params.get('location_id', None)
         branch_id = self.request.query_params.get('branch_id', None)
 
@@ -94,7 +94,7 @@ class ActiveStudents(APIView):
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_student_ids) \
             .exclude(id__in=deleted_new_student_ids) \
-            .filter(groups_student__isnull=False).distinct()
+            .filter(groups_student__isnull=False).distinct()[:100]
         location_id = self.request.query_params.get('location_id', None)
         branch_id = self.request.query_params.get('branch_id', None)
 

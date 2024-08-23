@@ -1,7 +1,11 @@
 from django.contrib import admin
 
-# Register your models here.
-
 from .models import System
 
-admin.site.register(System)
+
+# Register the System model
+@admin.register(System)
+class SystemAdmin(admin.ModelAdmin):
+    list_display = ('name', 'number')
+    search_fields = ('name',)
+    ordering = ('name',)
