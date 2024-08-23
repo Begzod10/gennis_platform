@@ -12,6 +12,7 @@ from students.serializers import StudentPaymentListSerializer, StudentHistoryGro
 from teachers.models import Teacher
 from teachers.serializers import TeacherSerializerRead
 from user.functions.functions import check_auth
+from system.models import System
 
 
 class StudentRetrieveAPIView(generics.RetrieveAPIView):
@@ -250,3 +251,11 @@ class FilteredStudentsListView(APIView):
                     teachers_list.append(teacher_data)
         return Response(
             {'subjects_with_students': subjects_with_students.values(), 'teachers': teachers_list, 'errors': errors})
+
+
+class SchoolStudents(generics.ListAPIView):
+    serializer_class = StudentListSerializer
+
+    def get_queryset(self):
+        system = System.objects.get(name='School')
+        return Student.objects.filter(system_id=system.pk)

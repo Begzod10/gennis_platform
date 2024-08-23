@@ -56,7 +56,6 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
     date = serializers.CharField(default=None, allow_blank=True)
     teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
-    attendance_per_month = serializers.PrimaryKeyRelatedField(queryset=AttendancePerMonth.objects.all())
 
     class Meta:
         model = AttendancePerDay
@@ -67,6 +66,8 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         teacher = validated_data.get('teacher')
         group = validated_data.get('group')
+        teacher = validated_data.get('teacher')
+
         students = validated_data.get('students')
         date = validated_data.get('date')
         today = datetime.today()
@@ -112,6 +113,7 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
             else:
                 debt_per_day = (group.price / 13) - charity_per_day
             update_lesson_plan(group.id)
+            nonlocal attendance_per_day
             attendance_per_day = AttendancePerDay.objects.create(
                 group_id=group.id,
                 student_id=student['id'],
@@ -136,14 +138,14 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
                 teacher=teacher
             )
             student_data = Student.objects.get(pk=student['id'])
-            if created:
-                if created.remaining_debt == 0:
-                    student.debt_status = 0
-                elif student.total_payment_month > created.total_debt:
-                    student.debt_status = 1
-                    TeacherBlackSalary.objects.filter(student=student, status=False).update(status=True)
-                elif student.total_payment_month < created.total_debt:
-                    student.debt_status = 2
+            if current_month_attendance:
+                if current_month_attendance.remaining_debt == 0:
+                    student_data.debt_status = 0
+                elif student_data.total_payment_month > current_month_attendance.total_debt:
+                    student_data.debt_status = 1
+                    TeacherBlackSalary.objects.filter(student=student_data, status=False).update(status=True)
+                elif student_data.total_payment_month < current_month_attendance.total_debt:
+                    student_data.debt_status = 2
                     static, _ = TaskStatistics.objects.get_or_create(
                         task__name="Qarzdor uquvchilar",
                         day=tomorrow,
@@ -156,12 +158,11 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
                         students=student
                     )
 
-                student.save()
+                student_data.save()
             try:
                 AttendancePerDay.objects.get(group_id=group.id, teacher=teacher, day=day, student_id=student['id'])
                 errors.append(
                     {'msg': f'bu kunda {student_data.user.name} {student_data.user.surname} davomat qilingan'})
-                return errors
             except AttendancePerDay.DoesNotExist:
                 status = True
                 charity_data = student_data.charity_student_id.filter(student_id=student['id'],

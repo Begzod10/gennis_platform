@@ -6,5 +6,5 @@ from ...serializers import DeleteItemTimeTableSerializers
 
 
 class DeleteItemClassTimeTable(generics.RetrieveUpdateAPIView):
-    queryset = ClassTimeTable
+    queryset = ClassTimeTable.objects.all()
     serializer_class = DeleteItemTimeTableSerializers

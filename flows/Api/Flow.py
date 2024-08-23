@@ -10,6 +10,11 @@ class FlowListCreateView(generics.ListCreateAPIView):
     queryset = Flow.objects.all()
     serializer_class = FlowCreateUpdateSerializer
 
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return FlowsSerializer
+        return FlowCreateUpdateSerializer
+
 
 class FlowListView(generics.ListAPIView):
     queryset = Flow.objects.all()
@@ -44,6 +49,3 @@ class FlowProfile(generics.RetrieveUpdateAPIView):
         instance.refresh_from_db()
         read_serializer = FlowsSerializer(instance)
         return Response(read_serializer.data)
-
-
-

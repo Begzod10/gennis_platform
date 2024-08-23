@@ -35,8 +35,10 @@ class GroupReasonSerializers(serializers.ModelSerializer):
 
 
 class GroupCreateUpdateSerializer(serializers.ModelSerializer):
+    group_type = serializers.CharField(default=None, allow_blank=True)
     time_table = serializers.JSONField(required=False, default=None)
     update_method = serializers.CharField(default=None, allow_blank=True)
+    create_type = serializers.CharField(default=None, allow_blank=True)
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all())
     level = serializers.PrimaryKeyRelatedField(queryset=SubjectLevel.objects.all())
@@ -52,39 +54,33 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         model = Group
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
                   'deleted', 'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system', 'class_number',
-                  'color', 'course_types', 'class_number', 'update_method', 'time_table']
+                  'color', 'course_types', 'class_number', 'update_method', 'time_table', 'create_type', 'group_type']
 
     def create(self, validated_data):
         time_tables = validated_data.get('time_table')
-        group = Group.objects.create(name=validated_data.get('name'), price=validated_data.get('price'),
-                                     status=validated_data.get('status'),
-                                     teacher_salary=validated_data.get('teacher_salary'),
-                                     attendance_days=validated_data.get('attendance_days'),
-                                     branch=validated_data.get('branch'),
-                                     language=validated_data.get('language'),
-                                     level=validated_data.get('level'), subject=validated_data.get('subject'),
-                                     system=validated_data.get('branch').location.system,
-                                     # color=validated_data.get('color'),
-                                     # class_number=validated_data.get('class_number'),
-                                     course_types=validated_data.get('course_types')
-                                     )
-        group.students.set(validated_data.get('students'))
-        group.teacher.set(validated_data.get('teacher'))
-
-        for time_table in time_tables:
-            group_time_table = GroupTimeTable.objects.create(week_id=time_table['week'],
-                                                             start_time=time_table['start_time'],
-                                                             end_time=time_table['end_time'],
-                                                             room_id=time_table['room'], group=group,
-                                                             branch_id=time_table['branch'])
-            for student in group.students.all():
-                student.group_time_table.add(group_time_table)
-            for teacher in group.teacher.all():
-                teacher.group_time_table.add(group_time_table)
-        create_school_student_debts(group, group.students.all())
+        create_type = validated_data.pop('create_type')
+        students_data = validated_data.pop('students', [])
+        teacher_data = validated_data.pop('teacher', [])
+        group = Group.objects.create(**validated_data, system_id=validated_data.get('branch').location.system_id)
+        group.students.set(students_data)
+        group.teacher.set(teacher_data)
+        if create_type == 'school':
+            create_school_student_debts(group, group.students.all())
+        else:
+            for time_table in time_tables:
+                group_time_table = GroupTimeTable.objects.create(week_id=time_table['week'],
+                                                                 start_time=time_table['start_time'],
+                                                                 end_time=time_table['end_time'],
+                                                                 room_id=time_table['room'], group=group,
+                                                                 branch_id=time_table['branch'])
+                for student in group.students.all():
+                    student.group_time_table.add(group_time_table)
+                for teacher in group.teacher.all():
+                    teacher.group_time_table.add(group_time_table)
         return group
 
     def update(self, instance, validated_data):
+        group_type = validated_data.pop('group_type')
         update_method = validated_data.get("update_method")
         students = validated_data.get("students")
 
@@ -95,21 +91,37 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         if 'teacher' in validated_data:
             instance.teacher.remove(*instance.teacher.all())
             instance.teacher.set(validated_data['teacher'])
+        if group_type == 'school':
+            if update_method:
+                if update_method == "add_students":
+                    for student in students:
+                        status = True
+                        for flow in student.flow_set.all():
+                            # if flow.classtimetable_set.filter()
 
-        if update_method:
-            if update_method == "add_students":
-                for student in students:
-                    status = True
-                    for st_group in student.groups_student.all():
-                        if instance.group_time_table.start_time == st_group.group_time_table.start_time and instance.group_time_table.week == st_group.group_time_table.week and instance.group_time_table.room == st_group.group_time_table.room and instance.group_time_table.end_time == st_group.group_time_table.end_time:
                             status = False
                             break
-                    if status:
-                        instance.students.add(student)
-                        create_school_student_debts(instance, instance.students.all())
-            elif update_method == "remove_students":
-                for student in students:
-                    instance.students.remove(student)
+                        if status:
+                            instance.students.add(student)
+                            create_school_student_debts(instance, instance.students.all())
+                elif update_method == "remove_students":
+                    for student in students:
+                        instance.students.remove(student)
+        else:
+            if update_method:
+                if update_method == "add_students":
+                    for student in students:
+                        status = True
+                        for st_group in student.groups_student.all():
+                            if instance.group_time_table.start_time == st_group.group_time_table.start_time and instance.group_time_table.week == st_group.group_time_table.week and instance.group_time_table.room == st_group.group_time_table.room and instance.group_time_table.end_time == st_group.group_time_table.end_time:
+                                status = False
+                                break
+                        if status:
+                            instance.students.add(student)
+                            create_school_student_debts(instance, instance.students.all())
+                elif update_method == "remove_students":
+                    for student in students:
+                        instance.students.remove(student)
         instance.save()
         return instance
 

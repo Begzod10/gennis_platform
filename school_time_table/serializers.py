@@ -52,6 +52,7 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
 
     def create(self, validated_data):
         group = validated_data.get('group')
+        print(validated_data['teacher'])
         flow = validated_data.get('flow')
         students = group.students.all() if group else flow.students.all() if flow else None
         status, errors = check_student_room_teacher(students, validated_data['teacher'], validated_data['room'],
@@ -191,6 +192,119 @@ class ClassTimeTableLessonsSerializer(serializers.Serializer):
                             'end_time': hour.end_time
                         }
                     })
+            time_tables.append(info)
+        return time_tables
+
+    def get_hours_list(self, obj):
+        hours = Hours.objects.all().order_by('order')
+        return [
+            {
+                'id': hour.id,
+                'name': hour.name,
+                'start_time': hour.start_time,
+                'end_time': hour.end_time
+            }
+            for hour in hours
+        ]
+
+
+class ClassTimeTableLessonsTestSerializer(serializers.Serializer):
+    time_tables = serializers.SerializerMethodField()
+    hours_list = serializers.SerializerMethodField()
+
+    def get_time_tables(self, obj):
+        week = self.context['week']
+        hours = Hours.objects.all().order_by('order')
+        rooms = Room.objects.all()
+        time_tables = []
+
+        for room in rooms:
+            info = {
+                'room': {
+                    'id': room.id,
+                    'name': room.name,
+                    'hours': {
+                        hour.order: {
+                            'hour': {
+                                'id': hour.id,
+                                'name': hour.name,
+                                'start_time': hour.start_time,
+                                'end_time': hour.end_time
+                            }
+                        } for hour in hours
+                    }
+                },
+            }
+
+            lesson = room.classtimetable_set.filter(week=week).order_by('hours__order').all()
+
+            room_info = {'id': room.id, 'name': room.name} if room else None
+            teacher_info = {
+                'id': lesson.teacher.id,
+                'name': lesson.teacher.user.name,
+                'surname': lesson.teacher.user.surname
+            } if lesson.teacher else None
+            subject_info = {'id': lesson.subject.id,
+                            'name': lesson.subject.name} if lesson.subject else None
+            group_info = {'id': lesson.group.id, 'name': lesson.group.name} if lesson.group else None
+
+            lesson_info = {
+                'id': lesson.id,
+                'name': lesson.name,
+                'status': True if lesson.hour in info['room']['hours'] else False,
+                'room': room_info,
+                'teacher': teacher_info,
+                'subject': subject_info,
+                'group': group_info,
+            }
+            info['weekday']['hours'][lesson.hours.order]['lesson_info'].append(lesson_info)
+            time_tables.append(info)
+        return time_tables
+
+    def get_hours_list(self, obj):
+        hours = Hours.objects.all().order_by('order')
+        return [
+            {
+                'id': hour.id,
+                'name': hour.name,
+                'start_time': hour.start_time,
+                'end_time': hour.end_time
+            }
+            for hour in hours
+        ]
+
+
+class FlowLessonsSerializer(serializers.Serializer):
+    time_tables = serializers.SerializerMethodField()
+    hours_list = serializers.SerializerMethodField()
+
+    def get_time_tables(self, obj):
+        weekdays = WeekDays.objects.all()
+        hours = Hours.objects.all().order_by('order')
+        time_tables = []
+
+        for weekday in weekdays:
+            info = {
+                'weekday': {
+                    'id': weekday.id,
+                    'name': weekday.name_en,
+                    'hours': {
+                        hour.order: {
+                            'lessons': [],
+                            'hour': {
+                                'id': hour.id,
+                                'name': hour.name,
+                                'start_time': hour.start_time,
+                                'end_time': hour.end_time
+                            }
+                        } for hour in hours}
+                },
+            }
+
+            lessons = ClassTimeTable.objects.filter(flow__isnull=False, week=weekday).order_by(
+                'hours__order').first()
+            for lesson in lessons:
+                info['weekday']['hours'][lesson.hours.order]['lessons'].append(ClassTimeTableReadSerializers(lesson))
             time_tables.append(info)
         return time_tables
 

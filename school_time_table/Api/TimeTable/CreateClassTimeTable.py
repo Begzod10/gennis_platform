@@ -5,10 +5,11 @@ from rest_framework.views import APIView
 from group.models import Group
 from ...models import ClassTimeTable
 from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTableReadSerializers, \
-    ClassTimeTableLessonsSerializer
+    ClassTimeTableLessonsSerializer, ClassTimeTableLessonsTestSerializer
 
 from group.serializers import GroupSerializer
 from time_table.functions.creatWeekDays import creat_week_days
+from time_table.models import WeekDays
 
 
 class CreateClassTimeTable(generics.ListCreateAPIView):
@@ -26,10 +27,6 @@ class CreateClassTimeTable(generics.ListCreateAPIView):
         return Response(read_serializer.data)
 
 
-# class Classes(generics.RetrieveUpdateAPIView):
-#     queryset = Group.objects.filter(class_number__isnull=False)
-#     serializer_class = GroupSerializer
-#
 
 class Classes(generics.ListAPIView):
     queryset = Group.objects.filter(class_number__isnull=False)
@@ -50,10 +47,19 @@ class Classes(generics.ListAPIView):
 class ClassTimeTableLessonsView(APIView):
     def get(self, request, pk):
         creat_week_days()
-        group = Group.objects.get(id=pk)
-        serializer = ClassTimeTableLessonsSerializer(context={'group': group})
+        week = WeekDays.objects.get(id=pk)
+        serializer = ClassTimeTableLessonsTestSerializer(context={'week': week})
         data = {
             'time_tables': serializer.get_time_tables(None),
             'hours_list': serializer.get_hours_list(None)
         }
         return Response(data)
+    # def get(self, request, pk):
+    #     creat_week_days()
+    #     group = Group.objects.get(id=pk)
+    #     serializer = ClassTimeTableLessonsSerializer(context={'group': group})
+    #     data = {
+    #         'time_tables': serializer.get_time_tables(None),
+    #         'hours_list': serializer.get_hours_list(None)
+    #     }
+    #     return Response(data)

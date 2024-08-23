@@ -52,3 +52,7 @@ class TeachersForBranches(generics.ListAPIView):
     def get_queryset(self):
         pk = self.kwargs.get('pk')
         return Teacher.objects.filter(branches__in=[pk])
+
+
+# class SchoolTeachers(generics.ListAPIView):
+#     queryset = Teacher.objects.filter(user)

@@ -23,6 +23,7 @@ class Teacher(models.Model):
     old_id = models.IntegerField(unique=True, null=True)
     branches = models.ManyToManyField(Branch, blank=True)
     group_time_table = models.ManyToManyField('time_table.GroupTimeTable', blank=True)
+    # system = models.ForeignKey('system.System', on_delete=models.SET_NULL, null=True)
 
 
 class TeacherAttendance(models.Model):

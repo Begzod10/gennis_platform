@@ -8,6 +8,7 @@ from .gennis.AddToGroupApi import AddToGroupApi
 from .gennis.TeacherGroupChange import TeacherGroupChange
 from .gennis.MoveToGroupApi import MoveToGroupApi
 from .gennis.DeleteStudentFromGroup import DeleteStudentFromGroup
+from .school.ClassesList import ClassesView
 
 urlpatterns = [
     path('groups/create/', CreatGroups.as_view(), name='create'),
@@ -21,4 +22,5 @@ urlpatterns = [
     path('delete_student_from_group/<int:pk>/', DeleteStudentFromGroup.as_view(), name='delete_student_from_group'),
     path('course_types/', CreateCourseTypesList.as_view(), name='course-types-list-create'),
     path('course_types/<int:pk>/', CourseTypesRetrieveUpdateDestroyAPIView.as_view(), name='course-types-detail'),
+    path('classes/', ClassesView.as_view(), name='classes'),
 ]

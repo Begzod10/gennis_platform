@@ -12,7 +12,7 @@ class FlowTypes(models.Model):
 
 class Flow(models.Model):
     name = models.CharField()
-    flow_type = models.ForeignKey(FlowTypes, on_delete=models.CASCADE)
+    # flow_type = models.ForeignKey(FlowTypes, on_delete=models.CASCADE)
     subject = models.ForeignKey('subjects.Subject', on_delete=models.CASCADE)
     teacher = models.ForeignKey('teachers.Teacher', on_delete=models.CASCADE)
     students = models.ManyToManyField('students.Student')
