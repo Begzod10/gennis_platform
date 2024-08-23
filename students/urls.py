@@ -2,7 +2,9 @@ from django.urls import path
 
 from .views import (CreateContractView, UploadPDFContractView, StudentListView)
 from .Api.get import StudentCharityAPIView, StudentPaymentAPIView, StudentHistoryGroupsAPIView, \
-    StudentCharityListAPIView, StudentPaymentListAPIView, StudentHistoryGroupsListAPIView, StudentRetrieveAPIView,FilteredStudentsListView
+    StudentCharityListAPIView, StudentPaymentListAPIView, StudentHistoryGroupsListAPIView, StudentRetrieveAPIView, \
+    FilteredStudentsListView, \
+    SchoolStudents
 from .Api.createdeleteupdate import StudentCreateView, StudentCharityCreateView, \
     StudentPaymentCreateView, \
     StudentDestroyView, StudentCharityUpdateView, StudentPaymentUpdateView, StudentCharityDestroyView, \
@@ -38,4 +40,6 @@ urlpatterns = [
     path('upload_pdf_contract/<int:user_id>/', UploadPDFContractView.as_view(), name='upload_pdf_contract'),
     path('api/filter_students_subject/<int:branch_id>/', FilteredStudentsListView.as_view(),
          name='get_filtered_students_list'),
+    path('school_students/', SchoolStudents.as_view(),
+         name='school_students'),
 ]

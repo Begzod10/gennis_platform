@@ -6,7 +6,7 @@ from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTable
 
 
 class UpdateClassTimeTable(generics.UpdateAPIView):
-    queryset = ClassTimeTable
+    queryset = ClassTimeTable.objects.all()
     serializer_class = ClassTimeTableCreateUpdateSerializers
 
     def update(self, request, *args, **kwargs):
@@ -18,4 +18,3 @@ class UpdateClassTimeTable(generics.UpdateAPIView):
         read_serializer = ClassTimeTableReadSerializers(instance)
 
         return Response(read_serializer.data)
-
