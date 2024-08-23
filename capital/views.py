@@ -5,6 +5,8 @@ from user.functions.functions import check_auth
 from rest_framework.response import Response
 from permissions.functions.CheckUserPermissions import check_user_permissions
 
+import json
+
 
 class CreateCapitalCategoryList(generics.ListCreateAPIView):
     queryset = CapitalCategory.objects.all()
@@ -37,3 +39,7 @@ class CapitalCategoryRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroy
         capital_category = self.get_object()
         capital_category_data = self.get_serializer(capital_category).data
         return Response({'capitalcategory': capital_category_data, 'permissions': permissions})
+
+    def destroy(self, request, *args, **kwargs):
+        super().destroy(request, *args, **kwargs)
+        return Response({'message': 'Capital category deleted successfully'}, status=200)

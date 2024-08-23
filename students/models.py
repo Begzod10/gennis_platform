@@ -38,6 +38,7 @@ class StudentPayment(models.Model):
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
     added_data = models.DateTimeField(auto_now_add=True)
     status = models.BooleanField()
+    extra_payment = models.IntegerField(null=True)
     deleted = models.BooleanField(default=False)
     old_id = models.IntegerField(unique=True, null=True)
 
@@ -49,7 +50,7 @@ class DeletedNewStudent(models.Model):
     old_id = models.IntegerField(unique=True, null=True)
 
 
-class  StudentHistoryGroups(models.Model):
+class StudentHistoryGroups(models.Model):
     student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, related_name='student_student_history')
     group = models.ForeignKey('group.Group', on_delete=models.SET_NULL, null=True, related_name='group_student_history')
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_student_history')

@@ -30,6 +30,9 @@ class CreatGroups(generics.ListCreateAPIView):
     queryset = Group.objects.all()
     serializer_class = GroupCreateUpdateSerializer
 
+    def get_queryset(self):
+        return Group.objects.all()[:100]
+
     def get_serializer_class(self):
         if self.request.method == 'GET':
             return GroupSerializer

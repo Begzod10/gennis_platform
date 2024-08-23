@@ -6,56 +6,112 @@ metadata = MetaData()
 metadata.reflect(bind=engine)
 users = Table('users', metadata, autoload_with=engine)
 phones = Table('phonelist', metadata, autoload_with=engine)
+staff = Table('staff', metadata, autoload_with=engine)
 staffsalaries = Table('staffsalaries', metadata, autoload_with=engine)
 staffsalary = Table('staffsalary', metadata, autoload_with=engine)
+month_date = Table('calendarmonth', metadata, autoload_with=engine)
+
+
+def get_month(id):
+    query = select(month_date).where(month_date.c.id == int(id))
+    with engine.connect() as conn:
+        result = conn.execute(query).fetchone()
+    if result:
+        return dict(zip(month_date.columns.keys(), result))
+    return None
+
+
+def get_user(staff_id):
+    if not staff_id:
+        return None
+    query = select(staff).where(staff.c.id == int(staff_id))
+    with engine.connect() as conn:
+        staff_result = conn.execute(query).mappings().fetchone()
+    if staff_result:
+        query = select(users).where(users.c.id == int(staff_result['user_id']))
+        with engine.connect() as conn:
+            user_result = conn.execute(query).mappings().fetchone()
+        return user_result
+    return None
 
 
 def get_phones_by_user(id):
     query = select(phones).where(phones.c.user_id == id)
     with engine.connect() as conn:
         results = conn.execute(query).fetchall()
-    list = []
+    phone = None
     for number in results:
         row_dict = dict(zip(phones.columns.keys(), number))
-        list.append(row_dict)
-    phone = 0
-    for number in list:
-        if number['personal'] != None and number['personal'] == True:
-            phone = number['phone']
+        if row_dict['personal']:
+            phone = row_dict['phone']
+            break  # Stop once we find a personal phone number
     return phone
 
 
 def get_salaries():
-    list = []
+    salary_list = []
+    with engine.connect() as conn:
+        result = conn.execute(staffsalary.select()).fetchall()
+    for row in result:
+        staff = dict(zip(staffsalary.columns.keys(), row))
+        month_info = get_month(staff['calendar_month'])
+        year_str = month_info['date'].strftime("%Y-%m-%d") if month_info and month_info.get('date') else None
+        user_info = get_user(staff['staff_id'])
+        if user_info:
+            user = user_info['id']
+        else:
+            user = None
+        info = {
+            "permission": staff['staff_id'],
+            "user": user,
+            "date": year_str,
+            "total_salary": staff['total_salary'],
+            "taken_salary": staff['taken_money'],
+            "remaining_salary": staff['remaining_salary'],
+            "old_id": staff['id']
+        }
+        salary_list.append(info)
+    return salary_list
+
+
+def get_staffsalaries():
+    salary_list = []
     with engine.connect() as conn:
         result = conn.execute(staffsalaries.select()).fetchall()
     for row in result:
-        staff_salaries = dict(zip(staffsalaries.columns.keys(), row))
-        print(staff_salaries)
+        staff = dict(zip(staffsalaries.columns.keys(), row))
+        month_info = get_month(staff['calendar_month'])
+        year_str = month_info['date'].strftime("%Y-%m-%d") if month_info and month_info.get('date') else None
+        user_info = get_user(staff['staff_id'])
+        if user_info:
+            user = user_info['id']
+        else:
+            user = None
         info = {
-            "user": staff_salaries['id'],
-            "permission": staff_salaries['id'],
-            "user_salary": staff_salaries['id'],
-            "payment_types": staff_salaries['id'],
-            "branch": staff_salaries['id'],
-            "salary": staff_salaries['id'],
-            "comment": staff_salaries['id'],
-            "deleted": staff_salaries['id'],
-            "old_id": staff_salaries['id']
+            "permission": staff['staff_id'],
+            "user": user,
+            "user_salary": staff['salary_id'],
+            "payment_types": staff['payment_type_id'],
+            "branch": staff['location_id'],
+            "salary": staff['payment_sum'],
+            "date": year_str,
+            "comment": staff['reason'],
+            "deleted": False,
+            'old_id': staff['id']
         }
-        print(info)
-        # list.append(info)
-        break
-    return list
+        salary_list.append(info)
+
+    return salary_list
 
 
 def get_users():
-    list = []
+    user_list = []
     with engine.connect() as conn:
         result = conn.execute(users.select()).fetchall()
     for row in result:
         user = dict(zip(users.columns.keys(), row))
         phone = get_phones_by_user(user['id'])
+        birth_date = f"{user['born_year'] or '0000'}-{user['born_month'] or '00'}-{user['born_day'] or '00'}"
         info = {
             'old_id': user['id'],
             "name": user['name'],
@@ -66,11 +122,11 @@ def get_users():
             "phone": phone,
             "observer": user['observer'],
             "comment": user['comment'],
-            "birth_date": f"{user['born_year']}-{user['born_month']}-{user['born_day']}",
+            "birth_date": birth_date,
             "language": user['education_language'],
             "branch": user['location_id'],
             "is_superuser": False,
             "is_staff": False,
         }
-        list.append(info)
-    return list
+        user_list.append(info)
+    return user_list

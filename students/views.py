@@ -22,7 +22,8 @@ class StudentListView(APIView):
     def get(self, request, *args, **kwargs):
         deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
-        active_students = Student.objects.exclude(id__in=deleted_student_ids).exclude(id__in=deleted_new_student_ids)
+        active_students = Student.objects.exclude(id__in=deleted_student_ids).exclude(id__in=deleted_new_student_ids)[
+                          :100]
         student_serializer = StudentListSerializer(active_students, many=True)
 
         deleted_students = DeletedStudent.objects.all()
@@ -83,6 +84,8 @@ class NewRegisteredStudents(APIView):
             active_students = active_students.filter(branch_id=branch_id)
         if location_id is not None:
             active_students = active_students.filter(location_id=location_id)
+        active_students = active_students[:100]
+
         student_serializer = StudentListSerializer(active_students, many=True)
 
         return Response(student_serializer.data)
@@ -102,6 +105,8 @@ class ActiveStudents(APIView):
             active_students = active_students.filter(branch_id=branch_id)
         if location_id is not None:
             active_students = active_students.filter(location_id=location_id)
+        active_students = active_students[:100]
+
         student_serializer = StudentListSerializer(active_students, many=True)
 
         return Response(student_serializer.data)

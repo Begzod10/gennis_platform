@@ -9,7 +9,7 @@ class Room(models.Model):
     seats_number = models.BigIntegerField()
     branch = models.ForeignKey(Branch, related_name='branch_id', on_delete=models.SET_NULL, null=True)
     electronic_board = models.BooleanField()
-    deleted = models.BooleanField()
+    deleted = models.BooleanField(default=False)
     old_id = models.IntegerField(null=True, unique=True)
 
 

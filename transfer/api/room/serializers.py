@@ -9,7 +9,7 @@ class TransferRoomsCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Room
-        fields = ['id', 'name', 'seats_number', 'electronic_board', 'deleted', 'branch', 'old_id']
+        fields = ['id', 'name', 'seats_number', 'electronic_board', 'branch', 'old_id']
 
 
 class TransferRoomImagesCreateSerializer(serializers.ModelSerializer):

@@ -5,7 +5,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from werkzeug.security import check_password_hash
-
+from datetime import datetime
 from branch.serializers import BranchSerializer
 from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
@@ -104,6 +104,7 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
             user_salary=user_salary,
             payment_types=payment_types,
             user=user,
+            date=datetime.now(),
             branch=branch,
             salary=validated_data.get('salary'),
             comment=validated_data.get('comment', ''),
@@ -114,8 +115,6 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
         instance.payment_types = validated_data['payment_types'],
         instance.save()
         return instance
-
-
 
 
 class CustomAutoGroupSerializers(serializers.ModelSerializer):
@@ -208,7 +207,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         read_only=True,
         slug_field='name'
     )
-    profile_photo = serializers.ImageField(use_url=True,required=False, allow_null=True)
+    profile_photo = serializers.ImageField(use_url=True, required=False, allow_null=True)
     location_id = serializers.CharField(source='branch_id')
 
     class Meta:
