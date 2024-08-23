@@ -1,9 +1,12 @@
 from django.contrib import admin
 
-# Register your models here.
-
-
 from .models import Location
 
-admin.site.register(Location)
 
+# Register the Location model
+@admin.register(Location)
+class LocationAdmin(admin.ModelAdmin):
+    list_display = ('name', 'number', 'system', 'old_id')
+    search_fields = ('name', 'number', 'system__name')
+    list_filter = ('system',)
+    ordering = ('name',)

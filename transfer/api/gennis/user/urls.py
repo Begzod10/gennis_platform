@@ -1,6 +1,6 @@
 from django.urls import path
 
-from transfer.api.user.views import StaffTransferView, \
+from transfer.api.gennis.user.views import StaffTransferView, \
     UserJobsTransfer
 
 urlpatterns = [

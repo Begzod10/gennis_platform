@@ -2,12 +2,12 @@ import logging
 
 from sqlalchemy import create_engine, Table, MetaData, select
 
-from transfer.api.teacher.salary.serializers import (
+from transfer.api.gennis.teacher.salary.serializers import (
     TransferTeacherSalaryCreateSerializers as TransferTeacherSalaryCreateSerializer,
     TransferTeacherSalaryListCreateSerializers as TransferTeacherListCreateSerializer,
     TransferTeacherBlackSalaryCreateSerializers as TransferTeacherBlackSalaryCreateSerializer,
 )
-from transfer.api.teacher.serializers import (
+from transfer.api.gennis.teacher.serializers import (
     TeacherSerializerTransfer as TransferTeacherSerializer,
     TeacherBranchSerializer as TransferTeacherBranchSerializer,
 )

@@ -1,16 +1,17 @@
 import json
-from rest_framework import generics, mixins
+
+from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 from permissions.functions.CheckUserPermissions import check_user_permissions
 from rooms.models import Room
 from students.models import StudentPayment, StudentHistoryGroups, StudentCharity, Student
 from students.serializers import StudentPaymentListSerializer, StudentHistoryGroupsListSerializer, \
     StudentCharityListSerializer, StudentListSerializer
-from subjects.serializers import SubjectSerializer
-from user.functions.functions import check_auth
 from teachers.models import Teacher
 from teachers.serializers import TeacherSerializerRead
+from user.functions.functions import check_auth
 
 
 class StudentRetrieveAPIView(generics.RetrieveAPIView):
@@ -120,8 +121,14 @@ class StudentHistoryGroupsAPIView(generics.RetrieveAPIView):
         table_names = ['studenthistorygroups', 'student', 'group', 'teacher']
         permissions = check_user_permissions(user, table_names)
         student_history_groups = self.get_object()
-        student_history_groups_data = self.get_serializer(student_history_groups).data
+
+        student_history_groups_data = self.get_serializer(student_history_groups, many=True).data
+
         return Response({'studenthistorygroup': student_history_groups_data, 'permissions': permissions})
+
+    def get_object(self):
+        user_id = self.kwargs.get('pk')
+        return StudentHistoryGroups.objects.filter(student=user_id)
 
 
 class StudentPaymentListAPIView(generics.ListAPIView):
@@ -199,9 +206,7 @@ class FilteredStudentsListView(APIView):
         location_id = branch_id
         teachers_list = []
         subjects_with_students = {}
-        errors = {
-            'rooms': [],
-        }
+        errors = {'rooms': [], }
         time_tables = json.loads(request.body)
         for time_table in time_tables:
             room = Room.objects.get(id=time_table['room'])
@@ -211,34 +216,22 @@ class FilteredStudentsListView(APIView):
             if room_time_table:
                 errors['rooms'].append(f'Bu voxta {room.name} xonasida {room_time_table.group.name}ni  darsi bor')
 
-            students = Student.objects.filter(
-                user__branch_id=location_id,
-                # user__isnull=False,
-                subject__student__isnull=False
-                # deleted_student_student_new__isnull=True
-            )
+            students = Student.objects.filter(user__branch_id=location_id,  # user__isnull=False,
+                                              subject__student__isnull=False  # deleted_student_student_new__isnull=True
+                                              )
             for student in students:
                 student_data = StudentListSerializer(student).data
                 time_table_st = student.group_time_table.filter(week_id=time_table['week'],
                                                                 start_time__gte=time_table['start_time'],
                                                                 end_time__lte=time_table['end_time']).first()
                 if time_table_st:
-                    student_data['extra_info'] = {
-                        'status': False,
-                        'reason': f"{student.user.name} {student.user.surname} o'quvchini {time_table.group.name} guruhida darsi bor"
-                    }
+                    student_data['extra_info'] = {'status': False,
+                                                  'reason': f"{student.user.name} {student.user.surname} o'quvchini {time_table.group.name} guruhida darsi bor"}
                 else:
-                    student_data['extra_info'] = {
-                        'status': True,
-                        'reason': ''
-                    }
+                    student_data['extra_info'] = {'status': True, 'reason': ''}
                 for subject in student.subject.all():
                     if subject.id not in subjects_with_students:
-                        subjects_with_students[subject.id] = {
-                            "id": subject.id,
-                            "name": subject.name,
-                            "students": []
-                        }
+                        subjects_with_students[subject.id] = {"id": subject.id, "name": subject.name, "students": []}
                     if not student_data in subjects_with_students[subject.id]["students"]:
                         subjects_with_students[subject.id]["students"].append(student_data)
             teachers = Teacher.objects.filter(user__branch_id=location_id)
@@ -248,15 +241,10 @@ class FilteredStudentsListView(APIView):
                                                                  start_time__gte=time_table['start_time'],
                                                                  end_time__lte=time_table['end_time'])
                 if time_table_tch:
-                    teacher_data['extra_info'] = {
-                        'status': False,
-                        'reason': f"{teacher.user.name} {teacher.user.surname} o'quvchini {time_table.group.name} guruhida darsi bor"
-                    }
+                    teacher_data['extra_info'] = {'status': False,
+                                                  'reason': f"{teacher.user.name} {teacher.user.surname} o'quvchini {time_table.group.name} guruhida darsi bor"}
                 else:
-                    teacher_data['extra_info'] = {
-                        'status': True,
-                        'reason': ''
-                    }
+                    teacher_data['extra_info'] = {'status': True, 'reason': ''}
                 if not teacher_data in teachers_list:
                     teachers_list.append(teacher_data)
         return Response(

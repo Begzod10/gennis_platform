@@ -1,5 +1,5 @@
 from .serializers import TransferAttendancePerMonthSerializer, TransferAttendancePerDaySerializer
-from transfer.api.attendance.flask_data_base import get_AttendancePerMonths, get_attendancedays
+from transfer.api.gennis.attendance.flask_data_base import get_AttendancePerMonths, get_attendancedays
 import time
 
 

@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from teachers.models import Teacher
-from transfer.api.teacher.serializers import (
+from transfer.api.gennis.teacher.serializers import (
     TeacherSerializerTransfer, TeacherBranchSerializer
 )
 

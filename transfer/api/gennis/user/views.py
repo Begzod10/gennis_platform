@@ -1,19 +1,18 @@
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
-from transfer.api.user.serializers import (
-    TransferStaffs, TransferStaffsSalary, TransferUserJobs, TransferStaffsSalaryList
+from transfer.api.gennis.user.serializers import (
+    TransferStaffs, TransferStaffsSalary, TransferUserJobs
 )
 from user.models import CustomAutoGroup
 import time
-from transfer.api.user.flask_data_base import get_users, get_salaries, get_staffsalaries
+from transfer.api.gennis.user.flask_data_base import get_salaries
 import random
 from user.models import CustomUser
 from datetime import datetime
 
 
 def check_user_name(username):
-    username += str(random.randint(1, 10))
     try:
         user = CustomUser.objects.get(username=username)
         if user:

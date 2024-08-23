@@ -1,7 +1,7 @@
 from rest_framework import generics
 
 from teachers.models import TeacherSalary, TeacherSalaryList, TeacherBlackSalary
-from transfer.api.teacher.salary.serializers import TransferTeacherSalaryCreateSerializers, \
+from transfer.api.gennis.teacher.salary.serializers import TransferTeacherSalaryCreateSerializers, \
     TransferTeacherSalaryListCreateSerializers, TransferTeacherBlackSalaryCreateSerializers
 
 

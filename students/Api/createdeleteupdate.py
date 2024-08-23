@@ -7,8 +7,6 @@ from rest_framework.response import Response
 from rest_framework import status
 
 
-
-
 class StudentCreateView(generics.CreateAPIView):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
@@ -72,6 +70,19 @@ class StudentPaymentUpdateView(generics.UpdateAPIView):
 class StudentPaymentDestroyView(generics.DestroyAPIView):
     queryset = StudentPayment.objects.all()
     serializer_class = StudentPaymentSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.deleted = True
+        instance.save()
+        student = instance.student
+        if not instance.payment_sum:
+            instance.payment_sum = 0
+        if student.extra_payment:
+            extra_payment = float(student.extra_payment)
+            student.extra_payment = extra_payment - instance.payment_sum
+            student.save()
+        return Response({'message': 'Payment record successfully deleted.'}, status=status.HTTP_200_OK)
 
 
 class DeletedStudentDestroy(generics.DestroyAPIView):

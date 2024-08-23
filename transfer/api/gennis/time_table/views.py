@@ -3,7 +3,7 @@ from rest_framework import generics
 from time_table.models import WeekDays
 from .serializers import WeekDaysSerializerTransfer, GroupTimeTableSerializerTransfer
 import time
-from transfer.api.time_table.flask_data_base import get_group_room_week
+from transfer.api.gennis.time_table.flask_data_base import get_group_room_week
 
 
 def time_table(self):

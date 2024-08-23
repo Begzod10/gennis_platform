@@ -1,15 +1,18 @@
-from datetime import datetime
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from group.models import Group
-import jwt
 import json
+from datetime import datetime
 
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from group.models import Group
+from ..models import AttendancePerDay
 
 class AttendanceList(APIView):
 
     def get_attendances_json(self, group, month_date):
-        attendances = group.attendance_per_day.filter(group__attendance_per_month__month_date=month_date).distinct()
+        # attendances = group.attendance_per_day.filter(group__attendance_per_month__month_date=month_date).distinct()
+        attendances = AttendancePerDay.objects.filter(group=group, day__month=month_date.month).distinct()
+
         days = sorted(set(attendance.day.day for attendance in attendances))
         attendances_json = {day: [] for day in days}
 

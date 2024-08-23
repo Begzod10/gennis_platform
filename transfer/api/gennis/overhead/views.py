@@ -1,13 +1,13 @@
-from .serializers import TransferGroupCreateUpdateSerializer
-from transfer.api.group.flask_data_base import get_groups
+from .serializers import TransferOverheadSerializerCreate
+from transfer.api.gennis.overhead.flask_data_base import get_overheads
 import time
 
 
-def groups(self):
+def overhead(self):
     start = time.time()
-    list = get_groups()
+    list = get_overheads()
     for info in list:
-        serializer = TransferGroupCreateUpdateSerializer(data=info)
+        serializer = TransferOverheadSerializerCreate(data=info)
         if serializer.is_valid():
             serializer.save()
         else:

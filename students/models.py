@@ -18,6 +18,7 @@ class Student(models.Model):
     representative_name = models.CharField(null=True)
     representative_surname = models.CharField(null=True)
     old_id = models.IntegerField(null=True, unique=True)
+    turon_old_id = models.IntegerField(null=True, unique=True)
     old_money = models.BigIntegerField(null=True)
     group_time_table = models.ManyToManyField('time_table.GroupTimeTable', blank=True)
 
@@ -34,11 +35,11 @@ class StudentCharity(models.Model):
 class StudentPayment(models.Model):
     student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True)
     payment_type = models.ForeignKey(PaymentTypes, on_delete=models.SET_NULL, null=True)
-    payment_sum = models.IntegerField()
+    payment_sum = models.IntegerField(default=0)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
     added_data = models.DateTimeField(auto_now_add=True)
     status = models.BooleanField()
-    extra_payment = models.IntegerField(null=True)
+    extra_payment = models.IntegerField(null=True, default=0)
     deleted = models.BooleanField(default=False)
     old_id = models.IntegerField(unique=True, null=True)
 
