@@ -12,6 +12,7 @@ from user.functions.functions import check_auth
 from teachers.models import Teacher
 from teachers.serializers import TeacherSerializerRead
 from system.models import System
+from subjects.models import Subject
 
 
 class StudentRetrieveAPIView(generics.RetrieveAPIView):
@@ -178,12 +179,29 @@ class FilteredStudentsListView(APIView):
     def post(self, request, branch_id):
         location_id = branch_id
         teachers_list = []
-        subjects_with_students = {}
+        subjects = Subject.objects.filter(student__subject__student__isnull=False).all()
+
+        subjects_with_students = {
+            subject.id: {
+                "id": subject.id,
+                "name": subject.name,
+                "students": [],
+                "subject_status": False
+            }
+            for subject in subjects
+        }
         errors = {
             'rooms': [],
         }
         time_tables = json.loads(request.body)
+
+        students = Student.objects.filter(
+            user__branch_id=location_id,
+            deleted_student_student__isnull=True,
+            subject__isnull=False
+        )
         for time_table in time_tables:
+
             room = Room.objects.get(id=time_table['room'])
             room_time_table = room.grouptimetable_set.filter(week_id=time_table['week'],
                                                              start_time__gte=time_table['start_time'],
@@ -191,12 +209,6 @@ class FilteredStudentsListView(APIView):
             if room_time_table:
                 errors['rooms'].append(f'Bu voxta {room.name} xonasida {room_time_table.group.name}ni  darsi bor')
 
-            students = Student.objects.filter(
-                user__branch_id=location_id,
-                # user__isnull=False,
-                subject__student__isnull=False
-                # deleted_student_student_new__isnull=True
-            )
             for student in students:
                 student_data = StudentListSerializer(student).data
                 time_table_st = student.group_time_table.filter(week_id=time_table['week'],
@@ -213,14 +225,8 @@ class FilteredStudentsListView(APIView):
                         'reason': ''
                     }
                 for subject in student.subject.all():
-                    if subject.id not in subjects_with_students:
-                        subjects_with_students[subject.id] = {
-                            "id": subject.id,
-                            "name": subject.name,
-                            "students": []
-                        }
-                    if not student_data in subjects_with_students[subject.id]["students"]:
-                        subjects_with_students[subject.id]["students"].append(student_data)
+                    subjects_with_students[subject.id]["students"].append(student_data)
+                    subjects_with_students[subject.id]["subject_status"] = True
             teachers = Teacher.objects.filter(user__branch_id=location_id)
             for teacher in teachers:
                 teacher_data = TeacherSerializerRead(teacher).data

@@ -3,7 +3,7 @@ import pprint
 from rest_framework import serializers
 from branch.models import Branch
 from language.models import Language
-from students.models import Student
+from students.models import Student, DeletedStudent
 from subjects.models import Subject, SubjectLevel
 from system.models import System
 from teachers.models import Teacher
@@ -18,6 +18,7 @@ from teachers.serializers import TeacherSerializer
 
 from .functions.checkTimeTable import check_time_table
 from .functions.CreateSchoolStudentDebts import create_school_student_debts
+from students.models import DeletedNewStudent
 
 
 class CourseTypesSerializers(serializers.ModelSerializer):
@@ -39,6 +40,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
     time_table = serializers.JSONField(required=False, default=None)
     update_method = serializers.CharField(default=None, allow_blank=True)
     create_type = serializers.CharField(default=None, allow_blank=True)
+    group_reason = serializers.IntegerField(default=None, allow_null=True)
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all())
     level = serializers.PrimaryKeyRelatedField(queryset=SubjectLevel.objects.all())
@@ -49,15 +51,18 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
     class_number = serializers.PrimaryKeyRelatedField(queryset=ClassNumber.objects.all())
     color = serializers.PrimaryKeyRelatedField(queryset=ClassColors.objects.all())
     course_types = serializers.PrimaryKeyRelatedField(queryset=CourseTypes.objects.all(), required=False)
+    delete_type = serializers.CharField(default=None, allow_blank=True)
+    comment = serializers.CharField(default=None, allow_blank=True, required=False)
 
     class Meta:
         model = Group
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
                   'deleted', 'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system', 'class_number',
-                  'color', 'course_types', 'class_number', 'update_method', 'time_table', 'create_type', 'group_type']
+                  'color', 'course_types', 'class_number', 'update_method', 'time_table', 'create_type', 'group_type',
+                  'delete_type', 'comment', 'group_reason']
 
     def create(self, validated_data):
-        time_tables = validated_data.get('time_table')
+        time_tables = validated_data.pop('time_table', None)
         create_type = validated_data.pop('create_type')
         students_data = validated_data.pop('students', [])
         teacher_data = validated_data.pop('teacher', [])
@@ -80,34 +85,32 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         return group
 
     def update(self, instance, validated_data):
-        group_type = validated_data.pop('group_type')
+        group_type = validated_data.get('group_type')
         update_method = validated_data.get("update_method")
         students = validated_data.get("students")
-
+        delete_type = validated_data.get("delete_type")
+        comment = validated_data.get("comment")
+        group_reason = validated_data.get("group_reason")
+        teacher_status = True
         for attr, value in validated_data.items():
             if attr != 'update_method' and attr != 'students' and attr != 'teacher':
                 setattr(instance, attr, value)
 
-        if 'teacher' in validated_data:
-            instance.teacher.remove(*instance.teacher.all())
-            instance.teacher.set(validated_data['teacher'])
         if group_type == 'school':
-            if update_method:
-                if update_method == "add_students":
-                    for student in students:
-                        status = True
-                        for flow in student.flow_set.all():
-                            # if flow.classtimetable_set.filter()
-
-                            status = False
-                            break
-                        if status:
-                            instance.students.add(student)
-                            create_school_student_debts(instance, instance.students.all())
-                elif update_method == "remove_students":
-                    for student in students:
-                        instance.students.remove(student)
+            pass
         else:
+            if 'teacher' in validated_data:
+                if validated_data['teacher'][0].group_set.all():
+                    for st_group in validated_data.get('teacher')[0].group_set.all():
+                        if instance.group_time_table.start_time == st_group.group_time_table.start_time and instance.group_time_table.week == st_group.group_time_table.week and instance.group_time_table.room == st_group.group_time_table.room and instance.group_time_table.end_time == st_group.group_time_table.end_time:
+                            teacher_status = False
+                            raise serializers.ValidationError({
+                                "detail": f"{validated_data.get('teacher')[0].name} {validated_data.get('teacher')[0].surname}ning {st_group.name} guruhida darsi bor"})
+                        if teacher_status:
+                            instance.teacher.remove(*instance.teacher.all())
+                            instance.teacher.set(validated_data.get('teacher')[0])
+                else:
+                    instance.teacher.add(validated_data.get('teacher')[0])
             if update_method:
                 if update_method == "add_students":
                     for student in students:
@@ -116,12 +119,21 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                             if instance.group_time_table.start_time == st_group.group_time_table.start_time and instance.group_time_table.week == st_group.group_time_table.week and instance.group_time_table.room == st_group.group_time_table.room and instance.group_time_table.end_time == st_group.group_time_table.end_time:
                                 status = False
                                 break
+
                         if status:
                             instance.students.add(student)
                             create_school_student_debts(instance, instance.students.all())
                 elif update_method == "remove_students":
-                    for student in students:
-                        instance.students.remove(student)
+                    if delete_type == 'new_students':
+                        for student in students:
+                            instance.students.remove(student)
+                            DeletedNewStudent.objects.create(student=student, comment=comment)
+                    else:
+                        for student in students:
+                            instance.students.remove(student)
+                            DeletedStudent.objects.create(student=student, group=instance,
+                                                          comment=comment if comment else None,
+                                                          group_reason_id=group_reason if group_reason else None)
         instance.save()
         return instance
 

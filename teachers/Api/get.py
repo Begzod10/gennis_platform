@@ -47,5 +47,14 @@ class TeachersForBranches(generics.ListAPIView):
         return Teacher.objects.filter(branches__in=[pk])
 
 
+class TeachersForSubject(generics.ListAPIView):
+    serializer_class = TeacherSerializerRead
+
+    def get_queryset(self):
+        branch_id = self.kwargs.get('branch_id')
+        subject_id = self.kwargs.get('subject_id')
+        print(branch_id, subject_id)
+        return Teacher.objects.filter(branches__in=[branch_id], subject__in=[subject_id])
+
 # class SchoolTeachers(generics.ListAPIView):
 #     queryset = Teacher.objects.filter(user)
