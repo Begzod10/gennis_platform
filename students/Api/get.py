@@ -9,10 +9,11 @@ from rooms.models import Room
 from students.models import StudentPayment, StudentHistoryGroups, StudentCharity, Student
 from students.serializers import StudentPaymentListSerializer, StudentHistoryGroupsListSerializer, \
     StudentCharityListSerializer, StudentListSerializer
+from subjects.models import Subject
+from system.models import System
 from teachers.models import Teacher
 from teachers.serializers import TeacherSerializerRead
 from user.functions.functions import check_auth
-from system.models import System
 
 
 class StudentRetrieveAPIView(generics.RetrieveAPIView):
@@ -232,8 +233,29 @@ class FilteredStudentsListView(APIView):
         teachers_list = []
         subjects_with_students = {}
         errors = {'rooms': [], }
+        subjects = Subject.objects.filter(student__subject__student__isnull=False).all()
+
+        subjects_with_students = {
+            subject.id: {
+                "id": subject.id,
+                "name": subject.name,
+                "students": [],
+                "subject_status": False
+            }
+            for subject in subjects
+        }
+        errors = {
+            'rooms': [],
+        }
         time_tables = json.loads(request.body)
+
+        students = Student.objects.filter(
+            user__branch_id=location_id,
+            deleted_student_student__isnull=True,
+            subject__isnull=False
+        )
         for time_table in time_tables:
+
             room = Room.objects.get(id=time_table['room'])
             room_time_table = room.grouptimetable_set.filter(week_id=time_table['week'],
                                                              start_time__gte=time_table['start_time'],
@@ -259,6 +281,8 @@ class FilteredStudentsListView(APIView):
                         subjects_with_students[subject.id] = {"id": subject.id, "name": subject.name, "students": []}
                     if not student_data in subjects_with_students[subject.id]["students"]:
                         subjects_with_students[subject.id]["students"].append(student_data)
+                    subjects_with_students[subject.id]["students"].append(student_data)
+                    subjects_with_students[subject.id]["subject_status"] = True
             teachers = Teacher.objects.filter(user__branch_id=location_id)
             for teacher in teachers:
                 teacher_data = TeacherSerializerRead(teacher).data

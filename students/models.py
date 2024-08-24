@@ -47,7 +47,7 @@ class StudentPayment(models.Model):
 
 class DeletedNewStudent(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student_new')
-    created = models.DateTimeField(auto_now_add=False)
+    created = models.DateTimeField(auto_now_add=True)
     comment = models.CharField(null=True)
     old_id = models.IntegerField(unique=True, null=True)
 
@@ -70,6 +70,7 @@ class DeletedStudent(models.Model):
                                      related_name='deleted_student_group_reason')
     deleted_date = models.DateTimeField(auto_now_add=True)
     old_id = models.IntegerField(unique=True, null=True)
+    comment = models.CharField(max_length=255, null=True)
 
 
 class ContractStudent(models.Model):

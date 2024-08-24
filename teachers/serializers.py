@@ -202,12 +202,4 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
         instance.save()
         return instance
 
-    def delete(self, instance):
-        if instance.salary_id:
-            instance.salary_id.taken_salary -= instance.salary
-            instance.salary_id.remaining_salary += instance.salary
-            instance.salary_id.save()
 
-        instance.deleted = True
-        instance.save()
-        return instance

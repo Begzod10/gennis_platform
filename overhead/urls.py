@@ -10,10 +10,12 @@ from overhead.Api.get import (
 
     OverheadListView,
     OverheadRetrieveView,
+    OverheadTYpeListView
 )
 
 urlpatterns = [
     path('overheads/', OverheadListView.as_view(), name='overhead-list'),
+    path('overheads_type/', OverheadTYpeListView.as_view(), name='overhead-list'),
     path('overheads/<int:pk>/', OverheadRetrieveView.as_view(), name='overhead-detail'),
     path('overheads/create/', OverheadCreateView.as_view(), name='overhead-create'),
     path('overheads/<int:pk>/update/', OverheadUpdateView.as_view(), name='overhead-update'),

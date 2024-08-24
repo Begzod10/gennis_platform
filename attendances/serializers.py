@@ -51,7 +51,7 @@ class StudentDetailSerializer(serializers.Serializer):
 class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
     students = serializers.ListField(
         child=StudentDetailSerializer(),
-
+        write_only=True  # Ensure this field is used only during write operations
     )
     date = serializers.CharField(default=None, allow_blank=True)
     teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
@@ -66,14 +66,16 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         teacher = validated_data.get('teacher')
         group = validated_data.get('group')
-        teacher = validated_data.get('teacher')
-
-        students = validated_data.get('students')
+        students = validated_data.pop('students', [])
         date = validated_data.get('date')
         today = datetime.today()
         tomorrow = today + timedelta(days=1)
-        month_date = datetime.strptime(f"{today.year}-{today.month}", "%Y-%m")
+        month_date = f"{today.year}-{date}"
+        year = today.year
+
         day = datetime.strptime(f"{today.year}-{date}", "%Y-%m-%d")
+        month = day.month
+
         errors = []
         status = False
         attendance_per_day = None
@@ -132,7 +134,9 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
 
         for student in students:
             current_month_attendance, created = AttendancePerMonth.objects.get_or_create(
-                month_date=month_date,
+                month_date__year=year,
+                month_date__month=month,
+                defaults={'month_date': month_date},
                 group_id=group.id,
                 student_id=student['id'],
                 teacher=teacher

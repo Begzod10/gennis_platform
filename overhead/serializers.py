@@ -3,7 +3,7 @@ from rest_framework import serializers
 from branch.models import Branch
 from branch.serializers import BranchSerializer
 from payments.serializers import PaymentTypes, PaymentTypesSerializers
-from .models import Overhead
+from .models import Overhead,OverheadType
 
 
 class OverheadSerializerCreate(serializers.ModelSerializer):
@@ -24,4 +24,9 @@ class OverheadSerializerGet(serializers.ModelSerializer):
 
     class Meta:
         model = Overhead
+        fields = '__all__'
+class OverheadSerializerGetTYpe(serializers.ModelSerializer):
+
+    class Meta:
+        model = OverheadType
         fields = '__all__'

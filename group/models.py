@@ -22,7 +22,7 @@ class Group(models.Model):
     teacher = models.ManyToManyField(Teacher)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True)
     color = models.ForeignKey('classes.ClassColors', on_delete=models.CASCADE, null=True)
-    status = models.BooleanField(null=True)
+    status = models.BooleanField(null=True, default=False)
     created_date = models.DateTimeField(auto_now_add=True, null=True)
     language = models.ForeignKey(Language, on_delete=models.CASCADE, null=True)
     teacher_salary = models.IntegerField(null=True)
