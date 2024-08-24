@@ -183,11 +183,14 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
         fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'branch']
 
     def create(self, validated_data):
-        attendance_per_months = AttendancePerMonth.objects.get(student=validated_data.get('student'),
-                                                               status=False).all()
-        student = Student.objects.get(pk=validated_data.get('student'))
+        attendance_per_months = AttendancePerMonth.objects.filter(student=validated_data.get('student'), status=False)
+        student = Student.objects.get(pk=validated_data.get('student').id)
         student_payment = StudentPayment.objects.create(**validated_data)
-        payment_sum = student_payment.payment_sum + student_payment.extra_payment
+        if student_payment.extra_payment:
+            payment_sum = student_payment.payment_sum + student_payment.extra_payment
+        else:
+            payment_sum = 0
+
         for attendance_per_month in attendance_per_months:
             if attendance_per_month.remaining_debt >= payment_sum:
                 attendance_per_month.remaining_debt -= payment_sum
@@ -201,15 +204,18 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
                 attendance_per_month.remaining_debt = 0
                 attendance_per_month.status = True
             attendance_per_month.save()
+
         student_payment.extra_payment = payment_sum
         student_payment.save()
+
         total_debt = 0
         remaining_debt = 0
-        attendance_per_months = AttendancePerMonth.objects.filter(student=validated_data.get('student'),
-                                                                  status=False).all()
+        attendance_per_months = AttendancePerMonth.objects.filter(student=validated_data.get('student'), status=False)
+
         for attendance_per_month in attendance_per_months:
             total_debt += attendance_per_month.total_debt
             remaining_debt += attendance_per_month.remaining_debt
+
         if remaining_debt == 0:
             student.debt_status = 0
         elif student.total_payment_month > total_debt:
@@ -217,15 +223,9 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
             TeacherBlackSalary.objects.filter(student=student, status=False).update(status=True)
         elif student.total_payment_month < total_debt:
             student.debt_status = 2
+
         student.save()
         return student_payment
-
-    def delete(self, instance):
-        instance.deleted = True
-        instance.save()
-        instance.student.extra_payment -= instance.payment_sum
-        instance.student.extra_payment.save()
-        return instance
 
 
 class StudentPaymentListSerializer(serializers.ModelSerializer):
@@ -233,10 +233,15 @@ class StudentPaymentListSerializer(serializers.ModelSerializer):
     payment_type = PaymentTypesSerializers(required=True)
     payment_sum = serializers.IntegerField(required=False)
     status = serializers.BooleanField(required=False)
+    added_data =serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = StudentPayment
-        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status']
+        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status','added_data']
+
+    def get_added_data(self, obj):
+        return obj.added_data.strftime('%Y-%m-%d   ')
+
 
 
 class DeletedNewStudentSerializer(serializers.ModelSerializer):

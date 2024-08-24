@@ -8,7 +8,7 @@ from .Api.createdeleteupdate import StudentCreateView, StudentCharityCreateView,
 from .Api.get import SchoolStudents
 from .Api.get import StudentCharityAPIView, StudentPaymentAPIView, StudentHistoryGroupsAPIView, \
     StudentCharityListAPIView, StudentPaymentListAPIView, StudentHistoryGroupsListAPIView, StudentRetrieveAPIView, \
-    FilteredStudentsListView
+    FilteredStudentsListView, StudentDeletedPaymentListAPIView
 from .views import (CreateContractView, UploadPDFContractView, StudentListView, DeletedFromRegistered,
                     DeletedGroupStudents, NewRegisteredStudents, ActiveStudents
                     )
@@ -32,6 +32,8 @@ urlpatterns = [
     path('student_payment_delete/<int:pk>/', StudentPaymentDestroyView.as_view(), name='student-payment-delete'),
     path('student_payment/<int:pk>/', StudentPaymentAPIView.as_view(), name='student-payment'),
     path('student_payment_list/', StudentPaymentListAPIView.as_view(), name='student-payment-list'),
+    path('student_payment_deleted_list/', StudentDeletedPaymentListAPIView.as_view(),
+         name='student-deleted-payment-list'),
     path('deleted-student/<int:pk>/', DeletedStudentDestroy.as_view(), name='deleted-student-detail'),
     path('students_create/', StudentCreateView.as_view(), name='students-create'),
     path('students_update/<int:pk>/', StudentUpdateView.as_view(), name='students-update'),
