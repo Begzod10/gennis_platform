@@ -179,7 +179,9 @@ class StudentPaymentAPIView(generics.RetrieveAPIView):
 
 class FilteredStudentsListView(APIView):
     def post(self, request, branch_id):
-        location_id = branch_id
+        # location_id = branch_id
+        location_id = self.request.query_params.get('branch')
+        print(location_id)
         teachers_list = []
 
         subjects = Subject.objects.filter(student__subject__student__isnull=False).all()
