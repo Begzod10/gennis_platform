@@ -14,5 +14,5 @@ urlpatterns = [
     path('timetable-list-delete_item/<int:pk>', DeleteItemClassTimeTable.as_view(), name='timetable-list-delete_item'),
     # path('timetable-classes/<int:pk>', Classes.as_view(), name='timetable-list-delete_item'),
     path('timetable-classes/', Classes.as_view(), name='timetable-classes'),
-    path('class-timetable/<int:pk>', ClassTimeTableLessonsView.as_view(), name='timetable-list-delete_item'),
+    path('timetable-lessons/<int:pk>', ClassTimeTableLessonsView.as_view(), name='timetable-lessons'),
 ]

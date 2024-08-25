@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from group.models import Group
 from ...models import ClassTimeTable
 from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTableReadSerializers, \
-    ClassTimeTableLessonsSerializer, ClassTimeTableLessonsTestSerializer
+    ClassTimeTableLessonsSerializer, ClassTimeTableLessonsTestSerializer, ClassTimeTableTest2Serializer
 
 from group.serializers import GroupSerializer
 from time_table.functions.creatWeekDays import creat_week_days
@@ -48,7 +48,7 @@ class ClassTimeTableLessonsView(APIView):
     def get(self, request, pk):
         creat_week_days()
         week = WeekDays.objects.get(id=pk)
-        serializer = ClassTimeTableLessonsTestSerializer(context={'week': week})
+        serializer = ClassTimeTableTest2Serializer(context={'week': week})
         data = {
             'time_tables': serializer.get_time_tables(None),
             'hours_list': serializer.get_hours_list(None)
