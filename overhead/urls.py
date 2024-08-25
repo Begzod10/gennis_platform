@@ -10,7 +10,8 @@ from overhead.Api.get import (
 
     OverheadListView,
     OverheadRetrieveView,
-    OverheadTYpeListView
+    OverheadTYpeListView,
+    MonthDaysView
 )
 
 urlpatterns = [
@@ -19,5 +20,7 @@ urlpatterns = [
     path('overheads/<int:pk>/', OverheadRetrieveView.as_view(), name='overhead-detail'),
     path('overheads/create/', OverheadCreateView.as_view(), name='overhead-create'),
     path('overheads/<int:pk>/update/', OverheadUpdateView.as_view(), name='overhead-update'),
-    path('overheads/<int:pk>/delete/', OverheadDestroyView.as_view(), name='overhead-delete'),
+    path('overheads/delete/<int:pk>/', OverheadDestroyView.as_view(), name='overhead-delete'),
+    path('month-days/', MonthDaysView.as_view(), name='month_days'),
+
 ]

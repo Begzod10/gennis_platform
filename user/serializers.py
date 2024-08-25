@@ -198,7 +198,7 @@ class UserSalaryListSerializersRead(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_date(self, obj):
-        return obj.date.strftime('%Y-%m-%d %H:%M')
+        return obj.date.strftime('%Y-%m-%d')
 
 
 class CustomUserSerializer(serializers.ModelSerializer):

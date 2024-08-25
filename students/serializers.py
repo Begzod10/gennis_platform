@@ -11,7 +11,7 @@ from payments.serializers import PaymentTypesSerializers
 from subjects.serializers import Subject
 from subjects.serializers import SubjectSerializer
 from teachers.models import TeacherGroupStatistics, TeacherBlackSalary, Teacher
-from teachers.serializers import TeacherSerializer
+from teachers.serializers import TeacherSerializer, TeacherSerializerRead
 from user.serializers import UserSerializerWrite, UserSerializerRead
 from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent, DeletedNewStudent)
 
@@ -75,7 +75,7 @@ class GroupSerializerStudents(serializers.ModelSerializer):
     language = LanguageSerializers()
     level = SubjectLevelSerializer()
     subject = SubjectSerializer()
-    teacher = TeacherSerializer(many=True)
+    teacher = TeacherSerializerRead(many=True)
     system = SystemSerializers()
     course_types = CourseTypesSerializers()
 
@@ -100,6 +100,7 @@ class StudentListSerializer(serializers.ModelSerializer):
     parents_number = serializers.CharField()
     shift = serializers.CharField()
     group = serializers.SerializerMethodField(required=False)
+    contract = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Student
@@ -107,6 +108,14 @@ class StudentListSerializer(serializers.ModelSerializer):
 
     def get_group(self, obj):
         return [GroupSerializerStudents(group).data for group in obj.groups_student.all()]
+
+    def get_contract(self, obj):
+        contracts = obj.contract_student_id.all()
+        if contracts.exists():
+            contract_list = [{"url": contract.contract.url} for contract in contracts]
+        else:
+            contract_list = []
+        return contract_list
 
 
 class StudentHistoryGroupsSerializer(serializers.ModelSerializer):
@@ -180,7 +189,7 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentPayment
-        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'branch']
+        fields = ['student', 'payment_type', 'payment_sum', 'status', 'branch']
 
     def create(self, validated_data):
         attendance_per_months = AttendancePerMonth.objects.filter(student=validated_data.get('student'), status=False)
@@ -233,15 +242,14 @@ class StudentPaymentListSerializer(serializers.ModelSerializer):
     payment_type = PaymentTypesSerializers(required=True)
     payment_sum = serializers.IntegerField(required=False)
     status = serializers.BooleanField(required=False)
-    added_data =serializers.SerializerMethodField(required=False)
+    added_data = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = StudentPayment
-        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status','added_data']
+        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'added_data']
 
     def get_added_data(self, obj):
-        return obj.added_data.strftime('%Y-%m-%d   ')
-
+        return obj.added_data.strftime('%Y-%m-%d')
 
 
 class DeletedNewStudentSerializer(serializers.ModelSerializer):

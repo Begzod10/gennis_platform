@@ -1,6 +1,7 @@
 import json
 
 from rest_framework import generics
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -190,11 +191,29 @@ class StudentPaymentAPIView(generics.RetrieveAPIView):
         if auth_error:
             return Response(auth_error)
 
-        table_names = ['branch', 'location']
+        table_names = ['studentpayment', 'student', 'paymenttypes']
         permissions = check_user_permissions(user, table_names)
-        create_branches = self.get_object()
-        create_branches_data = self.get_serializer(create_branches).data
-        return Response({'branches': create_branches_data, 'permissions': permissions})
+        status = self.request.query_params.get('status', None)
+
+        queryset = StudentPayment.objects.all()
+        if status is not None:
+            queryset = queryset.filter(deleted=status)
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
+        serializer = StudentPaymentListSerializer(queryset, many=True)
+        return Response({'payments': serializer.data, 'permissions': permissions})
+
+    def get_object(self):
+        user_id = self.kwargs.get('pk')
+        try:
+            return StudentPayment.objects.filter(student_id=user_id).all()
+        except StudentPayment.DoesNotExist:
+            raise NotFound('Student payment not found for the given student_id')
 
 
 # class FilteredStudentsListView(mixins.ListModelMixin, generics.GenericAPIView):

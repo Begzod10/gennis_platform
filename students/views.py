@@ -15,7 +15,6 @@ from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent
 from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
                           DeletedStudentListSerializer, DeletedNewStudentListSerializer)
-from .utils import user_contract_folder
 
 
 class StudentListView(APIView):
@@ -75,8 +74,8 @@ class NewRegisteredStudents(APIView):
         deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_student_ids) \
-            .exclude(id__in=deleted_new_student_ids) \
-            .filter(groups_student__isnull=True).distinct()[:100]
+                              .exclude(id__in=deleted_new_student_ids) \
+                              .filter(groups_student__isnull=True).distinct()[:100]
         location_id = self.request.query_params.get('location_id', None)
         branch_id = self.request.query_params.get('branch_id', None)
 
@@ -96,8 +95,8 @@ class ActiveStudents(APIView):
         deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_student_ids) \
-            .exclude(id__in=deleted_new_student_ids) \
-            .filter(groups_student__isnull=False).distinct()[:100]
+                              .exclude(id__in=deleted_new_student_ids) \
+                              .filter(groups_student__isnull=False).distinct()[:100]
         location_id = self.request.query_params.get('location_id', None)
         branch_id = self.request.query_params.get('branch_id', None)
 
@@ -120,7 +119,7 @@ class CreateContractView(APIView):
 
         calendar_year, calendar_month, calendar_day = self._get_calendar_date()
         calendar_year = str(calendar_year)  # Ensure calendar_year is a string
-        student = get_object_or_404(Student, user_id=user_id)
+        student = get_object_or_404(Student, id=user_id)
 
         try:
             ot = datetime.strptime(data['date']['ot'], "%Y-%m-%d").date()
@@ -185,7 +184,7 @@ class CreateContractView(APIView):
 
         doc = docx.Document('media/contract.docx')
         user_name, user_surname, father_name = (
-            (user.name, user.surname, user.father_name) if int(user.age) >= 18
+            (user.name, user.surname, user.father_name) if int(user.calculate_age()) >= 18
             else (student.representative_name, student.representative_surname, contract.father_name)
         )
 
@@ -253,26 +252,9 @@ class UploadPDFContractView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, user_id):
-        student = get_object_or_404(ContractStudent, student__user_id=user_id)
+        student = get_object_or_404(ContractStudent, student__id=user_id)
         file = request.FILES.get('file')
-        if not file:
-            return Response({"success": False, "msg": "No file provided"}, status=400)
-        upload_folder = user_contract_folder()
-        if not os.path.exists(upload_folder):
-            os.makedirs(upload_folder)
+        student.contract = file
+        student.save()
 
-        file_name = str(student.contract)
-        file_path = os.path.join(upload_folder, file_name)
-
-        try:
-            with open(file_path, 'wb+') as destination:
-                for chunk in file.chunks():
-                    destination.write(chunk)
-            url = os.path.join('contracts', file_name)
-            student.contract = url
-            student.save()
-
-            return Response({"success": True, "msg": "File uploaded successfully", "url": url})
-
-        except Exception as e:
-            return Response({"success": False, "msg": f"File upload failed: {str(e)}"}, status=500)
+        return Response({"success": True, "msg": "File uploaded successfully", "url": str(student.contract)})
