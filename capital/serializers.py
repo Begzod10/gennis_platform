@@ -1,10 +1,12 @@
 from rest_framework import serializers
-from .models import CapitalCategory, Capital, OldCapital
-from branch.serializers import BranchSerializer
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from branch.models import Branch
-from payments.serializers import PaymentTypesSerializers
+from branch.serializers import BranchSerializer
 from payments.models import PaymentTypes
-from user.serializers import UserSerializerWrite, CustomUser, UserSerializerRead
+from payments.serializers import PaymentTypesSerializers
+from user.serializers import CustomUser, UserSerializerRead
+from .models import CapitalCategory, Capital, OldCapital
 
 
 class CapitalCategorySerializers(serializers.ModelSerializer):
@@ -85,23 +87,36 @@ class CapitalTermListSerializers(serializers.ModelSerializer):
 class OldCapitalSerializers(serializers.ModelSerializer):
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     payment_type = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
-    by_who = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
+    by_who = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = OldCapital
         fields = '__all__'
 
-    def delete(self, instance):
-        instance.deleted = True
-        instance.save()
-        return instance
+    def create(self, validated_data):
+        jwt_auth = JWTAuthentication()
+        request = self.context['request']
+        header = request.META.get('HTTP_AUTHORIZATION')
+        if header is not None:
+            raw_token = header.split(' ')[1]
+            validated_token = jwt_auth.get_validated_token(raw_token)
+            user_id = validated_token['user_id']
+            validated_data['by_who_id'] = user_id
+
+        return OldCapital.objects.create(**validated_data)
+
+
 
 
 class OldCapitalListSerializers(serializers.ModelSerializer):
     by_who = UserSerializerRead(read_only=True)
     branch = BranchSerializer(required=False)
     payment_type = PaymentTypesSerializers(required=False)
+    added_date = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = OldCapital
-        fields = '__all__'
+        fields = ['id','by_who', 'branch', 'payment_type', 'added_date', 'price', 'name']
+
+    def get_added_date(self, obj):
+        return obj.added_date.strftime('%Y-%m-%d')

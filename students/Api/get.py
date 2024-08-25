@@ -148,12 +148,13 @@ class StudentPaymentListAPIView(generics.ListAPIView):
         table_names = ['studentpayment', 'student', 'paymenttypes']
         permissions = check_user_permissions(user, table_names)
 
-        queryset = StudentPayment.objects.filter(deleted=False).all()[:200]
-        location_id = self.request.query_params.get('location_id', None)
+        queryset = StudentPayment.objects.filter(deleted=False).all()
         branch_id = self.request.query_params.get('branch_id', None)
 
         if branch_id is not None:
             queryset = queryset.filter(branch_id=branch_id)
+        location_id = self.request.query_params.get('location_id', None)
+
         if location_id is not None:
             queryset = queryset.filter(location_id=location_id)
         serializer = StudentPaymentListSerializer(queryset, many=True)

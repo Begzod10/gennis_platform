@@ -1,10 +1,11 @@
 from rest_framework import generics
-from capital.serializers import (CapitalListSerializers, OldCapitalListSerializers)
-from capital.models import Capital, OldCapital
-from user.functions.functions import check_auth
 from rest_framework.response import Response
-from permissions.functions.CheckUserPermissions import check_user_permissions
+
 from capital.functions.creat_capital_term import creat_capital_term
+from capital.models import Capital, OldCapital
+from capital.serializers import (CapitalListSerializers, OldCapitalListSerializers)
+from permissions.functions.CheckUserPermissions import check_user_permissions
+from user.functions.functions import check_auth
 
 
 class OldCapitalRetrieveAPIView(generics.RetrieveAPIView):
@@ -38,11 +39,14 @@ class OldCapitalListView(generics.ListAPIView):
         queryset = OldCapital.objects.all()
         location_id = self.request.query_params.get('location_id', None)
         branch_id = self.request.query_params.get('branch_id', None)
+        status = self.request.query_params.get('status', None)
 
         if branch_id is not None:
             queryset = queryset.filter(branch_id=branch_id)
         if location_id is not None:
             queryset = queryset.filter(location_id=location_id)
+        if status is not None:
+            queryset = queryset.filter(status=status)
         serializer = OldCapitalListSerializers(queryset, many=True)
         return Response({'old_capitals': serializer.data, 'permissions': permissions})
 

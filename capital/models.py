@@ -51,6 +51,8 @@ class OldCapital(models.Model):
     payment_type = models.ForeignKey(PaymentTypes, on_delete=models.SET_NULL, null=True,
                                      related_name='old_capital_payment_type')
     old_id = models.IntegerField(null=True, unique=True)
+    deleted = models.BooleanField(default=False)
+
 
     class Meta:
         ordering = ['id']

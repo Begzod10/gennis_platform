@@ -31,6 +31,8 @@ class TeacherSerializer(serializers.ModelSerializer):
         user = user_serializer.save()
         teacher = Teacher.objects.create(user=user, **validated_data)
         teacher.subject.set(subject_data)
+        branch = Branch.objects.get(pk=user_data['branch'])
+        teacher.branches.set(branch)
         return teacher
 
     def update(self, instance, validated_data):

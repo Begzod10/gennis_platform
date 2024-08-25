@@ -47,7 +47,7 @@ class DeletedFromRegistered(APIView):
         branch_id = self.request.query_params.get('branch_id', None)
 
         if branch_id is not None:
-            delete_new_students = delete_new_students.filter(branch_id=branch_id)
+            delete_new_students = delete_new_students.filter(user__branch_id=branch_id)
         if location_id is not None:
             delete_new_students = delete_new_students.filter(location_id=location_id)
         delete_new_student_serializer = DeletedNewStudentListSerializer(delete_new_students, many=True)
@@ -62,7 +62,7 @@ class DeletedGroupStudents(APIView):
         branch_id = self.request.query_params.get('branch_id', None)
 
         if branch_id is not None:
-            active_students = active_students.filter(branch_id=branch_id)
+            active_students = active_students.filter(user__branch_id=branch_id)
         if location_id is not None:
             active_students = active_students.filter(location_id=location_id)
         student_serializer = StudentListSerializer(active_students, many=True)
@@ -80,7 +80,7 @@ class NewRegisteredStudents(APIView):
         branch_id = self.request.query_params.get('branch_id', None)
 
         if branch_id is not None:
-            active_students = active_students.filter(branch_id=branch_id)
+            active_students = active_students.filter(user__branch_id=branch_id)
         if location_id is not None:
             active_students = active_students.filter(location_id=location_id)
         active_students = active_students[:100]
@@ -101,7 +101,7 @@ class ActiveStudents(APIView):
         branch_id = self.request.query_params.get('branch_id', None)
 
         if branch_id is not None:
-            active_students = active_students.filter(branch_id=branch_id)
+            active_students = active_students.filter(user__branch_id=branch_id)
         if location_id is not None:
             active_students = active_students.filter(location_id=location_id)
         active_students = active_students[:100]
