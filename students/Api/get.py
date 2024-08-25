@@ -198,7 +198,7 @@ class StudentPaymentAPIView(generics.RetrieveAPIView):
         permissions = check_user_permissions(user, table_names)
         status = self.request.query_params.get('status', None)
 
-        queryset = StudentPayment.objects.all()
+        queryset = self.get_object()
         if status is not None:
             queryset = queryset.filter(deleted=status)
         location_id = self.request.query_params.get('location_id', None)

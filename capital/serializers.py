@@ -102,10 +102,11 @@ class OldCapitalSerializers(serializers.ModelSerializer):
             validated_token = jwt_auth.get_validated_token(raw_token)
             user_id = validated_token['user_id']
             validated_data['by_who_id'] = user_id
-
-        return OldCapital.objects.create(**validated_data)
-
-
+            # data = [{
+            #     'capital': OldCapital.objects.create(**validated_data),
+            #     'message': "Capital muvaffaqiyatli qo'shildi"
+            # }]
+        return  OldCapital.objects.create(**validated_data)
 
 
 class OldCapitalListSerializers(serializers.ModelSerializer):
@@ -116,7 +117,7 @@ class OldCapitalListSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = OldCapital
-        fields = ['id','by_who', 'branch', 'payment_type', 'added_date', 'price', 'name']
+        fields = ['id', 'by_who', 'branch', 'payment_type', 'added_date', 'price', 'name']
 
     def get_added_date(self, obj):
         return obj.added_date.strftime('%Y-%m-%d')

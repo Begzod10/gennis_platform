@@ -4,19 +4,20 @@ from rest_framework.response import Response
 
 from capital.models import Capital, OldCapital
 from capital.serializers import (CapitalSerializers, OldCapitalSerializers)
+from permissions.response import CustomResponseMixin
 
 
-class OldCapitalCreateView(generics.CreateAPIView):
+class OldCapitalCreateView(CustomResponseMixin, generics.CreateAPIView):
     queryset = OldCapital.objects.all()
     serializer_class = OldCapitalSerializers
 
 
-class OldCapitalUpdateView(generics.UpdateAPIView):
+class OldCapitalUpdateView(CustomResponseMixin, generics.UpdateAPIView):
     queryset = OldCapital.objects.all()
     serializer_class = OldCapitalSerializers
 
 
-class OldCapitalDestroyView(generics.DestroyAPIView):
+class OldCapitalDestroyView(CustomResponseMixin, generics.DestroyAPIView):
     queryset = OldCapital.objects.all()
     serializer_class = OldCapitalSerializers
 
@@ -28,16 +29,16 @@ class OldCapitalDestroyView(generics.DestroyAPIView):
         return Response({"msg": "muvaffaqiyatlik o'chirildi"}, status=status.HTTP_200_OK)
 
 
-class CapitalCreateView(generics.CreateAPIView):
+class CapitalCreateView(CustomResponseMixin, generics.CreateAPIView):
     queryset = Capital.objects.all()
     serializer_class = CapitalSerializers
 
 
-class CapitalUpdateView(generics.UpdateAPIView):
+class CapitalUpdateView(CustomResponseMixin, generics.UpdateAPIView):
     queryset = Capital.objects.all()
     serializer_class = CapitalSerializers
 
 
-class CapitalDestroyView(generics.DestroyAPIView):
+class CapitalDestroyView(CustomResponseMixin, generics.DestroyAPIView):
     queryset = Capital.objects.all()
     serializer_class = CapitalSerializers

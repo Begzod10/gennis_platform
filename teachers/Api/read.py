@@ -60,7 +60,7 @@ class TeacherSalaryListAPIView(generics.ListAPIView):
     serializer_class = TeacherSalaryListReadSerializers
 
     def get_queryset(self):
-        queryset = TeacherSalaryList.objects.all()
+        queryset = self.get_object()
         status = self.request.query_params.get('status', None)
         branch_id = self.request.query_params.get('branch_id', None)
         teacher_salary = self.request.query_params.get('teacher_salary', None)

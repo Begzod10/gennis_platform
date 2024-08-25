@@ -4,6 +4,7 @@ from .views import (CreateCapitalCategoryList, CapitalCategoryRetrieveUpdateDest
 from .api.get import CapitalRetrieveAPIView, CapitalListView, OldCapitalListView, OldCapitalRetrieveAPIView
 from .api.createdeleteupdate import CapitalCreateView, CapitalUpdateView, CapitalDestroyView, OldCapitalCreateView, \
     OldCapitalUpdateView, OldCapitalDestroyView
+app_name = 'Capital'
 
 urlpatterns = [
     path('old_capital_create/', OldCapitalCreateView.as_view(), name='old-capital-create'),
