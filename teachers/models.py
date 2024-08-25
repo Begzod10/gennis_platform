@@ -98,6 +98,6 @@ class TeacherGroupStatistics(models.Model):
 class TeacherHistoryGroups(models.Model):
     group = models.ForeignKey('group.Group', on_delete=models.SET_NULL, null=True, related_name='group_teacher_history')
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_teacher_history')
-    reason = models.CharField(max_length=50)
+    reason = models.CharField(max_length=50, null=True)
     joined_day = models.DateTimeField()
-    left_day = models.DateTimeField()
+    left_day = models.DateTimeField(null=True)

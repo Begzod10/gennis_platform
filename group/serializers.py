@@ -1,12 +1,12 @@
 import pprint
-
+from datetime import datetime
 from rest_framework import serializers
 from branch.models import Branch
 from language.models import Language
-from students.models import Student, DeletedStudent
+from students.models import Student, DeletedStudent, StudentHistoryGroups
 from subjects.models import Subject, SubjectLevel
 from system.models import System
-from teachers.models import Teacher
+from teachers.models import Teacher, TeacherHistoryGroups
 from .models import Group, GroupReason, CourseTypes
 from classes.models import ClassNumber, ClassColors
 from time_table.models import GroupTimeTable
@@ -19,6 +19,9 @@ from teachers.serializers import TeacherSerializer
 from .functions.checkTimeTable import check_time_table
 from .functions.CreateSchoolStudentDebts import create_school_student_debts
 from students.models import DeletedNewStudent
+
+
+# from time_table.serializers import GroupTimeTableReadSerializer
 
 
 class CourseTypesSerializers(serializers.ModelSerializer):
@@ -66,12 +69,31 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         create_type = validated_data.pop('create_type')
         students_data = validated_data.pop('students', [])
         teacher_data = validated_data.pop('teacher', [])
-        group = Group.objects.create(**validated_data, system_id=validated_data.get('branch').location.system_id)
-        group.students.set(students_data)
-        group.teacher.set(teacher_data)
+
+        today = datetime.now()
+
         if create_type == 'school':
+            group = Group.objects.create(**validated_data, system_id=validated_data.get('branch').location.system_id)
+            group.students.set(students_data)
+            group.teacher.set(teacher_data)
+            for student in students_data:
+                StudentHistoryGroups.objects.create(group=group, student=student, teacher=teacher_data[0],
+                                                    joined_day=today)
+            TeacherHistoryGroups.objects.create(group=group, teacher=teacher_data[0], joined_day=today)
             create_school_student_debts(group, group.students.all())
         else:
+            group = Group.objects.create(**validated_data, system_id=validated_data.get('branch').location.system_id)
+            group.students.set(students_data)
+            group.teacher.set(teacher_data)
+            for student in students_data:
+                StudentHistoryGroups.objects.create(group=group, student=student, teacher=teacher_data[0],
+                                                    joined_day=today)
+            TeacherHistoryGroups.objects.create(group=group, teacher=teacher_data[0], joined_day=today)
+            subject = validated_data.get('subject')
+            teacher_subjects = Teacher.objects.filter(id=teacher_data[0], subject__in=[subject.id]).first()
+            if not teacher_subjects:
+                raise serializers.ValidationError('Ustozni fani togri kelmadi')
+
             for time_table in time_tables:
                 group_time_table = GroupTimeTable.objects.create(week_id=time_table['week'],
                                                                  start_time=time_table['start_time'],
@@ -100,29 +122,27 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
             pass
         else:
             if 'teacher' in validated_data:
-                if validated_data['teacher'][0].group_set.all():
-                    for st_group in validated_data.get('teacher')[0].group_set.all():
-                        if instance.group_time_table.start_time == st_group.group_time_table.start_time and instance.group_time_table.week == st_group.group_time_table.week and instance.group_time_table.room == st_group.group_time_table.room and instance.group_time_table.end_time == st_group.group_time_table.end_time:
-                            teacher_status = False
-                            raise serializers.ValidationError({
-                                "detail": f"{validated_data.get('teacher')[0].name} {validated_data.get('teacher')[0].surname}ning {st_group.name} guruhida darsi bor"})
-                        if teacher_status:
-                            instance.teacher.remove(*instance.teacher.all())
-                            instance.teacher.set(validated_data.get('teacher')[0])
-                else:
-                    instance.teacher.add(validated_data.get('teacher')[0])
+                teacher_history_group = TeacherHistoryGroups.objects.get(group=instance,
+                                                                         teacher=instance.teacher.all()[0])
+                teacher_history_group.left_day = datetime.now()
+                teacher_history_group.save()
+                for time_table in instance.group_time_table.all():
+                    instance.teacher.all()[0].group_time_table.remove(time_table)
+                    validated_data.get('teacher')[0].group_time_table.add(time_table)
+                instance.teacher.remove(instance.teacher.all()[0])
+                instance.teacher.remove(*instance.teacher.all())
+                instance.teacher.add(validated_data.get('teacher')[0])
+                TeacherHistoryGroups.objects.create(group=instance, teacher=validated_data.get('teacher')[0],
+                                                    joined_day=datetime.now())
+
             if update_method:
                 if update_method == "add_students":
                     for student in students:
-                        status = True
-                        for st_group in student.groups_student.all():
-                            if instance.group_time_table.start_time == st_group.group_time_table.start_time and instance.group_time_table.week == st_group.group_time_table.week and instance.group_time_table.room == st_group.group_time_table.room and instance.group_time_table.end_time == st_group.group_time_table.end_time:
-                                status = False
-                                break
-
-                        if status:
-                            instance.students.add(student)
-                            create_school_student_debts(instance, instance.students.all())
+                        instance.students.add(student)
+                        StudentHistoryGroups.objects.create(group=instance, student=student,
+                                                            teacher=instance.teacher.all()[0],
+                                                            joined_day=datetime.now())
+                        # create_school_student_debts(instance, instance.students.all())
                 elif update_method == "remove_students":
                     if delete_type == 'new_students':
                         for student in students:
@@ -134,6 +154,10 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                             DeletedStudent.objects.create(student=student, group=instance,
                                                           comment=comment if comment else None,
                                                           group_reason_id=group_reason if group_reason else None)
+                    student_history_group = StudentHistoryGroups.objects.get(group=instance,
+                                                                             teacher=instance.teacher.all()[0])
+                    student_history_group.left_day = datetime.now()
+                    student_history_group.save()
         instance.save()
         return instance
 

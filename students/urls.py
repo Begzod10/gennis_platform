@@ -42,4 +42,6 @@ urlpatterns = [
          name='get_filtered_students_list'),
     path('school_students/', SchoolStudents.as_view(),
          name='school_students'),
+    path('students_for_subject/<int:branch_id>/<int:subject_id>/', SchoolStudents.as_view(),
+         name='students_for_subject'),
 ]

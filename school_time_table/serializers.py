@@ -225,6 +225,7 @@ class ClassTimeTableLessonsTestSerializer(serializers.Serializer):
                     'name': room.name,
                     'hours': {
                         hour.order: {
+                            'status': False,
                             'hour': {
                                 'id': hour.id,
                                 'name': hour.name,
@@ -258,6 +259,81 @@ class ClassTimeTableLessonsTestSerializer(serializers.Serializer):
                 'group': group_info,
             }
             info['weekday']['hours'][lesson.hours.order]['lesson_info'].append(lesson_info)
+            info['weekday']['hours'][lesson.hours.order]['status'] = True if lesson.hour in info['room'][
+                'hours'] else False
+            time_tables.append(info)
+        return time_tables
+
+    def get_hours_list(self, obj):
+        hours = Hours.objects.all().order_by('order')
+        return [
+            {
+                'id': hour.id,
+                'name': hour.name,
+                'start_time': hour.start_time,
+                'end_time': hour.end_time
+            }
+            for hour in hours
+        ]
+
+
+class ClassTimeTableTest2Serializer(serializers.Serializer):
+    time_tables = serializers.SerializerMethodField()
+    hours_list = serializers.SerializerMethodField()
+
+    def get_time_tables(self, obj):
+        week = self.context['week']
+        rooms = Room.objects.all()
+        hours = Hours.objects.all().order_by('order')
+        time_tables = []
+
+        for room in rooms:
+            info = {
+                'room': {
+                    'id': room.id,
+                    'name': room.name_en,
+                    'lessons': []
+                },
+            }
+            for hour in hours:
+                lesson = room.classtimetable_set.filter(week=week, hours=hour).order_by('hours__order').first()
+                if lesson:
+                    flow_info = {'id': lesson.flow.id, 'name': lesson.flow.name} if lesson.flow else None
+                    room_info = {'id': lesson.room.id, 'name': lesson.room.name} if lesson.room else None
+                    teacher_info = {
+                        'id': lesson.teacher.id,
+                        'name': lesson.teacher.user.name,
+                        'surname': lesson.teacher.user.surname
+                    } if lesson.teacher else None
+                    subject_info = {'id': lesson.subject.id, 'name': lesson.subject.name} if lesson.subject else None
+
+                    lesson_info = {
+                        'id': lesson.id,
+                        'name': lesson.name,
+                        'status': lesson.hours == hour,
+                        'flow': flow_info,
+                        'room': room_info,
+                        'teacher': teacher_info,
+                        'subject': subject_info,
+                        'hour': {
+                            'id': hour.id,
+                            'name': hour.name,
+                            'start_time': hour.start_time,
+                            'end_time': hour.end_time
+                        }
+                    }
+
+                    info['weekday']['lessons'].append(lesson_info)
+                else:
+                    info['weekday']['lessons'].append({
+                        'status': False,
+                        'hour': {
+                            'id': hour.id,
+                            'name': hour.name,
+                            'start_time': hour.start_time,
+                            'end_time': hour.end_time
+                        }
+                    })
             time_tables.append(info)
         return time_tables
 

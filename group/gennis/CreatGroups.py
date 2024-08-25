@@ -27,7 +27,7 @@ class GroupReasonRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIV
 
 
 class CreatGroups(generics.ListCreateAPIView):
-    queryset = Group.objects.all()
+    queryset = Group.objects.filter(deleted=False).all()
     serializer_class = GroupCreateUpdateSerializer
 
     def get_serializer_class(self):

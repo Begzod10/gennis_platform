@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 from rest_framework import generics, mixins
 from rest_framework.response import Response
@@ -8,6 +9,7 @@ from students.models import StudentPayment, StudentHistoryGroups, StudentCharity
 from students.serializers import StudentPaymentListSerializer, StudentHistoryGroupsListSerializer, \
     StudentCharityListSerializer, StudentListSerializer
 from subjects.serializers import SubjectSerializer
+from time_table.models import GroupTimeTable
 from user.functions.functions import check_auth
 from teachers.models import Teacher
 from teachers.serializers import TeacherSerializerRead
@@ -179,6 +181,7 @@ class FilteredStudentsListView(APIView):
     def post(self, request, branch_id):
         location_id = branch_id
         teachers_list = []
+
         subjects = Subject.objects.filter(student__subject__student__isnull=False).all()
 
         subjects_with_students = {
@@ -190,30 +193,53 @@ class FilteredStudentsListView(APIView):
             }
             for subject in subjects
         }
+
         errors = {
             'rooms': [],
         }
+
         time_tables = json.loads(request.body)
 
         students = Student.objects.filter(
             user__branch_id=location_id,
             deleted_student_student__isnull=True,
-            subject__isnull=False
+            subject__student__isnull=False
+        ).select_related('user').prefetch_related('subject', 'group_time_table').distinct()
+        print(students.count())
+        room_ids = [t['room'] for t in time_tables]
+        rooms = Room.objects.filter(id__in=room_ids)
+
+        room_time_tables = GroupTimeTable.objects.filter(
+            week_id__in=[t['week'] for t in time_tables],
+            room__in=rooms,
+            start_time__gte=min([t['start_time'] for t in time_tables]),
+            end_time__lte=max([t['end_time'] for t in time_tables])
         )
-        for time_table in time_tables:
 
-            room = Room.objects.get(id=time_table['room'])
-            room_time_table = room.grouptimetable_set.filter(week_id=time_table['week'],
-                                                             start_time__gte=time_table['start_time'],
-                                                             end_time__lte=time_table['end_time']).first()
-            if room_time_table:
-                errors['rooms'].append(f'Bu voxta {room.name} xonasida {room_time_table.group.name}ni  darsi bor')
+        teachers = Teacher.objects.filter(user__branch_id=location_id).prefetch_related('group_time_table')
 
-            for student in students:
-                student_data = StudentListSerializer(student).data
-                time_table_st = student.group_time_table.filter(week_id=time_table['week'],
-                                                                start_time__gte=time_table['start_time'],
-                                                                end_time__lte=time_table['end_time']).first()
+        for student in students:
+            student_data = StudentListSerializer(student).data
+            should_add_student = False
+
+            for time_table in time_tables:
+                room = next((r for r in rooms if r.id == time_table['room']), None)
+
+                if room:
+                    room_time_table = next(
+                        (rt for rt in room_time_tables if rt.room == room and rt.week_id == time_table['week']
+                         and rt.start_time >= datetime.strptime(time_table['start_time'], "%H:%M")
+                         and rt.end_time <= datetime.strptime(time_table['end_time'], "%H:%M")), None)
+                    if room_time_table:
+                        errors['rooms'].append(
+                            f'Bu voxta {room.name} xonasida {room_time_table.group.name}ni darsi bor')
+
+                time_table_st = student.group_time_table.filter(
+                    week_id=time_table['week'],
+                    start_time__gte=time_table['start_time'],
+                    end_time__lte=time_table['end_time']
+                ).first()
+
                 if time_table_st:
                     student_data['extra_info'] = {
                         'status': False,
@@ -224,29 +250,42 @@ class FilteredStudentsListView(APIView):
                         'status': True,
                         'reason': ''
                     }
+
+                if not should_add_student:
+                    should_add_student = True
+
+            if should_add_student:
                 for subject in student.subject.all():
                     subjects_with_students[subject.id]["students"].append(student_data)
                     subjects_with_students[subject.id]["subject_status"] = True
-            teachers = Teacher.objects.filter(user__branch_id=location_id)
-            for teacher in teachers:
-                teacher_data = TeacherSerializerRead(teacher).data
-                time_table_tch = teacher.group_time_table.filter(week_id=time_table['week'],
-                                                                 start_time__gte=time_table['start_time'],
-                                                                 end_time__lte=time_table['end_time'])
-                if time_table_tch:
-                    teacher_data['extra_info'] = {
-                        'status': False,
-                        'reason': f"{teacher.user.name} {teacher.user.surname} o'quvchini {time_table.group.name} guruhida darsi bor"
-                    }
-                else:
-                    teacher_data['extra_info'] = {
-                        'status': True,
-                        'reason': ''
-                    }
-                if not teacher_data in teachers_list:
-                    teachers_list.append(teacher_data)
-        return Response(
-            {'subjects_with_students': subjects_with_students.values(), 'teachers': teachers_list, 'errors': errors})
+
+        for teacher in teachers:
+            teacher_data = TeacherSerializerRead(teacher).data
+            time_table_tch = teacher.group_time_table.filter(
+                week_id=time_table['week'],
+                start_time__gte=time_table['start_time'],
+                end_time__lte=time_table['end_time']
+            ).first()
+
+            if time_table_tch:
+                teacher_data['extra_info'] = {
+                    'status': False,
+                    'reason': f"{teacher.user.name} {teacher.user.surname} o'quvchini {time_table.group.name} guruhida darsi bor"
+                }
+            else:
+                teacher_data['extra_info'] = {
+                    'status': True,
+                    'reason': ''
+                }
+
+            if not teacher_data in teachers_list:
+                teachers_list.append(teacher_data)
+
+        return Response({
+            'subjects_with_students': subjects_with_students.values(),
+            'teachers': teachers_list,
+            'errors': errors
+        })
 
 
 class SchoolStudents(generics.ListAPIView):
@@ -255,3 +294,12 @@ class SchoolStudents(generics.ListAPIView):
     def get_queryset(self):
         system = System.objects.get(name='School')
         return Student.objects.filter(system_id=system.pk)
+
+
+class StudentsForSubject(generics.ListAPIView):
+    serializer_class = StudentListSerializer
+
+    def get_queryset(self):
+        subject_id = self.kwargs['subject_id']
+        branch_id = self.kwargs['branch_id']
+        return Student.objects.filter(subject__student__in=[subject_id], user__branch_id=branch_id)

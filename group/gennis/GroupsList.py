@@ -7,7 +7,7 @@ from group.serializers import GroupSerializer, GroupReasonSerializers, CourseTyp
 
 
 class CreatGroups(generics.ListCreateAPIView):
-    queryset = Group.objects.all()
+    queryset = Group.objects.filter(deleted=False).all()
     serializer_class = GroupCreateUpdateSerializer
 
     def create(self, request, *args, **kwargs):
