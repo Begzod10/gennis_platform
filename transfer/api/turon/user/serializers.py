@@ -18,18 +18,6 @@ class OldIdRelatedField(serializers.SlugRelatedField):
             raise serializers.ValidationError(f"{model.__name__} with old_id {data} does not exist.")
 
 
-class NameRelatedField(serializers.SlugRelatedField):
-    def __init__(self, *args, **kwargs):
-        kwargs['slug_field'] = 'name'
-        super().__init__(*args, **kwargs)
-
-    def to_internal_value(self, data):
-        model = self.queryset.model
-        try:
-            return model.objects.get(name=data)
-        except model.DoesNotExist:
-            raise serializers.ValidationError(f"{model.__name__} with old_id {data} does not exist.")
-
 
 class TransferUserSerializer(serializers.ModelSerializer):
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())

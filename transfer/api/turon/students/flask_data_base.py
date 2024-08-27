@@ -15,7 +15,6 @@ def get_students():
     for row in results:
         student = dict(row)
         info = {
-            # "user": student['user_id'],
             "user": {
                 "turon_old_id": student['user_id']
             },

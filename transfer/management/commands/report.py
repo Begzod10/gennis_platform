@@ -3,8 +3,13 @@ from django.core.management.base import BaseCommand
 from transfer.api.gennis.overhead.views import overhead
 from transfer.api.turon.user.views import users_turon
 from transfer.api.turon.students.views import students_turon
+from transfer.api.turon.classes.views import class_turon
+from transfer.api.gennis.time_table.views import time_table
+from transfer.api.gennis.group.views import groups
+from transfer.api.gennis.user.views import users
 from transfer.api.gennis.students.views import students
 from transfer.api.gennis.attendance.views import attendance
+from transfer.api.gennis.teacher.uitils import teachers
 
 
 class Command(BaseCommand):
@@ -14,6 +19,11 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('Turon User data transfer completed successfully!'))
         except Exception as e:
             self.stdout.write(self.style.ERROR(f'Error during turon user data transfer: {e}'))
+        # try:
+        #     class_turon(self)
+        #     self.stdout.write(self.style.SUCCESS('Turon Class data transfer completed successfully!'))
+        # except Exception as e:
+        #     self.stdout.write(self.style.ERROR(f'Error during turon class data transfer: {e}'))
         # try:
         #     students_turon(self)
         #     self.stdout.write(self.style.SUCCESS('Turon Students data transfer completed successfully!'))

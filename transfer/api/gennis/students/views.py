@@ -36,13 +36,13 @@ def students(self):
     #         serializer.save()
     #     else:
     #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    list = get_studentpayments()
-    for info in list:
-        serializer = StudentPaymentSerializerTransfer(data=info)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time students: {(end - start) * 10 ** 3:.03f}ms")
+    # list = get_studentpayments()
+    # for info in list:
+    #     serializer = StudentPaymentSerializerTransfer(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    # end = time.time()
+    # print(f"Run time students: {(end - start) * 10 ** 3:.03f}ms")
     return True

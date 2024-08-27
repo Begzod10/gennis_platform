@@ -39,7 +39,6 @@ class StudentSerializerTransfer(serializers.ModelSerializer):
     def create(self, validated_data):
         user_data = validated_data.pop('user')
         language_type = validated_data.pop('language_type')
-        print(language_type)
         user = CustomUser.objects.get(old_id=user_data['turon_old_id']) if isinstance(user_data, dict) else user_data
         student = Student.objects.create(user=user, **validated_data)
         return student

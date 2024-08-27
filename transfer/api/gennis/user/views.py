@@ -52,16 +52,16 @@ def users(self):
     #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
     # end = time.time()
     # print(f"Run time users: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
-    list = get_salaries()
-    for info in list:
-        serializer = TransferStaffsSalary(data=info)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time salary: {(end - start) * 10 ** 3:.03f}ms")
+    # start = time.time()
+    # list = get_salaries()
+    # for info in list:
+    #     serializer = TransferStaffsSalary(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    # end = time.time()
+    # print(f"Run time salary: {(end - start) * 10 ** 3:.03f}ms")
     # start = time.time()
     # list = get_staffsalaries()
     # for info in list:
