@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'lesson_plan.apps.LessonPlanConfig',
     'Calendar.apps.CalendarConfig',
     'encashment.apps.EncashmentConfig',
+    "mobile.apps.MobileConfig"
 ]
 
 MIDDLEWARE = [

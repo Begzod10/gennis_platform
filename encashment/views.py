@@ -7,14 +7,14 @@ from rest_framework.views import APIView
 from books.models import BranchPayment
 from books.serializers import BranchPaymentListSerializers
 from capital.models import Capital
-from capital.serializers import CapitalSerializers
+from capital.serializers import CapitalSerializers,OldCapital,OldCapitalListSerializers
 from overhead.models import Overhead
 from overhead.serializers import OverheadSerializerGet
 from payments.models import PaymentTypes
 from students.models import StudentPayment
 from students.serializers import StudentPaymentSerializer
 from teachers.models import TeacherSalaryList
-from teachers.serializers import TeacherSalaryListReadSerializers
+from teachers.serializers import TeacherSalaryListCreateSerializers
 from user.models import UserSalaryList
 from user.serializers import UserSalaryListSerializers
 from .models import Encashment
@@ -49,7 +49,7 @@ class Encashments(APIView):
 
             )
             teacher_total_salary = teacher_salaries.aggregate(total=Sum('salary'))['total'] or 0
-            teacher_serializer = TeacherSalaryListReadSerializers(teacher_salaries.distinct(), many=True)
+            teacher_serializer = TeacherSalaryListCreateSerializers(teacher_salaries.distinct(), many=True)
 
             worker_salaries = UserSalaryList.objects.filter(
                 date__range=(ot, do),
@@ -84,21 +84,36 @@ class Encashments(APIView):
             ).distinct()
             overhead_serializer = OverheadSerializerGet(overheads, many=True)
 
-            total_capital = Capital.objects.filter(
+            # total_capital = Capital.objects.filter(
+            #     added_date__range=(ot, do),
+            #     payment_type_id=payment_type,
+            #     branch_id=branch,
+            #     deleted=False
+            #
+            # ).aggregate(total=Sum('price'))['total'] or 0
+            # capitals = Capital.objects.filter(
+            #     added_date__range=(ot, do),
+            #     payment_type_id=payment_type,
+            #     branch_id=branch,
+            #     deleted=False
+            #
+            # ).distinct()
+            # capital_serializer = CapitalSerializers(capitals, many=True)
+            total_capital = OldCapital.objects.filter(
                 added_date__range=(ot, do),
                 payment_type_id=payment_type,
                 branch_id=branch,
                 deleted=False
 
             ).aggregate(total=Sum('price'))['total'] or 0
-            capitals = Capital.objects.filter(
+            capitals = OldCapital.objects.filter(
                 added_date__range=(ot, do),
                 payment_type_id=payment_type,
                 branch_id=branch,
                 deleted=False
 
             ).distinct()
-            capital_serializer = CapitalSerializers(capitals, many=True)
+            capital_serializer = OldCapitalListSerializers(capitals, many=True)
             Encashment.objects.get_or_create(
                 ot=ot,
                 do=do,
@@ -172,7 +187,7 @@ class Encashments(APIView):
                     branch_id=branch
                 )
                 teacher_total_salary = teacher_salaries.aggregate(total=Sum('salary'))['total'] or 0
-                teacher_serializer = TeacherSalaryListReadSerializers(teacher_salaries.distinct(), many=True)
+                teacher_serializer = TeacherSalaryListCreateSerializers(teacher_salaries.distinct(), many=True)
 
                 worker_salaries = UserSalaryList.objects.filter(
                     date__range=(ot, do),

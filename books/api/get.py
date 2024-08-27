@@ -1,13 +1,15 @@
 from rest_framework import generics
+from rest_framework.response import Response
+
 from books.models import BookOrder, CollectedBookPayments, BalanceOverhead, CenterBalance, BookOverhead, BranchPayment, \
     EditorBalance, BookImage, UserBook
 from books.serializers import BookOrderListSerializers, BalanceOverheadListSerializers, \
     CollectedBookPaymentsListSerializers, BranchPaymentListSerializers, \
     CenterBalanceListSerializer, BookOverheadListSerializers, EditorBalanceListSerializers, BookImageListSerializer, \
     UserBookListSerializer
-from user.functions.functions import check_auth
-from rest_framework.response import Response
 from permissions.functions.CheckUserPermissions import check_user_permissions
+from permissions.response import CustomResponseMixin, QueryParamFilterMixin
+from user.functions.functions import check_auth
 
 
 class UserBookListView(generics.ListAPIView):
@@ -299,9 +301,13 @@ class CollectedBookPaymentsRetrieveView(generics.RetrieveAPIView):
         return Response({'collectedbookpayments': collected_book_payments_data, 'permissions': permissions})
 
 
-class BookOrderListView(generics.ListAPIView):
+class BookOrderListView(generics.ListAPIView, QueryParamFilterMixin, CustomResponseMixin):
     queryset = BookOrder.objects.all()
     serializer_class = BookOrderListSerializers
+    filter_mappings = {
+        'branch_id': 'branch',
+        'student_id': 'student',
+    }
 
     def get(self, request, *args, **kwargs):
         user, auth_error = check_auth(request)
@@ -313,13 +319,8 @@ class BookOrderListView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = BookOrder.objects.all()
-        location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch_id', None)
 
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        if location_id is not None:
-            queryset = queryset.filter(location_id=location_id)
+        queryset = self.filter_queryset(queryset)
         serializer = BookOrderListSerializers(queryset, many=True)
         return Response({'bookorders': serializer.data, 'permissions': permissions})
 

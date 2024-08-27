@@ -12,12 +12,11 @@ from rest_framework.views import APIView
 from gennis_platform import settings
 from gennis_platform.settings import classroom_server
 from permissions.functions.CheckUserPermissions import check_user_permissions
-from subjects.models import Subject as Subjects
-from subjects.serializers import SubjectSerializer
 from user.functions.functions import check_auth
 from user.models import CustomUser, UserSalaryList
-from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalary, CustomAutoGroup
-
+from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalary, CustomAutoGroup, \
+    UserSalarySerializersRead
+from subjects.serializers import SubjectSerializer,Subject
 
 class UserListCreateView(generics.ListAPIView):
     queryset = CustomUser.objects.all()
@@ -182,7 +181,7 @@ class EmployerRetrieveView(generics.RetrieveAPIView):
 
 class UserSalaryMonthView(generics.RetrieveAPIView):
     queryset = UserSalary.objects.all()
-    serializer_class = UserSalaryListSerializersRead
+    serializer_class = UserSalarySerializersRead
 
     def retrieve(self, request, *args, **kwargs):
         user, auth_error = check_auth(request)
@@ -194,6 +193,7 @@ class UserSalaryMonthView(generics.RetrieveAPIView):
         user_salary_list = self.get_object()
         if isinstance(user_salary_list, queryset):
             user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
+            print(user_salary_list_data)
         else:
             user_salary_list_data = self.get_serializer(user_salary_list).data
         return Response({'usersalary': user_salary_list_data, 'permissions': permissions})
@@ -255,7 +255,7 @@ class GetUserAPIView(APIView):
         user = CustomUser.objects.get(user_id=request.user.id)
         user_serializer = UserSerializerRead(user)
 
-        subjects = Subjects.objects.all().order_by('id')
+        subjects = Subject.objects.all().order_by('id')
         subject_list = [SubjectSerializer(sub).data for sub in subjects]
 
         jwt_payload_handler = settings.SIMPLE_JWT['JWT_PAYLOAD_HANDLER']

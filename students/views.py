@@ -74,6 +74,9 @@ class NewRegisteredStudents(QueryParamFilterMixin, CustomResponseMixin, APIView)
     filter_mappings = {
         'branch': 'user__branch_id',
         'location': 'location_id',
+        'subject': 'subject__id',
+        'age': 'user__birth_date',
+        'language': 'user__language_id',
     }
 
     def get(self, request, *args, **kwargs):

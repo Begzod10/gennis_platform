@@ -1,3 +1,6 @@
+from datetime import date
+
+
 class CustomResponseMixin:
     def get_custom_message(self, request):
 
@@ -34,12 +37,25 @@ class QueryParamFilterMixin:
         for param, field in self.filter_mappings.items():
             value = self.request.query_params.get(param, None)
             if value is not None:
-                if isinstance(value, str) and value.startswith('[') and value.endswith(']'):
+                if isinstance(value, str) and '-' in value:
+                    age_range = value.split('-')
+                    if len(age_range) == 2:
+                        try:
+                            age_from = int(age_range[0])
+                            age_to = int(age_range[1])
+                            today = date.today()
+                            birth_date_from = date(today.year - age_to, today.month, today.day)
+                            birth_date_to = date(today.year - age_from, today.month, today.day)
+                            queryset = queryset.filter(**{
+                                f'{field}__range': (birth_date_from, birth_date_to)
+                            })
+                        except ValueError:
+                            pass
+                elif isinstance(value, str) and value.startswith('[') and value.endswith(']'):
                     value_list = value.strip('[]').split(',')
                     value_list = [v.strip() for v in value_list]
                     lookup = {f"{field}__in": value_list}
                     queryset = queryset.filter(**lookup)
                 else:
-                    lookup = {field: value}
-                    queryset = queryset.filter(**lookup)
+                    queryset = queryset.filter(**{field: value})
         return queryset

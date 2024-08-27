@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import requests
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Group
@@ -5,7 +7,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from werkzeug.security import check_password_hash
-from datetime import datetime
+
 from branch.serializers import BranchSerializer
 from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
@@ -87,10 +89,26 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     user_salary = serializers.PrimaryKeyRelatedField(queryset=UserSalary.objects.all())
     payment_types = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
+    name = serializers.SerializerMethodField(required=False, read_only=True)
+    surname = serializers.SerializerMethodField(required=False, read_only=True)
+    date = serializers.SerializerMethodField(required=False, read_only=True)
+    payment_type_name = serializers.SerializerMethodField(required=False, read_only=True)
 
     class Meta:
         model = UserSalaryList
         fields = '__all__'
+
+    def get_name(self, obj):
+        return obj.user.name
+
+    def get_surname(self, obj):
+        return obj.user.surname
+
+    def get_date(self, obj):
+        return obj.date.strftime('%Y-%m-%d')
+
+    def get_payment_type_name(self, obj):
+        return obj.payment_types.name
 
     def create(self, validated_data):
         branch = validated_data.get('branch')
@@ -186,15 +204,15 @@ class Employeers(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class UserSalaryListSerializersRead(serializers.ModelSerializer):
+class UserSalarySerializersRead(serializers.ModelSerializer):
     user = UserSerializerRead(read_only=True)
     branch = BranchSerializer(read_only=True)
-    user_salary = UserSalarySerializers(read_only=True)
+    # user_salary = UserSalarySerializers(read_only=True)
     payment_types = PaymentTypesSerializers(read_only=True)
     date = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
-        model = UserSalaryList
+        model = UserSalary
         fields = '__all__'
 
     def get_date(self, obj):

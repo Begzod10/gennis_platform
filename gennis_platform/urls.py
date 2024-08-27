@@ -60,6 +60,7 @@ urlpatterns = [
     path('Calendar/', include('Calendar.urls')),
     path('Transfer/', include('transfer.urls')),
     path('Encashment/', include('encashment.urls')),
+    path('Mobile/', include('mobile.urls')),
     path("schema/", Schema.as_view()),
     path('Api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('Api/token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),

@@ -156,11 +156,25 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
     salary_id = serializers.PrimaryKeyRelatedField(queryset=TeacherSalary.objects.all())
     payment = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
+    name = serializers.SerializerMethodField(required=False, read_only=True)
+    surname = serializers.SerializerMethodField(required=False, read_only=True)
+    date = serializers.SerializerMethodField(required=False, read_only=True)
+    payment_type_name = serializers.SerializerMethodField(required=False, read_only=True)
 
     class Meta:
         model = TeacherSalaryList
         fields = '__all__'
+    def get_name(self, obj):
+        return obj.teacher.user.name
 
+    def get_surname(self, obj):
+        return obj.teacher.user.surname
+
+    def get_date(self, obj):
+        return obj.date.strftime('%Y-%m-%d')
+
+    def get_payment_type_name(self, obj):
+        return obj.payment.name
     def create(self, validated_data):
         teacher = validated_data.get('teacher')
         salary_id = validated_data.get('salary_id')
