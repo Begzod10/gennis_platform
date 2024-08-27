@@ -1,5 +1,7 @@
 from datetime import date
 
+from django.db.models import Q
+
 
 class CustomResponseMixin:
     def get_custom_message(self, request):
@@ -32,30 +34,31 @@ class CustomResponseMixin:
 
 class QueryParamFilterMixin:
     filter_mappings = {}
+    filter_conditions = Q()
 
     def filter_queryset(self, queryset):
+
         for param, field in self.filter_mappings.items():
-            value = self.request.query_params.get(param, None)
+            value = self.request.query_params.get(param)
             if value is not None:
-                if isinstance(value, str) and '-' in value:
-                    age_range = value.split('-')
-                    if len(age_range) == 2:
-                        try:
-                            age_from = int(age_range[0])
-                            age_to = int(age_range[1])
-                            today = date.today()
-                            birth_date_from = date(today.year - age_to, today.month, today.day)
-                            birth_date_to = date(today.year - age_from, today.month, today.day)
-                            queryset = queryset.filter(**{
-                                f'{field}__range': (birth_date_from, birth_date_to)
-                            })
-                        except ValueError:
-                            pass
-                elif isinstance(value, str) and value.startswith('[') and value.endswith(']'):
-                    value_list = value.strip('[]').split(',')
-                    value_list = [v.strip() for v in value_list]
-                    lookup = {f"{field}__in": value_list}
-                    queryset = queryset.filter(**lookup)
+                if value == '-':
+                    try:
+                        age_from, age_to = map(int, value.split('-'))
+                        today = date.today()
+                        birth_date_from = date(today.year - age_to, today.month, today.day)
+                        birth_date_to = date(today.year - age_from, today.month, today.day)
+                        self.filter_conditions &= Q(**{f'{field}__range': (birth_date_from, birth_date_to)})
+                    except ValueError:
+                        continue
+                elif value.startswith('[') and value.endswith(']'):
+                    value_list = [v.strip() for v in value.strip('[]').split(',')]
+                    self.filter_conditions &= Q(**{f'{field}__in': value_list})
+                elif value.isdigit():
+                    self.filter_conditions &= Q(**{field: value})
                 else:
-                    queryset = queryset.filter(**{field: value})
+                    continue
+
+        if self.filter_conditions:
+            queryset = queryset.filter(self.filter_conditions)
+
         return queryset

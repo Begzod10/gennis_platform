@@ -4,7 +4,7 @@ from rooms.Api.createupdatedelete import RoomCreateView, RoomDeleteView, RoomUpd
     RoomImagesUpdateView, RoomImagesDestroyView, RoomSubjectCreateView, RoomSubjectUpdateView, RoomSubjectDestroyView
 from rooms.Api.get import RoomListView, RoomRetrieveView, RoomImagesListView, RoomImagesRetrieveView, RoomSubjectListView, \
     RoomSubjectRetrieveView
-
+app_name = 'rooms'
 urlpatterns = [
     path('rooms/', RoomListView.as_view(), name='room-list'),
     path('rooms_create/', RoomCreateView.as_view(), name='room-create'),

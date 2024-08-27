@@ -2,6 +2,7 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
 
+from permissions.response import CustomResponseMixin
 from rooms.models import Room, RoomImages, RoomSubject
 from rooms.serializers import RoomCreateSerializer, RoomImagesCreateSerializer, RoomSubjectCreateSerializer
 
@@ -11,7 +12,7 @@ class RoomCreateView(generics.CreateAPIView):
     serializer_class = RoomCreateSerializer
 
 
-class RoomDeleteView(generics.DestroyAPIView):
+class RoomDeleteView(CustomResponseMixin, generics.DestroyAPIView):
     queryset = Room.objects.all()
     serializer_class = RoomCreateSerializer
 

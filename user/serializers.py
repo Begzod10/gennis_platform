@@ -62,25 +62,28 @@ class UserSerializerWrite(serializers.ModelSerializer):
         # user.save()
         # return user
 
-    def send_data(self, user_data):
-        url = 'https://example.com/api/update_user_info'
-        try:
-            response = requests.post(url, json={"user": user_data})
-            response.raise_for_status()
-            return response.json()
-        except requests.RequestException as e:
-            raise serializers.ValidationError({"error": str(e)})
+    # def send_data(self, user_data):
+    #     url = 'https://example.com/api/update_user_info'
+    #     try:
+    #         response = requests.post(url, json={"user": user_data})
+    #         response.raise_for_status()
+    #         return response.json()
+    #     except requests.RequestException as e:
+    #         raise serializers.ValidationError({"error": str(e)})
 
     def update(self, instance, validated_data):
-        # user = super().update(instance, validated_data)
-        # user.set_password(validated_data['password'])
-        # user.save()
         user = super().update(instance, validated_data)
         if 'password' in validated_data:
-            user.password = (validated_data['password'])
+            user.set_password(validated_data['password'])
             user.save()
+
+
+        # user = super().update(instance, validated_data)
+        # if 'password' in validated_data:
+        #     user.password = (validated_data['password'])
+        #     user.save()
         user_data = UserSerializerRead(user).data
-        self.send_data(user_data)
+        # self.send_data(user_data)
         return user
 
 
