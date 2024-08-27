@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from branch.models import Branch
+from permissions.response import CustomResponseMixin, QueryParamFilterMixin
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
 from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
@@ -70,29 +71,27 @@ class DeletedGroupStudents(APIView):
         return Response(student_serializer.data)
 
 
-class NewRegisteredStudents(APIView):
+class NewRegisteredStudents( QueryParamFilterMixin, CustomResponseMixin,APIView):
+    filter_mappings = {
+        'branch': 'user__branch_id',
+        'location': 'location_id',
+    }
+
     def get(self, request, *args, **kwargs):
+
         deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_student_ids) \
-                              .exclude(id__in=deleted_new_student_ids) \
-                              .filter(groups_student__isnull=True).distinct()
-        location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch', None)
-
-        if branch_id is not None:
-            active_students = active_students.filter(user__branch_id=branch_id)
-        if location_id is not None:
-            active_students = active_students.filter(location_id=location_id)
-        active_students = active_students[:100]
-
-        student_serializer = StudentListSerializer(active_students, many=True)
+            .exclude(id__in=deleted_new_student_ids) \
+            .filter(groups_student__isnull=True).distinct()
+        filtered_students = self.filter_queryset(active_students)
+        student_serializer = StudentListSerializer(filtered_students, many=True)
 
         return Response(student_serializer.data)
 
 
 class ActiveStudents(APIView):
-    def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwasrgs):
         deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_student_ids) \

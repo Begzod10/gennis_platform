@@ -12,6 +12,7 @@ from .Api.get import StudentCharityAPIView, StudentPaymentAPIView, StudentHistor
 from .views import (CreateContractView, UploadPDFContractView, StudentListView, DeletedFromRegistered,
                     DeletedGroupStudents, NewRegisteredStudents, ActiveStudents, PaymentDatas
                     )
+app_name = 'Students'
 
 urlpatterns = [
     path('student_history_groups_create/', StudentHistoryGroupsCreateView.as_view(),

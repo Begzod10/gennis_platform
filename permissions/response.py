@@ -25,3 +25,21 @@ class CustomResponseMixin:
                 response.data['msg'] = custom_message
 
         return response
+
+
+class QueryParamFilterMixin:
+    filter_mappings = {}
+
+    def filter_queryset(self, queryset):
+        for param, field in self.filter_mappings.items():
+            value = self.request.query_params.get(param, None)
+            if value is not None:
+                if isinstance(value, str) and value.startswith('[') and value.endswith(']'):
+                    value_list = value.strip('[]').split(',')
+                    value_list = [v.strip() for v in value_list]
+                    lookup = {f"{field}__in": value_list}
+                    queryset = queryset.filter(**lookup)
+                else:
+                    lookup = {field: value}
+                    queryset = queryset.filter(**lookup)
+        return queryset
