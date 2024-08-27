@@ -82,7 +82,7 @@ class NewRegisteredStudents(QueryParamFilterMixin, CustomResponseMixin, APIView)
         active_students = Student.objects.exclude(id__in=deleted_student_ids) \
             .exclude(id__in=deleted_new_student_ids) \
             .filter(groups_student__isnull=True).distinct()
-        filtered_students = self.filter_queryset(active_students)
+        filtered_students = self.filter_queryset(active_students)[:100]
         student_serializer = StudentListSerializer(filtered_students, many=True)
 
         return Response(student_serializer.data)

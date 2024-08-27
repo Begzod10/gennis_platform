@@ -186,10 +186,21 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
     payment_type = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
     payment_sum = serializers.IntegerField(required=False)
     status = serializers.BooleanField(required=False)
+    name = serializers.SerializerMethodField(required=False, read_only=True)
+    surname = serializers.SerializerMethodField(required=False, read_only=True)
+    date = serializers.SerializerMethodField(required=False, read_only=True)
 
     class Meta:
         model = StudentPayment
-        fields = ['student', 'payment_type', 'payment_sum', 'status', 'branch']
+        fields = ['student', 'payment_type', 'payment_sum', 'status', 'branch', 'name', 'surname','date']
+
+    def get_name(self, obj):
+        return obj.student.user.name
+
+    def get_surname(self, obj):
+        return obj.student.user.surname
+    def get_date(self, obj):
+        return obj.added_data.strftime('%Y-%m-%d')
 
     def create(self, validated_data):
         attendance_per_months = AttendancePerMonth.objects.filter(student=validated_data.get('student'), status=False)

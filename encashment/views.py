@@ -34,7 +34,9 @@ class Encashments(APIView):
             student_payments = StudentPayment.objects.filter(
                 added_data__range=(ot, do),
                 payment_type_id=payment_type,
-                student__user__branch_id=branch
+                student__user__branch_id=branch,
+                deleted=False,
+                status=False
             )
             student_total_payment = student_payments.aggregate(total=Sum('payment_sum'))['total'] or 0
             student_serializer = StudentPaymentSerializer(student_payments.distinct(), many=True)
@@ -42,7 +44,9 @@ class Encashments(APIView):
             teacher_salaries = TeacherSalaryList.objects.filter(
                 date__range=(ot, do),
                 payment_id=payment_type,
-                branch_id=branch
+                branch_id=branch,
+                deleted=False
+
             )
             teacher_total_salary = teacher_salaries.aggregate(total=Sum('salary'))['total'] or 0
             teacher_serializer = TeacherSalaryListReadSerializers(teacher_salaries.distinct(), many=True)
@@ -50,7 +54,9 @@ class Encashments(APIView):
             worker_salaries = UserSalaryList.objects.filter(
                 date__range=(ot, do),
                 payment_types_id=payment_type,
-                branch_id=branch
+                branch_id=branch,
+                deleted=False
+
             )
             worker_total_salary = worker_salaries.aggregate(total=Sum('salary'))['total'] or 0
             worker_serializer = UserSalaryListSerializers(worker_salaries.distinct(), many=True)
@@ -66,24 +72,31 @@ class Encashments(APIView):
             total_overhead_payment = Overhead.objects.filter(
                 created__range=(ot, do),
                 payment_id=payment_type,
-                branch_id=branch
+                branch_id=branch,
+                deleted=False
             ).aggregate(total=Sum('price'))['total'] or 0
             overheads = Overhead.objects.filter(
                 created__range=(ot, do),
                 payment_id=payment_type,
-                branch_id=branch
+                branch_id=branch,
+                deleted=False
+
             ).distinct()
             overhead_serializer = OverheadSerializerGet(overheads, many=True)
 
             total_capital = Capital.objects.filter(
                 added_date__range=(ot, do),
                 payment_type_id=payment_type,
-                branch_id=branch
+                branch_id=branch,
+                deleted=False
+
             ).aggregate(total=Sum('price'))['total'] or 0
             capitals = Capital.objects.filter(
                 added_date__range=(ot, do),
                 payment_type_id=payment_type,
-                branch_id=branch
+                branch_id=branch,
+                deleted=False
+
             ).distinct()
             capital_serializer = CapitalSerializers(capitals, many=True)
             Encashment.objects.get_or_create(
