@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import uuid
 from datetime import datetime
@@ -11,10 +12,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from branch.models import Branch
-from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent
+from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
 from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
-                          DeletedStudentListSerializer, DeletedNewStudentListSerializer)
+                          DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
 
 
 class StudentListView(APIView):
@@ -75,9 +76,9 @@ class NewRegisteredStudents(APIView):
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_student_ids) \
                               .exclude(id__in=deleted_new_student_ids) \
-                              .filter(groups_student__isnull=True).distinct()[:100]
+                              .filter(groups_student__isnull=True).distinct()
         location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch_id', None)
+        branch_id = self.request.query_params.get('branch', None)
 
         if branch_id is not None:
             active_students = active_students.filter(user__branch_id=branch_id)
@@ -258,3 +259,39 @@ class UploadPDFContractView(APIView):
         student.save()
 
         return Response({"success": True, "msg": "File uploaded successfully", "url": str(student.contract)})
+
+
+class PaymentDatas(APIView):
+
+    def post(self, request, student_id):
+        data = json.loads(request.body)
+        year = data['year']
+        month = data['month']
+        payments = StudentPayment.objects.filter(deleted=False, student_id=student_id, added_data__year=year,
+                                                 added_data__month=month).all()
+        data = StudentPaymentListSerializer(payments, many=True).data
+
+        return Response(data)
+
+    def get(self, request, student_id):
+
+        student_payments = StudentPayment.objects.filter(deleted=False, student_id=student_id).all()
+
+        payments_by_year = {}
+
+        for payment in student_payments:
+            year = payment.added_data.year
+            month = payment.added_data.month
+
+            if year not in payments_by_year:
+                payments_by_year[year] = set()
+            payments_by_year[year].add(month)
+
+        payments_by_year_list = [
+            {'name': year, 'months': sorted(months)}
+            for year, months in payments_by_year.items()
+        ]
+
+        return Response({
+            'payments_by_year': payments_by_year_list,
+        })

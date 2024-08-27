@@ -37,7 +37,7 @@ class OldCapitalListView(CustomResponseMixin, generics.ListAPIView):
         table_names = ['oldcapital', 'branch', 'paymenttype', 'customuser']
         permissions = check_user_permissions(user, table_names)
 
-        queryset = self.get_object()
+        queryset = OldCapital.objects.all()
         location_id = self.request.query_params.get('location_id', None)
         branch_id = self.request.query_params.get('branch_id', None)
         status = self.request.query_params.get('status', None)
