@@ -19,7 +19,7 @@ class Capital(models.Model):
     price = models.IntegerField()
     total_down_cost = models.IntegerField()
     added_date = models.DateTimeField(auto_now_add=True)
-    term = models.DateTimeField()
+    term = models.BigIntegerField()
     curriculum_hours = models.IntegerField()
     img = models.ImageField(upload_to='capital/images', null=True)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='capital_branch')

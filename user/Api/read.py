@@ -171,6 +171,7 @@ class EmployeersListView(QueryParamFilterMixin, CustomResponseMixin, generics.Li
 
     def get_queryset(self):
         queryset = CustomAutoGroup.objects.all()
+        queryset = self.filter_queryset(queryset)
 
         return queryset
 

@@ -7,27 +7,16 @@ from ..get_user import get_user
 
 
 class TeachersSalariesSerializer(serializers.ModelSerializer):
-    salaries = serializers.SerializerMethodField()
+    id = serializers.IntegerField()
+    month_date = serializers.DateField()
+    total_salary = serializers.IntegerField()
+    remaining_salary = serializers.IntegerField()
+    taken_salary = serializers.IntegerField()
+    total_black_salary = serializers.IntegerField()
 
     class Meta:
         model = TeacherSalary
-        fields = ['salaries']
-
-    def get_salaries(self, obj):
-        user = get_user(self.context['request'])
-        datas = []
-        for i in user.teacher.teacher_salary.all():
-            data = {
-                "id": i.id,
-                "date": i.date.strftime('%Y-%m-%d'),
-                "total_salary": i.total_salary,
-                "reaming_salary": i.remaining_salary,
-                "taken_salary": i.taken_salary,
-                "black_salary": i.black_salary
-
-            }
-            datas.append(data)
-        return datas
+        fields = ['id', 'month_date', 'total_salary', 'remaining_salary', 'taken_salary', 'total_black_salary']
 
 
 class TeachersDebtedStudents(serializers.ModelSerializer):
@@ -63,7 +52,7 @@ class TeachersDebtedStudents(serializers.ModelSerializer):
 
 
 class TeacherProfileSerializer(serializers.ModelSerializer):
-    user = serializers.SerializerMethodField(required=False,read_only=True)
+    user = serializers.SerializerMethodField(required=False, read_only=True)
     name = serializers.CharField(write_only=True, required=False)
     surname = serializers.CharField(write_only=True, required=False)
     father_name = serializers.CharField(write_only=True, required=False)
@@ -72,12 +61,12 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Teacher
-        fields = ['user','phone','birth_date','father_name','surname','name']
+        fields = ['user', 'phone', 'birth_date', 'father_name', 'surname', 'name']
 
     def get_user(self, obj):
         user = get_user(self.context['request'])
         user = CustomUser.objects.get(pk=user)
-        teacher =Teacher.objects.get(user_id=user.id)
+        teacher = Teacher.objects.get(user_id=user.id)
         salary_aggregate = TeacherSalary.objects.filter(
             teacher=teacher
         ).aggregate(
