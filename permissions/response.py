@@ -2,6 +2,9 @@ from datetime import date
 
 from django.db.models import Q
 
+from mobile.get_user import get_user
+from user.models import CustomUser
+
 
 class CustomResponseMixin:
     def get_custom_message(self, request):
@@ -41,13 +44,16 @@ class QueryParamFilterMixin:
         for param, field in self.filter_mappings.items():
             value = self.request.query_params.get(param)
             if value is not None:
-                if value == '-':
+                if '-' in value:
                     try:
                         age_from, age_to = map(int, value.split('-'))
-                        today = date.today()
-                        birth_date_from = date(today.year - age_to, today.month, today.day)
-                        birth_date_to = date(today.year - age_from, today.month, today.day)
-                        self.filter_conditions &= Q(**{f'{field}__range': (birth_date_from, birth_date_to)})
+                        if param == 'age':
+                            today = date.today()
+                            birth_date_from = date(today.year - age_to, today.month, today.day)
+                            birth_date_to = date(today.year - age_from, today.month, today.day)
+                            self.filter_conditions &= Q(**{f'{field}__range': (birth_date_from, birth_date_to)})
+                        else:
+                            self.filter_conditions &= Q(**{f'{field}__range': (age_from, age_to)})
                     except ValueError:
                         continue
                 elif value.startswith('[') and value.endswith(']'):
@@ -57,6 +63,10 @@ class QueryParamFilterMixin:
                     self.filter_conditions &= Q(**{field: value})
                 else:
                     continue
+            else:
+                if param == 'branch':
+                    user = CustomUser.objects.get(pk=get_user(self.request))
+                    self.filter_conditions &= Q(**{field: user.branch_id})
 
         if self.filter_conditions:
             queryset = queryset.filter(self.filter_conditions)
