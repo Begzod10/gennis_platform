@@ -101,6 +101,8 @@ class StudentListSerializer(serializers.ModelSerializer):
     shift = serializers.CharField()
     group = serializers.SerializerMethodField(required=False)
     contract = serializers.SerializerMethodField(required=False)
+    color = serializers.SerializerMethodField(required=False)
+    debt = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Student
@@ -108,6 +110,26 @@ class StudentListSerializer(serializers.ModelSerializer):
 
     def get_group(self, obj):
         return [GroupSerializerStudents(group).data for group in obj.groups_student.all()]
+
+    def get_color(self, obj):
+        color = ''
+        if obj.debt_status == 1:
+            color = '#FACC15'
+        elif obj.debt_status == 2:
+            color = '#FF3130'
+        elif obj.debt_status == 0:
+            color = '24FF00'
+        return color
+
+    def get_debt(self, obj):
+        groups = obj.groups_student.all()
+        debt = 0
+        for group in groups:
+            for i in group.teacher.all():
+                for salary in i.teacher_black_salary.filter(student_id=obj.id).all():
+                    debt += salary.black_salary if salary.black_salary else 0
+
+        return debt
 
     def get_contract(self, obj):
         contracts = obj.contract_student_id.all()

@@ -18,6 +18,8 @@ class CustomResponseMixin:
             return f" {app_name} muvaffaqiyatli yaratildi."
         elif method == 'PUT':
             return f"{app_name}  maʼlumotlari muvaffaqiyatli yangilandi."
+        elif method == 'PATCH':
+            return f"{app_name}  maʼlumotlari muvaffaqiyatli yangilandi."
         elif method == 'DELETE':
             return f"{app_name}  maʼlumotlari muvaffaqiyatli o'chirildi."
         else:

@@ -44,7 +44,9 @@ class StudentListView(APIView):
 class DeletedFromRegistered(QueryParamFilterMixin, CustomResponseMixin, APIView):
     filter_mappings = {
         'branch': 'user__branch_id',
-        'location': 'location_id',
+        'subject': 'subject__id',
+        'age': 'user__birth_date',
+        'language': 'user__language_id',
     }
 
     def get(self, request, *args, **kwargs):
@@ -59,9 +61,10 @@ class DeletedFromRegistered(QueryParamFilterMixin, CustomResponseMixin, APIView)
 class DeletedGroupStudents(QueryParamFilterMixin, CustomResponseMixin, APIView):
     filter_mappings = {
         'branch': 'user__branch_id',
-        'location': 'location_id',
+        'subject': 'subject__id',
+        'age': 'user__birth_date',
+        'language': 'user__language_id',
     }
-
     def get(self, request, *args, **kwargs):
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_new_student_ids)
@@ -84,7 +87,7 @@ class NewRegisteredStudents(QueryParamFilterMixin, APIView):
         active_students = Student.objects.exclude(id__in=deleted_student_ids) \
             .exclude(id__in=deleted_new_student_ids) \
             .filter(groups_student__isnull=True).distinct()
-        filtered_students = self.filter_queryset(active_students)[:100]
+        filtered_students = self.filter_queryset(active_students)
 
         student_serializer = StudentListSerializer(filtered_students, many=True)
 
@@ -94,7 +97,9 @@ class NewRegisteredStudents(QueryParamFilterMixin, APIView):
 class ActiveStudents(QueryParamFilterMixin, CustomResponseMixin, APIView):
     filter_mappings = {
         'branch': 'user__branch_id',
-        'location': 'location_id',
+        'subject': 'subject__id',
+        'age': 'user__birth_date',
+        'language': 'user__language_id',
     }
 
     def get(self, request, *args, **kwasrgs):

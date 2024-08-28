@@ -27,20 +27,20 @@ class TeacherGroupStatisticsListView(generics.ListAPIView):
         return teacher_group_statistics
 
 
-class TeacherListView(generics.ListAPIView):
+class TeacherListView(QueryParamFilterMixin, CustomResponseMixin, generics.ListAPIView):
+    filter_mappings = {
+        'branch': "user__branch_id",
+        'age': 'user__birth_date',
+        "subject": 'subject__id',
+        'language': 'user__language_id',
+
+    }
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializerRead
 
     def get_queryset(self):
         queryset = Teacher.objects.all()
-        location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch_id', None)
-
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        if location_id is not None:
-            queryset = queryset.filter(location_id=location_id)
-
+        queryset = self.filter_queryset(queryset)
         return queryset
 
 

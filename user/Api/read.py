@@ -12,11 +12,13 @@ from rest_framework.views import APIView
 from gennis_platform import settings
 from gennis_platform.settings import classroom_server
 from permissions.functions.CheckUserPermissions import check_user_permissions
+from permissions.response import CustomResponseMixin, QueryParamFilterMixin
+from subjects.serializers import SubjectSerializer, Subject
 from user.functions.functions import check_auth
 from user.models import CustomUser, UserSalaryList
 from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalary, CustomAutoGroup, \
     UserSalarySerializersRead
-from subjects.serializers import SubjectSerializer,Subject
+
 
 class UserListCreateView(generics.ListAPIView):
     queryset = CustomUser.objects.all()
@@ -156,19 +158,19 @@ class UserMe(APIView):
         return Response({'user': serializer.data, 'permissions': permissions})
 
 
-class EmployeersListView(generics.ListAPIView):
+class EmployeersListView(QueryParamFilterMixin, CustomResponseMixin, generics.ListAPIView):
+    filter_mappings = {
+        'age': 'user__birth_date',
+        'language': 'user__language_id',
+        'branch': 'user__branch__id',
+        'job': 'group__id'
+    }
+
     queryset = CustomAutoGroup.objects.all()
     serializer_class = Employeers
 
     def get_queryset(self):
         queryset = CustomAutoGroup.objects.all()
-        location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch_id', None)
-
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        if location_id is not None:
-            queryset = queryset.filter(location_id=location_id)
 
         return queryset
 

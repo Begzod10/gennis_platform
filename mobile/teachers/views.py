@@ -1,12 +1,13 @@
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 
-from permissions.response import QueryParamFilterMixin, CustomResponseMixin
 from mobile.teachers.serializers import TeachersSalariesSerializer, TeacherSalary, TeachersDebtedStudents, Teacher, \
     TeacherProfileSerializer
+from permissions.response import QueryParamFilterMixin, CustomResponseMixin, CustomUser
+from ..get_user import get_user
 
 
-class TeacherPaymentsListView(generics.ListAPIView, QueryParamFilterMixin, CustomResponseMixin):
+class TeacherPaymentsListView( QueryParamFilterMixin, CustomResponseMixin,generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     queryset = TeacherSalary.objects.all()
@@ -24,7 +25,7 @@ class TeacherPaymentsListView(generics.ListAPIView, QueryParamFilterMixin, Custo
         return Response(serializer.data)
 
 
-class TeachersDebtedStudentsListView(generics.ListAPIView, QueryParamFilterMixin, CustomResponseMixin):
+class TeachersDebtedStudentsListView( QueryParamFilterMixin, CustomResponseMixin,generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     queryset = Teacher.objects.all()
@@ -41,8 +42,13 @@ class TeachersDebtedStudentsListView(generics.ListAPIView, QueryParamFilterMixin
         return Response(serializer.data)
 
 
-class TeacherProfileView(generics.RetrieveUpdateAPIView):
+class TeacherProfileView(QueryParamFilterMixin, CustomResponseMixin,generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
-
     queryset = Teacher.objects.all()
     serializer_class = TeacherProfileSerializer
+
+    def get_object(self):
+        user = get_user(self.request)
+        user = CustomUser.objects.get(pk=user)
+        user = user.id
+        return user
