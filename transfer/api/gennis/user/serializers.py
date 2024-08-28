@@ -82,5 +82,4 @@ class TransferUserJobs(serializers.Serializer):
         user = validated_data['user_id']
         group = validated_data['group_id']
         user.groups.add(group)
-
         return user

@@ -6,11 +6,12 @@ from transfer.api.turon.user.serializers import (
 )
 from user.models import CustomAutoGroup
 import time
-from transfer.api.turon.user.flask_data_base import get_users
+from transfer.api.turon.user.flask_data_base import get_users, get_jobs,get_users_jobs
 import random
 from user.models import CustomUser
 from datetime import datetime
 from django.contrib.auth.hashers import make_password
+from permissions.serializers import GroupSerializer
 
 
 def check_user_name(username):
@@ -54,15 +55,25 @@ def users_turon(self):
     #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
     # end = time.time()
     # print(f"Run time students: {(end - start) * 10 ** 3:.03f}ms")
+    # start = time.time()
+    # list = get_jobs()
+    # for info in list:
+    #     serializer = GroupSerializer(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         print(info)
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    # end = time.time()
+    # print(f"Run time users job list: {(end - start) * 10 ** 3:.03f}ms")
+    # start = time.time()
+    # list = get_users_jobs()
+    # for info in list:
+    #     serializer = TransferUserJobs(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    # end = time.time()
+    # print(f"Run time users job list: {(end - start) * 10 ** 3:.03f}ms")
     return True
-
-
-class UserJobsTransfer(generics.GenericAPIView):
-    serializer_class = TransferUserJobs
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            teacher = serializer.save()
-            return Response({'status': 'role added', 'user_id': teacher.id}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

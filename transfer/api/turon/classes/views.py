@@ -17,17 +17,17 @@ def class_turon(self):
     #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
     # end = time.time()
     # print(f"Run time class: {(end - start) * 10 ** 3:.03f}ms")
-    # start = time.time()
-    # list = get_class()
-    # for info in list:
-    #     serializer = TransferGroupSerializer(data=info)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #     else:
-    #         print(info)
-    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    # end = time.time()
-    # print(f"Run time class: {(end - start) * 10 ** 3:.03f}ms")
+    start = time.time()
+    list = get_class()
+    for info in list:
+        serializer = TransferGroupSerializer(data=info)
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            print(info)
+            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    end = time.time()
+    print(f"Run time class: {(end - start) * 10 ** 3:.03f}ms")
     # start = time.time()
     # list = get_class_color()
     # for info in list:

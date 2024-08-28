@@ -25,6 +25,7 @@ class Student(models.Model):
 
 class StudentCharity(models.Model):
     charity_sum = models.IntegerField()
+    name = models.CharField(max_length=200, blank=True, null=True)
     group = models.ForeignKey('group.Group', on_delete=models.SET_NULL, null=True, related_name='group_id_charity')
     added_data = models.DateTimeField(auto_now_add=True)
     student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, related_name='charity_student_id')

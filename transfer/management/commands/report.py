@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 
 from transfer.api.gennis.overhead.views import overhead
 from transfer.api.turon.user.views import users_turon
+from transfer.api.turon.teachers.views import teachers_turon
 from transfer.api.turon.students.views import students_turon
 from transfer.api.turon.classes.views import class_turon
 from transfer.api.gennis.time_table.views import time_table
@@ -20,15 +21,20 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.ERROR(f'Error during turon user data transfer: {e}'))
         # try:
-        #     class_turon(self)
-        #     self.stdout.write(self.style.SUCCESS('Turon Class data transfer completed successfully!'))
+        #     teachers_turon(self)
+        #     self.stdout.write(self.style.SUCCESS('Turon Teachers data transfer completed successfully!'))
         # except Exception as e:
-        #     self.stdout.write(self.style.ERROR(f'Error during turon class data transfer: {e}'))
+        #     self.stdout.write(self.style.ERROR(f'Error during turon teachers data transfer: {e}'))
         # try:
         #     students_turon(self)
         #     self.stdout.write(self.style.SUCCESS('Turon Students data transfer completed successfully!'))
         # except Exception as e:
         #     self.stdout.write(self.style.ERROR(f'Error during turon students data transfer: {e}'))
+        # try:
+        #     class_turon(self)
+        #     self.stdout.write(self.style.SUCCESS('Turon Class data transfer completed successfully!'))
+        # except Exception as e:
+        #     self.stdout.write(self.style.ERROR(f'Error during turon class data transfer: {e}'))
         # try:
         #     overhead(self)
         #     self.stdout.write(self.style.SUCCESS('Gennis Overhead data transfer completed successfully!'))

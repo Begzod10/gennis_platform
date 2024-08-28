@@ -10,6 +10,7 @@ from system.models import System
 class TeacherSalaryType(models.Model):
     name = models.CharField()
     salary = models.IntegerField()
+    turon_old_id = models.IntegerField(null=True, unique=True)
 
 
 class Teacher(models.Model):
@@ -21,6 +22,7 @@ class Teacher(models.Model):
     class_type = models.IntegerField(null=True)
     teacher_salary_type = models.ForeignKey(TeacherSalaryType, on_delete=models.SET_NULL, null=True)
     old_id = models.IntegerField(unique=True, null=True)
+    turon_old_id = models.IntegerField(null=True, unique=True)
     branches = models.ManyToManyField(Branch, blank=True)
     group_time_table = models.ManyToManyField('time_table.GroupTimeTable', blank=True)
 

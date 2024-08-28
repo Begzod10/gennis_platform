@@ -5,11 +5,22 @@ engine = create_engine('postgresql://postgres:123@localhost:5432/gennis')
 metadata = MetaData()
 metadata.reflect(bind=engine)
 users = Table('users', metadata, autoload_with=engine)
+roles = Table('roles', metadata, autoload_with=engine)
 phones = Table('phonelist', metadata, autoload_with=engine)
 staff = Table('staff', metadata, autoload_with=engine)
 staffsalaries = Table('staffsalaries', metadata, autoload_with=engine)
 staffsalary = Table('staffsalary', metadata, autoload_with=engine)
 month_date = Table('calendarmonth', metadata, autoload_with=engine)
+jobs = Table('roles', metadata, autoload_with=engine)
+
+
+def get_role(id):
+    query = select(roles).where(roles.c.id == int(id))
+    with engine.connect() as conn:
+        result = conn.execute(query).fetchone()
+    if result:
+        return dict(zip(roles.columns.keys(), result))
+    return None
 
 
 def get_month(id):
@@ -46,6 +57,21 @@ def get_phones_by_user(id):
             phone = row_dict['phone']
             break  # Stop once we find a personal phone number
     return phone
+
+
+def get_jobs():
+    job_list = []
+    with engine.connect() as conn:
+        result = conn.execute(jobs.select()).fetchall()
+    for row in result:
+        job = dict(zip(jobs.columns.keys(), row))
+        info = {
+            "name": job['type_role'],
+            "system_id": 1,
+            "permissions": []
+        }
+        job_list.append(info)
+    return job_list
 
 
 def get_salaries():
@@ -130,3 +156,17 @@ def get_users():
         }
         user_list.append(info)
     return user_list
+
+
+def get_users_jobs():
+    user_job_list = []
+    with engine.connect() as conn:
+        result = conn.execute(users.select()).fetchall()
+    for row in result:
+        user = dict(zip(users.columns.keys(), row))
+        info = {
+            "user_id": user['id'],
+            "group_id": get_role(user['role_id'])['type_role']
+        }
+        user_job_list.append(info)
+    return user_job_list

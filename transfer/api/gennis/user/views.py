@@ -2,14 +2,15 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
 from transfer.api.gennis.user.serializers import (
-    TransferStaffs, TransferStaffsSalary, TransferUserJobs
+    TransferStaffs, TransferStaffsSalary, TransferUserJobs, TransferStaffsSalaryList, TransferUserSerializer
 )
 from user.models import CustomAutoGroup
 import time
-from transfer.api.gennis.user.flask_data_base import get_salaries
+from transfer.api.gennis.user.flask_data_base import get_salaries, get_users_jobs, get_staffsalaries, get_jobs
 import random
 from user.models import CustomUser
 from datetime import datetime
+from permissions.serializers import GroupSerializer
 
 
 def check_user_name(username):
@@ -72,20 +73,30 @@ def users(self):
     #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
     # end = time.time()
     # print(f"Run time salary list: {(end - start) * 10 ** 3:.03f}ms")
+    # start = time.time()
+    # list = get_jobs()
+    # for info in list:
+    #     serializer = GroupSerializer(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         print(info)
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    # end = time.time()
+    # print(f"Run time gennis job list: {(end - start) * 10 ** 3:.03f}ms")
+    # start = time.time()
+    # list = get_users_jobs()
+    # for info in list:
+    #     serializer = TransferUserJobs(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    # end = time.time()
+    # print(f"Run time users job list: {(end - start) * 10 ** 3:.03f}ms")
     return True
 
 
 class StaffTransferView(generics.CreateAPIView):
     queryset = CustomAutoGroup.objects.all()
     serializer_class = TransferStaffs
-
-
-class UserJobsTransfer(generics.GenericAPIView):
-    serializer_class = TransferUserJobs
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            teacher = serializer.save()
-            return Response({'status': 'role added', 'user_id': teacher.id}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

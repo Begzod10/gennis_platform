@@ -19,18 +19,7 @@ def get_students():
                 "turon_old_id": student['user_id']
             },
             "language_type": student['language_type'],
-            "turon_old_id": student['id'],  # This is the student's id
+            "turon_old_id": student['id'],
         }
-        # info = {
-        #     "user": student['user_id'],
-        #     "subject": None,
-        #     "parents_number": None,
-        #     "shift": None,
-        #     "representative_name": None,
-        #     "representative_surname": None,
-        #     "turon_old_id": student['id'],  # This is the student's id
-        #     "extra_payment": None,
-        #     "old_money": None
-        # }
         student_list.append(info)
     return student_list

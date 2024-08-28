@@ -65,22 +65,30 @@ class TransferGroupSerializer(serializers.ModelSerializer):
     language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all())
     system = serializers.PrimaryKeyRelatedField(queryset=System.objects.all())
     students = OldIdRelatedField(queryset=Student.objects.all(), many=True)
+    teacher = OldIdRelatedField(queryset=Teacher.objects.all(), many=True)
     color = NameRelatedField(queryset=ClassColors.objects.all(), required=False, allow_null=True)
     class_number = NumberRelatedField(queryset=ClassNumber.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = Group
-        fields = ['turon_old_id', 'class_number', 'color', 'name', 'branch', 'language', 'system', 'students']
+        fields = ['turon_old_id', 'class_number', 'color', 'name', 'branch', 'language', 'system', 'students',
+                  'teacher']
 
     @transaction.atomic
     def create(self, validated_data):
         students_data = validated_data.pop('students', [])
+        teacher_data = validated_data.pop('teacher', [])
         group = Group.objects.create(**validated_data)
         group.students.clear()
+        group.teacher.clear()
         for student in students_data:
             subject_instance = Student.objects.get(turon_old_id=student['old_id']) if isinstance(student,
                                                                                                  dict) else student
             group.students.add(subject_instance)
+        for teacher in teacher_data:
+            subject_instance = Teacher.objects.get(turon_old_id=teacher['old_id']) if isinstance(teacher,
+                                                                                                 dict) else teacher
+            group.teacher.add(subject_instance)
         return group
 
 

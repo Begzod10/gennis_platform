@@ -158,7 +158,7 @@ class StudentCharitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentCharity
-        fields = ['id', 'student', 'group', 'charity_sum']
+        fields = ['id', 'student', 'group', 'charity_sum', 'name']
 
 
 class StudentCharityListSerializer(serializers.ModelSerializer):
@@ -168,7 +168,7 @@ class StudentCharityListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentCharity
-        fields = ['id', 'student', 'group', 'charity_sum']
+        fields = ['id', 'student', 'group', 'charity_sum', 'name']
 
 
 class StudentPaymentSerializer(serializers.ModelSerializer):
@@ -233,15 +233,14 @@ class StudentPaymentListSerializer(serializers.ModelSerializer):
     payment_type = PaymentTypesSerializers(required=True)
     payment_sum = serializers.IntegerField(required=False)
     status = serializers.BooleanField(required=False)
-    added_data =serializers.SerializerMethodField(required=False)
+    added_data = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = StudentPayment
-        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status','added_data']
+        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'added_data']
 
     def get_added_data(self, obj):
         return obj.added_data.strftime('%Y-%m-%d   ')
-
 
 
 class DeletedNewStudentSerializer(serializers.ModelSerializer):

@@ -7,8 +7,32 @@ metadata.reflect(bind=engine)
 class_types = Table('class_type', metadata, autoload_with=engine)
 classes = Table('class', metadata, autoload_with=engine)
 student_class = Table('student_class', metadata, autoload_with=engine)
+teacher_class = Table('teacher_class', metadata, autoload_with=engine)
 students = Table('student', metadata, autoload_with=engine)
+teachers = Table('teacher', metadata, autoload_with=engine)
 rooms = Table('room', metadata, autoload_with=engine)
+
+
+def get_teacher_by_class(class_id):
+    query = select(teacher_class.c.teacher_id).where(teacher_class.c.class_id == class_id)
+    with engine.connect() as conn:
+        results = conn.execute(query).mappings().fetchall()
+
+    teacher_ids = [row['teacher_id'] for row in results]
+    if teacher_ids:
+        query = select(teachers).where(teachers.c.id.in_(teacher_ids))
+        with engine.connect() as conn:
+            subject_results = conn.execute(query).mappings().fetchall()
+        subject_list = [dict(row) for row in subject_results]
+        subject_list2 = []
+        for student in subject_list:
+            info = {
+                'turon_old_id': student['id']
+            }
+            subject_list2.append(info)
+        return subject_list2
+    else:
+        return []
 
 
 def get_student_by_class(class_id):
@@ -57,13 +81,15 @@ def get_class():
         result = conn.execute(classes.select()).fetchall()
     for row in result:
         classes_ = dict(zip(classes.columns.keys(), row))
-        students = get_student_by_class(classes_['id'])
+        students_ = get_student_by_class(classes_['id'])
+        teachers_ = get_teacher_by_class(classes_['id'])
         info = {
             "turon_old_id": classes_['id'],
             "name": classes_['name'],
             "branch": 27,
             "language": 4,
-            "students": students,
+            "students": students_,
+            "teacher": teachers_,
             "system": 2,
             "class_number": classes_['class_number'],
             "color": classes_['color'],
