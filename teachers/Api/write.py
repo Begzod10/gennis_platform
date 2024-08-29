@@ -1,9 +1,9 @@
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
-from teachers.models import Teacher, TeacherSalaryList
+from teachers.models import Teacher, TeacherSalaryList,TeacherSalary
 from teachers.serializers import (
-    TeacherSerializer, TeacherSalaryListCreateSerializers
+    TeacherSerializer, TeacherSalaryListCreateSerializers,TeacherSalaryCreateSerializersUpdate
 )
 
 
@@ -46,5 +46,5 @@ class TeacherSalaryUpdateAPIView(generics.UpdateAPIView):
     queryset = TeacherSalaryList.objects.all()
     serializer_class = TeacherSalaryListCreateSerializers
 class TeacherSalaryUpdateAPIViewPatch(generics.UpdateAPIView):
-    queryset = TeacherSalaryList.objects.all()
-    serializer_class = TeacherSalaryListCreateSerializers
+    queryset = TeacherSalary.objects.all()
+    serializer_class = TeacherSalaryCreateSerializersUpdate
