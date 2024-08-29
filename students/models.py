@@ -56,9 +56,9 @@ class StudentHistoryGroups(models.Model):
     student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, related_name='student_student_history')
     group = models.ForeignKey('group.Group', on_delete=models.SET_NULL, null=True, related_name='group_student_history')
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_student_history')
-    reason = models.CharField(max_length=50)
-    joined_day = models.DateTimeField()
-    left_day = models.DateTimeField()
+    reason = models.CharField(max_length=2000, null=True)
+    joined_day = models.DateTimeField(null=True)
+    left_day = models.DateTimeField(null=True)
     old_id = models.IntegerField(null=True)
 
 

@@ -42,7 +42,7 @@ class CapitalTerm(models.Model):
 
 
 class OldCapital(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=500)
     price = models.IntegerField()
     by_who = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='old_capital_user',
                                null=True)

@@ -10,18 +10,31 @@ from teachers.models import Teacher, TeacherSalary
 from user.models import CustomUser, UserSalary
 
 
+class OldIdRelatedField(serializers.SlugRelatedField):
+    def __init__(self, *args, **kwargs):
+        kwargs['slug_field'] = 'old_id'
+        super().__init__(*args, **kwargs)
+
+    def to_internal_value(self, data):
+        model = self.queryset.model
+        try:
+            return model.objects.get(old_id=data)
+        except model.DoesNotExist:
+            raise serializers.ValidationError(f"{model.__name__} with old_id {data} does not exist.")
+
+
 class TransferUserBookSerializer(serializers.ModelSerializer):
-    user = serializers.SlugRelatedField(queryset=CustomUser.objects.all(), slug_field='old_id', required=False,
-                                        allow_null=True)
-    book_order = serializers.SlugRelatedField(queryset=BookOrder.objects.all(), slug_field='old_id', required=False,
-                                              allow_null=True)
-    branch = serializers.SlugRelatedField(queryset=Branch.objects.all(), slug_field='old_id', required=False,
-                                          allow_null=True)
-    teacher_salary = serializers.SlugRelatedField(queryset=TeacherSalary.objects.all(), slug_field='old_id',
-                                                  required=False,
-                                                  allow_null=True)
-    user_salary = serializers.SlugRelatedField(queryset=UserSalary.objects.all(), slug_field='old_id', required=False,
-                                               allow_null=True)
+    user = OldIdRelatedField(queryset=CustomUser.objects.all(), required=False,
+                             allow_null=True)
+    book_order = OldIdRelatedField(queryset=BookOrder.objects.all(), required=False,
+                                   allow_null=True)
+    branch = OldIdRelatedField(queryset=Branch.objects.all(), required=False,
+                               allow_null=True)
+    teacher_salary = OldIdRelatedField(queryset=TeacherSalary.objects.all(),
+                                       required=False,
+                                       allow_null=True)
+    user_salary = OldIdRelatedField(queryset=UserSalary.objects.all(), required=False,
+                                    allow_null=True)
 
     class Meta:
         model = UserBook
@@ -29,10 +42,10 @@ class TransferUserBookSerializer(serializers.ModelSerializer):
 
 
 class TransferBranchPaymentSerializer(serializers.ModelSerializer):
-    book_order = serializers.SlugRelatedField(queryset=BookOrder.objects.all(), slug_field='old_id')
-    editor_balance = serializers.SlugRelatedField(queryset=EditorBalance.objects.all(), slug_field='old_id')
-    branch = serializers.SlugRelatedField(queryset=Branch.objects.all(), slug_field='old_id')
-    payment_type = serializers.SlugRelatedField(queryset=PaymentTypes.objects.all(), slug_field='old_id')
+    book_order = OldIdRelatedField(queryset=BookOrder.objects.all())
+    editor_balance = OldIdRelatedField(queryset=EditorBalance.objects.all())
+    branch = OldIdRelatedField(queryset=Branch.objects.all())
+    payment_type = OldIdRelatedField(queryset=PaymentTypes.objects.all())
 
     class Meta:
         model = BranchPayment
@@ -40,7 +53,7 @@ class TransferBranchPaymentSerializer(serializers.ModelSerializer):
 
 
 class TransferEditorBalanceSerializer(serializers.ModelSerializer):
-    payment_type = serializers.SlugRelatedField(queryset=PaymentTypes.objects.all(), slug_field='old_id')
+    payment_type = OldIdRelatedField(queryset=PaymentTypes.objects.all())
 
     class Meta:
         model = EditorBalance
@@ -48,9 +61,9 @@ class TransferEditorBalanceSerializer(serializers.ModelSerializer):
 
 
 class TransferBalanceOverheadSerializer(serializers.ModelSerializer):
-    balance = serializers.SlugRelatedField(queryset=CenterBalance.objects.all(), slug_field='old_id')
-    branch = serializers.SlugRelatedField(queryset=Branch.objects.all(), slug_field='old_id')
-    payment_type = serializers.SlugRelatedField(queryset=PaymentTypes.objects.all(), slug_field='old_id')
+    balance = OldIdRelatedField(queryset=CenterBalance.objects.all())
+    branch = OldIdRelatedField(queryset=Branch.objects.all())
+    payment_type = OldIdRelatedField(queryset=PaymentTypes.objects.all())
 
     class Meta:
         model = BalanceOverhead
@@ -58,7 +71,7 @@ class TransferBalanceOverheadSerializer(serializers.ModelSerializer):
 
 
 class TransferCenterBalanceSerializer(serializers.ModelSerializer):
-    branch = serializers.SlugRelatedField(queryset=Branch.objects.all(), slug_field='old_id')
+    branch = OldIdRelatedField(queryset=Branch.objects.all())
 
     class Meta:
         model = CenterBalance
@@ -66,8 +79,8 @@ class TransferCenterBalanceSerializer(serializers.ModelSerializer):
 
 
 class TransferCollectedBookPaymentsSerializer(serializers.ModelSerializer):
-    branch = serializers.SlugRelatedField(queryset=Branch.objects.all(), slug_field='old_id')
-    payment_type = serializers.SlugRelatedField(queryset=PaymentTypes.objects.all(), slug_field='old_id')
+    branch = OldIdRelatedField(queryset=Branch.objects.all())
+    payment_type = OldIdRelatedField(queryset=PaymentTypes.objects.all())
 
     class Meta:
         model = CollectedBookPayments
@@ -75,20 +88,20 @@ class TransferCollectedBookPaymentsSerializer(serializers.ModelSerializer):
 
 
 class TransferBookOrderSerializer(serializers.ModelSerializer):
-    user = serializers.SlugRelatedField(queryset=CustomUser.objects.all(), slug_field='old_id', required=False,
-                                        allow_null=True)
-    student = serializers.SlugRelatedField(queryset=Student.objects.all(), slug_field='old_id', required=False,
-                                           allow_null=True)
-    teacher = serializers.SlugRelatedField(queryset=Teacher.objects.all(), slug_field='old_id', required=False,
-                                           allow_null=True)
-    group = serializers.SlugRelatedField(queryset=Group.objects.all(), slug_field='old_id', required=False,
-                                         allow_null=True)
-    book = serializers.SlugRelatedField(queryset=Book.objects.all(), slug_field='old_id', required=False,
-                                        allow_null=True)
-    branch = serializers.SlugRelatedField(queryset=Branch.objects.all(), slug_field='old_id', required=False,
-                                          allow_null=True)
-    collected_payment = serializers.SlugRelatedField(queryset=CollectedBookPayments.objects.all(), slug_field='old_id',
-                                                     required=False, allow_null=True)
+    user = OldIdRelatedField(queryset=CustomUser.objects.all(), required=False,
+                             allow_null=True)
+    student = OldIdRelatedField(queryset=Student.objects.all(), required=False,
+                                allow_null=True)
+    teacher = OldIdRelatedField(queryset=Teacher.objects.all(), required=False,
+                                allow_null=True)
+    group = OldIdRelatedField(queryset=Group.objects.all(), required=False,
+                              allow_null=True)
+    book = OldIdRelatedField(queryset=Book.objects.all(), required=False,
+                             allow_null=True)
+    branch = OldIdRelatedField(queryset=Branch.objects.all(), required=False,
+                               allow_null=True)
+    collected_payment = OldIdRelatedField(queryset=CollectedBookPayments.objects.all(),
+                                          required=False, allow_null=True)
 
     class Meta:
         model = BookOrder
