@@ -73,6 +73,7 @@ class TeacherSalaryListAPIView(QueryParamFilterMixin, CustomResponseMixin, gener
         data = self.get_serializer(queryset, many=True).data
 
         return Response(data)
+from django.db.models.query import QuerySet
 
 
 class TeacherSalaryDetailAPIView(generics.RetrieveAPIView):
@@ -88,7 +89,7 @@ class TeacherSalaryDetailAPIView(generics.RetrieveAPIView):
         permissions = check_user_permissions(user, table_names)
         user_salary_list = self.get_object()
 
-        if isinstance(user_salary_list, self.queryset):
+        if isinstance(user_salary_list, QuerySet):
             user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
         else:
             user_salary_list_data = self.get_serializer(user_salary_list).data

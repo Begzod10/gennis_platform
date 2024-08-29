@@ -152,7 +152,7 @@ class Encashments(APIView):
                     'capital_data': capital_serializer.data,
                     'total_capital': total_capital,
                 },
-                'overall': student_total_payment - (teacher_total_salary + worker_total_salary)
+                'overall': student_total_payment - (teacher_total_salary + worker_total_salary+total_capital+total_overhead_payment)
             })
 
         except KeyError as e:

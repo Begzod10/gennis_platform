@@ -37,12 +37,13 @@ class UserSerializerWrite(serializers.ModelSerializer):
     old_id = serializers.IntegerField(required=False)
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all())
+    profession = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
                   'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff', 'old_id']
+                  'branch', 'is_superuser', 'is_staff', 'old_id','profession']
         extra_kwargs = {
             'password': {'write_only': True, 'required': True},
             'birth_date': {'required': False},
@@ -53,14 +54,16 @@ class UserSerializerWrite(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
+        profession = validated_data.pop('profession')
         user = super().create(validated_data)
         user.set_password(validated_data['password'])
         user.save()
+        if profession is not None:
+            print(profession)
+            CustomAutoGroup.objects.create(user=user, group=profession, salary='0')
+            user.groups.add(profession)
         return user
-        # user = super().create(validated_data)
-        # user.password = validated_data['password']
-        # user.save()
-        # return user
+
 
     # def send_data(self, user_data):
     #     url = 'https://example.com/api/update_user_info'
@@ -77,11 +80,8 @@ class UserSerializerWrite(serializers.ModelSerializer):
             user.set_password(validated_data['password'])
             user.save()
 
-        # user = super().update(instance, validated_data)
-        # if 'password' in validated_data:
-        #     user.password = (validated_data['password'])
-        #     user.save()
-        user_data = UserSerializerRead(user).data
+
+        # user_data = UserSerializerRead(user).data
         # self.send_data(user_data)
         return user
 
