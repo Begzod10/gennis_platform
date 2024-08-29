@@ -145,8 +145,8 @@ class StudentHistoryGroupsSerializer(serializers.ModelSerializer):
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
     teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
     reason = serializers.CharField(required=False)
-    joined_day = serializers.DateTimeField(required=False)
-    left_day = serializers.DateTimeField(required=False)
+    joined_day = serializers.DateField(required=False)
+    left_day = serializers.DateField(required=False)
 
     class Meta:
         model = StudentHistoryGroups

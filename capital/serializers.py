@@ -69,7 +69,7 @@ class CapitalListSerializers(serializers.ModelSerializer):
 class CapitalTermSerializers(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     down_cost = serializers.IntegerField(required=False)
-    month_date = serializers.DateTimeField(required=False)
+    month_date = serializers.DateField(required=False)
     capital = serializers.PrimaryKeyRelatedField(queryset=Capital.objects.all())
 
     class Meta:
@@ -80,7 +80,7 @@ class CapitalTermSerializers(serializers.ModelSerializer):
 class CapitalTermListSerializers(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     down_cost = serializers.IntegerField(required=False)
-    month_date = serializers.DateTimeField(required=False)
+    month_date = serializers.DateField(required=False)
     capital = CapitalSerializers(required=False)
 
     class Meta:

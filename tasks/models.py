@@ -15,7 +15,7 @@ class Task(models.Model):
 class StudentCallInfo(models.Model):
     student = models.ForeignKey(Student, related_name='student_call_info', on_delete=models.CASCADE)
     task = models.ForeignKey(Task, related_name='task_call_info', on_delete=models.CASCADE)
-    created = models.DateTimeField(auto_now_add=True)
+    created = models.DateField(auto_now_add=True)
     delay_date = models.DateField()
     comment = models.CharField()
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='user_call_info', on_delete=models.CASCADE)

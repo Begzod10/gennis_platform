@@ -20,7 +20,7 @@ class ObservationOptions(models.Model):
 
 
 class ObservationDay(models.Model):
-    day = models.DateTimeField()
+    day = models.DateField()
     average = models.IntegerField()
     comment = models.CharField(max_length=100)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='observation_day_user')

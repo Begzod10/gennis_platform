@@ -196,7 +196,6 @@ class UserSalaryMonthView(generics.RetrieveAPIView):
         user_salary_list = self.get_object()
         if isinstance(user_salary_list, queryset):
             user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
-            print(user_salary_list_data)
         else:
             user_salary_list_data = self.get_serializer(user_salary_list).data
         return Response({'usersalary': user_salary_list_data, 'permissions': permissions})

@@ -1,4 +1,3 @@
-from django.db.models.query import QuerySet as queryset
 from rest_framework import generics
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
@@ -28,6 +27,7 @@ class TeacherGroupStatisticsListView(generics.ListAPIView):
 
 
 class TeacherListView(QueryParamFilterMixin, CustomResponseMixin, generics.ListAPIView):
+    app_name ="O'qtuvchilar"
     filter_mappings = {
         'branch': "user__branch_id",
         'age': 'user__birth_date',
@@ -58,23 +58,21 @@ class TeacherRetrieveView(generics.RetrieveAPIView):
         return obj
 
 
-class TeacherSalaryListAPIView(generics.ListAPIView):
+class TeacherSalaryListAPIView(QueryParamFilterMixin, CustomResponseMixin, generics.ListAPIView):
+    filter_mappings = {
+        'status': 'deleted',
+        'branch': 'branch',
+        'teacher_salary': 'salary_id',
+
+    }
+    queryset = TeacherSalaryList.objects.all()
     serializer_class = TeacherSalaryListReadSerializers
 
-    def get_queryset(self):
-        queryset = self.get_object()
-        status = self.request.query_params.get('status', None)
-        branch_id = self.request.query_params.get('branch_id', None)
-        teacher_salary = self.request.query_params.get('teacher_salary', None)
-        if status is not None:
-            queryset = queryset.filter(deleted=status)
+    def get(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.queryset)
+        data = self.get_serializer(queryset, many=True).data
 
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        if teacher_salary is not None:
-            queryset = queryset.filter(salary_id_id=teacher_salary)
-
-        return queryset
+        return Response(data)
 
 
 class TeacherSalaryDetailAPIView(generics.RetrieveAPIView):
@@ -90,7 +88,7 @@ class TeacherSalaryDetailAPIView(generics.RetrieveAPIView):
         permissions = check_user_permissions(user, table_names)
         user_salary_list = self.get_object()
 
-        if isinstance(user_salary_list, queryset):
+        if isinstance(user_salary_list, self.queryset):
             user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
         else:
             user_salary_list_data = self.get_serializer(user_salary_list).data

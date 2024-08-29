@@ -27,7 +27,7 @@ class Student(models.Model):
 class StudentCharity(models.Model):
     charity_sum = models.IntegerField()
     group = models.ForeignKey('group.Group', on_delete=models.SET_NULL, null=True, related_name='group_id_charity')
-    added_data = models.DateTimeField(auto_now_add=True)
+    added_data = models.DateField(auto_now_add=True)
     student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, related_name='charity_student_id')
     old_id = models.IntegerField(null=True)
     branch = models.ForeignKey('branch.Branch', on_delete=models.SET_NULL, null=True)
@@ -38,7 +38,7 @@ class StudentPayment(models.Model):
     payment_type = models.ForeignKey(PaymentTypes, on_delete=models.SET_NULL, null=True)
     payment_sum = models.IntegerField(default=0)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
-    added_data = models.DateTimeField(auto_now_add=True)
+    added_data = models.DateField(auto_now_add=True)
     status = models.BooleanField()
     extra_payment = models.IntegerField(null=True, default=0)
     deleted = models.BooleanField(default=False)
@@ -47,7 +47,7 @@ class StudentPayment(models.Model):
 
 class DeletedNewStudent(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student_new')
-    created = models.DateTimeField(auto_now_add=True)
+    created = models.DateField(auto_now_add=True)
     comment = models.CharField(null=True)
     old_id = models.IntegerField(unique=True, null=True)
 
@@ -57,8 +57,8 @@ class StudentHistoryGroups(models.Model):
     group = models.ForeignKey('group.Group', on_delete=models.SET_NULL, null=True, related_name='group_student_history')
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_student_history')
     reason = models.CharField(max_length=50, null=True)
-    joined_day = models.DateTimeField()
-    left_day = models.DateTimeField(null=True)
+    joined_day = models.DateField()
+    left_day = models.DateField(null=True)
     old_id = models.IntegerField(null=True)
 
 
@@ -68,7 +68,7 @@ class DeletedStudent(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='deleted_student_teacher', null=True)
     group_reason = models.ForeignKey('group.GroupReason', on_delete=models.SET_NULL, null=True,
                                      related_name='deleted_student_group_reason')
-    deleted_date = models.DateTimeField(auto_now_add=True)
+    deleted_date = models.DateField(auto_now_add=True)
     old_id = models.IntegerField(unique=True, null=True)
     comment = models.CharField(max_length=255, null=True)
 

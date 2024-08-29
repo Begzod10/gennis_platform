@@ -76,7 +76,7 @@ class CustomUser(AbstractUser):
 class UserSalary(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     permission = models.ForeignKey(CustomAutoGroup, on_delete=models.SET_NULL, null=True)
-    date = models.DateTimeField(auto_now_add=False, null=True)
+    date = models.DateField(auto_now_add=False, null=True)
     total_salary = models.IntegerField(blank=True, null=True)
     taken_salary = models.IntegerField(blank=True, null=True)
     remaining_salary = models.IntegerField(blank=True, null=True)
@@ -93,7 +93,7 @@ class UserSalaryList(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
     salary = models.IntegerField(blank=True, null=True)
-    date = models.DateTimeField(null=True, auto_now_add=False)
+    date = models.DateField(null=True, auto_now_add=False)
     comment = models.CharField(max_length=100, blank=True, null=True)
     deleted = models.BooleanField(default=False, null=True)
     old_id = models.IntegerField(null=True, blank=True, unique=True)

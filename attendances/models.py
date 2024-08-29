@@ -34,7 +34,7 @@ class AttendancePerDay(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, null=True)
     charity_per_day = models.IntegerField(null=True)
     group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
-    day = models.DateTimeField(null=True)
+    day = models.DateField(null=True)
     homework_ball = models.IntegerField(null=True)
     dictionary_ball = models.IntegerField(null=True)
     activeness_ball = models.IntegerField(null=True)
@@ -48,7 +48,7 @@ class AttendancePerDay(models.Model):
 class GroupAttendancesPerMonth(models.Model):
     total_debt = models.IntegerField(null=True)
     total_salary = models.IntegerField(null=True)
-    month_date = models.DateTimeField(null=True)
+    month_date = models.DateField(null=True)
     total_charity = models.IntegerField(null=True)
     remaining_debt = models.IntegerField(null=True)
     payment = models.IntegerField(null=True)

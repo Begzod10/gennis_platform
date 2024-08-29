@@ -9,21 +9,20 @@ from user.models import CustomUser
 class CustomResponseMixin:
     def get_custom_message(self, request):
 
-        app_name = request.resolver_match.app_names[0]
         method = request.method
 
         if method == 'GET':
-            return f"{app_name}dan maʼlumotlari muvaffaqiyatli olindi."
+            return f"maʼlumotlari muvaffaqiyatli olindi."
         elif method == 'POST':
-            return f" {app_name} muvaffaqiyatli yaratildi."
+            return f"  muvaffaqiyatli yaratildi."
         elif method == 'PUT':
-            return f"{app_name}  maʼlumotlari muvaffaqiyatli yangilandi."
+            return f"  maʼlumotlari muvaffaqiyatli yangilandi."
         elif method == 'PATCH':
-            return f"{app_name}  maʼlumotlari muvaffaqiyatli yangilandi."
+            return f"maʼlumotlari muvaffaqiyatli yangilandi."
         elif method == 'DELETE':
-            return f"{app_name}  maʼlumotlari muvaffaqiyatli o'chirildi."
+            return f" maʼlumotlari muvaffaqiyatli o'chirildi."
         else:
-            return f"{app_name}  amal muvaffaqiyatli yakunlandi."
+            return f"amal muvaffaqiyatli yakunlandi."
 
     def finalize_response(self, request, response, *args, **kwargs):
 
@@ -63,7 +62,7 @@ class QueryParamFilterMixin:
                     self.filter_conditions &= Q(**{f'{field}__in': value_list})
                 elif value.isdigit():
                     self.filter_conditions &= Q(**{field: value})
-                elif value == 'True' or value=='False':
+                elif value == 'True' or value == 'False':
                     self.filter_conditions &= Q(**{field: value})
                 else:
                     continue

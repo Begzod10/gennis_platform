@@ -19,7 +19,7 @@ def create_default_overhead_types(sender, **kwargs):
 class Overhead(models.Model):
     name = models.CharField(max_length=300, null=True,blank=True)
     payment = models.ForeignKey(PaymentTypes, on_delete=models.CASCADE, related_name='payment_type_id')
-    created = models.DateTimeField(auto_now_add=True)
+    created = models.DateField(auto_now_add=True)
     price = models.IntegerField(null=True)
     branch = models.ForeignKey('branch.Branch', on_delete=models.CASCADE, null=True)
     type = models.ForeignKey(OverheadType, on_delete=models.SET_NULL, null=True)

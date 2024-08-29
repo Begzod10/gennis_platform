@@ -40,6 +40,7 @@ urlpatterns = [
     path('Teachers/', include('teachers.urls')),
     path('Capital/', include('capital.urls')),
     path('Class/', include('classes.urls')),
+    path('Permissions/', include('permissions.urls')),
     path('Subjects/', include('subjects.urls')),
     path('Group/', include('group.urls')),
     path('Rooms/', include('rooms.urls')),

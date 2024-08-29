@@ -56,7 +56,7 @@ class TeacherAttendanceSerializers(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
     system = serializers.PrimaryKeyRelatedField(queryset=System.objects.all())
-    day = serializers.DateTimeField(required=False)
+    day = serializers.DateField(required=False)
     status = serializers.BooleanField(required=False)
 
     class Meta:
@@ -68,7 +68,7 @@ class TeacherAttendanceListSerializers(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     teacher = TeacherSerializer(required=False)
     system = SystemSerializers(required=False)
-    day = serializers.DateTimeField(required=False)
+    day = serializers.DateField(required=False)
     status = serializers.BooleanField(required=False)
 
     class Meta:

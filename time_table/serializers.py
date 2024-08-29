@@ -25,7 +25,7 @@ class TimeTableArchiveListSerializer(serializers.ModelSerializer):
     room = RoomCreateSerializer()
     start_time = serializers.TimeField()
     end_time = serializers.TimeField()
-    date = serializers.DateTimeField(required=False)
+    date = serializers.DateField(required=False)
 
     class Meta:
         model = TimeTableArchive
