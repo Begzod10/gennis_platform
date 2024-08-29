@@ -24,6 +24,7 @@ class ClassNumber(models.Model):
     curriculum_hours = models.IntegerField()
     class_types = models.ForeignKey(ClassTypes, on_delete=models.SET_NULL, null=True)
     subjects = models.ManyToManyField(Subject)
+    price = models.IntegerField(null=True)
 
     class Meta:
         ordering = ['id']

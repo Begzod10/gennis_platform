@@ -8,6 +8,7 @@ from students.models import Student
 from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
 from teachers.serializers import TeacherSerializer
 from students.serializers import StudentSerializer
+from branch.serializers import BranchSerializer
 
 
 # class FlowTypesSerializer(serializers.ModelSerializer):
@@ -33,7 +34,9 @@ class FlowsSerializer(serializers.ModelSerializer):
     teacher = TeacherSerializer(read_only=True)
     students = StudentSerializer(read_only=True, many=True)
     level = SubjectLevelSerializer(read_only=True)
+    branch = BranchSerializer(read_only=True)
+    type = serializers.CharField(default='flow', read_only=True)
 
     class Meta:
         model = Flow
-        fields = ['id', 'name', 'level', 'activity', 'subject', 'teacher', 'students']
+        fields = ['id', 'name', 'level', 'activity', 'subject', 'teacher', 'students', 'branch', 'type']

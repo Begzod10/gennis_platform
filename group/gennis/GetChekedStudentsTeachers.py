@@ -56,7 +56,6 @@ class GetCheckedStudentsTeachers(APIView):
                                                                  start_time__gte=time_table['start_time'],
                                                                  end_time__lte=time_table['end_time']).first()
                 if time_table_tch:
-                    print(time_table_tch)
                     teacher_data['extra_info'] = {
                         'status': False,
                         'reason': f"{teacher.user.name} {teacher.user.surname} o'quvchini {time_table_tch.group.name} guruhida darsi bor"

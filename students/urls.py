@@ -43,7 +43,7 @@ urlpatterns = [
     path('students_list/', StudentListView.as_view(), name='students-list'),
     path('create_contract/<int:user_id>/', CreateContractView.as_view(), name='create_contract'),
     path('upload_pdf_contract/<int:user_id>/', UploadPDFContractView.as_view(), name='upload_pdf_contract'),
-    path('api/filter_students_subject/<int:branch_id>/', FilteredStudentsListView.as_view(),
+    path('api/filter_students_subject/', FilteredStudentsListView.as_view(),
          name='get_filtered_students_list'),
     path('deleted-from-registered/', DeletedFromRegistered.as_view(), name='deleted-from-registered'),
     path('deleted-group-students/', DeletedGroupStudents.as_view(), name='deleted-group-students'),

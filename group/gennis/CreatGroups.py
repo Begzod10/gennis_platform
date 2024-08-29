@@ -27,11 +27,13 @@ class GroupReasonRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIV
 
 
 class CreatGroups(generics.ListCreateAPIView):
-    queryset = Group.objects.filter(deleted=False).all()
     serializer_class = GroupCreateUpdateSerializer
 
     def get_queryset(self):
-        return Group.objects.all()[:100]
+        branch_id = self.request.query_params.get('branch')
+        queryset = Group.objects.filter(deleted=False, branch_id=branch_id).all()
+        return queryset
+
 
     def get_serializer_class(self):
         if self.request.method == 'GET':

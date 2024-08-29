@@ -47,7 +47,6 @@ urlpatterns = [
     path('Attendance/', include('attendances.urls')),
     path('Lead/', include('lead.urls')),
     path('Books/', include('books.urls')),
-    path('Permissions/', include('permissions.urls')),
     path('Lead/', include('lead.urls')),
     path('Books/', include('books.urls')),
     path('Attendance/', include('attendances.urls')),

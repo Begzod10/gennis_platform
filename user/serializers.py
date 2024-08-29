@@ -8,7 +8,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from werkzeug.security import check_password_hash
 
-from branch.serializers import BranchSerializer
+from branch.serializers import BranchSerializer, BranchListSerializer
 from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
@@ -77,7 +77,6 @@ class UserSerializerWrite(serializers.ModelSerializer):
             user.set_password(validated_data['password'])
             user.save()
 
-
         # user = super().update(instance, validated_data)
         # if 'password' in validated_data:
         #     user.password = (validated_data['password'])
@@ -85,6 +84,21 @@ class UserSerializerWrite(serializers.ModelSerializer):
         user_data = UserSerializerRead(user).data
         # self.send_data(user_data)
         return user
+
+
+class UserSerializerRead(serializers.ModelSerializer):
+    branch = BranchListSerializer(read_only=True)
+    language = LanguageSerializers(read_only=True)
+    age = serializers.SerializerMethodField(required=False)
+
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
+                  'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
+                  'branch', 'is_superuser', 'is_staff', 'age']
+
+    def get_age(self, obj):
+        return obj.calculate_age()
 
 
 class UserSalaryListSerializers(serializers.ModelSerializer):
@@ -163,10 +177,10 @@ class UserSalaryListSerializersRead(serializers.ModelSerializer):
     payment_types = PaymentTypesSerializers(read_only=True)
     date = serializers.SerializerMethodField(required=False, read_only=True)
 
-
     class Meta:
         model = UserSalaryList
         fields = '__all__'
+
     def get_date(self, obj):
         return obj.date.strftime('%Y-%m-%d')
 

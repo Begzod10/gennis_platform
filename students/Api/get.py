@@ -250,8 +250,10 @@ class StudentPaymentAPIView(generics.RetrieveAPIView):
 
 
 class FilteredStudentsListView(APIView):
-    def post(self, request, branch_id):
-        location_id = branch_id
+    def post(self, request):
+        # location_id = branch_id
+        location_id = self.request.query_params.get('branch')
+        print(location_id)
         teachers_list = []
 
         subjects = Subject.objects.filter(student__subject__student__isnull=False).all()
@@ -300,8 +302,8 @@ class FilteredStudentsListView(APIView):
                 if room:
                     room_time_table = next(
                         (rt for rt in room_time_tables if rt.room == room and rt.week_id == time_table['week']
-                         and rt.start_time >= datetime.strptime(time_table['start_time'], "%H:%M")
-                         and rt.end_time <= datetime.strptime(time_table['end_time'], "%H:%M")), None)
+                         and rt.start_time >= datetime.strptime(time_table['start_time'], "%H:%M").time()
+                         and rt.end_time <= datetime.strptime(time_table['end_time'], "%H:%M").time()), None)
                     if room_time_table:
                         errors['rooms'].append(
                             f'Bu voxta {room.name} xonasida {room_time_table.group.name}ni darsi bor')
@@ -364,8 +366,9 @@ class SchoolStudents(generics.ListAPIView):
     serializer_class = StudentListSerializer
 
     def get_queryset(self):
-        system = System.objects.get(name='School')
-        return Student.objects.filter(system_id=system.pk)
+        branch_id = self.request.query_params.get('branch')
+        return Student.objects.filter(user__branch_id=branch_id, deleted_student_student__isnull=True,
+                                      groups_student__isnull=True)
 
 
 class StudentsForSubject(generics.ListAPIView):
