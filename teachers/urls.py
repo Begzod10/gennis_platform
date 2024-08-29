@@ -10,7 +10,7 @@ from teachers.Api.read import (
 )
 from teachers.Api.write import (
     TeacherCreateView, TeacherUpdateView, TeacherDestroyView,
-    TeacherSalaryCreateAPIView, TeacherSalaryDeleteAPIView, TeacherSalaryUpdateAPIView
+    TeacherSalaryCreateAPIView, TeacherSalaryDeleteAPIView, TeacherSalaryUpdateAPIView,TeacherSalaryUpdateAPIViewPatch
 )
 from .Api.createdeleteupdate import TeacherAttendanceCreateView, TeacherAttendanceDestroyView
 from .Api.get import TeacherAttendanceListView, TeacherAttendanceRetrieveView, TeachersForBranches, TeachersForSubject
@@ -38,6 +38,7 @@ urlpatterns = [
     path('teachers/salary/create/', TeacherSalaryCreateAPIView.as_view(), name='teacher-salary-create'),
     path('teachers/salary/delete/<int:pk>/', TeacherSalaryDeleteAPIView.as_view(), name='teacher-salary-delete'),
     path('teachers/salary/update/<int:pk>/', TeacherSalaryUpdateAPIView.as_view(), name='teacher-salary-update'),
+    path('teachers/salary/update_patch/<int:pk>/', TeacherSalaryUpdateAPIViewPatch.as_view(), name='teacher-salary-update'),
     path('teachers-for-branches/<int:pk>/', TeachersForBranches.as_view(), name='teachers-for-branches'),
     path('teachers-for-subject/<int:branch_id>/<int:subject_id>/', TeachersForSubject.as_view(),
          name='teachers-for-subject'),

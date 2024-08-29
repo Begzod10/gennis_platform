@@ -117,13 +117,22 @@ class TeacherSalaryCreateSerializers(serializers.ModelSerializer):
         model = TeacherSalaryList
         fields = '__all__'
 
+
+class TeacherSalaryCreateSerializersUpdate(serializers.ModelSerializer):
+    teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
+    teacher_salary_type = serializers.PrimaryKeyRelatedField(queryset=TeacherSalaryType.objects.all(),required=False,allow_null=True)
+
+    class Meta:
+        model = TeacherSalary
+        fields = '__all__'
+
     def update(self, instance, validated_data):
         salary = super().update(instance, validated_data)
         if validated_data.get('worked_days', None) == 'worked_days':
             from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
             calculate_teacher_salary(instance)
         return salary
-
 
 class TeacherGroupStatisticsReadSerializers(serializers.ModelSerializer):
     teacher = TeacherSerializer(read_only=True)
