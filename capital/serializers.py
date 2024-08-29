@@ -55,11 +55,15 @@ class CapitalListSerializers(serializers.ModelSerializer):
     branch = BranchSerializer(required=False)
     payment_type = PaymentTypesSerializers(required=False)
     category = CapitalCategorySerializers(required=False)
+    date = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Capital
         fields = ['id', 'name', 'id_number', 'price', 'total_down_cost', 'term',
-                  'curriculum_hours', 'img', 'branch', 'payment_type', 'category']
+                  'curriculum_hours', 'img', 'branch', 'payment_type', 'category','date']
+    def get_date(self,obj):
+        return obj.added_date.strftime('%Y-%m-%d')
+
 
 
 class CapitalTermSerializers(serializers.ModelSerializer):

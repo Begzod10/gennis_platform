@@ -63,6 +63,8 @@ class QueryParamFilterMixin:
                     self.filter_conditions &= Q(**{f'{field}__in': value_list})
                 elif value.isdigit():
                     self.filter_conditions &= Q(**{field: value})
+                elif value == 'True' or value=='False':
+                    self.filter_conditions &= Q(**{field: value})
                 else:
                     continue
             else:

@@ -1,10 +1,13 @@
 from django.db.models import Sum
+from django.utils.timezone import localtime
 from rest_framework import serializers
+from rest_framework.exceptions import NotFound
 
+from attendances.models import AttendancePerDay
 from teachers.models import TeacherSalary, Teacher
 from user.models import CustomUser
 from ..get_user import get_user
-
+from group.serializers import GroupCreateUpdateSerializer
 
 class TeachersSalariesSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
@@ -20,35 +23,38 @@ class TeachersSalariesSerializer(serializers.ModelSerializer):
 
 
 class TeachersDebtedStudents(serializers.ModelSerializer):
-    students = serializers.SerializerMethodField()
+    students = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Teacher
         fields = ['students']
 
     def get_students(self, obj):
-        user = get_user(self.context['request'])
         datas = []
-        for i in user.teacher.groups.all():
-            teachers = i.black_salary.all()
-            for teacher in teachers:
-                color = ''
-                if teacher.student.debt_status == 1:
-                    color = 'yellow'
-                elif teacher.student.debt_status == 2:
-                    color = 'red'
-                elif teacher.student.debt_status == 0:
-                    color = 'green'
-                data = {
-                    "id": i.id,
-                    "name": teacher.student.user.first_name + ' ' + teachers.student.user.last_name,
-                    "group": i.name,
-                    "debt": teacher.teacher_black_salary.black_salary if teacher.teacher_black_salary else 0,
-                    "color": color
-                }
+        today = localtime()
+        teachers = obj.teacherblacksalary_set.filter(month_date__year=today.year, month_date__month=today.month).all()
+        for teacher in teachers:
+            color = ''
+            if teacher.student.debt_status == 1:
+                color = 'yellow'
+            elif teacher.student.debt_status == 2:
+                color = 'red'
+            elif teacher.student.debt_status == 0:
+                color = 'green'
+            data = {
+                "id": obj.id,
+                "name": teacher.student.user.name,
+                'surname': teacher.student.user.surname,
+                "group": obj.name,
+                "debt": teacher.black_salary if teacher.black_salary else 0,
+                "color": color
+            }
 
-                datas.append(data)
-        return datas
+            datas.append(data)
+        if datas:
+            return datas
+        else:
+            raise NotFound(detail="Joriy oy uchun qarzdor talabalar topilmadi.")
 
 
 class TeacherProfileSerializer(serializers.ModelSerializer):
@@ -105,3 +111,43 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
         user.save()
 
         return user
+
+
+class AttendancesTodayStudentsSerializer(serializers.ModelSerializer):
+    attendances = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Teacher
+        fields = ['attendances']
+
+    def get_attendances(self, obj):
+
+        datas = []
+        today = localtime()
+        students = obj.students.all()
+        for student in students:
+            attendances = AttendancePerDay.objects.filter(day__year=today.year, day__month=today.month,
+                                                          day__day=today.day, teacher__in=obj.teacher.all(),
+                                                          student_id=student.id).first()
+            if not attendances:
+                datas.append({
+                    'name': student.user.name + ' ' + ' ' + student.user.surname,
+                    'group': obj.name,
+                    'balance': student.total_payment_month,
+                    'date': today.strftime('%Y-%m-%d')
+                })
+
+        return datas
+# class GetLessonPlanSerializer(serializers.ModelSerializer):
+#
+#     class Meta:
+#         model = Teacher
+#         fields = ['id', 'name', 'description']
+class GroupListSeriliazersMobile(serializers.ModelSerializer):
+    groups=serializers.SerializerMethodField(read_only=True)
+    class Meta:
+        model = Teacher
+        fields = ['groups']
+
+    def get_groups(self, obj):
+        return GroupCreateUpdateSerializer(obj).data

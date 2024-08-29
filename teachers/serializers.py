@@ -108,8 +108,6 @@ class TeacherSalaryReadSerializers(serializers.ModelSerializer):
         fields = '__all__'
 
 
-
-
 class TeacherSalaryCreateSerializers(serializers.ModelSerializer):
     teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
@@ -118,6 +116,13 @@ class TeacherSalaryCreateSerializers(serializers.ModelSerializer):
     class Meta:
         model = TeacherSalaryList
         fields = '__all__'
+
+    def update(self, instance, validated_data):
+        salary = super().update(instance, validated_data)
+        if validated_data.get('worked_days', None) == 'worked_days':
+            from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
+            calculate_teacher_salary(instance)
+        return salary
 
 
 class TeacherGroupStatisticsReadSerializers(serializers.ModelSerializer):
@@ -164,6 +169,7 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
     class Meta:
         model = TeacherSalaryList
         fields = '__all__'
+
     def get_name(self, obj):
         return obj.teacher.user.name
 
@@ -175,6 +181,7 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
 
     def get_payment_type_name(self, obj):
         return obj.payment.name
+
     def create(self, validated_data):
         teacher = validated_data.get('teacher')
         salary_id = validated_data.get('salary_id')
@@ -217,5 +224,3 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
         instance.comment = validated_data.get('comment', instance.comment)
         instance.save()
         return instance
-
-
