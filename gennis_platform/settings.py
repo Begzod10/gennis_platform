@@ -86,6 +86,10 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'gennis_platform.urls'
 
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:3000',
+]
+
 TEMPLATES = [
     {'BACKEND': 'django.template.backends.django.DjangoTemplates', 'DIRS': [BASE_DIR / 'frontend' / 'build'],
      'APP_DIRS': True,
