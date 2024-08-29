@@ -30,6 +30,11 @@ class TeacherListView(generics.ListAPIView):
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializerRead
 
+    def get_queryset(self):
+        branch_id = self.request.query_params.get('branch')
+        queryset = Teacher.objects.filter(branches__in=[branch_id]).all()
+        return queryset
+
 
 class TeacherRetrieveView(generics.RetrieveAPIView):
     queryset = Teacher.objects.all()

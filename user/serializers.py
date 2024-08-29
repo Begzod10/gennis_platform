@@ -5,7 +5,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from werkzeug.security import check_password_hash
 
-from branch.serializers import BranchSerializer
+from branch.serializers import BranchSerializer, BranchListSerializer
 from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
@@ -53,7 +53,7 @@ class UserSerializerWrite(serializers.ModelSerializer):
 
 
 class UserSerializerRead(serializers.ModelSerializer):
-    branch = BranchSerializer(read_only=True)
+    branch = BranchListSerializer(read_only=True)
     language = LanguageSerializers(read_only=True)
     age = serializers.SerializerMethodField(required=False)
 

@@ -19,3 +19,4 @@ class Flow(models.Model):
     desc = models.CharField(null=True)
     activity = models.BooleanField(default=False)
     level = models.ForeignKey('subjects.SubjectLevel', on_delete=models.CASCADE, null=True)
+    branch = models.ForeignKey('branch.Branch', on_delete=models.CASCADE, null=True)

@@ -119,7 +119,49 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                 setattr(instance, attr, value)
 
         if group_type == 'school':
-            pass
+            if 'teacher' in validated_data:
+                teacher_history_group = TeacherHistoryGroups.objects.get(group=instance,
+                                                                         teacher=instance.teacher.all()[0])
+                teacher_history_group.left_day = datetime.now()
+                teacher_history_group.save()
+                for time_table in instance.group_time_table.all():
+                    instance.teacher.all()[0].group_time_table.remove(time_table)
+                    validated_data.get('teacher')[0].group_time_table.add(time_table)
+                instance.teacher.remove(instance.teacher.all()[0])
+                instance.teacher.remove(*instance.teacher.all())
+                instance.teacher.add(validated_data.get('teacher')[0])
+                TeacherHistoryGroups.objects.create(group=instance, teacher=validated_data.get('teacher')[0],
+                                                    joined_day=datetime.now())
+            if update_method:
+                if update_method == "add_students":
+                    for student in students:
+                        instance.students.add(student)
+                        StudentHistoryGroups.objects.create(group=instance, student=student,
+                                                            teacher=instance.teacher.all()[0],
+                                                            joined_day=datetime.now())
+
+                        create_school_student_debts(instance, instance.students.all())
+                elif update_method == "remove_students":
+                    if delete_type == 'new_students':
+                        for student in students:
+                            instance.students.remove(student)
+                            DeletedNewStudent.objects.create(student=student, comment=comment)
+                            student_history_group = StudentHistoryGroups.objects.get(group=instance,
+                                                                                     teacher=instance.teacher.all()[0],
+                                                                                     student=student)
+                            student_history_group.left_day = datetime.now()
+                            student_history_group.save()
+                    else:
+                        for student in students:
+                            instance.students.remove(student)
+                            DeletedStudent.objects.create(student=student, group=instance,
+                                                          comment=comment if comment else None,
+                                                          group_reason_id=group_reason if group_reason else None)
+                            student_history_group = StudentHistoryGroups.objects.get(group=instance,
+                                                                                     teacher=instance.teacher.all()[0],
+                                                                                     student=student)
+                            student_history_group.left_day = datetime.now()
+                            student_history_group.save()
         else:
             if 'teacher' in validated_data:
                 teacher_history_group = TeacherHistoryGroups.objects.get(group=instance,
@@ -171,6 +213,8 @@ class GroupSerializer(serializers.ModelSerializer):
     system = SystemSerializers()
     course_types = CourseTypesSerializers()
     students = serializers.SerializerMethodField()
+    class_number = serializers.SerializerMethodField()
+    color = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
@@ -183,9 +227,47 @@ class GroupSerializer(serializers.ModelSerializer):
         return StudentListSerializer(obj.students.all(), many=True).data
 
     def get_class_number(self, obj):
-        from classes.serializers import ClassNumberSerializers
-        return ClassNumberSerializers(obj.class_number).data
+        from classes.serializers import ClassNumberListSerializers
+        return ClassNumberListSerializers(obj.class_number).data
 
     def get_color(self, obj):
         from classes.serializers import ClassColorsSerializers
         return ClassColorsSerializers(obj.color).data
+
+
+class GroupClassSerializer(serializers.ModelSerializer):
+    branch = BranchSerializer()
+    language = LanguageSerializers()
+    level = SubjectLevelSerializer()
+    subject = SubjectSerializer()
+    teacher = TeacherSerializer(many=True)
+    system = SystemSerializers()
+    course_types = CourseTypesSerializers()
+    students = serializers.SerializerMethodField()
+    class_number = serializers.SerializerMethodField()
+    color = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    type = serializers.CharField(default='group', read_only=True)
+
+    class Meta:
+        model = Group
+        fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
+                  'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system', 'class_number', 'color',
+                  'course_types', 'type']
+
+    def get_students(self, obj):
+        from students.serializers import StudentListSerializer
+        return StudentListSerializer(obj.students.all(), many=True).data
+
+    def get_class_number(self, obj):
+        from classes.serializers import ClassNumberListSerializers
+        return ClassNumberListSerializers(obj.class_number).data
+
+    def get_color(self, obj):
+        from classes.serializers import ClassColorsSerializers
+        return ClassColorsSerializers(obj.color).data
+
+    def get_name(self, obj):
+        class_number = self.get_class_number(obj)
+        color = self.get_color(obj)
+        return f"{class_number['number']} - {color['name']}"

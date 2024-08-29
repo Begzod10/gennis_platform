@@ -41,5 +41,8 @@ class MoveToGroupApi(APIView):
                 student_history_group.save()
                 group.students.remove(student)
                 to_group.students.add(student)
+                StudentHistoryGroups.objects.create(group=to_group, student=student,
+                                                    teacher=to_group.teacher.all()[0],
+                                                    joined_day=today)
         serializer = GroupSerializer(group)
         return Response({'data': serializer.data, 'errors': errors})

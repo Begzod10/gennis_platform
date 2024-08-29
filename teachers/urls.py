@@ -38,7 +38,6 @@ urlpatterns = [
     path('teachers/salary/delete/<int:pk>/', TeacherSalaryDeleteAPIView.as_view(), name='teacher-salary-delete'),
     path('teachers/salary/update/<int:pk>/', TeacherSalaryUpdateAPIView.as_view(), name='teacher-salary-update'),
     path('teachers-for-branches/<int:pk>/', TeachersForBranches.as_view(), name='teachers-for-branches'),
-    path('teachers-for-subject/<int:branch_id>/<int:subject_id>/', TeachersForSubject.as_view(),
+    path('teachers-for-subject/', TeachersForSubject.as_view(),
          name='teachers-for-subject'),
-
 ]
