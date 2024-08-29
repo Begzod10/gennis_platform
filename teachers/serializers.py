@@ -129,9 +129,10 @@ class TeacherSalaryCreateSerializersUpdate(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         salary = super().update(instance, validated_data)
-        if validated_data.get('worked_days', None) == 'worked_days':
+        worked =validated_data.get('worked_days', None)
+        if  worked is not None:
             from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
-            calculate_teacher_salary(instance)
+            calculate_teacher_salary(instance.teacher)
         return salary
 
 class TeacherGroupStatisticsReadSerializers(serializers.ModelSerializer):
