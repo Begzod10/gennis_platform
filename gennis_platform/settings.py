@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 
 SECRET_KEY = 'django-insecure-8!t!6$g#(34ro((m-7t$#(zek1=b=y2ltslop@w71$^6)wb_rc'
-
+classroom_server =''
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -32,6 +32,7 @@ ALLOWED_HOSTS = ['*']
 
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -69,7 +70,8 @@ INSTALLED_APPS = [
     'flows.apps.FlowsConfig',
     'lesson_plan.apps.LessonPlanConfig',
     'Calendar.apps.CalendarConfig',
-    'encashment.apps.EncashmentConfig'
+    'encashment.apps.EncashmentConfig',
+    "mobile.apps.MobileConfig"
 ]
 
 MIDDLEWARE = [
@@ -147,8 +149,7 @@ SWAGGER_SETTINGS = {"SECURITY_DEFINITIONS": {"Bearer": {"type": "apiKey", "name"
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
-
+TIME_ZONE = 'Asia/Tashkent'
 USE_I18N = True
 
 USE_TZ = True
@@ -169,3 +170,106 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+JAZZMIN_SETTINGS = {
+    "site_title": "Gennis Admin Site",
+    "site_header": "Admin Panel",
+    "site_brand": "Admin Panel",
+    "welcome_sign": "Welcome to Your Admin Panel",
+    "user_avatar": None,
+
+    "topmenu_links": [
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"model": "auth.User"},
+        {"app": "system"},
+    ],
+
+    "usermenu_links": [
+        {"model": "auth.user"}
+    ],
+
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+    "order_with_respect_to": [
+        "auth", "books", "students", "teachers", "payments", "flows",
+        "tasks", "attendances", "time_table", "lesson_plan"
+    ],
+
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "books.Book": "fas fa-book",
+        "students.Student": "fas fa-user-graduate",
+        "teachers.Teacher": "fas fa-chalkboard-teacher",
+        "payments.PaymentTypes": "fas fa-money-check-alt",
+        "flows.Flow": "fas fa-stream",
+        "tasks.Task": "fas fa-tasks",
+        "attendances.AttendancePerMonth": "fas fa-calendar-check",
+        "time_table.GroupTimeTable": "fas fa-calendar-alt",
+        "lesson_plan.LessonPlan": "fas fa-book-open",
+        "branch.Branch": "fas fa-building",
+        "overhead.Overhead": "fas fa-file-invoice-dollar",
+    },
+
+    "default_icon_children": "fas fa-circle",
+
+    "related_modal_active": True,  # Enable modals for related fields
+    "custom_css": "css/custom_admin.css",
+    "custom_js": "js/custom_admin.js",  # Include your custom JS here
+    "use_google_fonts_cdn": True,
+    "show_ui_builder": False,
+
+    "changeform_format": "horizontal_tabs",
+    "changeform_format_overrides": {
+        "auth.user": "collapsible",
+        "books.book": "vertical_tabs",
+    },
+
+    "theme": "cerulean",
+    "dark_mode_theme": None,
+
+    "logging": {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+            },
+        },
+        "root": {
+            "handlers": ["console"],
+            "level": "WARNING",
+        },
+        "loggers": {
+            "django": {
+                "handlers": ["console"],
+                "level": "INFO",
+                "propagate": True,
+            },
+        },
+    },
+
+    # "custom_links": {
+    #     "auth": [{
+    #         "name": "Make Messages",
+    #         "url": "make_messages",
+    #         "icon": "fas fa-comments",
+    #         "permissions": ["auth.view_user"]
+    #     }]
+    # },
+
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "navbar_fixed": True,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "layout_boxed": False,
+    "sidebar_collapsed": False,
+    "sidebar_dark": True,
+
+    "language_chooser": False,
+}

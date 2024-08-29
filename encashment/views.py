@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -5,13 +7,14 @@ from rest_framework.views import APIView
 from books.models import BranchPayment
 from books.serializers import BranchPaymentListSerializers
 from capital.models import Capital
-from capital.serializers import CapitalSerializers
+from capital.serializers import OldCapital, OldCapitalListSerializers
 from overhead.models import Overhead
 from overhead.serializers import OverheadSerializerGet
+from payments.models import PaymentTypes
 from students.models import StudentPayment
 from students.serializers import StudentPaymentSerializer
 from teachers.models import TeacherSalaryList
-from teachers.serializers import TeacherSalaryListReadSerializers
+from teachers.serializers import TeacherSalaryListCreateSerializers
 from user.models import UserSalaryList
 from user.serializers import UserSalaryListSerializers
 from .models import Encashment
@@ -31,7 +34,9 @@ class Encashments(APIView):
             student_payments = StudentPayment.objects.filter(
                 added_data__range=(ot, do),
                 payment_type_id=payment_type,
-                student__user__branch_id=branch
+                student__user__branch_id=branch,
+                deleted=False,
+                status=False
             )
             student_total_payment = student_payments.aggregate(total=Sum('payment_sum'))['total'] or 0
             student_serializer = StudentPaymentSerializer(student_payments.distinct(), many=True)
@@ -39,15 +44,19 @@ class Encashments(APIView):
             teacher_salaries = TeacherSalaryList.objects.filter(
                 date__range=(ot, do),
                 payment_id=payment_type,
-                branch_id=branch
+                branch_id=branch,
+                deleted=False
+
             )
             teacher_total_salary = teacher_salaries.aggregate(total=Sum('salary'))['total'] or 0
-            teacher_serializer = TeacherSalaryListReadSerializers(teacher_salaries.distinct(), many=True)
+            teacher_serializer = TeacherSalaryListCreateSerializers(teacher_salaries.distinct(), many=True)
 
             worker_salaries = UserSalaryList.objects.filter(
                 date__range=(ot, do),
                 payment_types_id=payment_type,
-                branch_id=branch
+                branch_id=branch,
+                deleted=False
+
             )
             worker_total_salary = worker_salaries.aggregate(total=Sum('salary'))['total'] or 0
             worker_serializer = UserSalaryListSerializers(worker_salaries.distinct(), many=True)
@@ -63,26 +72,48 @@ class Encashments(APIView):
             total_overhead_payment = Overhead.objects.filter(
                 created__range=(ot, do),
                 payment_id=payment_type,
-                branch_id=branch
+                branch_id=branch,
+                deleted=False
             ).aggregate(total=Sum('price'))['total'] or 0
             overheads = Overhead.objects.filter(
                 created__range=(ot, do),
                 payment_id=payment_type,
-                branch_id=branch
+                branch_id=branch,
+                deleted=False
+
             ).distinct()
             overhead_serializer = OverheadSerializerGet(overheads, many=True)
 
-            total_capital = Capital.objects.filter(
+            # total_capital = Capital.objects.filter(
+            #     added_date__range=(ot, do),
+            #     payment_type_id=payment_type,
+            #     branch_id=branch,
+            #     deleted=False
+            #
+            # ).aggregate(total=Sum('price'))['total'] or 0
+            # capitals = Capital.objects.filter(
+            #     added_date__range=(ot, do),
+            #     payment_type_id=payment_type,
+            #     branch_id=branch,
+            #     deleted=False
+            #
+            # ).distinct()
+            # capital_serializer = CapitalSerializers(capitals, many=True)
+            total_capital = OldCapital.objects.filter(
                 added_date__range=(ot, do),
                 payment_type_id=payment_type,
-                branch_id=branch
+                branch_id=branch,
+                deleted=False
+
             ).aggregate(total=Sum('price'))['total'] or 0
-            capitals = Capital.objects.filter(
+            capitals = OldCapital.objects.filter(
                 added_date__range=(ot, do),
                 payment_type_id=payment_type,
-                branch_id=branch
+                branch_id=branch,
+                deleted=False
+
             ).distinct()
-            capital_serializer = CapitalSerializers(capitals, many=True)
+            capital_serializer = OldCapitalListSerializers(capitals, many=True)
             Encashment.objects.get_or_create(
                 ot=ot,
                 do=do,
@@ -122,6 +153,84 @@ class Encashments(APIView):
                     'total_capital': total_capital,
                 },
                 'overall': student_total_payment - (teacher_total_salary + worker_total_salary)
+            })
+
+        except KeyError as e:
+            return Response({'error': f'Missing required parameter: {str(e)}'}, status=400)
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
+
+    def get(self, request, pk):
+        current_month = datetime.now().month
+        current_year = datetime.now().year
+        ot = datetime(current_year, current_month, 1)
+        do = datetime(current_year, current_month, datetime.now().day)
+
+        try:
+            payment_types = PaymentTypes.objects.all()
+            branch = pk
+
+            all_payment_data = []
+
+            for payment_type in payment_types:
+                student_payments = StudentPayment.objects.filter(
+                    added_data__range=(ot, do),
+                    payment_type=payment_type,
+                    student__user__branch_id=branch,
+                    deleted=False,
+                    status=False
+                )
+                student_total_payment = student_payments.aggregate(total=Sum('payment_sum'))['total'] or 0
+
+                teacher_salaries = TeacherSalaryList.objects.filter(
+                    date__range=(ot, do),
+                    payment=payment_type,
+                    branch_id=branch,
+                    deleted=False
+                )
+                teacher_total_salary = teacher_salaries.aggregate(total=Sum('salary'))['total'] or 0
+
+                worker_salaries = UserSalaryList.objects.filter(
+                    date__range=(ot, do),
+                    payment_types=payment_type,
+                    branch_id=branch,
+                    deleted=False
+                )
+                worker_total_salary = worker_salaries.aggregate(total=Sum('salary'))['total'] or 0
+
+                branch_payments = BranchPayment.objects.filter(
+                    book_order__day__range=(ot, do),
+                    payment_type=payment_type,
+                    branch_id=branch,
+                )
+                branch_total_payment = branch_payments.aggregate(total=Sum('payment_sum'))['total'] or 0
+
+                total_overhead_payment = Overhead.objects.filter(
+                    created__range=(ot, do),
+                    payment=payment_type,
+                    branch_id=branch,
+                    deleted=False
+                ).aggregate(total=Sum('price'))['total'] or 0
+
+                total_capital = Capital.objects.filter(
+                    added_date__range=(ot, do),
+                    payment_type=payment_type,
+                    branch_id=branch,
+                    deleted=False
+
+                ).aggregate(total=Sum('price'))['total'] or 0
+
+                payment_data = {
+                    'payment_type': payment_type.name,
+
+                    'overall': student_total_payment - (
+                            teacher_total_salary + worker_total_salary + branch_total_payment + total_capital + total_overhead_payment)
+                }
+
+                all_payment_data.append(payment_data)
+
+            return Response({
+                'payments': all_payment_data,
             })
 
         except KeyError as e:

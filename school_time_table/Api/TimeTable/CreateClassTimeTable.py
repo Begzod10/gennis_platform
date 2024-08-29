@@ -39,6 +39,7 @@ class ClassesFlows(generics.ListAPIView):
         if type == 'flow':
             queryset = Flow.objects.filter(branch_id=branch_id)
 
+
         if type == 'group':
             queryset = Group.objects.filter(class_number__isnull=False, branch_id=branch_id)
         return queryset
@@ -49,6 +50,21 @@ class ClassesFlows(generics.ListAPIView):
             return GroupClassSerializer
         else:
             return FlowsSerializer
+
+# class Classes(generics.ListAPIView):
+#     queryset = Group.objects.filter(class_number__isnull=False)
+#     serializer_class = GroupSerializer
+#     def get_queryset(self):
+#         queryset = Group.objects.all()
+#         location_id = self.request.query_params.get('location_id', None)
+#         branch_id = self.request.query_params.get('branch_id', None)
+#
+#         if branch_id is not None:
+#             queryset = queryset.filter(branch_id=branch_id)
+#         if location_id is not None:
+#             queryset = queryset.filter(location_id=location_id)
+#
+#         return queryset
 
 
 class ClassTimeTableLessonsView(APIView):

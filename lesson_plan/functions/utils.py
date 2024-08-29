@@ -25,7 +25,6 @@ def weekday_from_date(day_list, month, year, week_list):
             filtered_days.append(days)
     return filtered_days
 
-
 def update_lesson_plan( group_id):
     time_table_group = GroupTimeTable.objects.filter(group_id=group_id).order_by('id')
 

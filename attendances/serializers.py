@@ -1,17 +1,19 @@
-from rest_framework import serializers
 from datetime import datetime, timedelta
-from students.models import Student
-from teachers.models import Teacher
-from teachers.serializers import TeacherSerializer
-from .models import Group
-from students.serializers import StudentSerializer
+
+from rest_framework import serializers
+
 from group.serializers import GroupSerializer
-from .models import AttendancePerDay, AttendancePerMonth
+from lesson_plan.functions.utils import update_lesson_plan
+from students.models import Student
+from students.serializers import StudentSerializer
 from tasks.models import TaskStatistics, TaskStudent
-from .Api.functions.CalculateGroupOverallAttendance import calculate_group_attendances
+from teachers.models import Teacher
 from teachers.models import TeacherBlackSalary
 from teachers.models import TeacherSalary
-from lesson_plan.functions.utils import update_lesson_plan
+from teachers.serializers import TeacherSerializer
+from .Api.functions.CalculateGroupOverallAttendance import calculate_group_attendances
+from .models import AttendancePerDay, AttendancePerMonth
+from .models import Group
 
 
 class AttendancePerMonthSerializer(serializers.ModelSerializer):
@@ -38,8 +40,19 @@ class AttendancePerDaySerializer(serializers.ModelSerializer):
                   'status', 'group', 'attendance_per_month']
 
 
+class StudentDetailSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    homework = serializers.IntegerField()
+    dictionary = serializers.IntegerField()
+    active = serializers.IntegerField()
+    type = serializers.CharField()
+
+
 class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
-    students = serializers.JSONField()
+    students = serializers.ListField(
+        child=StudentDetailSerializer(),
+        write_only=True  # Ensure this field is used only during write operations
+    )
     date = serializers.CharField(default=None, allow_blank=True)
     teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
@@ -48,17 +61,21 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
         model = AttendancePerDay
         fields = ['id', 'status', 'debt_per_day', 'salary_per_day', 'charity_per_day', 'day',
                   'homework_ball', 'dictionary_ball', 'activeness_ball', 'average', 'teacher', 'students',
-                  'status', 'group', 'date']
+                  'status', 'group', 'attendance_per_month', 'date']
 
     def create(self, validated_data):
-        group = validated_data.get('group')
         teacher = validated_data.get('teacher')
-        students = validated_data.get('students')
+        group = validated_data.get('group')
+        students = validated_data.pop('students', [])
         date = validated_data.get('date')
         today = datetime.today()
         tomorrow = today + timedelta(days=1)
-        month_date = datetime.strptime(f"{today.year}-{today.month}", "%Y-%m")
+        month_date = f"{today.year}-{date}"
+        year = today.year
+
         day = datetime.strptime(f"{today.year}-{date}", "%Y-%m-%d")
+        month = day.month
+
         errors = []
         status = False
         attendance_per_day = None
@@ -102,7 +119,7 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
             attendance_per_day = AttendancePerDay.objects.create(
                 group_id=group.id,
                 student_id=student['id'],
-                # teacher=teacher,
+                teacher=teacher,
                 status=bool(student['type']),
                 attendance_per_month_id=current_month_attendance.id,
                 debt_per_day=debt_per_day,
@@ -117,7 +134,9 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
 
         for student in students:
             current_month_attendance, created = AttendancePerMonth.objects.get_or_create(
-                month_date=month_date,
+                month_date__year=year,
+                month_date__month=month,
+                defaults={'month_date': month_date},
                 group_id=group.id,
                 student_id=student['id'],
                 teacher=teacher
@@ -154,7 +173,6 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
                                                                       group_id=group.id).first()
                 calculate_and_create_attendance(student, current_month_attendance, charity_data)
                 update_attendance_per_month(current_month_attendance)
-
         teacher_attendances_per_month = teacher.attendance_per_month.filter(month_date=month_date)
         salary = sum(attendance.total_salary for attendance in teacher_attendances_per_month)
         current_salary, created = TeacherSalary.objects.get_or_create(month_date=month_date,

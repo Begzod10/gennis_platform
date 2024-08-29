@@ -34,6 +34,7 @@ class CreatGroups(generics.ListCreateAPIView):
         queryset = Group.objects.filter(deleted=False, branch_id=branch_id).all()
         return queryset
 
+
     def get_serializer_class(self):
         if self.request.method == 'GET':
             return GroupSerializer

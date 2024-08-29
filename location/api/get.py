@@ -1,9 +1,10 @@
 from rest_framework import generics
-from location.serializers import LocationListSerializers
-from location.models import Location
-from user.functions.functions import check_auth
 from rest_framework.response import Response
+
+from location.models import Location
+from location.serializers import LocationListSerializers, LocationListSerializersWithBranch
 from permissions.functions.CheckUserPermissions import check_user_permissions
+from user.functions.functions import check_auth
 
 
 class LocationListAPIView(generics.ListAPIView):
@@ -44,10 +45,28 @@ class LocationsForSystem(generics.ListAPIView):
     queryset = Location.objects.all()
 
     def post(self, request, *args, **kwargs):
-        systems = request.data
+        systems = request.data.get('systems', [])
         locations = Location.objects.filter(system__in=systems)
-        serializer = LocationListSerializers(data=locations)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors)
+
+        if locations.count() == 1:
+            serializer = LocationListSerializers(locations.first())
+        else:
+            serializer = LocationListSerializers(locations, many=True)
+
+        return Response(serializer.data)
+
+
+class LocationsForSystemBranh(generics.ListAPIView):
+    serializer_class = LocationListSerializersWithBranch
+    queryset = Location.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        systems = request.data.get('systems', [])
+        locations = Location.objects.filter(system__in=systems)
+
+        if locations.count() == 1:
+            serializer = LocationListSerializersWithBranch(locations.first())
+        else:
+            serializer = LocationListSerializersWithBranch(locations, many=True)
+
+        return Response(serializer.data)

@@ -1,5 +1,8 @@
 from django.db import models
 
+from django.db.models.signals import post_migrate
+from django.dispatch import receiver
+
 
 class Years(models.Model):
     year = models.IntegerField()
@@ -49,3 +52,11 @@ class TypeDay(models.Model):
 
     class Meta:
         ordering = ['id']
+
+
+@receiver(post_migrate)
+def create_default_overhead_types(sender, **kwargs):
+    default_values = [{"name": "Ish kuni", "color": 'green'}, {"name": "Bayram kuni", "color": 'yellow'},
+                      {"name": "Dam", "color": 'red'}, ]
+    for value in default_values:
+        TypeDay.objects.get_or_create(type=value['name'], color=value['color'])

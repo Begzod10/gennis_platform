@@ -1,3 +1,6 @@
+from datetime import datetime
+
+import requests
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Group
 from rest_framework import serializers
@@ -9,6 +12,25 @@ from branch.serializers import BranchSerializer, BranchListSerializer
 from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
+
+
+class UserSerializerRead(serializers.ModelSerializer):
+    branch = BranchSerializer(read_only=True)
+    language = LanguageSerializers(read_only=True)
+    age = serializers.SerializerMethodField(required=False)
+    job = serializers.SerializerMethodField(required=False)
+
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
+                  'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
+                  'branch', 'is_superuser', 'is_staff', 'age', 'job']
+
+    def get_age(self, obj):
+        return obj.calculate_age()
+
+    def get_job(self, obj):
+        return [group.name for group in obj.groups.all()]
 
 
 class UserSerializerWrite(serializers.ModelSerializer):
@@ -31,24 +53,36 @@ class UserSerializerWrite(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        # user = super().create(validated_data)
-        # user.set_password(validated_data['password'])
-        # user.save()
-        # return user
         user = super().create(validated_data)
-        user.password = validated_data['password']
+        user.set_password(validated_data['password'])
         user.save()
         return user
+        # user = super().create(validated_data)
+        # user.password = validated_data['password']
+        # user.save()
+        # return user
+
+    # def send_data(self, user_data):
+    #     url = 'https://example.com/api/update_user_info'
+    #     try:
+    #         response = requests.post(url, json={"user": user_data})
+    #         response.raise_for_status()
+    #         return response.json()
+    #     except requests.RequestException as e:
+    #         raise serializers.ValidationError({"error": str(e)})
 
     def update(self, instance, validated_data):
-        # user = super().update(instance, validated_data)
-        # user.set_password(validated_data['password'])
-        # user.save()
         user = super().update(instance, validated_data)
         if 'password' in validated_data:
-            user.password = (validated_data['password'])
+            user.set_password(validated_data['password'])
             user.save()
 
+        # user = super().update(instance, validated_data)
+        # if 'password' in validated_data:
+        #     user.password = (validated_data['password'])
+        #     user.save()
+        user_data = UserSerializerRead(user).data
+        # self.send_data(user_data)
         return user
 
 
@@ -72,10 +106,26 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     user_salary = serializers.PrimaryKeyRelatedField(queryset=UserSalary.objects.all())
     payment_types = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
+    name = serializers.SerializerMethodField(required=False, read_only=True)
+    surname = serializers.SerializerMethodField(required=False, read_only=True)
+    date = serializers.SerializerMethodField(required=False, read_only=True)
+    payment_type_name = serializers.SerializerMethodField(required=False, read_only=True)
 
     class Meta:
         model = UserSalaryList
         fields = '__all__'
+
+    def get_name(self, obj):
+        return obj.user.name
+
+    def get_surname(self, obj):
+        return obj.user.surname
+
+    def get_date(self, obj):
+        return obj.date.strftime('%Y-%m-%d')
+
+    def get_payment_type_name(self, obj):
+        return obj.payment_types.name
 
     def create(self, validated_data):
         branch = validated_data.get('branch')
@@ -89,6 +139,7 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
             user_salary=user_salary,
             payment_types=payment_types,
             user=user,
+            date=datetime.now(),
             branch=branch,
             salary=validated_data.get('salary'),
             comment=validated_data.get('comment', ''),
@@ -98,14 +149,6 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.payment_types = validated_data['payment_types'],
         instance.save()
-        return instance
-
-    def delete(self, instance):
-        instance.deleted = True
-        instance.save()
-        instance.user_salary.taken_salary -= instance.salary
-        instance.user_salary.remaining_salary += instance.salary
-        instance.user_salary.save()
         return instance
 
 
@@ -128,14 +171,18 @@ class UserSalarySerializers(serializers.ModelSerializer):
 
 
 class UserSalaryListSerializersRead(serializers.ModelSerializer):
-    user = UserSerializerWrite(read_only=True)
+    user = UserSerializerRead(read_only=True)
     branch = BranchSerializer(read_only=True)
     user_salary = UserSalarySerializers(read_only=True)
-    payment_types = PaymentTypesSerializers
+    payment_types = PaymentTypesSerializers(read_only=True)
+    date = serializers.SerializerMethodField(required=False, read_only=True)
 
     class Meta:
         model = UserSalaryList
         fields = '__all__'
+
+    def get_date(self, obj):
+        return obj.date.strftime('%Y-%m-%d')
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -178,16 +225,30 @@ class Employeers(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class UserSalaryListSerializersRead(serializers.ModelSerializer):
-    user = UserSerializerWrite(read_only=True)
+class UserSalarySerializersRead(serializers.ModelSerializer):
+    user = UserSerializerRead(read_only=True)
     branch = BranchSerializer(read_only=True)
-    user_salary = UserSalarySerializers(read_only=True)
+    # user_salary = UserSalarySerializers(read_only=True)
     payment_types = PaymentTypesSerializers(read_only=True)
     date = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
-        model = UserSalaryList
+        model = UserSalary
         fields = '__all__'
 
     def get_date(self, obj):
-        return obj.date.strftime('%Y-%m-%d %H:%M')
+        return obj.date.strftime('%Y-%m-%d')
+
+
+class CustomUserSerializer(serializers.ModelSerializer):
+    groups = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field='name'
+    )
+    profile_photo = serializers.ImageField(use_url=True, required=False, allow_null=True)
+    location_id = serializers.CharField(source='branch_id')
+
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'surname', 'name', 'id', 'groups', 'profile_photo', 'location_id')

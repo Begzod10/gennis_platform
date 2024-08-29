@@ -1,12 +1,14 @@
 from rest_framework import generics
-from .serializers import (CapitalCategorySerializers)
-from .models import CapitalCategory
-from user.functions.functions import check_auth
 from rest_framework.response import Response
+
 from permissions.functions.CheckUserPermissions import check_user_permissions
+from permissions.response import CustomResponseMixin
+from user.functions.functions import check_auth
+from .models import CapitalCategory
+from .serializers import (CapitalCategorySerializers)
 
 
-class CreateCapitalCategoryList(generics.ListCreateAPIView):
+class CreateCapitalCategoryList(CustomResponseMixin, generics.ListCreateAPIView):
     queryset = CapitalCategory.objects.all()
     serializer_class = CapitalCategorySerializers
 
@@ -23,7 +25,7 @@ class CreateCapitalCategoryList(generics.ListCreateAPIView):
         return Response({'capitalcategorys': serializer.data, 'permissions': permissions})
 
 
-class CapitalCategoryRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+class CapitalCategoryRetrieveUpdateDestroyAPIView(CustomResponseMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = CapitalCategory.objects.all()
     serializer_class = CapitalCategorySerializers
 
@@ -37,3 +39,7 @@ class CapitalCategoryRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroy
         capital_category = self.get_object()
         capital_category_data = self.get_serializer(capital_category).data
         return Response({'capitalcategory': capital_category_data, 'permissions': permissions})
+
+    def destroy(self, request, *args, **kwargs):
+        super().destroy(request, *args, **kwargs)
+        return Response({'message': 'Capital category deleted successfully'}, status=200)

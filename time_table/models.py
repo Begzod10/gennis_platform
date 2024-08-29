@@ -18,7 +18,7 @@ class GroupTimeTable(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
-    old_id = models.IntegerField(null=True)
+    old_id = models.IntegerField(null=True, unique=True)
 
 
 class TimeTableArchive(models.Model):

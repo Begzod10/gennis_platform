@@ -13,7 +13,7 @@ class AttendancePerMonth(models.Model):
     total_debt = models.IntegerField(default=0, null=True)
     total_salary = models.IntegerField(default=0, null=True)
     ball_percentage = models.IntegerField(default=0, null=True)
-    month_date = models.DateTimeField(null=True)
+    month_date = models.DateField(null=True)
     total_charity = models.IntegerField(default=0, null=True)
     remaining_debt = models.IntegerField(default=0, null=True)
     payment = models.IntegerField(default=0)
@@ -41,7 +41,7 @@ class AttendancePerDay(models.Model):
     average = models.IntegerField(null=True)
     status = models.BooleanField(default=False)
     old_id = models.IntegerField(null=True, unique=True)
-    reason = models.CharField(null=True)
+    reason = models.CharField(null=True, blank=True)
     teacher_ball = models.IntegerField(null=True)
 
 

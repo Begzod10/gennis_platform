@@ -1,11 +1,10 @@
 from django.urls import path
 
-from subjects.views import SyncSubjectsAndLevelsView, SubjectRetrieveUpdateDestroyAPIView, CreateSubjectList
-from .api.get import SubjectLevelListAPIView, SubjectLevelRetrieveAPIView, LevelsForSubject
+from subjects.views import SubjectRetrieveUpdateDestroyAPIView, CreateSubjectList
 from .api.createdeleteupdate import SubjectLevelDestroyView, SubjectLevelUpdateView, SubjectLevelCreateView
+from .api.get import SubjectLevelListAPIView, SubjectLevelRetrieveAPIView, LevelsForSubject
 
 urlpatterns = [
-    path('sync/subjects/', SyncSubjectsAndLevelsView.as_view(), name='sync_subjects'),
     path('subject/', CreateSubjectList.as_view(), name='subject-list-create'),
     path('subject/<int:pk>/', SubjectRetrieveUpdateDestroyAPIView.as_view(), name='subject-retrieve-update-destroy'),
     path('subject_level_create/', SubjectLevelCreateView.as_view(), name='subject-level-create'),

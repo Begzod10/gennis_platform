@@ -33,6 +33,9 @@ class Group(models.Model):
     course_types = models.ForeignKey(CourseTypes, on_delete=models.CASCADE, null=True)
     old_id = models.IntegerField(null=True, unique=True)
 
+    class Meta:
+        ordering = ['id']
+
 
 class GroupReason(models.Model):
     name = models.CharField(max_length=255)

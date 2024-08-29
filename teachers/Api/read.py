@@ -4,6 +4,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
 from permissions.functions.CheckUserPermissions import check_user_permissions
+from permissions.response import CustomResponseMixin, QueryParamFilterMixin
 from teachers.models import TeacherGroupStatistics, Teacher, TeacherSalaryList, TeacherSalary
 from teachers.serializers import (
     TeacherSerializerRead, TeacherSalaryListReadSerializers, TeacherGroupStatisticsReadSerializers,
@@ -26,13 +27,20 @@ class TeacherGroupStatisticsListView(generics.ListAPIView):
         return teacher_group_statistics
 
 
-class TeacherListView(generics.ListAPIView):
+class TeacherListView(QueryParamFilterMixin, CustomResponseMixin, generics.ListAPIView):
+    filter_mappings = {
+        'branch': "user__branch_id",
+        'age': 'user__birth_date',
+        "subject": 'subject__id',
+        'language': 'user__language_id',
+
+    }
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializerRead
 
     def get_queryset(self):
-        branch_id = self.request.query_params.get('branch')
-        queryset = Teacher.objects.filter(branches__in=[branch_id]).all()
+        queryset = Teacher.objects.all()
+        queryset = self.filter_queryset(queryset)
         return queryset
 
 
@@ -54,7 +62,7 @@ class TeacherSalaryListAPIView(generics.ListAPIView):
     serializer_class = TeacherSalaryListReadSerializers
 
     def get_queryset(self):
-        queryset = TeacherSalaryList.objects.all()
+        queryset = self.get_object()
         status = self.request.query_params.get('status', None)
         branch_id = self.request.query_params.get('branch_id', None)
         teacher_salary = self.request.query_params.get('teacher_salary', None)
@@ -108,7 +116,10 @@ class TeacherSalaryListView(generics.ListAPIView):
         return queryset
 
 
-class TeacherSalaryListDetailView(generics.RetrieveAPIView):
+class TeacherSalaryListDetailView(QueryParamFilterMixin, CustomResponseMixin, generics.RetrieveAPIView):
+    filter_mappings = {
+        'status': 'deleted'
+    }
     queryset = TeacherSalaryList.objects.all()
     serializer_class = TeacherSalaryListReadSerializers
 
@@ -120,6 +131,7 @@ class TeacherSalaryListDetailView(generics.RetrieveAPIView):
         table_names = ['teachersalarylist', 'teachersalary', 'paymenttypes', 'branch', 'customuser']
         permissions = check_user_permissions(user, table_names)
         user_salary_list = self.get_object()
+        user_salary_list = self.filter_queryset(user_salary_list)
         user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
         return Response({'teacher_salary': user_salary_list_data, 'permissions': permissions})
 

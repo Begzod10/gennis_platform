@@ -9,41 +9,56 @@ from user.functions.functions import check_auth
 from permissions.functions.CheckUserPermissions import check_user_permissions
 
 
-class SyncSubjectsAndLevelsView(APIView):
-    def get(self, request, *args, **kwargs):
-        subjects_url = 'http://192.168.68.100:5001/get_subjects/'
-        level_url = 'http://192.168.68.100:5001/api/info_level_subject'
-        try:
-            # Fetch subjects data
-            subjects_response = requests.get(subjects_url)
-            subjects_response.raise_for_status()
-            subjects_data = subjects_response.json().get('subjects', [])
-            for subject_data in subjects_data:
-                subject_name = subject_data.get('name')
-                subject, created = Subject.objects.get_or_create(name=subject_name)
-                level_response = requests.get(f"{level_url}/{subject_data.get('id')}")
-                level_response.raise_for_status()
-                level_data = level_response.json().get('levels', [])
+class DataSyncView(APIView):
+    def post(self, request):
+        data_type = request.data.get('type')
+        if data_type == "subject":
+            subjects = request.data.get('subject', [])
+            for subject_data in subjects:
+                subject, created = Subject.objects.get_or_create(
+                    classroom_id=subject_data['id'],
+                    defaults={
+                        'name': subject_data['name'],
+                        'ball_number': 2,
+                    }
+                )
+                if not created:
+                    subject.disabled = subject_data.get('disabled', subject.disabled)
+                    subject.classroom_id = subject_data['id']
+                    subject.name = subject_data['name']
+                    subject.save()
 
-                for level_info in level_data:
-                    level_name = level_info.get('name')
+        elif data_type == "levels":
+            levels = request.data.get('levels', [])
+            for level_data in levels:
+                subject_data = level_data.get('subject')
+                subject, _ = Subject.objects.get_or_create(
+                    classroom_id=subject_data['id'],
+                    defaults={
+                        'name': subject_data['name'],
+                        'ball_number': 2,
+                    }
+                )
+                subject.disabled = subject_data.get('disabled', subject.disabled)
+                subject.classroom_id = subject_data['id']
+                subject.name = subject_data['name']
+                subject.save()
 
-                    SubjectLevel.objects.get_or_create(
-                        name=level_name, subject_id=subject
-                    )
+                level, created = SubjectLevel.objects.get_or_create(
+                    classroom_id=level_data['id'],
+                    subject=subject,
+                    defaults={
+                        'name': level_data['name'],
+                    }
+                )
+                if not created:
+                    level.disabled = level_data.get('disabled', level.disabled)
+                    level.classroom_id = level_data['id']
+                    level.name = level_data['name']
+                    level.save()
 
-            return Response({
-                'message': 'Subjects and levels synchronized successfully.',
-            }, status=status.HTTP_200_OK)
+        return Response({"msg": "Zo'r"}, status=status.HTTP_200_OK)
 
-        except requests.exceptions.RequestException as e:
-            return Response({'error': f'Error fetching data: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        except (KeyError, ValueError, AttributeError) as e:
-            return Response({'error': f'Error parsing data: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        except Exception as e:
-            return Response({'error': f'Server error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class CreateSubjectList(generics.ListCreateAPIView):

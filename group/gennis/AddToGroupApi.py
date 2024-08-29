@@ -1,15 +1,17 @@
 import json
 
+from django.shortcuts import get_object_or_404
 from rest_framework import generics
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import AccessToken
 
-from group.models import Group
-from students.models import Student
-
+from group.models import Group, SubjectLevel
 from group.serializers import GroupSerializer, GroupCreateUpdateSerializer
+from students.models import Student
 from students.serializers import StudentSerializer
-
+from user.serializers import CustomUser,UserSerializerRead
 
 class AddToGroupApi(generics.RetrieveUpdateAPIView):
     queryset = Group.objects.all()
@@ -59,3 +61,41 @@ class AddToGroupApi(APIView):
             students = Student.objects.filter(user__branch_id=group.branch_id)
             serializers = StudentSerializer(students, many=True)
             return Response({'data': serializers.data, 'group': group_serializer.data})
+
+
+class UpdateGroupDataAPIView(APIView):
+
+    def post(self, request, *args, **kwargs):
+        group_data = request.data.get('group', {})
+        group = get_object_or_404(Group, id=group_data.get('platform_id'))
+
+        course_data = group_data.get('course')
+        if course_data:
+            level = SubjectLevel.objects.filter(classroom_id=course_data.get('id')).first()
+            if not level:
+                level = SubjectLevel.objects.filter(name=course_data.get('name')).first()
+            if level:
+                group.level_id = level.id
+                group.save()
+
+        return Response({"msg": "O'zgarildi"}, status=status.HTTP_200_OK)
+class GetGroupDataAPIView(APIView):
+
+    def get(self, request, group_id):
+        access_token = str(AccessToken.for_user(request.user))
+
+        group = get_object_or_404(Group, id=group_id)
+        group_serializer = GroupSerializer(group)
+
+        students = Student.objects.filter(group_id=group_id).select_related('user')
+        user_ids = [student.user.id for student in students if student.user]
+        users = CustomUser.objects.filter(id__in=user_ids)
+        user_serializer = UserSerializerRead(users, many=True)
+
+        response_data = {
+            "users": user_serializer.data,
+            "access_token": access_token,
+            "group": group_serializer.data
+        }
+
+        return Response(response_data)

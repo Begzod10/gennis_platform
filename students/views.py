@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import uuid
 from datetime import datetime
@@ -11,18 +12,19 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from branch.models import Branch
-from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent
+from permissions.response import CustomResponseMixin, QueryParamFilterMixin
+from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
 from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
-                          DeletedStudentListSerializer, DeletedNewStudentListSerializer)
-from .utils import user_contract_folder
+                          DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
 
 
 class StudentListView(APIView):
     def get(self, request, *args, **kwargs):
         deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
-        active_students = Student.objects.exclude(id__in=deleted_student_ids).exclude(id__in=deleted_new_student_ids)
+        active_students = Student.objects.exclude(id__in=deleted_student_ids).exclude(id__in=deleted_new_student_ids)[
+                          :100]
         student_serializer = StudentListSerializer(active_students, many=True)
 
         deleted_students = DeletedStudent.objects.all()
@@ -39,6 +41,81 @@ class StudentListView(APIView):
         return Response(data)
 
 
+class DeletedFromRegistered(QueryParamFilterMixin, CustomResponseMixin, APIView):
+    filter_mappings = {
+        'branch': 'user__branch_id',
+        'subject': 'subject__id',
+        'age': 'user__birth_date',
+        'language': 'user__language_id',
+    }
+
+    def get(self, request, *args, **kwargs):
+        deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
+        delete_new_students = DeletedNewStudent.objects.exclude(id__in=deleted_student_ids)
+
+        delete_new_students = self.filter_queryset(delete_new_students)
+        delete_new_student_serializer = DeletedNewStudentListSerializer(delete_new_students, many=True)
+        return Response(delete_new_student_serializer.data)
+
+
+class DeletedGroupStudents(QueryParamFilterMixin, CustomResponseMixin, APIView):
+    filter_mappings = {
+        'branch': 'user__branch_id',
+        'subject': 'subject__id',
+        'age': 'user__birth_date',
+        'language': 'user__language_id',
+    }
+    def get(self, request, *args, **kwargs):
+        deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
+        active_students = Student.objects.exclude(id__in=deleted_new_student_ids)
+        active_students = self.filter_queryset(active_students)
+        student_serializer = StudentListSerializer(active_students, many=True)
+        return Response(student_serializer.data)
+
+
+class NewRegisteredStudents(QueryParamFilterMixin, APIView):
+    filter_mappings = {
+        'branch': 'user__branch_id',
+        'subject': 'subject__id',
+        'age': 'user__birth_date',
+        'language': 'user__language_id',
+    }
+
+    def get(self, request, *args, **kwargs):
+        deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
+        deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
+        active_students = Student.objects.exclude(id__in=deleted_student_ids) \
+            .exclude(id__in=deleted_new_student_ids) \
+            .filter(groups_student__isnull=True).distinct()
+        filtered_students = self.filter_queryset(active_students)
+
+        student_serializer = StudentListSerializer(filtered_students, many=True)
+
+        return Response(student_serializer.data)
+
+
+class ActiveStudents(QueryParamFilterMixin, CustomResponseMixin, APIView):
+    filter_mappings = {
+        'branch': 'user__branch_id',
+        'subject': 'subject__id',
+        'age': 'user__birth_date',
+        'language': 'user__language_id',
+    }
+
+    def get(self, request, *args, **kwasrgs):
+        deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
+        deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
+        active_students = Student.objects.exclude(id__in=deleted_student_ids) \
+                              .exclude(id__in=deleted_new_student_ids) \
+                              .filter(groups_student__isnull=False).distinct()
+
+        active_students = self.filter_queryset(active_students)
+
+
+        student_serializer = StudentListSerializer(active_students, many=True)
+
+        return Response(student_serializer.data)
+
 
 class CreateContractView(APIView):
     permission_classes = [IsAuthenticated]
@@ -48,7 +125,7 @@ class CreateContractView(APIView):
 
         calendar_year, calendar_month, calendar_day = self._get_calendar_date()
         calendar_year = str(calendar_year)  # Ensure calendar_year is a string
-        student = get_object_or_404(Student, user_id=user_id)
+        student = get_object_or_404(Student, id=user_id)
 
         try:
             ot = datetime.strptime(data['date']['ot'], "%Y-%m-%d").date()
@@ -113,7 +190,7 @@ class CreateContractView(APIView):
 
         doc = docx.Document('media/contract.docx')
         user_name, user_surname, father_name = (
-            (user.name, user.surname, user.father_name) if int(user.age) >= 18
+            (user.name, user.surname, user.father_name) if int(user.calculate_age()) >= 18
             else (student.representative_name, student.representative_surname, contract.father_name)
         )
 
@@ -181,26 +258,45 @@ class UploadPDFContractView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, user_id):
-        student = get_object_or_404(ContractStudent, student__user_id=user_id)
+        student = get_object_or_404(ContractStudent, student__id=user_id)
         file = request.FILES.get('file')
-        if not file:
-            return Response({"success": False, "msg": "No file provided"}, status=400)
-        upload_folder = user_contract_folder()
-        if not os.path.exists(upload_folder):
-            os.makedirs(upload_folder)
+        student.contract = file
+        student.save()
 
-        file_name = str(student.contract)
-        file_path = os.path.join(upload_folder, file_name)
+        return Response({"success": True, "msg": "File uploaded successfully", "url": str(student.contract)})
 
-        try:
-            with open(file_path, 'wb+') as destination:
-                for chunk in file.chunks():
-                    destination.write(chunk)
-            url = os.path.join('contracts', file_name)
-            student.contract = url
-            student.save()
 
-            return Response({"success": True, "msg": "File uploaded successfully", "url": url})
+class PaymentDatas(APIView):
 
-        except Exception as e:
-            return Response({"success": False, "msg": f"File upload failed: {str(e)}"}, status=500)
+    def post(self, request, student_id):
+        data = json.loads(request.body)
+        year = data['year']
+        month = data['month']
+        payments = StudentPayment.objects.filter(deleted=False, student_id=student_id, added_data__year=year,
+                                                 added_data__month=month).all()
+        data = StudentPaymentListSerializer(payments, many=True).data
+
+        return Response(data)
+
+    def get(self, request, student_id):
+
+        student_payments = StudentPayment.objects.filter(deleted=False, student_id=student_id).all()
+
+        payments_by_year = {}
+
+        for payment in student_payments:
+            year = payment.added_data.year
+            month = payment.added_data.month
+
+            if year not in payments_by_year:
+                payments_by_year[year] = set()
+            payments_by_year[year].add(month)
+
+        payments_by_year_list = [
+            {'name': year, 'months': sorted(months)}
+            for year, months in payments_by_year.items()
+        ]
+
+        return Response({
+            'payments_by_year': payments_by_year_list,
+        })

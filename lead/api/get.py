@@ -18,6 +18,13 @@ class LeadListAPIView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = Lead.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         serializer = LeadListSerializer(queryset, many=True)
         return Response({'leads': serializer.data, 'permissions': permissions})
 
@@ -44,6 +51,13 @@ class LeadCallListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = LeadCall.objects.all()
+        location_id = self.request.query_params.get('location_id', None)
+        branch_id = self.request.query_params.get('branch_id', None)
+
+        if branch_id is not None:
+            queryset = queryset.filter(branch_id=branch_id)
+        if location_id is not None:
+            queryset = queryset.filter(location_id=location_id)
         lead_id = self.request.query_params.get('lead_id', None)
         if lead_id is not None:
             queryset = queryset.filter(lead_id=lead_id)

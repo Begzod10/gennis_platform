@@ -2,13 +2,22 @@ from rest_framework import generics
 from rest_framework.response import Response
 
 from permissions.functions.CheckUserPermissions import check_user_permissions
+from permissions.response import CustomResponseMixin, QueryParamFilterMixin
 from rooms.models import Room, RoomImages, RoomSubject
 from rooms.serializers import RoomGetSerializer, RoomImagesGetSerializer, RoomSubjectGetSerializer
 from time_table.serializers import GroupTimeTable, GroupTimeTableReadSerializer
 from user.functions.functions import check_auth
 
 
-class RoomListView(generics.ListAPIView):
+class RoomListView(QueryParamFilterMixin, CustomResponseMixin, generics.ListAPIView):
+    filter_mappings = {
+        'teacher': 'group__teacher',
+        'seats_number': 'seats_number',
+        'electronic_board': 'electronic_board',
+        'branch': 'branch',
+        'deleted': 'deleted'
+
+    }
     queryset = Room.objects.all()
     serializer_class = RoomGetSerializer
 
@@ -21,6 +30,8 @@ class RoomListView(generics.ListAPIView):
         permissions = check_user_permissions(user, table_names)
 
         queryset = Room.objects.all()
+
+        queryset = self.filter_queryset(queryset)
         serializer = RoomGetSerializer(queryset, many=True)
         return Response({'rooms': serializer.data, 'permissions': permissions})
 
