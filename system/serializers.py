@@ -9,3 +9,11 @@ class SystemSerializers(serializers.ModelSerializer):
     class Meta:
         model = System
         fields = ['id', 'name', 'number']
+
+
+class SystemSerializersUsers(serializers.ModelSerializer):
+    system = SystemSerializers(read_only=True)
+
+    class Meta:
+        model = System
+        fields = ['system']

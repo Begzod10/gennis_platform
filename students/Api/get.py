@@ -279,7 +279,6 @@ class FilteredStudentsListView(APIView):
             deleted_student_student__isnull=True,
             subject__student__isnull=False
         ).select_related('user').prefetch_related('subject', 'group_time_table').distinct()
-        print(students.count())
         room_ids = [t['room'] for t in time_tables]
         rooms = Room.objects.filter(id__in=room_ids)
 
@@ -305,6 +304,7 @@ class FilteredStudentsListView(APIView):
                          and rt.start_time >= datetime.strptime(time_table['start_time'], "%H:%M").time()
                          and rt.end_time <= datetime.strptime(time_table['end_time'], "%H:%M").time()), None)
                     if room_time_table:
+
                         errors['rooms'].append(
                             f'Bu voxta {room.name} xonasida {room_time_table.group.name}ni darsi bor')
 
@@ -315,6 +315,7 @@ class FilteredStudentsListView(APIView):
                 ).first()
 
                 if time_table_st:
+                    print(time_table)
                     student_data['extra_info'] = {
                         'status': False,
                         'reason': f"{student.user.name} {student.user.surname} o'quvchini {time_table.group.name} guruhida darsi bor"

@@ -1,4 +1,5 @@
 from datetime import date
+from urllib.parse import unquote
 
 from django.db.models import Q
 
@@ -75,3 +76,31 @@ class QueryParamFilterMixin:
             queryset = queryset.filter(self.filter_conditions)
 
         return queryset
+
+
+class GetModelsMixin:
+    tables = [
+        {
+            'name': 'Students',
+            'value': ['new_student', 'studying_student', 'deleted_student']
+        },
+        {
+            'name': 'Teachers',
+            'value': ['new_teacher', 'deleted_teacher', 'teacher']
+        }
+    ]
+
+    def get_models(self):
+        response = []
+        query_type = self.request.query_params.get('type')
+
+        if query_type:
+            query_type = unquote(query_type).strip('[]')
+
+            query_type_list = query_type.split(',')
+
+            for table in self.tables:
+                if any(item.strip() in table['value'] for item in query_type_list):
+                    response.append(table['name'])
+
+        return response

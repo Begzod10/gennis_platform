@@ -43,10 +43,10 @@ class StudentListView(APIView):
 
 class DeletedFromRegistered(QueryParamFilterMixin, CustomResponseMixin, APIView):
     filter_mappings = {
-        'branch': 'user__branch_id',
+        'branch': 'student__user__branch_id',
         'subject': 'subject__id',
-        'age': 'user__birth_date',
-        'language': 'user__language_id',
+        'age': 'student__user__birth_date',
+        'language': 'student__user__language_id',
     }
 
     def get(self, request, *args, **kwargs):

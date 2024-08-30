@@ -5,18 +5,18 @@ from rest_framework.response import Response
 from overhead.models import Overhead
 from overhead.serializers import OverheadSerializerCreate
 
-
-class OverheadCreateView(generics.CreateAPIView):
+from permissions.response import CustomResponseMixin
+class OverheadCreateView(CustomResponseMixin,generics.CreateAPIView):
     queryset = Overhead.objects.all()
     serializer_class = OverheadSerializerCreate
 
 
-class OverheadUpdateView(generics.UpdateAPIView):
+class OverheadUpdateView(CustomResponseMixin,generics.UpdateAPIView):
     queryset = Overhead.objects.all()
     serializer_class = OverheadSerializerCreate
 
 
-class OverheadDestroyView(generics.DestroyAPIView):
+class OverheadDestroyView(CustomResponseMixin,generics.DestroyAPIView):
     queryset = Overhead.objects.all()
     serializer_class = OverheadSerializerCreate
 

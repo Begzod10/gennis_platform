@@ -108,7 +108,10 @@ class DeletedUserSalaryListListView(generics.ListAPIView):
         return Response({'usersalarylists': serializer.data, 'permissions': permissions})
 
 
-class UserSalaryListDetailView(generics.RetrieveAPIView):
+class UserSalaryListDetailView(QueryParamFilterMixin, CustomResponseMixin,generics.RetrieveAPIView):
+    filter_mappings = {
+        'status': 'deleted',
+    }
     queryset = UserSalaryList.objects.all()
     serializer_class = UserSalaryListSerializersRead
 
@@ -119,7 +122,7 @@ class UserSalaryListDetailView(generics.RetrieveAPIView):
 
         table_names = ['usersalarylist', 'usersalary', 'customautogroup', 'paymenttypes', 'branch', 'customuser']
         permissions = check_user_permissions(user, table_names)
-        user_salary_list = self.get_object()
+        user_salary_list = self.filter_queryset(self.get_object())
         user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
         return Response({'usersalarylist': user_salary_list_data, 'permissions': permissions})
 

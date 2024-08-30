@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from group.models import Group, GroupReason, CourseTypes
 from group.serializers import GroupSerializer, GroupReasonSerializers, CourseTypesSerializers, \
     GroupCreateUpdateSerializer
+from permissions.response import CustomResponseMixin, QueryParamFilterMixin
 
 
 class CreateCourseTypesList(generics.ListCreateAPIView):
@@ -26,14 +27,20 @@ class GroupReasonRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIV
     serializer_class = GroupReasonSerializers
 
 
-class CreatGroups(generics.ListCreateAPIView):
+class CreatGroups(QueryParamFilterMixin, CustomResponseMixin, generics.ListCreateAPIView):
+    filter_mappings = {
+        'teacher': 'teacher__id',
+        'subject': 'subject__id',
+        'course_types': 'course_types__id',
+        'deleted': 'deleted',
+        'created_date': 'created_date'
+    }
     serializer_class = GroupCreateUpdateSerializer
 
     def get_queryset(self):
-        branch_id = self.request.query_params.get('branch')
-        queryset = Group.objects.filter(deleted=False, branch_id=branch_id).all()
+        queryset = Group.objects.filter(deleted=False).all()
+        queryset = self.filter_queryset(queryset)
         return queryset
-
 
     def get_serializer_class(self):
         if self.request.method == 'GET':

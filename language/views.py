@@ -2,11 +2,12 @@ from rest_framework import generics
 from rest_framework.response import Response
 
 from permissions.functions.CheckUserPermissions import check_user_permissions
+from permissions.response import CustomResponseMixin
 from user.functions.functions import check_auth
 from .serializers import (Language, LanguageSerializers)
+from rest_framework import status
 
-
-class CreateLanguageList(generics.ListCreateAPIView):
+class CreateLanguageList(CustomResponseMixin, generics.ListCreateAPIView):
     queryset = Language.objects.all()
     serializer_class = LanguageSerializers
 
@@ -23,7 +24,7 @@ class CreateLanguageList(generics.ListCreateAPIView):
         return Response({'languages': serializer.data, 'permissions': permissions})
 
 
-class LanguageRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+class LanguageRetrieveUpdateDestroyAPIView(CustomResponseMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = Language.objects.all()
     serializer_class = LanguageSerializers  # permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrReadOnly) # login qilgan yoki yuq ligini va admin emasligini tekshiradi
 
@@ -37,3 +38,7 @@ class LanguageRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView
         language = self.get_object()
         language_data = self.get_serializer(language).data
         return Response({'language': language_data, 'permissions': permissions})
+
+    def destroy(self, request, *args, **kwargs):
+        super().destroy(request, *args, **kwargs)
+        return Response({'deleted': "True"}, status=status.HTTP_200_OK)

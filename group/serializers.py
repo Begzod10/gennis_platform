@@ -90,7 +90,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                                     joined_day=today)
             TeacherHistoryGroups.objects.create(group=group, teacher=teacher_data[0], joined_day=today)
             subject = validated_data.get('subject')
-            teacher_subjects = Teacher.objects.filter(id=teacher_data[0], subject__in=[subject.id]).first()
+            teacher_subjects = Teacher.objects.filter(id=teacher_data[0].id, subject__in=[subject.id]).first()
             if not teacher_subjects:
                 raise serializers.ValidationError('Ustozni fani togri kelmadi')
 
