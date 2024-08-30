@@ -18,11 +18,11 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from rest_framework_simplejwt.views import TokenVerifyView
 from schema_graph.views import Schema
-
-from group.gennis.AddToGroupApi import UpdateGroupDataAPIView,GetGroupDataAPIView
+from gennis_platform.views import index
+from group.gennis.AddToGroupApi import UpdateGroupDataAPIView, GetGroupDataAPIView
 from user.Api.read import GetUserAPIView, SetObserverView
 from user.Api.write import CustomTokenObtainPairView
 from user.views import CustomTokenRefreshView
@@ -30,6 +30,7 @@ from .swagger import urlpatterns as doc_urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', index, name='index'),
     path('Users/', include('user.urls')),
     path('System/', include('system.urls')),
     path('Location/', include('location.urls')),
@@ -70,6 +71,10 @@ urlpatterns = [
     path('api/update_group_datas/', UpdateGroupDataAPIView.as_view(), name='update_group_datas'),
     path('api/get_group_datas/<int:group_id>/', GetGroupDataAPIView.as_view(), name='get_group_datas'),
 
+]
+
+urlpatterns += [
+    re_path(r'^.*$', index),
 ]
 urlpatterns += doc_urls
 

@@ -31,6 +31,5 @@ def get_group_room_week():
             'end_time': time_table['end_time'].strftime("%H:%M"),
             'branch': time_table['location_id']
         }
-        print(info)
         list.append(info)
     return list

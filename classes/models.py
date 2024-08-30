@@ -5,8 +5,9 @@ from students.models import Student
 
 
 class ClassColors(models.Model):
-    name = models.CharField(max_length=100)
-    value = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, null=True)
+    value = models.CharField(max_length=100, null=True)
+    old_id = models.IntegerField(unique=True, null=True)
 
     class Meta:
         ordering = ['id']
@@ -20,11 +21,13 @@ class ClassTypes(models.Model):
 
 
 class ClassNumber(models.Model):
-    number = models.IntegerField()
-    curriculum_hours = models.IntegerField()
+    number = models.IntegerField(null=True)
+    price = models.IntegerField(null=True)
+    curriculum_hours = models.IntegerField(null=True)
     class_types = models.ForeignKey(ClassTypes, on_delete=models.SET_NULL, null=True)
     subjects = models.ManyToManyField(Subject)
     price = models.IntegerField(null=True)
+    old_id = models.IntegerField(unique=True, null=True)
 
     class Meta:
         ordering = ['id']

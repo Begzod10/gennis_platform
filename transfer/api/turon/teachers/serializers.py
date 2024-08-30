@@ -1,7 +1,5 @@
 from students.models import DeletedNewStudent
-from students.models import Student, StudentHistoryGroups, StudentCharity
-from subjects.serializers import Subject
-from teachers.models import Teacher
+from teachers.models import Teacher, TeacherSalaryType
 from user.models import CustomUser
 from branch.models import Branch
 from group.models import Group
@@ -27,18 +25,24 @@ class OldIdRelatedField(serializers.RelatedField):
         }
 
 
-class StudentSerializerTransfer(serializers.ModelSerializer):
+class TeacherSalaryTypeSerializerTransfer(serializers.ModelSerializer):
+    class Meta:
+        model = TeacherSalaryType
+        fields = '__all__'
+
+
+class TeacherSerializerTransfer(serializers.ModelSerializer):
     user = OldIdRelatedField(queryset=CustomUser.objects.all(), many=False)
-    language_type = serializers.IntegerField(required=False, allow_null=True)
+    teacher_salary_type = OldIdRelatedField(queryset=TeacherSalaryType.objects.all(), many=False)
 
     class Meta:
-        model = Student
+        model = Teacher
         fields = '__all__'
 
     @transaction.atomic
     def create(self, validated_data):
         user_data = validated_data.pop('user')
-        language_type = validated_data.pop('language_type')
-        user = CustomUser.objects.get(turon_old_id=user_data['turon_old_id']) if isinstance(user_data, dict) else user_data
-        student = Student.objects.create(user=user, **validated_data)
-        return student
+        user = CustomUser.objects.get(turon_old_id=user_data['turon_old_id']) if isinstance(user_data,
+                                                                                            dict) else user_data
+        teacher = Teacher.objects.create(user=user, **validated_data)
+        return teacher

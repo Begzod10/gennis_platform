@@ -168,18 +168,10 @@ class StudentHistoryGroupsListSerializer(serializers.ModelSerializer):
     group = GroupSerializer(required=True)
     teacher = TeacherSerializer(required=True)
     reason = serializers.CharField(required=False)
-    joined_day = serializers.SerializerMethodField(required=False)
-    left_day = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = StudentHistoryGroups
         fields = ['id', 'student', 'group', 'teacher', 'reason', 'joined_day', 'left_day']
-
-    def get_joined_day(self, obj):
-        return obj.joined_day.strftime('%Y-%m-%d %H:%M')
-
-    def get_left_day(self, obj):
-        return obj.left_day.strftime('%Y-%m-%d %H:%M')
 
 
 class StudentCharitySerializer(serializers.ModelSerializer):
@@ -189,7 +181,7 @@ class StudentCharitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentCharity
-        fields = ['id', 'student', 'group', 'charity_sum']
+        fields = ['id', 'student', 'group', 'charity_sum', 'name']
 
 
 class StudentCharityListSerializer(serializers.ModelSerializer):
@@ -199,7 +191,7 @@ class StudentCharityListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentCharity
-        fields = ['id', 'student', 'group', 'charity_sum']
+        fields = ['id', 'student', 'group', 'charity_sum', 'name']
 
 
 class StudentPaymentSerializer(serializers.ModelSerializer):
@@ -289,7 +281,6 @@ class StudentPaymentListSerializer(serializers.ModelSerializer):
 
     def get_added_data(self, obj):
         return obj.added_data.strftime('%Y-%m-%d')
-
 
 class DeletedNewStudentSerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())

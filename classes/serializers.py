@@ -21,13 +21,14 @@ class ClassTypesSerializers(serializers.ModelSerializer):
 class ClassNumberSerializers(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     number = serializers.IntegerField(required=False)
+    price = serializers.IntegerField(required=False)
     curriculum_hours = serializers.IntegerField(required=False)
     class_types = serializers.PrimaryKeyRelatedField(queryset=ClassTypes.objects.all())
     subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())
 
     class Meta:
         model = ClassNumber
-        fields = ['id', 'number', 'curriculum_hours', 'class_types', 'subjects']
+        fields = ['id', 'number', 'curriculum_hours', 'class_types', 'subjects', 'price']
 
 
 class ClassNumberListSerializers(serializers.ModelSerializer):
@@ -35,11 +36,12 @@ class ClassNumberListSerializers(serializers.ModelSerializer):
     number = serializers.IntegerField(required=False)
     curriculum_hours = serializers.IntegerField(required=False)
     class_types = ClassTypesSerializers(required=False)
+    price = serializers.IntegerField(required=False)
     subjects = SubjectSerializer(required=False)
 
     class Meta:
         model = ClassNumber
-        fields = ['id', 'number', 'curriculum_hours', 'class_types', 'subjects']
+        fields = ['id', 'number', 'curriculum_hours', 'class_types', 'subjects', 'price']
 
 
 class ClassColorsSerializers(serializers.ModelSerializer):

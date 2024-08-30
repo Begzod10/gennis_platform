@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 
 SECRET_KEY = 'django-insecure-8!t!6$g#(34ro((m-7t$#(zek1=b=y2ltslop@w71$^6)wb_rc'
-classroom_server =''
+classroom_server = ''
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -87,8 +87,13 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'gennis_platform.urls'
 
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:3000',
+]
+
 TEMPLATES = [
-    {'BACKEND': 'django.template.backends.django.DjangoTemplates', 'DIRS': [BASE_DIR / 'templates'], 'APP_DIRS': True,
+    {'BACKEND': 'django.template.backends.django.DjangoTemplates', 'DIRS': [BASE_DIR / 'frontend' / 'build'],
+     'APP_DIRS': True,
      'OPTIONS': {'context_processors': ['django.template.context_processors.debug',
                                         'django.template.context_processors.request',
                                         'django.contrib.auth.context_processors.auth',
@@ -160,7 +165,11 @@ USE_TZ = True
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+    BASE_DIR / 'frontend' / 'build' / 'static',
+]
+
 MEDIA_ROOT = BASE_DIR / 'media/'
 
 # Default primary key field type
