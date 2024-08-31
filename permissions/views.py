@@ -1,5 +1,5 @@
 from rest_framework import generics
-from rest_framework.generics import ListAPIView
+from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from permissions.models import ManySystem, ManyLocation, ManyBranch
@@ -71,14 +71,13 @@ class BranchListUser(generics.RetrieveAPIView):
         return Response(data)
 
 
-class DynamicModelListView(GetModelsMixin, ListAPIView):
-    serializer_class = SystemSerializersUsers
+class DynamicModelListView(GetModelsMixin,APIView):
 
-    def get_queryset(self):
-        model_names = self.get_models()
+    def post(self, request, *args, **kwargs):
+        model_names = self.filter()
 
-        return model_names
+        return Response(model_names)
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        return Response(queryset)
+    # def list(self, request, *args, **kwargs):
+    #     queryset = self.get_queryset()
+    #     return Response(queryset)

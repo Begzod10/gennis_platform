@@ -77,7 +77,7 @@ class DeletedStudent(models.Model):
 class ContractStudent(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='contract_student_id')
     created_date = models.DateField(auto_now_add=True)
-    expire_date = models.DateField()
+    expire_date = models.DateField(null=True)
     father_name = models.CharField(max_length=255)
     given_place = models.CharField(max_length=255)
     place = models.CharField(max_length=255)

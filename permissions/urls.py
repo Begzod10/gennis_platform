@@ -22,6 +22,6 @@ urlpatterns = [
     path('user_systems/', SystemListUser.as_view(), name='user_systems'),
     path('user_locations/<int:pk>/', LocationListUser.as_view(), name='user_systems'),
     path('user_branchs/<int:pk>/', BranchListUser.as_view(), name='user_systems'),
-    path('models/', DynamicModelListView.as_view(), name='dynamic-model-list'),
+    path('location_filters/', DynamicModelListView.as_view(), name='dynamic-model-list'),
 
 ]

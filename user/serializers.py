@@ -54,7 +54,7 @@ class UserSerializerWrite(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        profession = validated_data.pop('profession')
+        profession = validated_data.pop('profession',None)
         user = super().create(validated_data)
         user.set_password(validated_data['password'])
         user.save()

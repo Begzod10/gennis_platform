@@ -17,6 +17,7 @@ from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent,
 from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
                           DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
+from rest_framework import filters
 
 
 class StudentListView(APIView):
@@ -42,12 +43,14 @@ class StudentListView(APIView):
 
 
 class DeletedFromRegistered(QueryParamFilterMixin, CustomResponseMixin, APIView):
+
     filter_mappings = {
         'branch': 'student__user__branch_id',
         'subject': 'subject__id',
         'age': 'student__user__birth_date',
         'language': 'student__user__language_id',
     }
+
 
     def get(self, request, *args, **kwargs):
         deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
@@ -80,7 +83,8 @@ class NewRegisteredStudents(QueryParamFilterMixin, APIView):
         'age': 'user__birth_date',
         'language': 'user__language_id',
     }
-
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['user__name', 'user__surname', 'user__username']
     def get(self, request, *args, **kwargs):
         deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
@@ -88,6 +92,8 @@ class NewRegisteredStudents(QueryParamFilterMixin, APIView):
             .exclude(id__in=deleted_new_student_ids) \
             .filter(groups_student__isnull=True).distinct()
         filtered_students = self.filter_queryset(active_students)
+        search_filter = filters.SearchFilter()
+        filtered_students = search_filter.filter_queryset(request, filtered_students, self)
 
         student_serializer = StudentListSerializer(filtered_students, many=True)
 
@@ -95,6 +101,7 @@ class NewRegisteredStudents(QueryParamFilterMixin, APIView):
 
 
 class ActiveStudents(QueryParamFilterMixin, CustomResponseMixin, APIView):
+    table_names = ['student', 'deletedstudent', 'deletednewstudent','customuser','system','branch','subject','language','location','group']
     filter_mappings = {
         'branch': 'user__branch_id',
         'subject': 'subject__id',
@@ -226,7 +233,7 @@ class CreateContractView(APIView):
         doc.paragraphs[
             9].text = f"1.1 Ushbu shartnomaga muvofiq, o‘quvchining ota-onasi (yoki qonuniy vakili) o‘zining voyaga yetmagan farzandini {user.name.title()} {user.surname.title()} {user.father_name[0].title()}{user.father_name[1:].lower()} ni qo‘shimcha taʼlim olish uchun qabul qilmoqda."
         doc.paragraphs[
-            15].text = f"2.1 O‘quvchining nodavlat taʼlim muassasida taʼlim olishi uchun bir oylik to‘lov summasi {abs(student.debt_status) - all_charity} va {contract.expire_date.strftime('%d-%m-%Y')} muddatgacha {abs(((student.debt_status) - all_charity) * month)} so‘mni tashkil etadi."
+            15].text = f"2.1 O‘quvchining nodavlat taʼlim muassasida taʼlim olishi uchun bir oylik to‘lov summasi {abs(student.total_payment_month) - all_charity} va {contract.expire_date.strftime('%d-%m-%Y')} muddatgacha {abs(((student.total_payment_month) - all_charity) * month)} so‘mni tashkil etadi."
         doc.paragraphs[
             69].text = f"7.1 Ushbu shartnoma tomonlar o‘rtasida imzolangan kundan boshlab yuridik kuchga ega bo‘ladi va {contract.expire_date.strftime('%d-%m-%Y')} muddatga qadar amal qiladi."
 
