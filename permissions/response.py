@@ -62,7 +62,8 @@ class QueryParamFilterMixin:
                     self.filter_conditions &= Q(**{field: value})
                 else:
                     continue
-            # else:
+            else:
+                return []
             #     if param == 'branch':
             #         user = CustomUser.objects.get(pk=get_user(self.request))
             #         self.filter_conditions &= Q(**{field: user.branch_id})
