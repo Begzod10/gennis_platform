@@ -2,52 +2,52 @@ from datetime import date
 
 from django.db.models import Q
 
-from branch.models import Location
 from mobile.get_user import get_user
 from permissions.functions.CheckUserPermissions import check_user_permissions
-from permissions.models import ManyBranch
+from permissions.models import ManyBranch, ManyLocation
+from teachers.models import Teacher
 from user.functions.functions import check_auth
 from user.models import CustomUser
-from teachers.models import Teacher
+
 
 class CustomResponseMixin:
     def get_custom_message(self, request):
-
         method = request.method
-
         if method == 'GET':
             return f"maʼlumotlari muvaffaqiyatli olindi."
         elif method == 'POST':
-            return f"  muvaffaqiyatli yaratildi."
+            return f"muvaffaqiyatli yaratildi."
         elif method == 'PUT':
-            return f"  maʼlumotlari muvaffaqiyatli yangilandi."
+            return f"maʼlumotlari muvaffaqiyatli yangilandi."
         elif method == 'PATCH':
             return f"maʼlumotlari muvaffaqiyatli yangilandi."
         elif method == 'DELETE':
-            return f" maʼlumotlari muvaffaqiyatli o'chirildi."
+            return f"maʼlumotlari muvaffaqiyatli o'chirildi."
         else:
             return f"amal muvaffaqiyatli yakunlandi."
 
     def finalize_response(self, request, response, *args, **kwargs):
-
         response = super().finalize_response(request, response, *args, **kwargs)
+
         if 200 <= response.status_code < 300:
             custom_message = self.get_custom_message(request)
             user, auth_error = check_auth(request)
             if auth_error:
                 return auth_error
-            if hasattr(self, 'table_names') and self.table_names:
-                table_names = self.table_names
-                permissions = check_user_permissions(user, table_names)
-                if isinstance(response.data, dict):
-                    response.data['permissions'] = custom_message
-                if isinstance(response.data, list):
-                    response.data.append(permissions)
 
-            if isinstance(response.data, dict):
-                response.data['msg'] = custom_message
-            if isinstance(response.data, list):
-                response.data.append([custom_message])
+            if hasattr(self, 'table_names') and self.table_names:
+                permissions = check_user_permissions(user, self.table_names)
+
+                if isinstance(response.data, dict):
+                    response.data['permissions'] = permissions
+                    response.data['msg'] = custom_message
+                elif isinstance(response.data, list):
+                    response.data = {
+                        'list': response.data,
+                        'permissions': permissions,
+                        'msg': custom_message
+                    }
+
         return response
 
 
@@ -129,8 +129,6 @@ class GetModelsMixin:
 
         for model_info in table_names:
             for model in model_info['models']:
-                # model_data = []
-                # datas.append(model_data)
                 for type_index, type_name in enumerate(model_info['types']):
                     type_data = {
                         'name': model_info['return'][type_index],
@@ -145,16 +143,19 @@ class GetModelsMixin:
         return datas
 
     def get_location_objs(self, location_ids):
-        return Location.objects.filter(id__in=location_ids).all()
+        user, auth_error = check_auth(self.request)
+        if auth_error:
+            return auth_error
+        return ManyLocation.objects.filter(user=user, location_id__in=location_ids).all()
 
     def get_location_data(self, location, type_name, model):
         user, auth_error = check_auth(self.request)
         if auth_error:
             return auth_error
         location_data = {
-            'id': location.id,
-            'name': location.name,
-            'count': location.branch_set.count(),
+            'id': location.location.id,
+            'name': location.location.name,
+            'count': ManyBranch.objects.filter(user=user, branch__location_id=location.location.id).count(),
             'list': []
         }
 
@@ -194,5 +195,3 @@ class GetModelsMixin:
         if model == 'Teachers':
             if type_name == 'new_teacher':
                 branch_data['count'] = Teacher.objects.filter(user__branch_id=branch.id).count()
-
-

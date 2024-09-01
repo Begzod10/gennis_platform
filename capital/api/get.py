@@ -1,4 +1,5 @@
 from rest_framework import generics
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
 from capital.functions.creat_capital_term import creat_capital_term
@@ -65,7 +66,17 @@ class CapitalRetrieveAPIView(CustomResponseMixin, generics.RetrieveAPIView):
         # permissions = check_user_permissions(user, table_names)
         capital = self.get_queryset()
         capital_data = self.get_serializer(capital, many=True).data
-        return Response({'capital': capital_data, })
+        return Response({'capital': capital_data,})
+
+    def get_queryset(self):
+        user_id = self.kwargs.get('pk')
+        capital = Capital.objects.filter(category_id=user_id).all()
+        return capital
+class CapitalRetrieveAPIViewOne(CustomResponseMixin, generics.RetrieveAPIView):
+    queryset = Capital.objects.all()
+    serializer_class = CapitalListSerializers
+
+
 
 
 class CapitalListView(CustomResponseMixin, generics.ListAPIView):
@@ -92,8 +103,3 @@ class CapitalListView(CustomResponseMixin, generics.ListAPIView):
         for capital in serializer.data:
             creat_capital_term(capital)
         return Response({'capitals': serializer.data, 'permissions': permissions})
-
-    def get_queryset(self):
-        user_id = self.kwargs.get('pk')
-        capital = Capital.objects.filter(category_id=user_id).all()
-        return capital

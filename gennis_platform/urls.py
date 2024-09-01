@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from rest_framework_simplejwt.views import TokenVerifyView
 from schema_graph.views import Schema
-from gennis_platform.views import index
+# from gennis_platform.views import index
 from group.gennis.AddToGroupApi import UpdateGroupDataAPIView, GetGroupDataAPIView
 from user.Api.read import GetUserAPIView, SetObserverView
 from user.Api.write import CustomTokenObtainPairView
@@ -52,7 +52,7 @@ urlpatterns = [
 ]
 
 # Add index view for any undefined URL patterns
-urlpatterns += [re_path(r'^.*$', index)]
+# urlpatterns += [re_path(r'^.*$', index)]
 
 # Include the Swagger documentation URLs
 urlpatterns += doc_urls

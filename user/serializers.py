@@ -1,6 +1,5 @@
 from datetime import datetime
 
-import requests
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Group
 from rest_framework import serializers
@@ -8,7 +7,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from werkzeug.security import check_password_hash
 
-from branch.serializers import BranchSerializer, BranchListSerializer
+from branch.serializers import BranchSerializer
 from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
@@ -43,7 +42,7 @@ class UserSerializerWrite(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
                   'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff', 'old_id','profession']
+                  'branch', 'is_superuser', 'is_staff', 'old_id', 'profession']
         extra_kwargs = {
             'password': {'write_only': True, 'required': True},
             'birth_date': {'required': False},
@@ -54,16 +53,17 @@ class UserSerializerWrite(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        profession = validated_data.pop('profession',None)
+        profession = validated_data.pop('profession', None)
         user = super().create(validated_data)
         user.set_password(validated_data['password'])
         user.save()
+
+        user.many_location_set.create(user=user, location=Branch.objects.get(pk=validated_data['branch']).location)
+        user.many_branch_set.create(user=user, branch_id=validated_data['branch'])
         if profession is not None:
-            print(profession)
             CustomAutoGroup.objects.create(user=user, group=profession, salary='0')
             user.groups.add(profession)
         return user
-
 
     # def send_data(self, user_data):
     #     url = 'https://example.com/api/update_user_info'
@@ -80,25 +80,9 @@ class UserSerializerWrite(serializers.ModelSerializer):
             user.set_password(validated_data['password'])
             user.save()
 
-
         # user_data = UserSerializerRead(user).data
         # self.send_data(user_data)
         return user
-
-
-class UserSerializerRead(serializers.ModelSerializer):
-    branch = BranchListSerializer(read_only=True)
-    language = LanguageSerializers(read_only=True)
-    age = serializers.SerializerMethodField(required=False)
-
-    class Meta:
-        model = CustomUser
-        fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
-                  'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff', 'age']
-
-    def get_age(self, obj):
-        return obj.calculate_age()
 
 
 class UserSalaryListSerializers(serializers.ModelSerializer):
