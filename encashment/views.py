@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import Sum
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -21,6 +22,8 @@ from .models import Encashment
 
 
 class Encashments(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, *args, **kwargs):
         try:
             ot = request.data.get('ot')
@@ -152,7 +155,8 @@ class Encashments(APIView):
                     'capital_data': capital_serializer.data,
                     'total_capital': total_capital,
                 },
-                'overall': student_total_payment - (teacher_total_salary + worker_total_salary+total_capital+total_overhead_payment)
+                'overall': student_total_payment - (
+                            teacher_total_salary + worker_total_salary + total_capital + total_overhead_payment)
             })
 
         except KeyError as e:

@@ -3,6 +3,7 @@ import json
 from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
@@ -11,9 +12,12 @@ from group.models import Group, SubjectLevel
 from group.serializers import GroupSerializer, GroupCreateUpdateSerializer
 from students.models import Student
 from students.serializers import StudentSerializer
-from user.serializers import CustomUser,UserSerializerRead
+from user.serializers import CustomUser, UserSerializerRead
+
 
 class AddToGroupApi(generics.RetrieveUpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = Group.objects.all()
     serializer_class = GroupCreateUpdateSerializer
 
@@ -33,6 +37,8 @@ class AddToGroupApi(generics.RetrieveUpdateAPIView):
 
 
 class AddToGroupApi(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, pk):
         group = Group.objects.get(pk=pk)
         data = json.loads(request.body)
@@ -79,6 +85,8 @@ class UpdateGroupDataAPIView(APIView):
                 group.save()
 
         return Response({"msg": "O'zgarildi"}, status=status.HTTP_200_OK)
+
+
 class GetGroupDataAPIView(APIView):
 
     def get(self, request, group_id):

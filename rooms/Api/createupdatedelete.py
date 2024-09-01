@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from permissions.response import CustomResponseMixin
@@ -13,6 +14,8 @@ class RoomCreateView(generics.CreateAPIView):
 
 
 class RoomDeleteView(CustomResponseMixin, generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = Room.objects.all()
     serializer_class = RoomCreateSerializer
 
@@ -24,35 +27,49 @@ class RoomDeleteView(CustomResponseMixin, generics.DestroyAPIView):
 
 
 class RoomUpdateView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = Room.objects.all()
     serializer_class = RoomCreateSerializer
 
 
 class RoomImagesCreateView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = RoomImages.objects.all()
     serializer_class = RoomImagesCreateSerializer
 
 
 class RoomImagesUpdateView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = RoomImages.objects.all()
     serializer_class = RoomImagesCreateSerializer
 
 
 class RoomImagesDestroyView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = RoomImages.objects.all()
     serializer_class = RoomImagesCreateSerializer
 
 
 class RoomSubjectCreateView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = RoomSubject.objects.all()
     serializer_class = RoomSubjectCreateSerializer
 
 
 class RoomSubjectUpdateView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = RoomSubject.objects.all()
     serializer_class = RoomSubjectCreateSerializer
 
 
 class RoomSubjectDestroyView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = RoomSubject.objects.all()
     serializer_class = RoomSubjectCreateSerializer

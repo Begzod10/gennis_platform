@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -9,31 +10,43 @@ from user.serializers import UserSerializerWrite, UserSalaryListSerializers, Cus
 
 
 class UserCreateView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializerWrite
 
 
 class UserUpdateView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializerWrite
 
 
 class UserDestroyView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializerWrite
 
 
 class UserSalaryListCreateView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = UserSalaryList.objects.all()
     serializer_class = UserSalaryListSerializers
 
 
 class UserSalaryListUpdateView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = CustomUser.objects.all()
     serializer_class = UserSalaryListSerializers
 
 
 class UserSalaryListDestroyView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = UserSalaryList.objects.all()
     serializer_class = UserSalaryListSerializers
 
@@ -55,6 +68,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 
 class UsernameCheck(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, *args, **kwargs):
         username = request.data.get('username', None)
         if username:

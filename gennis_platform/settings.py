@@ -124,6 +124,8 @@ AUTH_PASSWORD_VALIDATORS = [{'NAME': 'django.contrib.auth.password_validation.Us
 
 REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
 
+                  # 'PAGE_SIZE': 10,
+
                   'DEFAULT_RENDERER_CLASS   ES': ['rest_framework.renderers.JSONRenderer',
                                                   'rest_framework.renderers.BrowsableAPIRenderer', ],
 

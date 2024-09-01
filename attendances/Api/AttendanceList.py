@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -9,6 +10,7 @@ from ..models import AttendancePerDay, Student
 
 
 class AttendanceList(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get_attendances_json(self, group, month_date, student_id):
         attendances = AttendancePerDay.objects.filter(group=group, day__month=month_date.month,
@@ -46,6 +48,7 @@ class AttendanceList(APIView):
 
 
 class AttendanceListForAllGroups(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get_attendances_json(self, groups, month_date, student_id):
         attendances_json = []

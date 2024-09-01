@@ -3,133 +3,93 @@ from datetime import datetime
 
 from rest_framework import generics
 from rest_framework.exceptions import NotFound
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from permissions.functions.CheckUserPermissions import check_user_permissions
 from rooms.models import Room
 from students.models import StudentPayment, StudentHistoryGroups, StudentCharity, Student
 from students.serializers import StudentPaymentListSerializer, StudentHistoryGroupsListSerializer, \
     StudentCharityListSerializer, StudentListSerializer
 from subjects.models import Subject
-from system.models import System
 from teachers.models import Teacher
 from teachers.serializers import TeacherSerializerRead
 from time_table.models import GroupTimeTable
-from user.functions.functions import check_auth
 
 
 class StudentRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = Student.objects.all()
     serializer_class = StudentListSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['student', 'subject', 'customuser']
-        permissions = check_user_permissions(user, table_names)
         student = self.get_object()
         student_data = self.get_serializer(student).data
-        return Response({'student': student_data, 'permissions': permissions})
+        return Response(student_data)
 
 
 class StudentCharityListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = StudentCharity.objects.all()
     serializer_class = StudentCharityListSerializer
 
     def get_queryset(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
 
-        table_names = ['studentcharity', 'student', 'group']
-        permissions = check_user_permissions(user, table_names)
         student_id = self.request.query_params.get('student_id', None)
         if student_id is not None:
             queryset = StudentCharity.objects.filter(student_id=student_id)
         else:
             queryset = StudentCharity.objects.all()
-            location_id = self.request.query_params.get('location_id', None)
-            branch_id = self.request.query_params.get('branch_id', None)
 
-            if branch_id is not None:
-                queryset = queryset.filter(branch_id=branch_id)
-            if location_id is not None:
-                queryset = queryset.filter(location_id=location_id)
         serializer = StudentCharityListSerializer(queryset, many=True)
-        return Response({'studentcharitys': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['studentcharity', 'student', 'group']
-        permissions = check_user_permissions(user, table_names)
 
         queryset = StudentCharity.objects.all()
         serializer = StudentCharityListSerializer(queryset, many=True)
-        return Response({'studentcharitys': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class StudentCharityAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = StudentCharity.objects.all()
     serializer_class = StudentCharityListSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['studentcharity', 'student', 'group']
-        permissions = check_user_permissions(user, table_names)
         student_charity = self.get_object()
         student_charity_data = self.get_serializer(student_charity).data
-        return Response({'studentcharity': student_charity_data, 'permissions': permissions})
+        return Response(student_charity_data)
 
 
 class StudentHistoryGroupsListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = StudentHistoryGroups.objects.all()
     serializer_class = StudentHistoryGroupsListSerializer
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['studenthistorygroups', 'student', 'group', 'teacher']
-        permissions = check_user_permissions(user, table_names)
-
         queryset = StudentHistoryGroups.objects.all()
-        location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch_id', None)
 
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        if location_id is not None:
-            queryset = queryset.filter(location_id=location_id)
         serializer = StudentHistoryGroupsListSerializer(queryset, many=True)
-        return Response({'studenthistorygroups': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class StudentHistoryGroupsAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = StudentHistoryGroups.objects.all()
     serializer_class = StudentHistoryGroupsListSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['studenthistorygroups', 'student', 'group', 'teacher']
-        permissions = check_user_permissions(user, table_names)
         student_history_groups = self.get_object()
 
         student_history_groups_data = self.get_serializer(student_history_groups, many=True).data
 
-        return Response({'studenthistorygroup': student_history_groups_data, 'permissions': permissions})
+        return Response(student_history_groups_data)
 
     def get_object(self):
         user_id = self.kwargs.get('pk')
@@ -137,79 +97,47 @@ class StudentHistoryGroupsAPIView(generics.RetrieveAPIView):
 
 
 class StudentPaymentListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = StudentPayment.objects.all()
     serializer_class = StudentPaymentListSerializer
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['studentpayment', 'student', 'paymenttypes']
-        permissions = check_user_permissions(user, table_names)
-
         queryset = StudentPayment.objects.filter(deleted=False).all()
-        branch_id = self.request.query_params.get('branch_id', None)
 
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        location_id = self.request.query_params.get('location_id', None)
-
-        if location_id is not None:
-            queryset = queryset.filter(location_id=location_id)
         serializer = StudentPaymentListSerializer(queryset, many=True)
-        return Response({'branches': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class StudentDeletedPaymentListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = StudentPayment.objects.all()
     serializer_class = StudentPaymentListSerializer
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['studentpayment', 'student', 'paymenttypes']
-        permissions = check_user_permissions(user, table_names)
-
         queryset = StudentPayment.objects.filter(deleted=True).all()
-        location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch_id', None)
 
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        if location_id is not None:
-            queryset = queryset.filter(location_id=location_id)
         serializer = StudentPaymentListSerializer(queryset, many=True)
-        return Response({'branches': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class StudentPaymentAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = StudentPayment.objects.all()
     serializer_class = StudentPaymentListSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
 
-        table_names = ['studentpayment', 'student', 'paymenttypes']
-        permissions = check_user_permissions(user, table_names)
         status = self.request.query_params.get('status', None)
 
         queryset = self.get_object()
         if status is not None:
             queryset = queryset.filter(deleted=status)
-        location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch_id', None)
 
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        if location_id is not None:
-            queryset = queryset.filter(location_id=location_id)
         serializer = StudentPaymentListSerializer(queryset, many=True)
-        return Response({'payments': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
     def get_object(self):
         user_id = self.kwargs.get('pk')
@@ -250,6 +178,8 @@ class StudentPaymentAPIView(generics.RetrieveAPIView):
 
 
 class FilteredStudentsListView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         # location_id = branch_id
         location_id = self.request.query_params.get('branch')
@@ -304,7 +234,6 @@ class FilteredStudentsListView(APIView):
                          and rt.start_time >= datetime.strptime(time_table['start_time'], "%H:%M").time()
                          and rt.end_time <= datetime.strptime(time_table['end_time'], "%H:%M").time()), None)
                     if room_time_table:
-
                         errors['rooms'].append(
                             f'Bu voxta {room.name} xonasida {room_time_table.group.name}ni darsi bor')
 
@@ -364,6 +293,8 @@ class FilteredStudentsListView(APIView):
 
 
 class SchoolStudents(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     serializer_class = StudentListSerializer
 
     def get_queryset(self):
@@ -373,6 +304,8 @@ class SchoolStudents(generics.ListAPIView):
 
 
 class StudentsForSubject(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     serializer_class = StudentListSerializer
 
     def get_queryset(self):

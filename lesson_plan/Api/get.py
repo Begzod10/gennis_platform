@@ -34,6 +34,7 @@ class GetLessonPlanView(generics.RetrieveAPIView):
 
 
 class LessonPlanListView(generics.ListAPIView):
+
     serializer_class = LessonPlanGetSerializer
     permission_classes = [IsAuthenticated]
 

@@ -10,8 +10,10 @@ from students.models import StudentHistoryGroups
 
 from group.serializers import GroupSerializer
 
-
+from rest_framework.permissions import IsAuthenticated
 class MoveToGroupApi(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, pk):
         today = datetime.now()
         group = Group.objects.get(pk=pk)

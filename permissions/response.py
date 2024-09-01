@@ -3,51 +3,34 @@ from datetime import date
 from django.db.models import Q
 
 from mobile.get_user import get_user
-from permissions.functions.CheckUserPermissions import check_user_permissions
 from permissions.models import ManyBranch, ManyLocation
-from teachers.models import Teacher
 from user.functions.functions import check_auth
 from user.models import CustomUser
 
 
 class CustomResponseMixin:
-    def get_custom_message(self, request):
-        method = request.method
-        if method == 'GET':
-            return f"maʼlumotlari muvaffaqiyatli olindi."
-        elif method == 'POST':
-            return f"muvaffaqiyatli yaratildi."
-        elif method == 'PUT':
-            return f"maʼlumotlari muvaffaqiyatli yangilandi."
-        elif method == 'PATCH':
-            return f"maʼlumotlari muvaffaqiyatli yangilandi."
-        elif method == 'DELETE':
-            return f"maʼlumotlari muvaffaqiyatli o'chirildi."
-        else:
-            return f"amal muvaffaqiyatli yakunlandi."
+    def get_custom_message(self, method):
+        messages = {
+            'POST': "muvaffaqiyatli yaratildi.",
+            'PUT': "maʼlumotlari muvaffaqiyatli yangilandi.",
+            'PATCH': "maʼlumotlari muvaffaqiyatli yangilandi.",
+            'DELETE': "maʼlumotlari muvaffaqiyatli o'chirildi.",
+        }
+        return messages.get(method, "amal muvaffaqiyatli yakunlandi.")
 
     def finalize_response(self, request, response, *args, **kwargs):
         response = super().finalize_response(request, response, *args, **kwargs)
 
-        if 200 <= response.status_code < 300:
-            custom_message = self.get_custom_message(request)
-            user, auth_error = check_auth(request)
-            if auth_error:
-                return auth_error
+        if not (200 <= response.status_code < 300 and isinstance(response.data, (dict, list))):
+            return response
+        custom_message = self.get_custom_message(request.method)
 
-            if hasattr(self, 'table_names') and self.table_names:
-                permissions = check_user_permissions(user, self.table_names)
-
-                if isinstance(response.data, dict):
-                    response.data['permissions'] = permissions
-                    response.data['msg'] = custom_message
-                elif isinstance(response.data, list):
-                    response.data = {
-                        'list': response.data,
-                        'permissions': permissions,
-                        'msg': custom_message
-                    }
-
+        if isinstance(response.data, dict):
+            response.data['msg'] = custom_message
+        elif isinstance(response.data, list):
+            response.data = {
+                'msg': custom_message,
+            }
         return response
 
 
@@ -132,6 +115,7 @@ class GetModelsMixin:
                 for type_index, type_name in enumerate(model_info['types']):
                     type_data = {
                         'name': model_info['return'][type_index],
+                        'type': type_name,
                         'list': []
                     }
                     datas.append(type_data)
@@ -159,7 +143,7 @@ class GetModelsMixin:
             'list': []
         }
 
-        for branch in ManyBranch.objects.filter(user=user, branch__location_id=location.id).all():
+        for branch in ManyBranch.objects.filter(user=user, branch__location_id=location.location.id).all():
             branch_data = self.get_branch_data(branch, type_name, model)
             location_data['list'].append(branch_data)
 
@@ -171,7 +155,7 @@ class GetModelsMixin:
             'name': branch.branch.name,
             'count': 0
         }
-        self.get_student_data(branch, type_name, branch_data, model)
+        self.get_student_data(branch.branch, type_name, branch_data, model)
 
         return branch_data
 
@@ -186,12 +170,15 @@ class GetModelsMixin:
                     id__in=deleted_student_ids).exclude(id__in=deleted_new_student_ids
                                                         ).filter(groups_student__isnull=True).count()
             elif type_name == 'studying_students':
-                branch_data['count'] = Student.objects.filter(user__branch_id=branch.id).exclude(
+                branch_data['count'] = Student.objects.filter(user__branch_id=branch.id,
+                                                              groups_student__isnull=False).exclude(
                     id__in=deleted_student_ids).exclude(id__in=deleted_new_student_ids
-                                                        ).filter(groups_student__isnull=False).count()
+                                                        ).count()
             elif type_name == 'deleted_students':
-                branch_data['count'] = Student.objects.filter(user__branch_id=branch.id).exclude(
+                branch_data['count'] = Student.objects.filter(user__branch_id=branch.id,
+                                                              groups_student__isnull=True).exclude(
                     id__in=deleted_new_student_ids).count()
         if model == 'Teachers':
+            from teachers.models import Teacher
             if type_name == 'new_teacher':
                 branch_data['count'] = Teacher.objects.filter(user__branch_id=branch.id).count()

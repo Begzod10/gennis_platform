@@ -11,7 +11,6 @@ from rest_framework.views import APIView
 
 from gennis_platform import settings
 from gennis_platform.settings import classroom_server
-from permissions.response import CustomResponseMixin
 from permissions.response import QueryParamFilterMixin
 from subjects.serializers import SubjectSerializer, Subject
 from user.models import CustomUser, UserSalaryList
@@ -20,8 +19,8 @@ from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, 
 
 
 class UserListCreateView(generics.ListAPIView):
-    table_names = ['customuser', 'branch', 'language', 'auth_group', 'auth_permission', 'system', 'location',
-                   ]
+    permission_classes = [IsAuthenticated]
+
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializerRead
 
@@ -31,9 +30,9 @@ class UserListCreateView(generics.ListAPIView):
         return Response(serializer.data)
 
 
-class UserDetailView(CustomResponseMixin, generics.RetrieveAPIView):
-    table_names = ['customuser', 'branch', 'language', 'auth_group', 'auth_permission', 'system', 'location',
-                   ]
+class UserDetailView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializerRead
 
@@ -44,8 +43,8 @@ class UserDetailView(CustomResponseMixin, generics.RetrieveAPIView):
 
 
 class UserSalaryListListView(generics.ListAPIView):
-    table_names = ['customuser', 'branch', 'language', 'auth_group', 'auth_permission', 'system', 'location',
-                   'usersalary', 'subjects', 'usersalarylist', 'customautogroup', 'paymenttypes']
+    permission_classes = [IsAuthenticated]
+
     queryset = UserSalaryList.objects.filter(deleted=False).all()
     serializer_class = UserSalaryListSerializersRead
 
@@ -55,9 +54,9 @@ class UserSalaryListListView(generics.ListAPIView):
         return Response(serializer.data)
 
 
-class DeletedUserSalaryListListView(CustomResponseMixin, generics.ListAPIView):
-    table_names = ['customuser', 'branch', 'language', 'auth_group', 'auth_permission', 'system', 'location',
-                   'usersalary', 'subjects', 'usersalarylist', 'customautogroup', 'paymenttypes']
+class DeletedUserSalaryListListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = UserSalaryList.objects.filter(deleted=True).all()
     serializer_class = UserSalaryListSerializersRead
 
@@ -67,9 +66,9 @@ class DeletedUserSalaryListListView(CustomResponseMixin, generics.ListAPIView):
         return Response(serializer.data)
 
 
-class UserSalaryListDetailView(QueryParamFilterMixin, CustomResponseMixin, generics.RetrieveAPIView):
-    table_names = ['customuser', 'branch', 'language', 'auth_group', 'auth_permission', 'system', 'location',
-                   'usersalary', 'subjects', 'usersalarylist', 'customautogroup', 'paymenttypes']
+class UserSalaryListDetailView(QueryParamFilterMixin, generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     filter_mappings = {
         'status': 'deleted',
     }
@@ -89,9 +88,7 @@ class UserSalaryListDetailView(QueryParamFilterMixin, CustomResponseMixin, gener
             raise NotFound('UserSalary not found for the given user_id')
 
 
-class UserMe(CustomResponseMixin, APIView):
-    table_names = ['customuser', 'branch', 'language', 'auth_group', 'auth_permission', 'system', 'location',
-                   'subjects']
+class UserMe(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -117,9 +114,9 @@ class UserMe(CustomResponseMixin, APIView):
         return Response(serializer.data)
 
 
-class EmployeersListView(QueryParamFilterMixin, CustomResponseMixin, generics.ListAPIView):
-    table_names = ['customuser', 'branch', 'language', 'auth_group', 'auth_permission', 'system', 'location',
-                   'subjects', 'customautogroup', ]
+class EmployeersListView(QueryParamFilterMixin, generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     filter_mappings = {
         'age': 'user__birth_date',
         'language': 'user__language_id',
@@ -137,19 +134,18 @@ class EmployeersListView(QueryParamFilterMixin, CustomResponseMixin, generics.Li
         return queryset
 
 
-class EmployerRetrieveView(CustomResponseMixin, generics.RetrieveAPIView):
-    table_names = ['customuser', 'branch', 'language', 'auth_group', 'auth_permission', 'system', 'location',
-                   'subjects', 'customautogroup']
+class EmployerRetrieveView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = CustomAutoGroup.objects.all()
 
     serializer_class = Employeers
 
 
-class UserSalaryMonthView(CustomResponseMixin, generics.RetrieveAPIView):
+class UserSalaryMonthView(generics.RetrieveAPIView):
     queryset = UserSalary.objects.all()
     serializer_class = UserSalarySerializersRead
-    table_names = ['customuser', 'branch', 'language', 'auth_group', 'auth_permission', 'system', 'location',
-                   'subjects', 'usersalary', 'paymenttypes']
+    permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):
 
@@ -168,9 +164,8 @@ class UserSalaryMonthView(CustomResponseMixin, generics.RetrieveAPIView):
             raise NotFound('UserSalary not found for the given user_id')
 
 
-class UsersWithJob(CustomResponseMixin, APIView):
-    table_names = ['customuser', 'branch', 'language', 'auth_group', 'auth_permission', 'system', 'location',
-                   'subjects']
+class UsersWithJob(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         queryset = CustomUser.objects.all()
@@ -214,9 +209,7 @@ class SetObserverView(APIView):
         })
 
 
-class GetUserAPIView(CustomResponseMixin, APIView):
-    table_names = ['customuser', 'branch', 'language', 'auth_group', 'auth_permission', 'system', 'location',
-                   'subjects']
+class GetUserAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
         user = CustomUser.objects.get(user_id=request.user.id)

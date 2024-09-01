@@ -5,19 +5,20 @@ import uuid
 from datetime import datetime
 
 import docx
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from rest_framework import filters
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from branch.models import Branch
-from permissions.response import CustomResponseMixin, QueryParamFilterMixin
+from permissions.response import QueryParamFilterMixin
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
 from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
                           DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
-from rest_framework import filters
 
 
 class StudentListView(APIView):
@@ -42,7 +43,8 @@ class StudentListView(APIView):
         return Response(data)
 
 
-class DeletedFromRegistered(QueryParamFilterMixin, CustomResponseMixin, APIView):
+class DeletedFromRegistered(QueryParamFilterMixin, APIView):
+    permission_classes = [IsAuthenticated]
 
     filter_mappings = {
         'branch': 'student__user__branch_id',
@@ -50,7 +52,6 @@ class DeletedFromRegistered(QueryParamFilterMixin, CustomResponseMixin, APIView)
         'age': 'student__user__birth_date',
         'language': 'student__user__language_id',
     }
-
 
     def get(self, request, *args, **kwargs):
         deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
@@ -61,13 +62,15 @@ class DeletedFromRegistered(QueryParamFilterMixin, CustomResponseMixin, APIView)
         return Response(delete_new_student_serializer.data)
 
 
-class DeletedGroupStudents(QueryParamFilterMixin, CustomResponseMixin, APIView):
+class DeletedGroupStudents(QueryParamFilterMixin, APIView):
+    permission_classes = [IsAuthenticated]
     filter_mappings = {
         'branch': 'user__branch_id',
         'subject': 'subject__id',
         'age': 'user__birth_date',
         'language': 'user__language_id',
     }
+
     def get(self, request, *args, **kwargs):
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_new_student_ids)
@@ -77,6 +80,8 @@ class DeletedGroupStudents(QueryParamFilterMixin, CustomResponseMixin, APIView):
 
 
 class NewRegisteredStudents(QueryParamFilterMixin, APIView):
+    permission_classes = [IsAuthenticated]
+
     filter_mappings = {
         'branch': 'user__branch_id',
         'subject': 'subject__id',
@@ -85,12 +90,15 @@ class NewRegisteredStudents(QueryParamFilterMixin, APIView):
     }
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__name', 'user__surname', 'user__username']
+
     def get(self, request, *args, **kwargs):
-        deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
-        deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
-        active_students = Student.objects.exclude(id__in=deleted_student_ids) \
-            .exclude(id__in=deleted_new_student_ids) \
-            .filter(groups_student__isnull=True).distinct()
+        excluded_ids = list(DeletedStudent.objects.values_list('student_id', flat=True)) + \
+                       list(DeletedNewStudent.objects.values_list('student_id', flat=True))
+
+        active_students = Student.objects.select_related('user').filter(
+            ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
+        ).distinct()
+
         filtered_students = self.filter_queryset(active_students)
         search_filter = filters.SearchFilter()
         filtered_students = search_filter.filter_queryset(request, filtered_students, self)
@@ -100,8 +108,7 @@ class NewRegisteredStudents(QueryParamFilterMixin, APIView):
         return Response(student_serializer.data)
 
 
-class ActiveStudents(QueryParamFilterMixin, CustomResponseMixin, APIView):
-    table_names = ['student', 'deletedstudent', 'deletednewstudent','customuser','system','branch','subject','language','location','group']
+class ActiveStudents(QueryParamFilterMixin, APIView):
     filter_mappings = {
         'branch': 'user__branch_id',
         'subject': 'subject__id',
@@ -113,11 +120,10 @@ class ActiveStudents(QueryParamFilterMixin, CustomResponseMixin, APIView):
         deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_student_ids) \
-                              .exclude(id__in=deleted_new_student_ids) \
-                              .filter(groups_student__isnull=False).distinct()
+            .exclude(id__in=deleted_new_student_ids) \
+            .filter(groups_student__isnull=False).distinct()
 
         active_students = self.filter_queryset(active_students)
-
 
         student_serializer = StudentListSerializer(active_students, many=True)
 
@@ -274,6 +280,7 @@ class UploadPDFContractView(APIView):
 
 
 class PaymentDatas(APIView):
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, student_id):
         data = json.loads(request.body)

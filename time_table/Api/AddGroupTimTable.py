@@ -1,15 +1,14 @@
-import json
 from rest_framework import generics
-from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+
+from time_table.functions.creatWeekDays import creat_week_days
 from time_table.models import GroupTimeTable
 from time_table.serializers import GroupTimeTableReadSerializer, GroupTimeTableCreateUpdateSerializer
-from time_table.functions.creatWeekDays import creat_week_days
-from time_table.functions.checkTime import check_time
-from time_table.functions.time_table_archive import creat_time_table_archive
-from group.models import Group
 
 
 class CreateGroupTimeTable(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = GroupTimeTable.objects.all()
     serializer_class = GroupTimeTableCreateUpdateSerializer
 

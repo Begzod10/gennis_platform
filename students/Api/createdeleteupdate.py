@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from permissions.response import CustomResponseMixin
@@ -10,16 +11,22 @@ from students.serializers import DeletedStudentSerializer, StudentPaymentSeriali
 
 
 class StudentCreateView(CustomResponseMixin, generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
 
 
 class StudentUpdateView(CustomResponseMixin, generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
 
 
 class StudentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
 
@@ -30,51 +37,69 @@ class StudentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
 
 
 class StudentHistoryGroupsCreateView(CustomResponseMixin, generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = StudentHistoryGroups.objects.all()
     serializer_class = StudentHistoryGroupsSerializer
 
 
 class StudentHistoryGroupsUpdateView(CustomResponseMixin, generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = StudentHistoryGroups.objects.all()
     serializer_class = StudentHistoryGroupsSerializer
 
 
 class StudentHistoryGroupsDestroyView(CustomResponseMixin, generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = StudentHistoryGroups.objects.all()
     serializer_class = StudentHistoryGroupsSerializer
 
 
 class StudentCharityCreateView(CustomResponseMixin, generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     app_name = 'Student uchun hayriya'
     queryset = StudentCharity.objects.all()
     serializer_class = StudentCharitySerializer
 
 
 class StudentCharityUpdateView(CustomResponseMixin, generics.UpdateAPIView):
-    app_name ='Student hayriyasi'
+    permission_classes = [IsAuthenticated]
+
+    app_name = 'Student hayriyasi'
 
     queryset = StudentCharity.objects.all()
     serializer_class = StudentCharitySerializer
 
 
 class StudentCharityDestroyView(CustomResponseMixin, generics.DestroyAPIView):
-    app_name ='Student hayriyasi'
+    permission_classes = [IsAuthenticated]
+
+    app_name = 'Student hayriyasi'
 
     queryset = StudentCharity.objects.all()
     serializer_class = StudentCharitySerializer
 
 
 class StudentPaymentCreateView(CustomResponseMixin, generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = StudentPayment.objects.all()
     serializer_class = StudentPaymentSerializer
 
 
 class StudentPaymentUpdateView(CustomResponseMixin, generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = StudentPayment.objects.all()
     serializer_class = StudentPaymentSerializer
 
 
 class StudentPaymentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = StudentPayment.objects.all()
     serializer_class = StudentPaymentSerializer
 
@@ -93,5 +118,7 @@ class StudentPaymentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
 
 
 class DeletedStudentDestroy(CustomResponseMixin, generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = DeletedStudent.objects.all()
     serializer_class = DeletedStudentSerializer

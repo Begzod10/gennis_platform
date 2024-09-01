@@ -2,26 +2,21 @@ from datetime import timedelta
 
 from django.utils import timezone
 from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from overhead.models import Overhead, OverheadType
 from overhead.serializers import OverheadSerializerGet, OverheadSerializerGetTYpe, MonthDaysSerializer
-from permissions.functions.CheckUserPermissions import check_user_permissions
-from user.functions.functions import check_auth
 
 
 class OverheadListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = Overhead.objects.all()
     serializer_class = OverheadSerializerGet
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['overhead', 'paymenttypes']
-        permissions = check_user_permissions(user, table_names)
 
         queryset = Overhead.objects.all()
         location_id = self.request.query_params.get('location_id', None)
@@ -34,43 +29,36 @@ class OverheadListView(generics.ListAPIView):
         if location_id is not None:
             queryset = queryset.filter(location_id=location_id)
         serializer = OverheadSerializerGet(queryset, many=True)
-        return Response({'overheads': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class OverheadTYpeListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = OverheadType.objects.all()
     serializer_class = OverheadSerializerGetTYpe
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['OverheadType', 'paymenttypes']
-        permissions = check_user_permissions(user, table_names)
-
         queryset = OverheadType.objects.all()
         serializer = OverheadSerializerGetTYpe(queryset, many=True)
-        return Response({'overheads': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class OverheadRetrieveView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = Overhead.objects.all()
     serializer_class = OverheadSerializerGet
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['overhead', 'paymenttypes']
-        permissions = check_user_permissions(user, table_names)
         overhead = self.get_object()
         overhead_data = self.get_serializer(overhead).data
-        return Response({'overhead': overhead_data, 'permissions': permissions})
+        return Response(overhead_data)
 
 
 class MonthDaysView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, format=None):
         try:
             today = timezone.localtime().date()

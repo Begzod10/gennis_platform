@@ -8,8 +8,10 @@ from students.serializers import StudentListSerializer
 from teachers.models import Teacher
 from teachers.serializers import TeacherSerializerRead
 
-
+from rest_framework.permissions import IsAuthenticated
 class GetCheckedStudentsTeachers(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, branch_id, subject_id):
         location_id = branch_id
         teachers_list = []

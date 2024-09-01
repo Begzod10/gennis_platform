@@ -22,18 +22,12 @@ class TypeDayUpdateView(generics.UpdateAPIView):
 
 
 class TypeDayDestroyView(generics.DestroyAPIView):
+
     permission_classes = [IsAuthenticated]
     queryset = TypeDay.objects.all()
     serializer_class = TypeDaySerializer
 
 
-# class ChangeTypeView(APIView):
-#     def post(self, request):
-#         day_id = request.data.get('day_id')
-#         type_id = request.data.get('type_id')
-#         Day.objects.filter(id=day_id).update(type_id=type_id)
-#         color = TypeDay.objects.get(id=type_id).color
-#         return Response({'color': color}, status=status.HTTP_200_OK)
 
 class ChangeTypeView(APIView):
     permission_classes = [IsAuthenticated]

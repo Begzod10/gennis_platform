@@ -1,11 +1,13 @@
-from rest_framework.response import Response
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
 
 from time_table.models import GroupTimeTable
-from rest_framework import generics
-from time_table.serializers import GroupTimeTableCreateUpdateSerializer, GroupTimeTableReadSerializer
+from time_table.serializers import GroupTimeTableCreateUpdateSerializer
 
 
 class GroupTimeTableUpdate(generics.RetrieveUpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = GroupTimeTable.objects.all()
     serializer_class = GroupTimeTableCreateUpdateSerializer
 

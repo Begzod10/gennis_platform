@@ -1,15 +1,16 @@
-import requests
 from rest_framework import generics
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 from subjects.models import Subject, SubjectLevel
-from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
-from user.functions.functions import check_auth
-from permissions.functions.CheckUserPermissions import check_user_permissions
+from subjects.serializers import SubjectSerializer
 
 
 class DataSyncView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         data_type = request.data.get('type')
         if data_type == "subject":
@@ -60,35 +61,23 @@ class DataSyncView(APIView):
         return Response({"msg": "Zo'r"}, status=status.HTTP_200_OK)
 
 
-
 class CreateSubjectList(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['subject']
-        permissions = check_user_permissions(user, table_names)
-
         queryset = Subject.objects.all()
         serializer = SubjectSerializer(queryset, many=True)
-        return Response({'subjects': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class SubjectRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['subject']
-        permissions = check_user_permissions(user, table_names)
         subject = self.get_object()
         subject_data = self.get_serializer(subject).data
-        return Response({'subject': subject_data, 'permissions': permissions})
+        return Response(subject_data)

@@ -1,12 +1,14 @@
 from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from ..serializers import FlowCreateUpdateSerializer, FlowsSerializer
-
 from ..models import Flow
+from ..serializers import FlowCreateUpdateSerializer, FlowsSerializer
 
 
 class FlowListCreateView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = Flow.objects.all()
     serializer_class = FlowCreateUpdateSerializer
 
@@ -17,8 +19,11 @@ class FlowListCreateView(generics.ListCreateAPIView):
 
 
 class FlowListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = Flow.objects.all()
     serializer_class = FlowsSerializer
+
     def get_queryset(self):
         queryset = Flow.objects.all()
         location_id = self.request.query_params.get('location_id', None)
@@ -33,6 +38,8 @@ class FlowListView(generics.ListAPIView):
 
 
 class FlowProfile(generics.RetrieveUpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = Flow.objects.all()
     serializer_class = FlowCreateUpdateSerializer
 

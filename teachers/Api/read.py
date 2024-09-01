@@ -1,18 +1,19 @@
+from django.db.models.query import QuerySet
 from rest_framework import generics
 from rest_framework.exceptions import NotFound
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from permissions.functions.CheckUserPermissions import check_user_permissions
-from permissions.response import CustomResponseMixin, QueryParamFilterMixin
+from permissions.response import QueryParamFilterMixin
 from teachers.models import TeacherGroupStatistics, Teacher, TeacherSalaryList, TeacherSalary
 from teachers.serializers import (
     TeacherSerializerRead, TeacherSalaryListReadSerializers, TeacherGroupStatisticsReadSerializers,
     TeacherSalaryReadSerializers
 )
-from user.functions.functions import check_auth
 
 
 class TeacherGroupStatisticsListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     # http://ip_adress:8000/Teachers/teacher-statistics-view/?branch_id=3
     queryset = TeacherGroupStatistics.objects.all()
     serializer_class = TeacherGroupStatisticsReadSerializers
@@ -26,8 +27,9 @@ class TeacherGroupStatisticsListView(generics.ListAPIView):
         return teacher_group_statistics
 
 
-class TeacherListView(QueryParamFilterMixin, CustomResponseMixin, generics.ListAPIView):
-    app_name ="O'qtuvchilar"
+class TeacherListView(QueryParamFilterMixin, generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    app_name = "O'qtuvchilar"
     filter_mappings = {
         'branch': "user__branch_id",
         'age': 'user__birth_date',
@@ -45,6 +47,7 @@ class TeacherListView(QueryParamFilterMixin, CustomResponseMixin, generics.ListA
 
 
 class TeacherRetrieveView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializerRead
 
@@ -58,7 +61,8 @@ class TeacherRetrieveView(generics.RetrieveAPIView):
         return obj
 
 
-class TeacherSalaryListAPIView(QueryParamFilterMixin, CustomResponseMixin, generics.ListAPIView):
+class TeacherSalaryListAPIView(QueryParamFilterMixin, generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     filter_mappings = {
         'status': 'deleted',
         'branch': 'branch',
@@ -73,20 +77,16 @@ class TeacherSalaryListAPIView(QueryParamFilterMixin, CustomResponseMixin, gener
         data = self.get_serializer(queryset, many=True).data
 
         return Response(data)
-from django.db.models.query import QuerySet
 
 
 class TeacherSalaryDetailAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = TeacherSalary.objects.all()
     serializer_class = TeacherSalaryReadSerializers
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
 
-        table_names = ['teacher', 'paymenttypes', 'branch', 'customuser']
-        permissions = check_user_permissions(user, table_names)
         user_salary_list = self.get_object()
 
         if isinstance(user_salary_list, QuerySet):
@@ -94,7 +94,7 @@ class TeacherSalaryDetailAPIView(generics.RetrieveAPIView):
         else:
             user_salary_list_data = self.get_serializer(user_salary_list).data
 
-        return Response({'usersalary': user_salary_list_data, 'permissions': permissions})
+        return Response(user_salary_list_data)
 
     def get_object(self):
         user_id = self.kwargs.get('pk')
@@ -105,6 +105,8 @@ class TeacherSalaryDetailAPIView(generics.RetrieveAPIView):
 
 
 class TeacherSalaryListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     serializer_class = TeacherSalaryReadSerializers
 
     def get_queryset(self):
@@ -115,7 +117,9 @@ class TeacherSalaryListView(generics.ListAPIView):
         return queryset
 
 
-class TeacherSalaryListDetailView(QueryParamFilterMixin, CustomResponseMixin, generics.RetrieveAPIView):
+class TeacherSalaryListDetailView(QueryParamFilterMixin, generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     filter_mappings = {
         'status': 'deleted'
     }
@@ -123,16 +127,11 @@ class TeacherSalaryListDetailView(QueryParamFilterMixin, CustomResponseMixin, ge
     serializer_class = TeacherSalaryListReadSerializers
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
 
-        table_names = ['teachersalarylist', 'teachersalary', 'paymenttypes', 'branch', 'customuser']
-        permissions = check_user_permissions(user, table_names)
         user_salary_list = self.get_object()
         user_salary_list = self.filter_queryset(user_salary_list)
         user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
-        return Response({'teacher_salary': user_salary_list_data, 'permissions': permissions})
+        return Response(user_salary_list_data)
 
     def get_object(self):
         user_id = self.kwargs.get('pk')

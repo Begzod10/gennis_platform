@@ -1,10 +1,14 @@
 from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
 from group.models import Group
 from group.serializers import GroupSerializer, GroupCreateUpdateSerializer
-from rest_framework.response import Response
 
 
 class GroupProfile(generics.RetrieveUpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = Group.objects.all()
     serializer_class = GroupCreateUpdateSerializer
 

@@ -9,8 +9,10 @@ from rest_framework.views import APIView
 from group.models import Group
 from ..models import AttendancePerMonth, Student
 
-
+from rest_framework.permissions import IsAuthenticated
 class AttendanceDatas(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get_specific_weekdays(self, year, month, weekday):
         c = calendar.Calendar()
         return [date.day for date in c.itermonthdates(year, month) if date.month == month and date.weekday() == weekday]
@@ -52,6 +54,8 @@ class AttendanceDatas(APIView):
 
 
 class AttendanceDatasForGroup(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get_specific_weekdays(self, year, month, weekday):
         c = calendar.Calendar()
         return [date.day for date in c.itermonthdates(year, month) if date.month == month and date.weekday() == weekday]
@@ -102,6 +106,8 @@ class AttendanceDatasForGroup(APIView):
         return JsonResponse(final_output)
 
 class AttendanceDatasForAllGroup(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get_specific_weekdays(self, year, month, weekday):
         c = calendar.Calendar()
         return [date.day for date in c.itermonthdates(year, month) if date.month == month and date.weekday() == weekday]

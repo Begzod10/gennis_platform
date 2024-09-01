@@ -3,9 +3,11 @@ from time_table.models import WeekDays
 from time_table.serializers import WeekDaysSerializer
 from rest_framework.response import Response
 from datetime import datetime
-
+from rest_framework.permissions import IsAuthenticated
 
 class WeekDaysView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     serializer_class = WeekDaysSerializer
     queryset = WeekDays.objects.all()
 

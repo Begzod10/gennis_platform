@@ -9,9 +9,11 @@ from teachers.models import Teacher
 from teachers.serializers import TeacherSerializerRead
 from group.models import Group
 from group.serializers import GroupClassSerializer
-
+from rest_framework.permissions import IsAuthenticated
 
 class GetCheckedStudentsForClassTimeTable(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, *args, **kwargs):
         students_list = []
         branch_id = self.request.query_params.get('branch')
@@ -55,6 +57,8 @@ class GetCheckedStudentsForClassTimeTable(APIView):
 
 
 class CheckedStudentsMoveToGroup(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, *args, **kwargs):
         today = datetime.now()
         errors = []

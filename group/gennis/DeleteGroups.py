@@ -8,9 +8,11 @@ from group.serializers import GroupSerializer
 from students.models import StudentHistoryGroups
 from time_table.models import TimeTableArchive
 from teachers.models import TeacherHistoryGroups
-
+from rest_framework.permissions import IsAuthenticated
 
 class DeleteGroups(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, pk):
         today = datetime.now()
         group = Group.objects.get(pk=pk)

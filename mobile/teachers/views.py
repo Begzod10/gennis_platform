@@ -10,11 +10,11 @@ from rest_framework.views import APIView
 from attendances.models import AttendancePerDay, Student, AttendancePerMonth, Group
 from mobile.teachers.serializers import TeachersSalariesSerializer, TeachersDebtedStudents, Teacher, \
     TeacherProfileSerializer, AttendancesTodayStudentsSerializer, GroupListSeriliazersMobile
-from permissions.response import QueryParamFilterMixin, CustomResponseMixin, CustomUser
+from permissions.response import QueryParamFilterMixin,  CustomUser
 from ..get_user import get_user
 
 
-class TeacherPaymentsListView(CustomResponseMixin, QueryParamFilterMixin, generics.ListAPIView):
+class TeacherPaymentsListView( QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = TeachersSalariesSerializer
     filter_mappings = {
@@ -28,7 +28,7 @@ class TeacherPaymentsListView(CustomResponseMixin, QueryParamFilterMixin, generi
         return teacher.teacher_id_salary.all().distinct()
 
 
-class TeachersDebtedStudentsListView(QueryParamFilterMixin, CustomResponseMixin, generics.ListAPIView):
+class TeachersDebtedStudentsListView(QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     queryset = Teacher.objects.all()
@@ -43,7 +43,7 @@ class TeachersDebtedStudentsListView(QueryParamFilterMixin, CustomResponseMixin,
         return teacher.group_set.all().distinct()
 
 
-class TeacherProfileView(QueryParamFilterMixin, CustomResponseMixin, generics.RetrieveUpdateAPIView):
+class TeacherProfileView(QueryParamFilterMixin, generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Teacher.objects.all()
     serializer_class = TeacherProfileSerializer
@@ -55,7 +55,7 @@ class TeacherProfileView(QueryParamFilterMixin, CustomResponseMixin, generics.Re
         return user
 
 
-class TeachersAttendaceStudentsListView(QueryParamFilterMixin, CustomResponseMixin, generics.ListAPIView):
+class TeachersAttendaceStudentsListView(QueryParamFilterMixin,  generics.ListAPIView):
     # filter_mappings = {
     #     'group': 'id',
     # }
@@ -71,7 +71,7 @@ class TeachersAttendaceStudentsListView(QueryParamFilterMixin, CustomResponseMix
         return teacher.group_set.all().distinct()
 
 
-class GroupListView(QueryParamFilterMixin, CustomResponseMixin, generics.ListAPIView):
+class GroupListView(QueryParamFilterMixin,  generics.ListAPIView):
     # filter_mappings = {
     #     'group': 'id',
     # }

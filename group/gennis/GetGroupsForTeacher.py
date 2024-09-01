@@ -2,9 +2,11 @@ import json
 from rest_framework import generics
 from group.models import Group
 from group.serializers import GroupSerializer
-
+from rest_framework.permissions import IsAuthenticated
 
 class GetGroupsForTeacher(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     serializer_class = GroupSerializer
 
     def get_queryset(self):

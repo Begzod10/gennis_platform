@@ -1,33 +1,44 @@
 from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from group.models import Group, GroupReason, CourseTypes
 from group.serializers import GroupSerializer, GroupReasonSerializers, CourseTypesSerializers, \
     GroupCreateUpdateSerializer
-from permissions.response import CustomResponseMixin, QueryParamFilterMixin
+from permissions.response import QueryParamFilterMixin
 
 
 class CreateCourseTypesList(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = CourseTypes.objects.all()
     serializer_class = CourseTypesSerializers
 
 
 class CourseTypesRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = CourseTypes.objects.all()
     serializer_class = CourseTypesSerializers
 
 
 class CreateGroupReasonList(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = GroupReason.objects.all()
     serializer_class = GroupReasonSerializers
 
 
 class GroupReasonRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = GroupReason.objects.all()
     serializer_class = GroupReasonSerializers
 
 
-class CreatGroups(QueryParamFilterMixin, CustomResponseMixin, generics.ListCreateAPIView):
+class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     filter_mappings = {
         'teacher': 'teacher__id',
         'subject': 'subject__id',
