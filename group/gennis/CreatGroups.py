@@ -44,7 +44,8 @@ class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
         'subject': 'subject__id',
         'course_types': 'course_types__id',
         'deleted': 'deleted',
-        'created_date': 'created_date'
+        'created_date': 'created_date',
+        'branch': 'branch_id'
     }
     serializer_class = GroupCreateUpdateSerializer
 

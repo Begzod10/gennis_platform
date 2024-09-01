@@ -82,8 +82,8 @@ class GetModelsMixin:
             'value': ['new_students', 'studying_students', 'deleted_students']
         },
         {
-            'name': 'Teachers',
-            'value': ['new_teacher', 'deleted_teacher', 'teacher']
+            'name': 'Group',
+            'value': ['groups']
         }
     ]
 
@@ -178,7 +178,7 @@ class GetModelsMixin:
                 branch_data['count'] = Student.objects.filter(user__branch_id=branch.id,
                                                               groups_student__isnull=True).exclude(
                     id__in=deleted_new_student_ids).count()
-        if model == 'Teachers':
-            from teachers.models import Teacher
-            if type_name == 'new_teacher':
-                branch_data['count'] = Teacher.objects.filter(user__branch_id=branch.id).count()
+        if model == 'Group':
+            from group.models import Group
+            if type_name == 'groups':
+                branch_data['count'] = Group.objects.filter(branch_id=branch.id).count()
