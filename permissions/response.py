@@ -2,10 +2,8 @@ from datetime import date
 
 from django.db.models import Q
 
-from mobile.get_user import get_user
 from permissions.models import ManyBranch, ManyLocation
 from user.functions.functions import check_auth
-from user.models import CustomUser
 
 
 class CustomResponseMixin:
@@ -42,7 +40,7 @@ class QueryParamFilterMixin:
 
         for param, field in self.filter_mappings.items():
             value = self.request.query_params.get(param)
-            if value is not None:
+            if value is not None and value != 'null':
                 if '-' in value:
                     try:
                         age_from, age_to = map(int, value.split('-'))
@@ -64,10 +62,10 @@ class QueryParamFilterMixin:
                     self.filter_conditions &= Q(**{field: value})
                 else:
                     continue
-            else:
-                if param == 'branch':
-                    user = CustomUser.objects.get(pk=get_user(self.request))
-                    self.filter_conditions &= Q(**{field: user.branch_id})
+            # else:
+            #     if param == 'branch':
+            #         user = CustomUser.objects.get(pk=get_user(self.request))
+            #         self.filter_conditions &= Q(**{field: user.branch_id})
 
         if self.filter_conditions:
             queryset = queryset.filter(self.filter_conditions)
@@ -84,6 +82,9 @@ class GetModelsMixin:
         {
             'name': 'Group',
             'value': ['groups']
+        }, {
+            'name': 'Teacher',
+            'value': ['teachers']
         }
     ]
 
@@ -182,3 +183,7 @@ class GetModelsMixin:
             from group.models import Group
             if type_name == 'groups':
                 branch_data['count'] = Group.objects.filter(branch_id=branch.id).count()
+        if model == 'Teacher':
+            from teachers.models import Teacher
+            if type_name == 'teachers':
+                branch_data['count'] = Teacher.objects.filter(user__branch_id=branch.id).count()

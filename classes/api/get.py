@@ -14,9 +14,14 @@ class ClassNumberRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = ClassNumberListSerializers
 
     def retrieve(self, request, *args, **kwargs):
-        class_number = self.get_object()
-        class_number_data = self.get_serializer(class_number).data
+        class_number = self.get_queryset()
+        class_number_data = self.get_serializer(class_number, many=True).data
         return Response(class_number_data)
+
+    def get_queryset(self):
+        queryset = ClassNumber.objects.filter(class_types_id=self.kwargs.get('pk')).all()
+
+        return queryset
 
 
 class StudentCoinRetrieveAPIView(generics.RetrieveAPIView):

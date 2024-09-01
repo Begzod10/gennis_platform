@@ -10,11 +10,12 @@ from rest_framework.views import APIView
 from attendances.models import AttendancePerDay, Student, AttendancePerMonth, Group
 from mobile.teachers.serializers import TeachersSalariesSerializer, TeachersDebtedStudents, Teacher, \
     TeacherProfileSerializer, AttendancesTodayStudentsSerializer, GroupListSeriliazersMobile
-from permissions.response import QueryParamFilterMixin,  CustomUser
+from permissions.response import QueryParamFilterMixin
+from user.models import CustomUser
 from ..get_user import get_user
 
 
-class TeacherPaymentsListView( QueryParamFilterMixin, generics.ListAPIView):
+class TeacherPaymentsListView(QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = TeachersSalariesSerializer
     filter_mappings = {
@@ -55,7 +56,7 @@ class TeacherProfileView(QueryParamFilterMixin, generics.RetrieveUpdateAPIView):
         return user
 
 
-class TeachersAttendaceStudentsListView(QueryParamFilterMixin,  generics.ListAPIView):
+class TeachersAttendaceStudentsListView(QueryParamFilterMixin, generics.ListAPIView):
     # filter_mappings = {
     #     'group': 'id',
     # }
@@ -71,7 +72,7 @@ class TeachersAttendaceStudentsListView(QueryParamFilterMixin,  generics.ListAPI
         return teacher.group_set.all().distinct()
 
 
-class GroupListView(QueryParamFilterMixin,  generics.ListAPIView):
+class GroupListView(QueryParamFilterMixin, generics.ListAPIView):
     # filter_mappings = {
     #     'group': 'id',
     # }
