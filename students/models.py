@@ -69,7 +69,7 @@ class DeletedStudent(models.Model):
     group_reason = models.ForeignKey('group.GroupReason', on_delete=models.SET_NULL, null=True,
                                      related_name='deleted_student_group_reason')
     deleted_date = models.DateTimeField(auto_now_add=True)
-    old_id = models.IntegerField(unique=True, null=True)
+    # old_id = models.IntegerField(unique=True, null=True)
     comment = models.CharField(max_length=255, null=True)
 
 
