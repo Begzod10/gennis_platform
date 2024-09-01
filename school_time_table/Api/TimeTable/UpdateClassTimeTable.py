@@ -215,14 +215,15 @@ class UpdateFlowTimeTable(APIView):
                 if flow.students.all():
                     for student in flow.students.all():
                         tm = student.class_time_table.filter(hours_id=hour, week_id=day).first()
-                        if not tm.id == time_table.id:
-                            status = False
-                            if tm.flow_id == None:
-                                msg.append(
-                                    f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.group.class_number.number}-{tm.group.color.name}" sinifida darsi bor')
-                            else:
-                                msg.append(
-                                    f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.flow.name}" patokida darsi bor')
+                        if tm:
+                            if not tm.id == time_table.id:
+                                status = False
+                                if tm.flow_id == None:
+                                    msg.append(
+                                        f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.group.class_number.number}-{tm.group.color.name}" sinifida darsi bor')
+                                else:
+                                    msg.append(
+                                        f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.flow.name}" patokida darsi bor')
             if status == True:
                 time_table.delete()
             print(msg)
@@ -249,10 +250,12 @@ class UpdateFlowTimeTable(APIView):
                 if flow.students.all():
                     for student in flow.students.all():
                         tm = student.class_time_table.filter(hours_id=hour, week_id=day).first()
-                        if tm.flow_id == None:
-                            msg.append(
-                                f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.group.class_number.number}-{tm.group.color.name}" sinifida darsi bor')
-                        else:
-                            msg.append(
-                                f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.flow.name}" patokida darsi bor')
+                        if tm:
+
+                            if tm.flow_id == None:
+                                msg.append(
+                                    f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.group.class_number.number}-{tm.group.color.name}" sinifida darsi bor')
+                            else:
+                                msg.append(
+                                    f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.flow.name}" patokida darsi bor')
         return Response({'status': status, 'msg': msg})

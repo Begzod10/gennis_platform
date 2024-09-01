@@ -60,10 +60,7 @@ class TeachersForSubject(generics.ListAPIView):
     def get_queryset(self):
         branch_id = self.request.query_params.get('branch')
         subject_id = self.request.query_params.get('subject')
-        print(branch_id)
-        print(subject_id)
         teachers = Teacher.objects.filter(branches__in=[branch_id], subject__in=[subject_id])
-        print(teachers)
         return Teacher.objects.filter(branches__in=[branch_id], subject__in=[subject_id])
 
 # class SchoolTeachers(generics.ListAPIView):

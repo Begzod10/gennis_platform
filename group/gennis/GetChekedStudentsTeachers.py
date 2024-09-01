@@ -69,6 +69,5 @@ class GetCheckedStudentsTeachers(APIView):
                     should_add_teacher = True
             if should_add_teacher:
                 teachers_list.append(teacher_data)
-
         return Response(
             {'students': students_list, 'teachers': teachers_list})

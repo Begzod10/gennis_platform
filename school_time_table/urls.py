@@ -6,6 +6,7 @@ from .Api.TimeTable.CreateClassTimeTable import CreateClassTimeTable, ClassesFlo
     CheckClassTimeTable
 from .Api.TimeTable.UpdateClassTimeTable import UpdateClassTimeTable, UpdateClassTimeTableHours, UpdateFlowTimeTable
 from .Api.TimeTable.DeleteItemClassTimeTable import DeleteItemClassTimeTable
+from .Api.TimeTable.checks.checkNextLesson import CheckNextLesson
 
 urlpatterns = [
     path('hours-list-create/', HourListCreateView.as_view(), name='hours-list-create'),
@@ -21,4 +22,6 @@ urlpatterns = [
     path('timetable-lessons/', ClassTimeTableLessonsView.as_view(), name='timetable-lessons'),
     path('can-set/', CheckClassTimeTable.as_view(), name='timetable-lessons'),
     path('can-set-flow/', UpdateFlowTimeTable.as_view(), name='timetable-lessons'),
+    path('check-next-lesson/', CheckNextLesson.as_view(),
+         name='check-next-lesson'),
 ]

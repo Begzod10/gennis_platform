@@ -18,7 +18,7 @@ class Student(models.Model):
     representative_name = models.CharField(null=True)
     representative_surname = models.CharField(null=True)
     old_id = models.IntegerField(null=True, unique=True)
-    turon_old_id = models.IntegerField(null=True, unique=True)
+    # turon_old_id = models.IntegerField(null=True, unique=True)
     old_money = models.BigIntegerField(null=True)
     group_time_table = models.ManyToManyField('time_table.GroupTimeTable', blank=True)
     system = models.ForeignKey('system.System', on_delete=models.SET_NULL, null=True)
@@ -49,7 +49,7 @@ class DeletedNewStudent(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student_new')
     created = models.DateTimeField(auto_now_add=True)
     comment = models.CharField(null=True)
-    old_id = models.IntegerField(unique=True, null=True)
+    # old_id = models.IntegerField(unique=True, null=True)
 
 
 class StudentHistoryGroups(models.Model):
