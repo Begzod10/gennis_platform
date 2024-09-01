@@ -47,7 +47,6 @@ class FlowCreateUpdateSerializer(serializers.ModelSerializer):
                     instance.students.remove(student)
                     for time_table in instance.classtimetable_set.all():
                         student.class_time_table.remove(time_table)
-
         instance.save()
         return instance
 

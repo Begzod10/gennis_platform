@@ -69,6 +69,7 @@ class DeletedStudent(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='deleted_student_teacher', null=True)
     group_reason = models.ForeignKey('group.GroupReason', on_delete=models.SET_NULL, null=True,
                                      related_name='deleted_student_group_reason')
+
     deleted_date = models.DateField(auto_now_add=True)
     old_id = models.IntegerField(unique=True, null=True)
     comment = models.CharField(max_length=255, null=True)
