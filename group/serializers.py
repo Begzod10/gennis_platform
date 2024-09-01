@@ -15,13 +15,8 @@ from language.serializers import LanguageSerializers
 from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
 from system.serializers import SystemSerializers
 from teachers.serializers import TeacherSerializer
-
-from .functions.checkTimeTable import check_time_table
 from .functions.CreateSchoolStudentDebts import create_school_student_debts
 from students.models import DeletedNewStudent
-
-
-# from time_table.serializers import GroupTimeTableReadSerializer
 
 
 class CourseTypesSerializers(serializers.ModelSerializer):
@@ -140,10 +135,19 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                                             teacher=instance.teacher.all()[0],
                                                             joined_day=datetime.now())
 
-                        create_school_student_debts(instance, instance.students.all())
+                    create_school_student_debts(instance, students)
                 elif update_method == "remove_students":
                     if delete_type == 'new_students':
                         for student in students:
+                            today = datetime.now()
+                            date = datetime(today.year, today.month, 1)
+                            month_date = date.strftime("%Y-%m-%d")
+                            attendances_per_month = student.attendancepermonth_set.filter(group=instance,
+                                                                                          student=student,
+                                                                                          month_date__gte=month_date,
+                                                                                          payment=0)
+                            for attendance in attendances_per_month:
+                                attendance.delete()
                             instance.students.remove(student)
                             DeletedNewStudent.objects.create(student=student, comment=comment)
                             student_history_group = StudentHistoryGroups.objects.get(group=instance,
@@ -153,6 +157,15 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                             student_history_group.save()
                     else:
                         for student in students:
+                            today = datetime.now()
+                            date = datetime(today.year, today.month, 1)
+                            month_date = date.strftime("%Y-%m-%d")
+                            attendances_per_month = student.attendancepermonth_set.filter(group=instance,
+                                                                                          student=student,
+                                                                                          month_date__gte=month_date,
+                                                                                          payment=0)
+                            for attendance in attendances_per_month:
+                                attendance.delete()
                             instance.students.remove(student)
                             DeletedStudent.objects.create(student=student, group=instance,
                                                           comment=comment if comment else None,
@@ -162,6 +175,8 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                                                                      student=student)
                             student_history_group.left_day = datetime.now()
                             student_history_group.save()
+
+
         else:
             if 'teacher' in validated_data:
                 teacher_history_group = TeacherHistoryGroups.objects.get(group=instance,
@@ -184,7 +199,6 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                         StudentHistoryGroups.objects.create(group=instance, student=student,
                                                             teacher=instance.teacher.all()[0],
                                                             joined_day=datetime.now())
-                        # create_school_student_debts(instance, instance.students.all())
                 elif update_method == "remove_students":
                     if delete_type == 'new_students':
                         for student in students:

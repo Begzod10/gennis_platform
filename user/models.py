@@ -10,6 +10,7 @@ from language.models import Language
 from payments.models import PaymentTypes
 
 
+
 class CustomAutoGroup(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='custom_permission')
     salary = models.IntegerField(blank=True, null=True)
@@ -35,7 +36,7 @@ class CustomUser(AbstractUser):
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
     language = models.ForeignKey(Language, on_delete=models.SET_NULL, null=True)
     old_id = models.IntegerField(null=True, unique=True)
-    turon_old_id = models.IntegerField(null=True, unique=True)
+    # turon_old_id = models.IntegerField(null=True, unique=True)
     groups = models.ManyToManyField(
         Group,
         related_name='custom_user_set',  # related_name'ni o'zgartiring

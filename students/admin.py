@@ -37,7 +37,7 @@ class StudentPaymentAdmin(admin.ModelAdmin):
 # Register the DeletedNewStudent model
 @admin.register(DeletedNewStudent)
 class DeletedNewStudentAdmin(admin.ModelAdmin):
-    list_display = ('student', 'created', 'comment', 'old_id')
+    list_display = ('student', 'created', 'comment')
     search_fields = ('student__user__username', 'comment')
     list_filter = ('created',)
 

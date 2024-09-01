@@ -58,11 +58,6 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         group = validated_data.get('group')
         flow = validated_data.get('flow')
-        students = group.students.all() if group else flow.students.all() if flow else None
-        # status, errors = check_student_room_teacher(students, validated_data['teacher'], validated_data['room'],
-        #                                             validated_data['hours'], validated_data['week'])
-        # if not status:
-        #     raise ({"detail": errors})
         instance.group = validated_data.get('group', instance.group)
         instance.week = validated_data.get('week', instance.week)
         instance.room = validated_data.get('room', instance.room)

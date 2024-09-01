@@ -39,9 +39,8 @@ class ClassesFlows(generics.ListAPIView):
         if type == 'flow':
             queryset = Flow.objects.filter(branch_id=branch_id)
 
-
         if type == 'group':
-            queryset = Group.objects.filter(class_number__isnull=False, branch_id=branch_id)
+            queryset = Group.objects.filter(class_number__isnull=False, branch_id=branch_id, deleted=False)
         return queryset
 
     def get_serializer_class(self):
@@ -50,6 +49,7 @@ class ClassesFlows(generics.ListAPIView):
             return GroupClassSerializer
         else:
             return FlowsSerializer
+
 
 # class Classes(generics.ListAPIView):
 #     queryset = Group.objects.filter(class_number__isnull=False)
@@ -80,16 +80,6 @@ class ClassTimeTableLessonsView(APIView):
             'hours_list': serializer.get_hours_list(None)
         }
         return Response(data)
-
-    # def get(self, request, pk):
-    #     creat_week_days()
-    #     group = Group.objects.get(id=pk)
-    #     serializer = ClassTimeTableLessonsSerializer(context={'group': group})
-    #     data = {
-    #         'time_tables': serializer.get_time_tables(None),
-    #         'hours_list': serializer.get_hours_list(None)
-    #     }
-    #     return Response(data)
 
 
 class CheckClassTimeTable(APIView):

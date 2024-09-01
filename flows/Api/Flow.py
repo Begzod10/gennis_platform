@@ -17,6 +17,14 @@ class FlowListCreateView(generics.ListCreateAPIView):
             return FlowsSerializer
         return FlowCreateUpdateSerializer
 
+    def create(self, request, *args, **kwargs):
+        write_serializer = self.get_serializer(data=request.data, partial=True)
+        write_serializer.is_valid(raise_exception=True)
+        self.perform_create(write_serializer)
+        instance = Flow.objects.get(pk=write_serializer.data['id'])
+        read_serializer = FlowsSerializer(instance)
+        return Response(read_serializer.data)
+
 
 class FlowListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]

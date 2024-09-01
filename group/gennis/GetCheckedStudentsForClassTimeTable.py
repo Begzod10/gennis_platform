@@ -96,3 +96,6 @@ class CheckedStudentsMoveToGroup(APIView):
                                                     joined_day=today)
         serializer = GroupClassSerializer(group)
         return Response({'data': serializer.data, 'errors': errors})
+
+
+
