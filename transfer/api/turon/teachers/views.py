@@ -4,16 +4,16 @@ from .serializers import TeacherSerializerTransfer, TeacherSalaryTypeSerializerT
 
 
 def teachers_turon(self):
-    # start = time.time()
-    # list = get_teachers_salary_type()
-    # for info in list:
-    #     serializer = TeacherSalaryTypeSerializerTransfer(data=info)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #     else:
-    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    # end = time.time()
-    # print(f"Run time teachers salary type: {(end - start) * 10 ** 3:.03f}ms")
+    start = time.time()
+    list = get_teachers_salary_type()
+    for info in list:
+        serializer = TeacherSalaryTypeSerializerTransfer(data=info)
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    end = time.time()
+    print(f"Run time teachers salary type: {(end - start) * 10 ** 3:.03f}ms")
     start = time.time()
     list = get_teachers()
     for info in list:
