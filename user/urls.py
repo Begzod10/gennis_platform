@@ -22,7 +22,7 @@ from user.Api.write import (
     UserSalaryListDestroyView,
     UsernameCheck
 )
-
+app_name = 'user'
 urlpatterns = [
     path('users/create/', UserCreateView.as_view(), name='user-create'),
     path('users/update/<int:pk>/', UserUpdateView.as_view(), name='user-update'),

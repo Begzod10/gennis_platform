@@ -7,9 +7,11 @@ import json
 from ..models import AttendancePerDay
 from teachers.models import Teacher
 from .functions.CalculateGroupOverallAttendance import calculate_group_attendances
-
+from rest_framework.permissions import IsAuthenticated
 
 class AttendanceDelete(APIView):
+    permission_classes = [IsAuthenticated]
+
 
     def get_attendances_json(self, group, month_date):
         attendances = group.attendance_per_day.filter(group__attendance_per_month__month_date=month_date).distinct()

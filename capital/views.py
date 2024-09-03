@@ -1,44 +1,34 @@
 from rest_framework import generics
-from .serializers import (CapitalCategorySerializers)
-from .models import CapitalCategory
-from user.functions.functions import check_auth
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from permissions.functions.CheckUserPermissions import check_user_permissions
 
-import json
+from permissions.response import CustomResponseMixin
+from .models import CapitalCategory
+from .serializers import (CapitalCategorySerializers)
 
 
-class CreateCapitalCategoryList(generics.ListCreateAPIView):
+class CreateCapitalCategoryList( generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = CapitalCategory.objects.all()
     serializer_class = CapitalCategorySerializers
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['capitalcategory']
-        permissions = check_user_permissions(user, table_names)
-
         queryset = CapitalCategory.objects.all()
         serializer = CapitalCategorySerializers(queryset, many=True)
-        return Response({'capitalcategorys': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
-class CapitalCategoryRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+class CapitalCategoryRetrieveUpdateDestroyAPIView(CustomResponseMixin, generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = CapitalCategory.objects.all()
     serializer_class = CapitalCategorySerializers
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['capitalcategory']
-        permissions = check_user_permissions(user, table_names)
         capital_category = self.get_object()
         capital_category_data = self.get_serializer(capital_category).data
-        return Response({'capitalcategory': capital_category_data, 'permissions': permissions})
+        return Response(capital_category_data)
 
     def destroy(self, request, *args, **kwargs):
         super().destroy(request, *args, **kwargs)

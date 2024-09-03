@@ -25,7 +25,7 @@ class TimeTableArchiveListSerializer(serializers.ModelSerializer):
     room = RoomCreateSerializer()
     start_time = serializers.TimeField()
     end_time = serializers.TimeField()
-    date = serializers.DateTimeField(required=False)
+    date = serializers.DateField(required=False)
 
     class Meta:
         model = TimeTableArchive
@@ -47,6 +47,7 @@ class GroupTimeTableCreateUpdateSerializer(serializers.ModelSerializer):
         result = check_time(validated_data.get('group'), validated_data.get('week').id, validated_data.get('room'),
                             validated_data.get('start_time'),
                             validated_data.get('end_time'))
+
         if result == True:
             group_time_table = GroupTimeTable.objects.create(
                 **validated_data
@@ -69,7 +70,12 @@ class GroupTimeTableCreateUpdateSerializer(serializers.ModelSerializer):
             instance.save()
             return instance
         else:
-            raise serializers.ValidationError({"detail": result})
+            raise serializers.ValidationError(result)
+
+    def save(self, **kwargs):
+        if self.instance:
+            return self.update(self.instance, self.validated_data)
+        return self.create(self.validated_data)
 
 
 class GroupTimeTableReadSerializer(serializers.ModelSerializer):

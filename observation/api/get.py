@@ -1,38 +1,30 @@
 from rest_framework import generics
-from observation.serializers import (ObservationDayListSerializers, ObservationStatisticsListSerializers)
-from observation.models import ObservationDay, ObservationStatistics
-from user.functions.functions import check_auth
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from permissions.functions.CheckUserPermissions import check_user_permissions
+
+from observation.models import ObservationDay, ObservationStatistics
+from observation.serializers import (ObservationDayListSerializers, ObservationStatisticsListSerializers)
 
 
 class ObservationStatisticsRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = ObservationStatistics.objects.all()
     serializer_class = ObservationStatisticsListSerializers
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['observationstatistics', 'observationday', 'observationinfo', 'observationoption']
-        permissions = check_user_permissions(user, table_names)
         observation_statistics = self.get_object()
         observation_statistics_data = self.get_serializer(observation_statistics).data
-        return Response({'observationstatistic': observation_statistics_data, 'permissions': permissions})
+        return Response(observation_statistics_data)
 
 
 class ObservationStatisticsListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = ObservationStatistics.objects.all()
     serializer_class = ObservationStatisticsListSerializers
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['observationstatistics', 'observationday', 'observationinfo', 'observationoption']
-        permissions = check_user_permissions(user, table_names)
 
         queryset = ObservationStatistics.objects.all()
         location_id = self.request.query_params.get('location_id', None)
@@ -43,36 +35,28 @@ class ObservationStatisticsListView(generics.ListAPIView):
         if location_id is not None:
             queryset = queryset.filter(location_id=location_id)
         serializer = ObservationStatisticsListSerializers(queryset, many=True)
-        return Response({'observationstatistics': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class ObservationDayRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = ObservationDay.objects.all()
     serializer_class = ObservationDayListSerializers
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['observationday', 'customuser', 'group', 'teacher']
-        permissions = check_user_permissions(user, table_names)
         observation_day = self.get_object()
         observation_day_data = self.get_serializer(observation_day).data
-        return Response({'observationday': observation_day_data, 'permissions': permissions})
+        return Response(observation_day_data)
 
 
 class ObservationDayListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = ObservationDay.objects.all()
     serializer_class = ObservationDayListSerializers
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['observationday', 'customuser', 'group', 'teacher']
-        permissions = check_user_permissions(user, table_names)
 
         queryset = ObservationDay.objects.all()
         location_id = self.request.query_params.get('location_id', None)
@@ -83,4 +67,4 @@ class ObservationDayListView(generics.ListAPIView):
         if location_id is not None:
             queryset = queryset.filter(location_id=location_id)
         serializer = ObservationDayListSerializers(queryset, many=True)
-        return Response({'observationdays': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)

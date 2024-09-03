@@ -25,12 +25,13 @@ class Teacher(models.Model):
     turon_old_id = models.IntegerField(null=True, unique=True)
     branches = models.ManyToManyField(Branch, blank=True)
     group_time_table = models.ManyToManyField('time_table.GroupTimeTable', blank=True)
+    # system = models.ForeignKey('system.System', on_delete=models.SET_NULL, null=True)
 
 
 class TeacherAttendance(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True,
                                 related_name='teacher_attendance_teacher')
-    day = models.DateTimeField(null=True)
+    day = models.DateField(null=True)
     status = models.BooleanField(null=True)
     system = models.ForeignKey(System, on_delete=models.SET_NULL, null=True, related_name='teacher_attendance_system')
 
@@ -60,7 +61,7 @@ class TeacherBlackSalary(models.Model):
     black_salary = models.IntegerField(null=True)
     group = models.ForeignKey('group.Group', on_delete=models.CASCADE, null=True)
     student = models.ForeignKey('students.Student', on_delete=models.CASCADE)
-    month_date = models.DateTimeField(null=True)
+    month_date = models.DateField(null=True)
     status = models.BooleanField()
 
 
@@ -70,7 +71,7 @@ class TeacherSalaryList(models.Model):
                                   related_name='salary_id_salary_list')
     payment = models.ForeignKey(PaymentTypes, on_delete=models.SET_NULL, null=True,
                                 related_name='payment_id_salary_list')
-    date = models.DateTimeField(auto_now_add=True, null=True)  # true qilish kerak
+    date = models.DateField(auto_now_add=True, null=True)  # true qilish kerak
     comment = models.CharField(max_length=300)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='branch_id_salary_list')
     deleted = models.BooleanField(default=False)
@@ -90,7 +91,7 @@ class TeacherGroupStatistics(models.Model):
                                related_name='branch_id_teacher_group_statistics')
     number_students = models.IntegerField()
     percentage = models.IntegerField()
-    date = models.DateTimeField(null=True, auto_now_add=False)  # true bolishi kerak
+    date = models.DateField(null=True, auto_now_add=False)  # true bolishi kerak
 
     class Meta:
         ordering = ['id']
@@ -99,6 +100,6 @@ class TeacherGroupStatistics(models.Model):
 class TeacherHistoryGroups(models.Model):
     group = models.ForeignKey('group.Group', on_delete=models.SET_NULL, null=True, related_name='group_teacher_history')
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='teacher_teacher_history')
-    reason = models.CharField(max_length=50)
-    joined_day = models.DateTimeField()
-    left_day = models.DateTimeField()
+    reason = models.CharField(max_length=50, null=True)
+    joined_day = models.DateField()
+    left_day = models.DateField(null=True)

@@ -1,37 +1,58 @@
 from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from group.models import Group, GroupReason, CourseTypes
 from group.serializers import GroupSerializer, GroupReasonSerializers, CourseTypesSerializers, \
     GroupCreateUpdateSerializer
+from permissions.response import QueryParamFilterMixin
 
 
 class CreateCourseTypesList(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = CourseTypes.objects.all()
     serializer_class = CourseTypesSerializers
 
 
 class CourseTypesRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = CourseTypes.objects.all()
     serializer_class = CourseTypesSerializers
 
 
 class CreateGroupReasonList(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = GroupReason.objects.all()
     serializer_class = GroupReasonSerializers
 
 
 class GroupReasonRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = GroupReason.objects.all()
     serializer_class = GroupReasonSerializers
 
 
-class CreatGroups(generics.ListCreateAPIView):
-    queryset = Group.objects.all()
+class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+
+    filter_mappings = {
+        'teacher': 'teacher__id',
+        'subject': 'subject__id',
+        'course_types': 'course_types__id',
+        'deleted': 'deleted',
+        'created_date': 'created_date',
+        'branch': 'branch_id'
+    }
     serializer_class = GroupCreateUpdateSerializer
 
     def get_queryset(self):
-        return Group.objects.all()[:100]
+        queryset = Group.objects.filter(deleted=False).all()
+        queryset = self.filter_queryset(queryset)
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method == 'GET':

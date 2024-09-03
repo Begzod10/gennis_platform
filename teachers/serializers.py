@@ -1,13 +1,20 @@
 from rest_framework import serializers
 
-from branch.serializers import BranchSerializer, Branch
-from payments.serializers import PaymentTypesSerializers, PaymentTypes
-from subjects.serializers import SubjectSerializer
+from branch.models import Branch
+from branch.serializers import BranchSerializer
+from group.models import Group
+from language.models import Language
+from language.serializers import LanguageSerializers
+from payments.models import PaymentTypes
+from payments.serializers import PaymentTypesSerializers
+from subjects.serializers import Subject
+from subjects.serializers import SubjectLevelSerializer, SubjectSerializer
 from system.models import System
 from system.serializers import SystemSerializers
-from user.serializers import UserSerializerWrite, UserSerializerRead, Language
-from .models import (Teacher, TeacherSalaryList, TeacherSalary, TeacherGroupStatistics, Subject, TeacherSalaryType)
+from teachers.models import TeacherGroupStatistics, Teacher
+from user.serializers import UserSerializerWrite, UserSerializerRead
 from .models import (TeacherAttendance)
+from .models import (TeacherSalaryList, TeacherSalary, TeacherSalaryType)
 
 
 class TeacherSerializer(serializers.ModelSerializer):
@@ -31,6 +38,8 @@ class TeacherSerializer(serializers.ModelSerializer):
         user = user_serializer.save()
         teacher = Teacher.objects.create(user=user, **validated_data)
         teacher.subject.set(subject_data)
+        branch = Branch.objects.get(pk=user_data['branch'])
+        teacher.branches.set(branch)
         return teacher
 
     def update(self, instance, validated_data):
@@ -54,7 +63,7 @@ class TeacherAttendanceSerializers(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
     system = serializers.PrimaryKeyRelatedField(queryset=System.objects.all())
-    day = serializers.DateTimeField(required=False)
+    day = serializers.DateField(required=False)
     status = serializers.BooleanField(required=False)
 
     class Meta:
@@ -66,7 +75,7 @@ class TeacherAttendanceListSerializers(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     teacher = TeacherSerializer(required=False)
     system = SystemSerializers(required=False)
-    day = serializers.DateTimeField(required=False)
+    day = serializers.DateField(required=False)
     status = serializers.BooleanField(required=False)
 
     class Meta:
@@ -86,17 +95,49 @@ class TeacherSalaryTypeSerializerRead(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class GroupSerializerTeachers(serializers.ModelSerializer):
+    branch = BranchSerializer()
+    language = LanguageSerializers()
+    level = SubjectLevelSerializer()
+    subject = SubjectSerializer()
+    system = SystemSerializers()
+
+    class Meta:
+        model = Group
+        fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
+                  'branch', 'language', 'level', 'subject', 'teacher', 'system', 'class_number', 'color',
+                  'course_types']
+
+    @property
+    def course_types(self):
+        from group.serializers import CourseTypesSerializers
+        return CourseTypesSerializers()
+
+    def get_class_number(self, obj):
+        from classes.serializers import ClassNumberSerializers
+        return ClassNumberSerializers(obj.class_number).data
+
+    def get_color(self, obj):
+        from classes.serializers import ClassColorsSerializers
+        return ClassColorsSerializers(obj.color).data
+
+
 class TeacherSerializerRead(serializers.ModelSerializer):
     user = UserSerializerRead(read_only=True)
     subject = SubjectSerializer(many=True)
     teacher_salary_type = TeacherSalaryTypeSerializerRead(read_only=True)
+    group = GroupSerializerTeachers(many=True, source='group_set')
 
     class Meta:
         model = Teacher
         fields = "__all__"
 
+    # def get_group(self, obj):
+    #     return [GroupSerializerTeachers(group).data for group in obj.group_teachers_set.all()]
+
 
 class TeacherSalaryReadSerializers(serializers.ModelSerializer):
+    from group.serializers import BranchSerializer
     teacher = TeacherSerializerRead(read_only=True)
     branch = BranchSerializer(read_only=True)
     teacher_salary_type = TeacherSalaryTypeSerializerRead(read_only=True)
@@ -104,8 +145,6 @@ class TeacherSalaryReadSerializers(serializers.ModelSerializer):
     class Meta:
         model = TeacherSalary
         fields = '__all__'
-
-
 
 
 class TeacherSalaryCreateSerializers(serializers.ModelSerializer):
@@ -116,6 +155,25 @@ class TeacherSalaryCreateSerializers(serializers.ModelSerializer):
     class Meta:
         model = TeacherSalaryList
         fields = '__all__'
+
+
+class TeacherSalaryCreateSerializersUpdate(serializers.ModelSerializer):
+    teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
+    teacher_salary_type = serializers.PrimaryKeyRelatedField(queryset=TeacherSalaryType.objects.all(), required=False,
+                                                             allow_null=True)
+
+    class Meta:
+        model = TeacherSalary
+        fields = '__all__'
+
+    def update(self, instance, validated_data):
+        salary = super().update(instance, validated_data)
+        worked = validated_data.get('worked_days', None)
+        if worked is not None:
+            from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
+            calculate_teacher_salary(instance.teacher)
+        return salary
 
 
 class TeacherGroupStatisticsReadSerializers(serializers.ModelSerializer):
@@ -154,10 +212,26 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
     salary_id = serializers.PrimaryKeyRelatedField(queryset=TeacherSalary.objects.all())
     payment = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
+    name = serializers.SerializerMethodField(required=False, read_only=True)
+    surname = serializers.SerializerMethodField(required=False, read_only=True)
+    date = serializers.SerializerMethodField(required=False, read_only=True)
+    payment_type_name = serializers.SerializerMethodField(required=False, read_only=True)
 
     class Meta:
         model = TeacherSalaryList
         fields = '__all__'
+
+    def get_name(self, obj):
+        return obj.teacher.user.name
+
+    def get_surname(self, obj):
+        return obj.teacher.user.surname
+
+    def get_date(self, obj):
+        return obj.date.strftime('%Y-%m-%d')
+
+    def get_payment_type_name(self, obj):
+        return obj.payment.name
 
     def create(self, validated_data):
         teacher = validated_data.get('teacher')
@@ -199,15 +273,5 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
         instance.branch = validated_data.get('branch', instance.branch)
         instance.salary = salary_amount
         instance.comment = validated_data.get('comment', instance.comment)
-        instance.save()
-        return instance
-
-    def delete(self, instance):
-        if instance.salary_id:
-            instance.salary_id.taken_salary -= instance.salary
-            instance.salary_id.remaining_salary += instance.salary
-            instance.salary_id.save()
-
-        instance.deleted = True
         instance.save()
         return instance

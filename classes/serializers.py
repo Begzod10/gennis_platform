@@ -1,12 +1,12 @@
 from rest_framework import serializers
 
-from .models import ClassNumber, ClassTypes, ClassColors, ClassCoin, StudentCoin, CoinInfo
-from subjects.serializers import SubjectSerializer
-from subjects.models import Subject
-from group.serializers import GroupSerializer
 from group.models import Group
-from students.serializers import StudentSerializer
+from group.serializers import GroupSerializer
 from students.models import Student
+from students.serializers import StudentSerializer
+from subjects.models import Subject
+from subjects.serializers import SubjectSerializer
+from .models import ClassNumber, ClassTypes, ClassColors, ClassCoin, StudentCoin, CoinInfo
 
 
 class ClassTypesSerializers(serializers.ModelSerializer):
@@ -18,30 +18,31 @@ class ClassTypesSerializers(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 
+class ClassNumberListSerializers(serializers.ModelSerializer):
+    class_types = ClassTypesSerializers(required=False)
+    subjects = SubjectSerializer(required=False, many=True)
+
+    class Meta:
+        model = ClassNumber
+        fields = '__all__'
+
+
 class ClassNumberSerializers(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     number = serializers.IntegerField(required=False)
     price = serializers.IntegerField(required=False)
     curriculum_hours = serializers.IntegerField(required=False)
-    class_types = serializers.PrimaryKeyRelatedField(queryset=ClassTypes.objects.all())
-    subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())
+    class_types = serializers.PrimaryKeyRelatedField(queryset=ClassTypes.objects.all(), required=True)
+    subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), required=False, allow_null=True, many=True)
 
     class Meta:
         model = ClassNumber
         fields = ['id', 'number', 'curriculum_hours', 'class_types', 'subjects', 'price']
 
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        return instance
 
-class ClassNumberListSerializers(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=False)
-    number = serializers.IntegerField(required=False)
-    curriculum_hours = serializers.IntegerField(required=False)
-    class_types = ClassTypesSerializers(required=False)
-    price = serializers.IntegerField(required=False)
-    subjects = SubjectSerializer(required=False)
-
-    class Meta:
-        model = ClassNumber
-        fields = ['id', 'number', 'curriculum_hours', 'class_types', 'subjects', 'price']
 
 
 class ClassColorsSerializers(serializers.ModelSerializer):

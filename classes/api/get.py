@@ -1,74 +1,63 @@
 from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from classes.models import ClassNumber, ClassCoin, CoinInfo, StudentCoin, ClassColors
 from classes.serializers import (ClassCoinListSerializers, CoinInfoListSerializers, StudentCoinListSerializers,
                                  ClassNumberListSerializers, ClassColorsSerializers)
-from classes.models import ClassNumber, ClassCoin, CoinInfo, StudentCoin, ClassColors
-from user.functions.functions import check_auth
-from rest_framework.response import Response
-from permissions.functions.CheckUserPermissions import check_user_permissions
 
 
 class ClassNumberRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = ClassNumber.objects.all()
     serializer_class = ClassNumberListSerializers
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
+        class_number = self.get_queryset()
+        class_number_data = self.get_serializer(class_number, many=True).data
+        return Response(class_number_data)
 
-        table_names = ['classnumber', 'classtypes', 'subjects']
-        permissions = check_user_permissions(user, table_names)
-        class_number = self.get_object()
-        class_number_data = self.get_serializer(class_number).data
-        return Response({'classnumber': class_number_data, 'permissions': permissions})
+    def get_queryset(self):
+        queryset = ClassNumber.objects.filter(class_types_id=self.kwargs.get('pk')).all()
+
+        return queryset
 
 
 class StudentCoinRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = StudentCoin.objects.all()
     serializer_class = StudentCoinListSerializers
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['studentcoin', 'classcoin', 'student']
-        permissions = check_user_permissions(user, table_names)
         student_coin = self.get_object()
         student_coin_data = self.get_serializer(student_coin).data
-        return Response({'studentcoin': student_coin_data, 'permissions': permissions})
+        return Response(student_coin_data)
 
 
 class CoinInfoRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = CoinInfo.objects.all()
     serializer_class = CoinInfoListSerializers
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['coininfo', 'classcoin']
-        permissions = check_user_permissions(user, table_names)
         coininfo = self.get_object()
         coininfo_data = self.get_serializer(coininfo).data
-        return Response({'coininfo': coininfo_data, 'permissions': permissions})
+        return Response(coininfo_data)
 
 
 class ClassCoinRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = ClassCoin.objects.all()
     serializer_class = ClassCoinListSerializers
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['classcoin', 'group']
-        permissions = check_user_permissions(user, table_names)
         class_coin = self.get_object()
         class_coin_data = self.get_serializer(class_coin).data
-        return Response({'classcoin': class_coin_data, 'permissions': permissions})
+        return Response(class_coin_data)
 
 
 class ClassCoinListView(generics.ListAPIView):
@@ -76,12 +65,6 @@ class ClassCoinListView(generics.ListAPIView):
     serializer_class = ClassCoinListSerializers
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['classcoin', 'group']
-        permissions = check_user_permissions(user, table_names)
 
         queryset = ClassCoin.objects.all()
         location_id = self.request.query_params.get('location_id', None)
@@ -92,20 +75,16 @@ class ClassCoinListView(generics.ListAPIView):
         if location_id is not None:
             queryset = queryset.filter(location_id=location_id)
         serializer = ClassCoinListSerializers(queryset, many=True)
-        return Response({'classcoins': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class CoinInfoListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = CoinInfo.objects.all()
     serializer_class = CoinInfoListSerializers
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['coininfo', 'classcoin']
-        permissions = check_user_permissions(user, table_names)
 
         queryset = CoinInfo.objects.all()
         location_id = self.request.query_params.get('location_id', None)
@@ -116,20 +95,16 @@ class CoinInfoListView(generics.ListAPIView):
         if location_id is not None:
             queryset = queryset.filter(location_id=location_id)
         serializer = CoinInfoListSerializers(queryset, many=True)
-        return Response({'coininfos': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class StudentCoinListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = StudentCoin.objects.all()
     serializer_class = StudentCoinListSerializers
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['studentcoin', 'classcoin', 'student']
-        permissions = check_user_permissions(user, table_names)
 
         queryset = StudentCoin.objects.all()
         location_id = self.request.query_params.get('location_id', None)
@@ -140,20 +115,16 @@ class StudentCoinListView(generics.ListAPIView):
         if location_id is not None:
             queryset = queryset.filter(location_id=location_id)
         serializer = StudentCoinListSerializers(queryset, many=True)
-        return Response({'studentcoins': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class ClassNumberListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = ClassNumber.objects.all()
     serializer_class = ClassNumberListSerializers
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['classnumber', 'classtypes', 'subjects']
-        permissions = check_user_permissions(user, table_names)
 
         queryset = ClassNumber.objects.all()
         location_id = self.request.query_params.get('location_id', None)
@@ -164,12 +135,15 @@ class ClassNumberListView(generics.ListAPIView):
         if location_id is not None:
             queryset = queryset.filter(location_id=location_id)
         serializer = ClassNumberListSerializers(queryset, many=True)
-        return Response({'classnumbers': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class ClassColorsView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = ClassColors.objects.all()
     serializer_class = ClassColorsSerializers
+
     def get_queryset(self):
         queryset = ClassColors.objects.all()
         location_id = self.request.query_params.get('location_id', None)

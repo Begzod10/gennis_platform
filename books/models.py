@@ -29,9 +29,9 @@ class CollectedBookPayments(models.Model):
     payment_type = models.ForeignKey(PaymentTypes, on_delete=models.CASCADE,
                                      related_name='collected_book_payment_payment_type')
     total_debt = models.IntegerField(null=True)
-    month_date = models.DateTimeField(null=True)
-    created_date = models.DateTimeField(auto_now_add=False)
-    received_date = models.DateTimeField(null=True)
+    month_date = models.DateField(null=True)
+    created_date = models.DateField(auto_now_add=False)
+    received_date = models.DateField(null=True)
     status = models.BooleanField(null=True, default=False)
     old_id = models.IntegerField(unique=True, null=True)
 
@@ -61,7 +61,7 @@ class CenterBalance(models.Model):
     total_money = models.IntegerField(null=True)
     remaining_money = models.IntegerField(null=True)
     taken_money = models.IntegerField(null=True)
-    month_date = models.DateTimeField(auto_now_add=False)
+    month_date = models.DateField(auto_now_add=False)
     old_id = models.IntegerField(unique=True, null=True)
 
 
@@ -71,7 +71,7 @@ class EditorBalance(models.Model):
     balance = models.IntegerField(null=True)
     payment_sum = models.IntegerField(null=True)
     overhead_sum = models.IntegerField(null=True)
-    date = models.DateTimeField(auto_now_add=True)
+    date = models.DateField(auto_now_add=True)
     old_id = models.IntegerField(unique=True, null=True)
 
 
@@ -113,7 +113,7 @@ class BalanceOverhead(models.Model):
     overhead_sum = models.IntegerField(null=True)
     reason = models.CharField(max_length=250, null=True)
     deleted = models.BooleanField(default=False)
-    day = models.DateTimeField(auto_now_add=False)
+    day = models.DateField(auto_now_add=False)
     old_id = models.IntegerField(unique=True, null=True)
 
 
@@ -128,6 +128,6 @@ class UserBook(models.Model):
     user_salary = models.ForeignKey(UserSalary, on_delete=models.CASCADE, related_name='user_book_user_salary',
                                     null=True)
 
-    date = models.DateTimeField(auto_now_add=False)
+    date = models.DateField(auto_now_add=False)
     payment_sum = models.IntegerField(null=True)
     old_id = models.IntegerField(unique=True, null=True)

@@ -1,95 +1,63 @@
 from django.utils import timezone
 from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from permissions.functions.CheckUserPermissions import check_user_permissions
+from rest_framework.views import APIView
+
 from students.models import Student, DeletedStudent, DeletedNewStudent
 from tasks.models import Task, StudentCallInfo, TaskStatistics, TaskStudent, TaskDailyStatistics
 from tasks.serializers import TaskGetSerializer, StudentCallInfoGetSerializers
 from user.functions.functions import check_auth
 
-from rest_framework.views import APIView
 
 class TaskListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Task.objects.all()
     serializer_class = TaskGetSerializer
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['task', 'auth_group', 'branch']
-        permissions = check_user_permissions(user, table_names)
-
         queryset = Task.objects.all()
-        location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch_id', None)
 
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        if location_id is not None:
-            queryset = queryset.filter(location_id=location_id)
         serializer = TaskGetSerializer(queryset, many=True)
-        return Response({'tasks': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class TaskRetrieveView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Task.objects.all()
     serializer_class = TaskGetSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['task', 'auth_group', 'branch']
-        permissions = check_user_permissions(user, table_names)
         task = self.get_object()
         task_data = self.get_serializer(task).data
-        return Response({'task': task_data, 'permissions': permissions})
+        return Response(task_data)
 
 
 class CallListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = StudentCallInfo.objects.all()
     serializer_class = StudentCallInfoGetSerializers
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['StudentCallInfo', 'student', 'branch']
-        permissions = check_user_permissions(user, table_names)
-
         queryset = Task.objects.all()
-        location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch_id', None)
 
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        if location_id is not None:
-            queryset = queryset.filter(location_id=location_id)
         serializer = TaskGetSerializer(queryset, many=True)
-        return Response({'calls': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class CallRetrieveView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = StudentCallInfo.objects.all()
     serializer_class = StudentCallInfoGetSerializers
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['StudentCallInfo', 'student', 'branch']
-        permissions = check_user_permissions(user, table_names)
         task = self.get_object()
         task_data = self.get_serializer(task).data
-        return Response({'calls': task_data, 'permissions': permissions})
+        return Response(task_data)
 
 
 class CreateTask(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         user, auth_error = check_auth(request)

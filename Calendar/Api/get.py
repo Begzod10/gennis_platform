@@ -95,23 +95,10 @@ class TypeDayListView(generics.ListAPIView):
     serializer_class = TypeDaySerializer
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['Calendar_typeday']
-        permissions = check_user_permissions(user, table_names)
 
         queryset = TypeDay.objects.all()
-        location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch_id', None)
-
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        if location_id is not None:
-            queryset = queryset.filter(location_id=location_id)
         serializer = TypeDaySerializer(queryset, many=True)
-        return Response({'typeday': serializer.data, 'permissions': permissions})
+        return Response( serializer.data)
 
 
 class TypeDayDetailView(generics.RetrieveAPIView):
@@ -129,4 +116,4 @@ class TypeDayDetailView(generics.RetrieveAPIView):
         permissions = check_user_permissions(user, table_names)
         room_images = self.get_object()
         room_images_data = self.get_serializer(room_images).data
-        return Response({'typeday': room_images_data, 'permissions': permissions})
+        return Response( room_images_data)

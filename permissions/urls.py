@@ -5,7 +5,7 @@ from .Api.DescriptionTables import DescriptionTables
 from .Api.CreatGroupAndAddPermissions import AddPermissions, Jobs, JobProfile
 from .Api.AddUserJob import AddUserGroup
 from .Api.AddPermissionManagersAndDirectors import AddPermissionManagersAndDirectors
-
+from permissions.views import SystemListUser,LocationListUser,BranchListUser,DynamicModelListView
 urlpatterns = [
     path('tables/', Tables.as_view(), name='tables'),
     path('description_for_table/', DescriptionTables.as_view(), name='description_for_table'),
@@ -19,4 +19,9 @@ urlpatterns = [
          name='jobs'),
     path('job_profile/<int:pk>', JobProfile.as_view(),
          name='job_profile'),
+    path('user_systems/', SystemListUser.as_view(), name='user_systems'),
+    path('user_locations/<int:pk>/', LocationListUser.as_view(), name='user_systems'),
+    path('user_branchs/<int:pk>/', BranchListUser.as_view(), name='user_systems'),
+    path('location_filters/', DynamicModelListView.as_view(), name='dynamic-model-list'),
+
 ]

@@ -5,12 +5,14 @@ from .Api.createdeleteupdate import StudentCreateView, StudentCharityCreateView,
     StudentDestroyView, StudentCharityUpdateView, StudentPaymentUpdateView, StudentCharityDestroyView, \
     StudentPaymentDestroyView, StudentUpdateView, StudentHistoryGroupsCreateView, StudentHistoryGroupsDestroyView, \
     StudentHistoryGroupsUpdateView, DeletedStudentDestroy
+from .Api.get import SchoolStudents
 from .Api.get import StudentCharityAPIView, StudentPaymentAPIView, StudentHistoryGroupsAPIView, \
     StudentCharityListAPIView, StudentPaymentListAPIView, StudentHistoryGroupsListAPIView, StudentRetrieveAPIView, \
     FilteredStudentsListView, StudentDeletedPaymentListAPIView
 from .views import (CreateContractView, UploadPDFContractView, StudentListView, DeletedFromRegistered,
-                    DeletedGroupStudents, NewRegisteredStudents, ActiveStudents
+                    DeletedGroupStudents, NewRegisteredStudents, ActiveStudents, PaymentDatas
                     )
+app_name = 'Students'
 
 urlpatterns = [
     path('student_history_groups_create/', StudentHistoryGroupsCreateView.as_view(),
@@ -41,11 +43,16 @@ urlpatterns = [
     path('students_list/', StudentListView.as_view(), name='students-list'),
     path('create_contract/<int:user_id>/', CreateContractView.as_view(), name='create_contract'),
     path('upload_pdf_contract/<int:user_id>/', UploadPDFContractView.as_view(), name='upload_pdf_contract'),
-    path('api/filter_students_subject/<int:branch_id>/', FilteredStudentsListView.as_view(),
+    path('api/filter_students_subject/', FilteredStudentsListView.as_view(),
          name='get_filtered_students_list'),
-
     path('deleted-from-registered/', DeletedFromRegistered.as_view(), name='deleted-from-registered'),
     path('deleted-group-students/', DeletedGroupStudents.as_view(), name='deleted-group-students'),
     path('new-registered-students/', NewRegisteredStudents.as_view(), name='new-registered-students'),
     path('active-students/', ActiveStudents.as_view(), name='active-students'),
+    path('school_students/', SchoolStudents.as_view(),
+         name='school_students'),
+    path('students_for_subject/<int:branch_id>/<int:subject_id>/', SchoolStudents.as_view(),
+         name='students_for_subject'),
+    path('payment_datas/<int:student_id>/', PaymentDatas.as_view(), name='payment_datas'),
+
 ]

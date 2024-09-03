@@ -1,38 +1,38 @@
 from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from permissions.functions.CheckUserPermissions import check_user_permissions
+from permissions.response import QueryParamFilterMixin
 from rooms.models import Room, RoomImages, RoomSubject
 from rooms.serializers import RoomGetSerializer, RoomImagesGetSerializer, RoomSubjectGetSerializer
 from time_table.serializers import GroupTimeTable, GroupTimeTableReadSerializer
-from user.functions.functions import check_auth
 
 
-class RoomListView(generics.ListAPIView):
+class RoomListView(QueryParamFilterMixin, generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    filter_mappings = {
+        'teacher': 'group__teacher',
+        'seats_number': 'seats_number',
+        'electronic_board': 'electronic_board',
+        'branch': 'branch',
+        'deleted': 'deleted'
+
+    }
     queryset = Room.objects.all()
     serializer_class = RoomGetSerializer
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['room', 'branch']
-        permissions = check_user_permissions(user, table_names)
-
         queryset = Room.objects.all()
-        location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch_id', None)
 
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        if location_id is not None:
-            queryset = queryset.filter(location_id=location_id)
+        queryset = self.filter_queryset(queryset)
         serializer = RoomGetSerializer(queryset, many=True)
-        return Response({'rooms': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class RoomRetrieveView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = Room.objects.all()
     serializer_class = RoomGetSerializer
 
@@ -42,12 +42,6 @@ class RoomRetrieveView(generics.RetrieveAPIView):
         return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['room', 'branch']
-        permissions = check_user_permissions(user, table_names)
         room = self.get_object()
         time_tables_response = self.get_group_time_tables(room.id)
         room_data = self.get_serializer(room).data
@@ -55,74 +49,54 @@ class RoomRetrieveView(generics.RetrieveAPIView):
         return Response({
             "room": room_data,
             "group_time_tables": time_tables_response.data,
-            'permissions': permissions
         })
 
 
 class RoomImagesListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = RoomImages.objects.all()
     serializer_class = RoomImagesGetSerializer
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['roomimages', 'room']
-        permissions = check_user_permissions(user, table_names)
-
         queryset = RoomImages.objects.all()
         serializer = RoomImagesGetSerializer(queryset, many=True)
-        return Response({'roomimages': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class RoomImagesRetrieveView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = RoomImages.objects.all()
     serializer_class = RoomImagesGetSerializer
 
     def retrieve(self, request, pk, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['roomimages', 'room']
-        permissions = check_user_permissions(user, table_names)
-
         room_images = RoomImages.objects.filter(room_id=pk)
 
         room_images_data = self.get_serializer(room_images, many=True).data
 
-        return Response({'roomimages': room_images_data, 'permissions': permissions})
+        return Response(room_images_data)
 
 
 class RoomSubjectListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = RoomSubject.objects.all()
     serializer_class = RoomSubjectGetSerializer
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['roomsubject', 'room']
-        permissions = check_user_permissions(user, table_names)
-
         queryset = RoomSubject.objects.all()
         serializer = RoomSubjectGetSerializer(queryset, many=True)
-        return Response({'roomsubjects': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class RoomSubjectRetrieveView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = RoomSubject.objects.all()
     serializer_class = RoomSubjectGetSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['roomsubject', 'room']
-        permissions = check_user_permissions(user, table_names)
         room_subject = self.get_object()
         room_subject_data = self.get_serializer(room_subject).data
-        return Response({'roomsubject': room_subject_data, 'permissions': permissions})
+        return Response(room_subject_data)

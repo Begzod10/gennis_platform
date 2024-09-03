@@ -62,7 +62,8 @@ class ManySystemSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'system']
 
     def create(self, validated_data):
-        return ManySystem.objects.create(**validated_data)
+        instance, created = ManySystem.objects.get_or_create(**validated_data)
+        return instance
 
 
 class ManySystemRead(serializers.ModelSerializer):
@@ -89,7 +90,8 @@ class ManyLocationSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'location']
 
     def create(self, validated_data):
-        return ManyLocation.objects.create(**validated_data)
+        instance, created = ManyLocation.objects.get_or_create(**validated_data)
+        return instance
 
 
 class ManyLocationRead(serializers.ModelSerializer):
@@ -116,7 +118,8 @@ class ManyBranchSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'branch']
 
     def create(self, validated_data):
-        return ManyBranch.objects.create(**validated_data)
+        instance, created = ManyBranch.objects.get_or_create(**validated_data)
+        return instance
 
 
 class ManyBranchRead(serializers.ModelSerializer):

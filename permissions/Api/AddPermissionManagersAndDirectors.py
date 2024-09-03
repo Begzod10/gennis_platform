@@ -24,9 +24,7 @@ from location.serializers import LocationSerializers
 
 class AddPermissionManagersAndDirectors(APIView):
     def post(self, request):
-        print(request.body)
         data = json.loads(request.body)
-        print(data)
         for key in ['locations', 'branchs', 'systems']:
             print(key)
             if key in data:
@@ -36,7 +34,6 @@ class AddPermissionManagersAndDirectors(APIView):
                                                                                      **{key[:-1]: item})
                     serializer.is_valid(raise_exception=True)
                     serializer.save()
-                    print(serializer.data)
         return Response({'message': 'Dostuplar muvaffaqqiyatli berildi!'})
 
     def get(self, request):

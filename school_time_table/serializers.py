@@ -1,24 +1,20 @@
-from datetime import datetime
-from django.db.models import Q
 from rest_framework import serializers
 
 from branch.models import Branch
+from branch.serializers import BranchSerializer
+from flows.models import Flow
+from flows.serializers import FlowsSerializer
 from group.models import Group
+from group.serializers import GroupSerializer, GroupClassSerializer
 from rooms.models import Room
+from rooms.serializers import RoomCreateSerializer
 from school_time_table.models import Hours, ClassTimeTable
 from subjects.models import Subject
-from teachers.models import Teacher
-from time_table.models import WeekDays
-from flows.models import Flow
-
-from group.serializers import GroupSerializer
-from time_table.serializers import WeekDaysSerializer
-from rooms.serializers import RoomCreateSerializer
-from branch.serializers import BranchSerializer
-from teachers.serializers import TeacherSerializer
 from subjects.serializers import SubjectSerializer
-from flows.serializers import FlowsSerializer
-
+from teachers.models import Teacher
+from teachers.serializers import TeacherSerializer
+from time_table.models import WeekDays
+from time_table.serializers import WeekDaysSerializer
 from .functions.checkStudentRoomTeacher import check_student_room_teacher
 
 
@@ -29,6 +25,7 @@ class HoursSerializers(serializers.ModelSerializer):
 
 
 class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
+    # type = serializers.CharField(default=None, allow_blank=True)
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
     week = serializers.PrimaryKeyRelatedField(queryset=WeekDays.objects.all())
     room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all(), allow_null=True, required=False)
@@ -54,10 +51,6 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
         group = validated_data.get('group')
         flow = validated_data.get('flow')
         students = group.students.all() if group else flow.students.all() if flow else None
-        status, errors = check_student_room_teacher(students, validated_data['teacher'], validated_data['room'],
-                                                    validated_data['hours'], validated_data['week'])
-        if not status:
-            raise serializers.ValidationError({"detail": errors})
         class_time_table = ClassTimeTable.objects.create(**validated_data)
         class_time_table.students.add(*students)
         return class_time_table
@@ -65,11 +58,6 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         group = validated_data.get('group')
         flow = validated_data.get('flow')
-        students = group.students.all() if group else flow.students.all() if flow else None
-        status, errors = check_student_room_teacher(students, validated_data['teacher'], validated_data['room'],
-                                                    validated_data['hours'], validated_data['week'])
-        if not status:
-            raise serializers.ValidationError({"detail": errors})
         instance.group = validated_data.get('group', instance.group)
         instance.week = validated_data.get('week', instance.week)
         instance.room = validated_data.get('room', instance.room)
@@ -117,6 +105,7 @@ class DeleteItemTimeTableSerializers(serializers.ModelSerializer):
 
 
 class WeekDaysSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = WeekDays
         fields = ['id', 'name_en']
@@ -134,62 +123,54 @@ class ClassTimeTableSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'week', 'hours', 'flow', 'room', 'teacher', 'subject']
 
 
-class ClassTimeTableLessonsSerializer(serializers.Serializer):
+class ClassTimeTableTest2Serializer(serializers.Serializer):
     time_tables = serializers.SerializerMethodField()
     hours_list = serializers.SerializerMethodField()
 
     def get_time_tables(self, obj):
-        group = self.context['group']
-        weekdays = WeekDays.objects.all()
+        week = self.context['week']
+        branch = self.context['branch']
+        rooms = Room.objects.all()
         hours = Hours.objects.all().order_by('order')
         time_tables = []
 
-        for weekday in weekdays:
+        for room in rooms:
             info = {
-                'weekday': {
-                    'id': weekday.id,
-                    'name': weekday.name_en,
-                    'lessons': []
-                },
+                'id': room.id,
+                'name': room.name,
+                'lessons': []
             }
             for hour in hours:
-                lesson = group.classtimetable_set.filter(week=weekday, hours=hour).order_by('hours__order').first()
+                lesson = room.classtimetable_set.filter(week=week, hours=hour, branch=branch).order_by(
+                    'hours__order').first()
                 if lesson:
+                    group_info = GroupClassSerializer(lesson.group).data if lesson.group else None
                     flow_info = {'id': lesson.flow.id, 'name': lesson.flow.name} if lesson.flow else None
-                    room_info = {'id': lesson.room.id, 'name': lesson.room.name} if lesson.room else None
-                    teacher_info = {
-                        'id': lesson.teacher.id,
-                        'name': lesson.teacher.user.name,
-                        'surname': lesson.teacher.user.surname
-                    } if lesson.teacher else None
+                    teacher_info = TeacherSerializer(lesson.teacher).data if lesson.teacher else None
                     subject_info = {'id': lesson.subject.id, 'name': lesson.subject.name} if lesson.subject else None
 
                     lesson_info = {
                         'id': lesson.id,
-                        'name': lesson.name,
                         'status': lesson.hours == hour,
-                        'flow': flow_info,
-                        'room': room_info,
+                        'is_flow': True if lesson.flow else False,
+                        'group': flow_info if lesson.group == None else group_info,
+                        'room': room.id,
                         'teacher': teacher_info,
                         'subject': subject_info,
-                        'hour': {
-                            'id': hour.id,
-                            'name': hour.name,
-                            'start_time': hour.start_time,
-                            'end_time': hour.end_time
-                        }
+                        'hours': hour.id
                     }
 
-                    info['weekday']['lessons'].append(lesson_info)
+                    info['lessons'].append(lesson_info)
                 else:
-                    info['weekday']['lessons'].append({
+                    info['lessons'].append({
+                        'group': {},
                         'status': False,
-                        'hour': {
-                            'id': hour.id,
-                            'name': hour.name,
-                            'start_time': hour.start_time,
-                            'end_time': hour.end_time
-                        }
+                        'hours': hour.id,
+                        'teacher': {},
+                        'subject': {},
+                        'room': room.id,
+                        'is_flow': False,
+
                     })
             time_tables.append(info)
         return time_tables
@@ -200,8 +181,10 @@ class ClassTimeTableLessonsSerializer(serializers.Serializer):
             {
                 'id': hour.id,
                 'name': hour.name,
-                'start_time': hour.start_time,
-                'end_time': hour.end_time
+                'start_time': f'{hour.start_time.hour}:{hour.start_time.minute}',
+                'end_time': f'{hour.end_time.hour}:{hour.end_time.minute}'
             }
             for hour in hours
         ]
+
+

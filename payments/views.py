@@ -1,39 +1,30 @@
-from .serializers import (PaymentTypesSerializers)
 from rest_framework import generics
-from .models import PaymentTypes
-from user.functions.functions import check_auth
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from permissions.functions.CheckUserPermissions import check_user_permissions
+
+from .models import PaymentTypes
+from .serializers import (PaymentTypesSerializers)
 
 
 class CreatePaymentTypesList(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = PaymentTypes.objects.all()
     serializer_class = PaymentTypesSerializers
 
     def get(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['paymenttypes']
-        permissions = check_user_permissions(user, table_names)
-
         queryset = PaymentTypes.objects.all()
         serializer = PaymentTypesSerializers(queryset, many=True)
-        return Response({'paymenttypes': serializer.data, 'permissions': permissions})
+        return Response(serializer.data)
 
 
 class PaymentTypesRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
     queryset = PaymentTypes.objects.all()
     serializer_class = PaymentTypesSerializers
 
     def retrieve(self, request, *args, **kwargs):
-        user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
-
-        table_names = ['paymenttypes']
-        permissions = check_user_permissions(user, table_names)
         payment_types = self.get_object()
         payment_types_data = self.get_serializer(payment_types).data
-        return Response({'paymenttypes': payment_types_data, 'permissions': permissions})
+        return Response(payment_types_data)

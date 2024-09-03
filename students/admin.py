@@ -37,7 +37,7 @@ class StudentPaymentAdmin(admin.ModelAdmin):
 # Register the DeletedNewStudent model
 @admin.register(DeletedNewStudent)
 class DeletedNewStudentAdmin(admin.ModelAdmin):
-    list_display = ('student', 'created', 'comment', 'old_id')
+    list_display = ('student', 'created', 'comment')
     search_fields = ('student__user__username', 'comment')
     list_filter = ('created',)
 
@@ -54,7 +54,7 @@ class StudentHistoryGroupsAdmin(admin.ModelAdmin):
 # Register the DeletedStudent model
 @admin.register(DeletedStudent)
 class DeletedStudentAdmin(admin.ModelAdmin):
-    list_display = ('student', 'group', 'teacher', 'group_reason', 'deleted_date', 'old_id')
+    list_display = ('student', 'group', 'teacher', 'group_reason', 'deleted_date')
     search_fields = ('student__user__username', 'group__name', 'teacher__user__username', 'group_reason__name')
     list_filter = ('group', 'teacher', 'deleted_date')
     date_hierarchy = 'deleted_date'

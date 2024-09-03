@@ -11,7 +11,7 @@ class Room(models.Model):
     electronic_board = models.BooleanField()
     deleted = models.BooleanField(default=False)
     old_id = models.IntegerField(null=True, unique=True)
-    turon_old_id = models.IntegerField(null=True, unique=True)
+    # turon_old_id = models.IntegerField(null=True, unique=True)
 
 
 class RoomImages(models.Model):

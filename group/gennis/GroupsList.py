@@ -7,8 +7,25 @@ from group.serializers import GroupSerializer, GroupReasonSerializers, CourseTyp
 
 
 class CreatGroups(generics.ListCreateAPIView):
-    queryset = Group.objects.all()
+    queryset = Group.objects.filter(deleted=False).all()
     serializer_class = GroupCreateUpdateSerializer
+
+
+    def get(self, request, *args, **kwargs):
+
+        write_serializer = self.get_serializer(data=request.data, partial=True)
+        info = {
+            "id": 1,
+            'user': {
+
+            }
+        }
+        teacher = {
+            'name': info['user']['name'],
+        }
+
+        return Response({})
+
 
     def create(self, request, *args, **kwargs):
         write_serializer = self.get_serializer(data=request.data, partial=True)

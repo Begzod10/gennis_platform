@@ -27,7 +27,7 @@ class TimeTableArchive(models.Model):
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
     start_time = models.TimeField()
     end_time = models.TimeField()
-    date = models.DateTimeField(auto_now_add=True)
+    date = models.DateField(auto_now_add=True)
 
 
 class StudentTimTableArchive(models.Model):

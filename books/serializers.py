@@ -59,8 +59,8 @@ class CollectedBookPaymentsSerializers(serializers.ModelSerializer):
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     payment_type = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
     total_debt = serializers.IntegerField(required=False)
-    month_date = serializers.DateTimeField(required=False)
-    received_date = serializers.DateTimeField(required=False)
+    month_date = serializers.DateField(required=False)
+    received_date = serializers.DateField(required=False)
     status = serializers.BooleanField(required=False)
     old_id = serializers.IntegerField(required=False)
 
@@ -109,8 +109,8 @@ class CollectedBookPaymentsListSerializers(serializers.ModelSerializer):
     branch = BranchSerializer(required=False)
     payment_type = PaymentTypesSerializers(required=False)
     total_debt = serializers.IntegerField(required=False)
-    month_date = serializers.DateTimeField(required=False)
-    received_date = serializers.DateTimeField(required=False)
+    month_date = serializers.DateField(required=False)
+    received_date = serializers.DateField(required=False)
     status = serializers.BooleanField(required=False)
     old_id = serializers.IntegerField(required=False)
 

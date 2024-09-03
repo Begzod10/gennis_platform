@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'lesson_plan.apps.LessonPlanConfig',
     'Calendar.apps.CalendarConfig',
     'encashment.apps.EncashmentConfig',
+    "mobile.apps.MobileConfig"
 ]
 
 MIDDLEWARE = [
@@ -88,6 +89,7 @@ ROOT_URLCONF = 'gennis_platform.urls'
 
 CORS_ORIGIN_WHITELIST = [
     'http://localhost:3000',
+    'http://localhost:3001',
 ]
 
 TEMPLATES = [
@@ -122,6 +124,8 @@ AUTH_PASSWORD_VALIDATORS = [{'NAME': 'django.contrib.auth.password_validation.Us
 
 REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
 
+                  # 'PAGE_SIZE': 10,
+
                   'DEFAULT_RENDERER_CLASS   ES': ['rest_framework.renderers.JSONRenderer',
                                                   'rest_framework.renderers.BrowsableAPIRenderer', ],
 
@@ -153,8 +157,7 @@ SWAGGER_SETTINGS = {"SECURITY_DEFINITIONS": {"Bearer": {"type": "apiKey", "name"
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
-
+TIME_ZONE = 'Asia/Tashkent'
 USE_I18N = True
 
 USE_TZ = True
