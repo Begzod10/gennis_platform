@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import ClassTypes, ClassColors, ClassNumber
-from .serializers import (ClassTypesSerializers, ClassColorsSerializers, ClassNumberSerializers)
+from .serializers import (ClassTypesSerializers, ClassColorsSerializers)
 
 
 class CreateClassColorsList(generics.ListCreateAPIView):
@@ -38,14 +38,28 @@ class CreateClassTypesList(generics.ListCreateAPIView):
         queryset = ClassTypes.objects.all()
         serializer = ClassTypesSerializers(queryset, many=True)
         datas = []
+
+        class_numbers = ClassNumber.objects.all()
+
         for data in serializer.data:
+            class_type_id = data.get('id')
+            assigned_class_numbers = class_numbers.filter(class_types_id=class_type_id)
+
+            class_number_list = []
+            for class_number in assigned_class_numbers:
+                class_number_list.append({
+                    'id': class_number.id,
+                    'status': True,
+                    'number': class_number.number
+                })
+
             datas.append({
                 'id': data['id'],
                 'name': data['name'],
-                'class_numer': ClassNumberSerializers(ClassNumber.objects.filter(class_types_id=data['id']).all(),
-                                                      many=True).data
+                'class_numbers': class_number_list
             })
-        return Response(serializer.data)
+
+        return Response(datas)
 
 
 class ClassTypesRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):

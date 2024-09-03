@@ -66,6 +66,10 @@ class UserSerializerWrite(serializers.ModelSerializer):
         if profession is not None:
             CustomAutoGroup.objects.create(user=user, group=profession, salary='0')
             user.groups.add(profession)
+            if profession.name == 'admin':
+                user.is_superuser = True
+                user.is_staff = True
+                user.save()
         return user
 
     # def send_data(self, user_data):

@@ -14,19 +14,31 @@ class ClassNumberRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = ClassNumberListSerializers
 
     def retrieve(self, request, *args, **kwargs):
-        class_number = ClassNumber.objects.all().order_by('id')
+        pk = int(self.kwargs.get('pk'))
+        class_number = ClassNumber.objects.all()
         datas = []
-        for class_num in class_number:
-            data = {
-                'id': class_num.id,
-                'number': class_num.number,
-                'price': class_num.price,
-                'curriculum_hours': class_num.curriculum_hours,
-                'class_types': class_num.class_types.id,
-                'status': True if class_num.class_types.id == self.kwargs.get('pk') else False
 
-            }
-            datas.append(data)
+        for class_num in class_number:
+            if class_num.class_types is not None:
+                class_type_id = class_num.class_types.id
+                status = class_num.class_types.id == pk
+
+            else:
+                status = False
+                class_type_id = None
+            if pk == class_type_id or class_type_id is None:
+                data = {
+                    'id': class_num.id,
+                    'number': class_num.number,
+                    'price': class_num.price,
+                    'curriculum_hours': class_num.curriculum_hours,
+                    'class_types': class_type_id,
+                    'status': status
+                }
+                datas.append(data)
+
+        datas.sort(key=lambda x: not x['status'])
+
         return Response(datas)
 
 
