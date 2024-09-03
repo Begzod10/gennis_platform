@@ -52,7 +52,7 @@ class CreateGroupTimeTable(generics.ListCreateAPIView):
 #             return Response({"data": serializer.data})
 #         else:
 #             return Response(result)
-
+#
 # def get(self, request, group_id):
 #     creat_week_days()
 #     group = Group.objects.get(pk=group_id)
