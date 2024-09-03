@@ -127,12 +127,15 @@ class TeacherSerializerRead(serializers.ModelSerializer):
     subject = SubjectSerializer(many=True)
     teacher_salary_type = TeacherSalaryTypeSerializerRead(read_only=True)
     group = GroupSerializerTeachers(many=True, source='group_set')
+    calculate = serializers.SerializerMethodField(read_only=True, required=False, allow_null=True)
 
     class Meta:
         model = Teacher
         fields = "__all__"
 
-
+    def get_calculate(self, obj):
+        from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
+        calculate_teacher_salary(obj)
 
 
 class TeacherSalaryReadSerializers(serializers.ModelSerializer):
@@ -203,6 +206,8 @@ class TeacherSalaryListReadSerializers(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_date(self, obj):
+        from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
+        calculate_teacher_salary(obj.teacher)
         return obj.date.strftime('%Y-%m-%d %H:%M')
 
 
