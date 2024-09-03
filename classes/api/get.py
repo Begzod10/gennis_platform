@@ -14,14 +14,32 @@ class ClassNumberRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = ClassNumberListSerializers
 
     def retrieve(self, request, *args, **kwargs):
-        class_number = self.get_queryset()
-        class_number_data = self.get_serializer(class_number, many=True).data
-        return Response(class_number_data)
+        pk = int(self.kwargs.get('pk'))
+        class_number = ClassNumber.objects.all()
+        datas = []
 
-    def get_queryset(self):
-        queryset = ClassNumber.objects.filter(class_types_id=self.kwargs.get('pk')).all()
+        for class_num in class_number:
+            if class_num.class_types is not None:
+                class_type_id = class_num.class_types.id
+                status = class_num.class_types.id == pk
 
-        return queryset
+            else:
+                status = False
+                class_type_id = None
+            if pk == class_type_id or class_type_id is None:
+                data = {
+                    'id': class_num.id,
+                    'number': class_num.number,
+                    'price': class_num.price,
+                    'curriculum_hours': class_num.curriculum_hours,
+                    'class_types': class_type_id,
+                    'status': status
+                }
+                datas.append(data)
+
+        datas.sort(key=lambda x: not x['status'])
+
+        return Response(datas)
 
 
 class StudentCoinRetrieveAPIView(generics.RetrieveAPIView):

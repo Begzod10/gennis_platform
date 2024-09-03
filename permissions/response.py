@@ -2,8 +2,10 @@ from datetime import date
 
 from django.db.models import Q
 
+from mobile.get_user import get_user
 from permissions.models import ManyBranch, ManyLocation
 from user.functions.functions import check_auth
+from user.models import CustomUser
 
 
 class CustomResponseMixin:
@@ -63,12 +65,9 @@ class QueryParamFilterMixin:
                 else:
                     continue
             else:
-
-                return []
-            break
-            #     if param == 'branch':
-            #         user = CustomUser.objects.get(pk=get_user(self.request))
-            #         self.filter_conditions &= Q(**{field: user.branch_id})
+                if param == 'branch':
+                    user = CustomUser.objects.get(pk=get_user(self.request))
+                    self.filter_conditions &= Q(**{field: user.branch_id})
 
         if self.filter_conditions:
             queryset = queryset.filter(self.filter_conditions)
@@ -88,6 +87,14 @@ class GetModelsMixin:
         }, {
             'name': 'Teacher',
             'value': ['teachers']
+        },
+        {
+            'name': 'Users',
+            'value': ['worker']
+        },
+        {
+            'name': 'Rooms',
+            'value': ['rooms']
         }
     ]
 
@@ -190,3 +197,11 @@ class GetModelsMixin:
             from teachers.models import Teacher
             if type_name == 'teachers':
                 branch_data['count'] = Teacher.objects.filter(user__branch_id=branch.id).count()
+        if model == 'Users':
+            from user.models import CustomAutoGroup
+            if type_name == 'worker':
+                branch_data['count'] = CustomAutoGroup.objects.filter(user__branch_id=branch.id).count()
+        if model == 'Rooms':
+            from rooms.models import Room
+            if type_name == 'rooms':
+                branch_data['count'] = Room.objects.filter(branch_id=branch.id).count()
