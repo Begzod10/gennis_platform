@@ -126,14 +126,14 @@ class TeacherSerializerRead(serializers.ModelSerializer):
     user = UserSerializerRead(read_only=True)
     subject = SubjectSerializer(many=True)
     teacher_salary_type = TeacherSalaryTypeSerializerRead(read_only=True)
-    group = serializers.SerializerMethodField(required=False)
+    group = GroupSerializerTeachers(many=True, source='group_set')
 
     class Meta:
         model = Teacher
         fields = "__all__"
 
-    def get_group(self, obj):
-        return [GroupSerializerTeachers(group).data for group in obj.groups_student.all()]
+    # def get_group(self, obj):
+    #     return [GroupSerializerTeachers(group).data for group in obj.group_teachers_set.all()]
 
 
 class TeacherSalaryReadSerializers(serializers.ModelSerializer):
