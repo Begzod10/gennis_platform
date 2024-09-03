@@ -24,7 +24,8 @@ class SystemListUser(generics.ListAPIView):
 
                 'id': info.system.id,
                 'name': info.system.name,
-                'number': info.system.number
+                'number': info.system.number,
+                'type': info.system.type
             })
         return Response(data)
 
@@ -71,7 +72,7 @@ class BranchListUser(generics.RetrieveAPIView):
         return Response(data)
 
 
-class DynamicModelListView(GetModelsMixin,APIView):
+class DynamicModelListView(GetModelsMixin, APIView):
 
     def post(self, request, *args, **kwargs):
         model_names = self.filter()

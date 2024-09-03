@@ -32,7 +32,7 @@ class Group(models.Model):
     class_number = models.ForeignKey('classes.ClassNumber', on_delete=models.CASCADE, null=True)
     course_types = models.ForeignKey(CourseTypes, on_delete=models.CASCADE, null=True)
     old_id = models.IntegerField(null=True, unique=True)
-    turon_old_id = models.IntegerField(null=True, unique=True)
+    # turon_old_id = models.IntegerField(null=True, unique=True)
 
     class Meta:
         ordering = ['id']
