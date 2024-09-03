@@ -16,3 +16,5 @@ class SubjectLevel(models.Model):
     old_id = models.IntegerField(null=True, unique=True)
     classroom_id = models.IntegerField(null=True)
     disabled = models.BooleanField(default=False)
+    desc = models.CharField(null=True, blank=True)
+

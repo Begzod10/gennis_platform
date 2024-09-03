@@ -6,7 +6,7 @@ from subjects.serializers import SubjectLevelSerializer
 
 
 class SubjectLevelCreateView(generics.CreateAPIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     queryset = SubjectLevel.objects.all()
     serializer_class = SubjectLevelSerializer
