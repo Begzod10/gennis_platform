@@ -11,7 +11,7 @@ from branch.serializers import BranchSerializer
 from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
-
+from permissions.models import ManySystem, ManyBranch, ManyLocation
 
 class UserSerializerRead(serializers.ModelSerializer):
     branch = BranchSerializer(read_only=True)
@@ -57,12 +57,19 @@ class UserSerializerWrite(serializers.ModelSerializer):
         user = super().create(validated_data)
         user.set_password(validated_data['password'])
         user.save()
-
-        user.many_location_set.create(user=user, location=Branch.objects.get(pk=validated_data['branch']).location)
-        user.many_branch_set.create(user=user, branch_id=validated_data['branch'])
+        branch = validated_data.get('branch')
+        if branch and branch.location:
+            system = branch.location.system
+            ManySystem.objects.get_or_create(user=user, system=system)
+            ManyLocation.objects.get_or_create(user=user, location=branch.location)
+            ManyBranch.objects.get_or_create(user=user, branch=branch)
         if profession is not None:
             CustomAutoGroup.objects.create(user=user, group=profession, salary='0')
             user.groups.add(profession)
+            if profession.name == 'admin':
+                user.is_superuser = True
+                user.is_staff = True
+                user.save()
         return user
 
     # def send_data(self, user_data):

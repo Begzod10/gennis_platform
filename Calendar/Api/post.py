@@ -48,7 +48,7 @@ class ChangeTypeView(APIView):
             day = Day.objects.get(pk=day_id)
 
             result.append({
-                'day_id': day.id,
+                'id': day.id,
                 'day_name': day.day_name,
                 'day_number': day.day_number,
                 'month': day.month.month_number,
@@ -80,7 +80,7 @@ class DeleteTypeView(APIView):
             day.save()
 
             result.append({
-                'day_id': day.id,
+                'id': day.id,
                 'day_name': day.day_name,
                 'day_number': day.day_number,
                 'month': day.month.month_number,

@@ -15,7 +15,7 @@ class RoomListView(QueryParamFilterMixin, generics.ListAPIView):
         'teacher': 'group__teacher',
         'seats_number': 'seats_number',
         'electronic_board': 'electronic_board',
-        'branch': 'branch',
+        'branch': 'branch_id',
         'deleted': 'deleted'
 
     }
@@ -25,8 +25,8 @@ class RoomListView(QueryParamFilterMixin, generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         queryset = Room.objects.all()
 
-        queryset = self.filter_queryset(queryset)
-        serializer = RoomGetSerializer(queryset, many=True)
+        querysets = self.filter_queryset(queryset)
+        serializer = RoomGetSerializer(querysets, many=True)
         return Response(serializer.data)
 
 
