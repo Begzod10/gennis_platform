@@ -2,8 +2,8 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import ClassTypes, ClassColors
-from .serializers import (ClassTypesSerializers, ClassColorsSerializers)
+from .models import ClassTypes, ClassColors, ClassNumber
+from .serializers import (ClassTypesSerializers, ClassColorsSerializers, ClassNumberSerializers)
 
 
 class CreateClassColorsList(generics.ListCreateAPIView):
@@ -37,6 +37,14 @@ class CreateClassTypesList(generics.ListCreateAPIView):
     def get(self, request, *args, **kwargs):
         queryset = ClassTypes.objects.all()
         serializer = ClassTypesSerializers(queryset, many=True)
+        datas = []
+        for data in serializer.data:
+            datas.append({
+                'id': data['id'],
+                'name': data['name'],
+                'class_numer': ClassNumberSerializers(ClassNumber.objects.filter(class_types_id=data['id']).all(),
+                                                      many=True).data
+            })
         return Response(serializer.data)
 
 
