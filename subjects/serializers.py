@@ -4,11 +4,21 @@ from subjects.models import Subject, SubjectLevel
 
 
 class SubjectSerializer(serializers.ModelSerializer):
-    old_id = serializers.IntegerField(required=False)
+    name = serializers.CharField(max_length=250)
+    desc = serializers.CharField(null=True, blank=True)
+    disabled = serializers.BooleanField(default=False)
+    id = serializers.IntegerField(required=False)
 
     class Meta:
         model = Subject
-        fields = ['id', 'name', 'ball_number', 'old_id']
+        fields = '__all__'
+
+    def create(self, validated_data):
+        subject = Subject(**validated_data)
+        subject.save()
+        return subject
+
+
 
 
 class SubjectLevelSerializer(serializers.ModelSerializer):

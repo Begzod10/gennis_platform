@@ -314,3 +314,28 @@ class PaymentDatas(APIView):
         return Response({
             'payments_by_year': payments_by_year_list,
         })
+
+
+class GetMonth(APIView):
+
+    def get(self, request, student_id):
+        from attendances.models import AttendancePerMonth
+        month = AttendancePerMonth.objects.exclude(total_debt=0).filter(student_id=student_id).all()
+        data = []
+        for mont in month:
+            if isinstance(mont.month_date, str):
+                month_date = datetime.strptime(mont.month_date, "%Y-%m-%d")
+            else:
+                month_date = mont.month_date
+            month_name = month_date.strftime("%B")
+            month_number = month_date.strftime("%m")
+
+        data.append(
+            {
+                'id': mont.id,
+                'name': month_name,
+                'number': month_number,
+            }
+        )
+
+        return Response(data)
