@@ -22,7 +22,6 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from rest_framework_simplejwt.views import TokenVerifyView
 from schema_graph.views import Schema
-# from gennis_platform.views import index
 from group.gennis.AddToGroupApi import UpdateGroupDataAPIView, GetGroupDataAPIView
 from user.Api.read import GetUserAPIView, SetObserverView
 from user.Api.write import CustomTokenObtainPairView
@@ -69,12 +68,7 @@ urlpatterns = [
     path('api/get_group_datas/<int:group_id>/', GetGroupDataAPIView.as_view(), name='get_group_datas'),
 ]
 
-# Add index view for any undefined URL patterns
-# urlpatterns += [re_path(r'^.*$', index)]
-
-# Include the Swagger documentation URLs
 urlpatterns += doc_urls
 
-# Serve media files during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

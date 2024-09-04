@@ -26,7 +26,12 @@ classroom_server = ''
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+
+ALLOWED_HOSTS = ['school.gennis.uz']
+
+
+CORS_ALLOW_ALL_ORIGINS = True
+
 
 INSTALLED_APPS = [
     'jazzmin',
@@ -47,7 +52,6 @@ INSTALLED_APPS = [
     'students.apps.StudentsConfig',
     'subjects.apps.SubjectsConfig',
     'teachers.apps.TeachersConfig',
-    'transfer.apps.TransferConfig',
     'rooms.apps.RoomsConfig',
     'capital.apps.CapitalConfig',
     'overhead.apps.OverheadConfig',
@@ -68,7 +72,6 @@ INSTALLED_APPS = [
     'lesson_plan.apps.LessonPlanConfig',
     'Calendar.apps.CalendarConfig',
     'encashment.apps.EncashmentConfig',
-    "mobile.apps.MobileConfig"
 ]
 
 MIDDLEWARE = [
@@ -85,8 +88,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'gennis_platform.urls'
 
 CORS_ORIGIN_WHITELIST = [
-    'http://localhost:3000',
-    'http://localhost:3001',
+    '*',
 ]
 
 TEMPLATES = [
@@ -121,8 +123,6 @@ AUTH_PASSWORD_VALIDATORS = [{'NAME': 'django.contrib.auth.password_validation.Us
 
 REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
 
-                  # 'PAGE_SIZE': 2,
-
                   'DEFAULT_RENDERER_CLASS   ES': ['rest_framework.renderers.JSONRenderer',
                                                   'rest_framework.renderers.BrowsableAPIRenderer', ],
 
@@ -154,7 +154,8 @@ SWAGGER_SETTINGS = {"SECURITY_DEFINITIONS": {"Bearer": {"type": "apiKey", "name"
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Asia/Tashkent'
+TIME_ZONE = 'UTC'
+
 USE_I18N = True
 
 USE_TZ = True
@@ -164,6 +165,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = '/home/ubuntu/gennis_website/gennis_platform/static'
+
 MEDIA_URL = '/media/'
 
 STATICFILES_DIRS = [

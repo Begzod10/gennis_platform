@@ -282,6 +282,10 @@ class StudentPaymentListSerializer(serializers.ModelSerializer):
     def get_added_data(self, obj):
         return obj.added_data.strftime('%Y-%m-%d')
 
+
+
+
+
 class DeletedNewStudentSerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
 

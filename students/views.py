@@ -19,6 +19,7 @@ from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent,
 from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
                           DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
+from teachers.models import TeacherBlackSalary
 
 
 class StudentListView(APIView):
@@ -318,9 +319,9 @@ class PaymentDatas(APIView):
 
 class GetMonth(APIView):
 
-    def get(self, request, student_id):
+    def get(self, request, student_id, attendance_id):
         from attendances.models import AttendancePerMonth
-        month = AttendancePerMonth.objects.exclude(total_debt=0).filter(student_id=student_id).all()
+        month = AttendancePerMonth.objects.exclude(total_debt=0).filter(student_id=student_id, status=False).all()
         data = []
         for mont in month:
             if isinstance(mont.month_date, str):
@@ -329,13 +330,67 @@ class GetMonth(APIView):
                 month_date = mont.month_date
             month_name = month_date.strftime("%B")
             month_number = month_date.strftime("%m")
-
-        data.append(
-            {
-                'id': mont.id,
-                'name': month_name,
-                'number': month_number,
-            }
-        )
-
+            if mont.total_debt != mont.payment and mont.remaining_debt == 0:
+                mont.remaining_debt = mont.total_debt
+                mont.save()
+            data.append(
+                {
+                    'id': mont.id,
+                    'name': month_name,
+                    'number': month_number,
+                    'price': mont.remaining_debt
+                }
+            )
         return Response(data)
+
+    def post(self, request, student_id, attendance_id):
+        from attendances.models import AttendancePerMonth
+        attendance_per_months = AttendancePerMonth.objects.get(pk=attendance_id)
+        if attendance_per_months.total_debt != attendance_per_months.payment and attendance_per_months.remaining_debt == 0:
+            attendance_per_months.remaining_debt = attendance_per_months.total_debt
+            attendance_per_months.save()
+        student = Student.objects.get(pk=student_id)
+        data = json.loads(request.body)
+        payment_sum = data['payment_sum']
+        branch = data[' ']
+        student_payment = StudentPayment.objects.create(student=student, payment_sum=payment_sum, branch=branch)
+        if student_payment.extra_payment:
+            payment_sum = student_payment.payment_sum + student_payment.extra_payment
+        else:
+            payment_sum = 0
+
+        for attendance_per_month in attendance_per_months:
+            if attendance_per_month.remaining_debt >= payment_sum:
+                attendance_per_month.remaining_debt -= payment_sum
+                attendance_per_month.payment += payment_sum
+                payment_sum = 0
+                if attendance_per_month.remaining_debt == 0:
+                    attendance_per_month.status = True
+            else:
+                payment_sum -= attendance_per_month.remaining_debt
+                attendance_per_month.payment += attendance_per_month.remaining_debt
+                attendance_per_month.remaining_debt = 0
+                attendance_per_month.status = True
+            attendance_per_month.save()
+
+        student_payment.extra_payment = payment_sum
+        student_payment.save()
+
+        total_debt = 0
+        remaining_debt = 0
+        attendance_per_months = AttendancePerMonth.objects.filter(student=student, status=False)
+
+        for attendance_per_month in attendance_per_months:
+            total_debt += attendance_per_month.total_debt
+            remaining_debt += attendance_per_month.remaining_debt
+
+        if remaining_debt == 0:
+            student.debt_status = 0
+        elif student.total_payment_month > total_debt:
+            student.debt_status = 1
+            TeacherBlackSalary.objects.filter(student=student, status=False).update(status=True)
+        elif student.total_payment_month < total_debt:
+            student.debt_status = 2
+
+        student.save()
+        return Response(attendance_per_months)

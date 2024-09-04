@@ -69,7 +69,7 @@ def get_room():
             "name": room['name'],
             "seats_number": room['chair_count'],
             "electronic_board": False,
-            "branch": 27,
+            "branch": 3,
         }
         room_list.append(info)
     return room_list
@@ -86,11 +86,11 @@ def get_class():
         info = {
             "turon_old_id": classes_['id'],
             "name": classes_['name'],
-            "branch": 27,
-            "language": 4,
+            "branch": 3,
+            "language": 2,
             "students": students_,
             "teacher": teachers_,
-            "system": 2,
+            "system": 4,
             "class_number": classes_['class_number'],
             "color": classes_['color'],
         }

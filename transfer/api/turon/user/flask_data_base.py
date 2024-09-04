@@ -26,7 +26,7 @@ def get_jobs():
         job = dict(zip(jobs.columns.keys(), row))
         info = {
             "name": job['name'],
-            "system_id": 2,
+            "system_id": 4,
             "permissions": []
         }
         job_list.append(info)
@@ -103,8 +103,8 @@ def get_users():
                 "password": user['password'],
                 "phone": user['number'],
                 "birth_date": birth_date,
-                "language": 1,
-                "branch": 27,
+                "language": 2,
+                "branch": 3,
                 "is_superuser": False,
                 "is_staff": False,
             }
