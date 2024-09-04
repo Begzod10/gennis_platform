@@ -43,10 +43,11 @@ def class_turon(self):
     list = get_class()
     for info in list:
         serializer = TransferGroupSerializer(data=info)
+        if not serializer.is_valid():
+            print(serializer)
         if serializer.is_valid():
             serializer.save()
         else:
-            print(info)
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
     end = time.time()
     print(f"Run time class: {(end - start) * 10 ** 3:.03f}ms")
