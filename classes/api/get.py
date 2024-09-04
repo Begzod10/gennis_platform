@@ -33,10 +33,16 @@ class ClassNumberRetrieveAPIView(generics.RetrieveAPIView):
                     'price': class_num.price,
                     'curriculum_hours': class_num.curriculum_hours,
                     'class_types': class_type_id,
-                    'status': status
+                    'status': status,
+                    "subjects": []
                 }
+                for subject in class_num.subjects.all():
+                    info = {
+                        "id": subject.id,
+                        "name": subject.name
+                    }
+                    data['subjects'].append(info)
                 datas.append(data)
-
         datas.sort(key=lambda x: not x['status'])
 
         return Response(datas)

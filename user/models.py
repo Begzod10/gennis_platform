@@ -36,7 +36,7 @@ class CustomUser(AbstractUser):
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
     language = models.ForeignKey(Language, on_delete=models.SET_NULL, null=True)
     old_id = models.IntegerField(null=True, unique=True)
-    turon_old_id = models.IntegerField(null=True, unique=True)
+    # turon_old_id = models.IntegerField(null=True, unique=True)
     groups = models.ManyToManyField(
         Group,
         related_name='custom_user_set',  # related_name'ni o'zgartiring
