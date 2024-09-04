@@ -139,7 +139,6 @@ class TeacherSerializerRead(serializers.ModelSerializer):
     def get_calculate(self, obj):
         from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
         if obj.user.branch.location.system.type == 'school':
-
             calculate_teacher_salary(obj)
 
 
@@ -216,11 +215,8 @@ class TeacherSalaryListReadSerializers(serializers.ModelSerializer):
     def get_date(self, obj):
         from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
         if obj.teacher.user.branch.location.system.type == 'school':
-
-
             calculate_teacher_salary(obj.teacher)
         return obj.date.strftime('%Y-%m-%d %H:%M')
-
 
 
 class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
