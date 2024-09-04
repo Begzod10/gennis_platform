@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from attendances.models import AttendancePerMonth
 from branch.models import Branch
+from classes.models import ClassNumber
 from group.models import Group, GroupReason
 from group.serializers import GroupSerializer, GroupReasonSerializers, BranchSerializer, LanguageSerializers, \
     SubjectLevelSerializer, SystemSerializers, CourseTypesSerializers
@@ -18,13 +19,14 @@ from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayme
 
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializerWrite()
-    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)
+    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True, required=False)
     parents_number = serializers.CharField()
     shift = serializers.CharField()
+    class_number = serializers.PrimaryKeyRelatedField(queryset=ClassNumber.objects.all())
 
     class Meta:
         model = Student
-        fields = ['id', 'user', 'subject', 'parents_number', 'shift']
+        fields = ['id', 'user', 'subject', 'parents_number', 'shift', 'class_number']
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -32,15 +34,17 @@ class StudentSerializer(serializers.ModelSerializer):
             user_data['language'] = user_data['language'].id
         if isinstance(user_data.get('branch'), Branch):
             user_data['branch'] = user_data['branch'].id
-        subject_data = validated_data.pop('subject')
 
         user_serializer = UserSerializerWrite(data=user_data)
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
 
         student = Student.objects.create(user=user, parents_number=validated_data.get('parents_number'),
-                                         shift=validated_data.get('shift'))
-        student.subject.set(subject_data)
+                                         shift=validated_data.get('shift'),
+                                         class_number=validated_data.get('class_number'))
+        if validated_data.get('subject'):
+            subject_data = validated_data.pop('subject')
+            student.subject.set(subject_data)
         return student
 
     def update(self, instance, validated_data):
@@ -281,6 +285,7 @@ class StudentPaymentListSerializer(serializers.ModelSerializer):
 
     def get_added_data(self, obj):
         return obj.added_data.strftime('%Y-%m-%d')
+
 
 class DeletedNewStudentSerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())

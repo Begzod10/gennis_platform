@@ -20,12 +20,14 @@ from .models import (TeacherSalaryList, TeacherSalary, TeacherSalaryType)
 class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializerWrite()
     subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)
+    teacher_salary_type = serializers.PrimaryKeyRelatedField(queryset=TeacherSalaryType.objects.all(), required=False)
 
     class Meta:
         model = Teacher
-        fields = ['user', 'subject', 'color', 'total_students', 'id']
+        fields = ['user', 'subject', 'color', 'total_students', 'id', 'teacher_salary_type']
 
     def create(self, validated_data):
+        print(validated_data)
         user_data = validated_data.pop('user')
         subject_data = validated_data.pop('subject')
         if isinstance(user_data.get('language'), Language):
@@ -38,8 +40,9 @@ class TeacherSerializer(serializers.ModelSerializer):
         user = user_serializer.save()
         teacher = Teacher.objects.create(user=user, **validated_data)
         teacher.subject.set(subject_data)
+        print(user_data['branch'])
         branch = Branch.objects.get(pk=user_data['branch'])
-        teacher.branches.set(branch)
+        teacher.branches.add(branch)
         return teacher
 
     def update(self, instance, validated_data):
@@ -131,8 +134,6 @@ class TeacherSerializerRead(serializers.ModelSerializer):
     class Meta:
         model = Teacher
         fields = "__all__"
-
-
 
 
 class TeacherSalaryReadSerializers(serializers.ModelSerializer):
@@ -274,3 +275,5 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
         instance.comment = validated_data.get('comment', instance.comment)
         instance.save()
         return instance
+
+

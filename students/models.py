@@ -22,6 +22,7 @@ class Student(models.Model):
     old_money = models.BigIntegerField(null=True)
     group_time_table = models.ManyToManyField('time_table.GroupTimeTable', blank=True)
     system = models.ForeignKey('system.System', on_delete=models.SET_NULL, null=True)
+    class_number = models.ForeignKey('classes.ClassNumber', on_delete=models.SET_NULL, null=True)
 
 
 class StudentCharity(models.Model):
