@@ -87,11 +87,13 @@ class NewRegisteredStudents(QueryParamFilterMixin, APIView):
         'subject': 'subject__id',
         'age': 'user__birth_date',
         'language': 'user__language_id',
+        'number': 'class_number_id',
     }
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__name', 'user__surname', 'user__username']
 
     def get(self, request, *args, **kwargs):
+
         excluded_ids = list(DeletedStudent.objects.values_list('student_id', flat=True)) + \
                        list(DeletedNewStudent.objects.values_list('student_id', flat=True))
 

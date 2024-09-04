@@ -2,11 +2,12 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
+from rest_framework.views import APIView
 from teachers.models import Teacher, TeacherSalaryList, TeacherSalary
 from teachers.serializers import (
     TeacherSerializer, TeacherSalaryListCreateSerializers, TeacherSalaryCreateSerializersUpdate
 )
+from user.models import CustomUser
 
 
 class TeacherCreateView(generics.CreateAPIView):
@@ -21,6 +22,14 @@ class TeacherUpdateView(generics.UpdateAPIView):
 
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializer
+
+    def get(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        if not instance.teacher_salary_type:
+            data['msg'] = "O'qituvchiga toifa tanlanmagan"
+        return Response(serializer.data)
 
 
 class TeacherDestroyView(generics.DestroyAPIView):
@@ -66,3 +75,12 @@ class TeacherSalaryUpdateAPIViewPatch(generics.UpdateAPIView):
 
     queryset = TeacherSalary.objects.all()
     serializer_class = TeacherSalaryCreateSerializersUpdate
+
+
+class UploadFile(APIView):
+    def post(self, request, *args, **kwargs):
+        file = request.FILES.get('file')
+        username = self.request.query_params.get('username')
+        CustomUser.objects.filter(username=username).update(file=file)
+        print(file)
+        return Response({"msg": "File uploaded successfully"}, status=status.HTTP_200_OK)
