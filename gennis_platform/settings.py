@@ -28,9 +28,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-# Application definition
-
-
 INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.admin',
@@ -166,6 +163,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = '/home/ubuntu/gennis_website/gennis_platform/static'
 MEDIA_URL = '/media/'
 
 STATICFILES_DIRS = [
