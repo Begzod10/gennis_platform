@@ -10,7 +10,7 @@ from .Api.get import StudentCharityAPIView, StudentPaymentAPIView, StudentHistor
     StudentCharityListAPIView, StudentPaymentListAPIView, StudentHistoryGroupsListAPIView, StudentRetrieveAPIView, \
     FilteredStudentsListView, StudentDeletedPaymentListAPIView
 from .views import (CreateContractView, UploadPDFContractView, StudentListView, DeletedFromRegistered,
-                    DeletedGroupStudents, NewRegisteredStudents, ActiveStudents, PaymentDatas, GetMonth
+                    DeletedGroupStudents, NewRegisteredStudents, ActiveStudents, PaymentDatas, GetMonth,shahakota
                     )
 
 app_name = 'Students'
@@ -56,5 +56,7 @@ urlpatterns = [
          name='students_for_subject'),
     path('payment_datas/<int:student_id>/', PaymentDatas.as_view(), name='payment_datas'),
     path('student_payment_month/<int:student_id>/<int:attendance_id>/', GetMonth.as_view(),
+         name='student_payment_month'),
+    path('student_payment_month_for_month/', shahakota.as_view(),
          name='student_payment_month'),
 ]

@@ -15,11 +15,11 @@ from rest_framework.views import APIView
 
 from branch.models import Branch
 from permissions.response import QueryParamFilterMixin
+from teachers.models import TeacherBlackSalary
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
 from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
                           DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
-from teachers.models import TeacherBlackSalary
 
 
 class StudentListView(APIView):
@@ -352,7 +352,7 @@ class GetMonth(APIView):
         student = Student.objects.get(pk=student_id)
         data = json.loads(request.body)
         payment_sum = data['payment_sum']
-        branch = data[' ']
+        branch = data['branch']
         student_payment = StudentPayment.objects.create(student=student, payment_sum=payment_sum, branch=branch)
         if student_payment.extra_payment:
             payment_sum = student_payment.payment_sum + student_payment.extra_payment
@@ -394,3 +394,20 @@ class GetMonth(APIView):
 
         student.save()
         return Response(attendance_per_months)
+
+
+class shahakota(APIView):
+    def post(self, request):
+        from attendances.models import AttendancePerMonth
+        attendance_id=request.data['id']
+        print(attendance_id)
+        month = AttendancePerMonth.objects.get(id=attendance_id, status=False)
+        if month.remaining_debt == 0:
+            data = {
+                'price': month.total_debt
+            }
+        else:
+            data = {
+                'price': month.remaining_debt
+            }
+        return Response(data)

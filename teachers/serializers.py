@@ -213,7 +213,7 @@ class TeacherSalaryListReadSerializers(serializers.ModelSerializer):
         from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
         if obj.teacher.user.branch.location.system.type == 'school':
             calculate_teacher_salary(obj)
-        return obj.date.strftime('%Y-%m-%d %H:%M')
+        return obj.date.strftime('%Y-%m-%d')
 
 
 class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
