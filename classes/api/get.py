@@ -33,7 +33,14 @@ class ClassNumberRetrieveAPIView(generics.RetrieveAPIView):
                     'price': class_num.price,
                     'curriculum_hours': class_num.curriculum_hours,
                     'class_types': class_type_id,
-                    'status': status
+                    'status': status,
+                    'subjects': [
+                        {
+                            'id': i.id,
+                            'name': i.name
+                        }
+                        for i in  class_num.subjects.all()
+                    ]
                 }
                 datas.append(data)
 
