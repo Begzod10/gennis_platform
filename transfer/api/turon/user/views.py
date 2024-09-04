@@ -6,7 +6,7 @@ from transfer.api.turon.user.serializers import (
 )
 from user.models import CustomAutoGroup
 import time
-from transfer.api.turon.user.flask_data_base import get_users, get_jobs,get_users_jobs
+from transfer.api.turon.user.flask_data_base import get_users, get_jobs, get_users_jobs
 import random
 from user.models import CustomUser
 from datetime import datetime
@@ -32,20 +32,28 @@ def validate_and_convert_date(date_str):
 
 
 def users_turon(self):
-    # start = time.time()
-    # list = get_jobs()
-    # for info in list:
-    #     serializer = GroupSerializer(data=info)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #     else:
-    #         print(info)
-    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    # end = time.time()
-    # print(f"Run time job: {(end - start) * 10 ** 3:.03f}ms")
+    start = time.time()
+    list = get_jobs()
+    for info in list:
+        serializer = GroupSerializer(data=info)
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            print(info)
+            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    end = time.time()
+    print(f"Run time job: {(end - start) * 10 ** 3:.03f}ms")
     start = time.time()
     list = get_users()
     for info in list:
+        if info['turon_old_id'] == 258:
+            new_password = make_password('1234')
+            info['password'] = new_password
+            serializer = TransferUserSerializer(data=info)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                print(serializer.errors)
         serializer = TransferUserSerializer(data=info)
         if not serializer.is_valid():
             try:
@@ -55,34 +63,29 @@ def users_turon(self):
                     username = check_user_name(cleaned_text)
                     info['username'] = username
                     serializer = TransferUserSerializer(data=info)
+                elif serializer.errors['birth_date']:
+                    info['birth_date'] = validate_and_convert_date(info['birth_date'])
+                    serializer = TransferUserSerializer(data=info)
             except KeyError:
                 if serializer.errors['birth_date']:
                     info['birth_date'] = validate_and_convert_date(info['birth_date'])
                     serializer = TransferUserSerializer(data=info)
-                else:
-                    print(True)
-                    new_password = make_password('1234')
-                    info['password'] = new_password
-                    serializer = TransferUserSerializer(data=info)
-                    if serializer.is_valid():
-                        serializer.save()
-                    else:
-                        print(serializer.errors)
+        if not info['birth_date']:
+            info['birth_date'] = None
         if serializer.is_valid():
             serializer.save()
         else:
-
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
     end = time.time()
     print(f"Run time users: {(end - start) * 10 ** 3:.03f}ms")
-    # start = time.time()
-    # list = get_users_jobs()
-    # for info in list:
-    #     serializer = TransferUserJobs(data=info)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #     else:
-    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    # end = time.time()
-    # print(f"Run time users job: {(end - start) * 10 ** 3:.03f}ms")
+    start = time.time()
+    list = get_users_jobs()
+    for info in list:
+        serializer = TransferUserJobs(data=info)
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    end = time.time()
+    print(f"Run time users job: {(end - start) * 10 ** 3:.03f}ms")
     return True

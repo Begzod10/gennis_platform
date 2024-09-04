@@ -31,7 +31,7 @@ class TeacherSalaryTypeSerializerTransfer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class   TeacherSerializerTransfer(serializers.ModelSerializer):
+class TeacherSerializerTransfer(serializers.ModelSerializer):
     user = OldIdRelatedField(queryset=CustomUser.objects.all(), many=False)
     teacher_salary_type = OldIdRelatedField(queryset=TeacherSalaryType.objects.all(), many=False)
 
