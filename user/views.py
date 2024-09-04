@@ -9,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from user.serializers import CustomUserSerializer
 from permissions.functions.CheckUserPermissions import check_user_permissions
+import time
 
 
 class CustomTokenRefreshView(TokenRefreshView):
@@ -58,6 +59,6 @@ class CustomTokenRefreshView(TokenRefreshView):
             "refresh_token": str(RefreshToken.for_user(user)),
             'permissions': permissions
         })
-
+        # time.sleep(3)
         return Response(response_data, status=status.HTTP_200_OK)
 

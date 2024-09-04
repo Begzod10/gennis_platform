@@ -155,3 +155,6 @@ class CheckClassTimeTable(APIView):
                             msg.append(
                                 f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.flow.name}" patokida darsi bor')
         return Response({'status': status, 'msg': msg})
+
+
+

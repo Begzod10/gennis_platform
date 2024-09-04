@@ -23,6 +23,14 @@ class TeacherUpdateView(generics.UpdateAPIView):
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializer
 
+    def get(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        if not instance.teacher_salary_type:
+            data['msg'] = "O'qituvchiga toifa tanlanmagan"
+        return Response(serializer.data)
+
 
 class TeacherDestroyView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]

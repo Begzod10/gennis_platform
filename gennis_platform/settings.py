@@ -28,9 +28,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-# Application definition
-
-
 INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.admin',
@@ -124,7 +121,7 @@ AUTH_PASSWORD_VALIDATORS = [{'NAME': 'django.contrib.auth.password_validation.Us
 
 REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
 
-                  # 'PAGE_SIZE': 10,
+                  # 'PAGE_SIZE': 2,
 
                   'DEFAULT_RENDERER_CLASS   ES': ['rest_framework.renderers.JSONRenderer',
                                                   'rest_framework.renderers.BrowsableAPIRenderer', ],
@@ -166,6 +163,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = '/home/ubuntu/gennis_website/gennis_platform/static'
 MEDIA_URL = '/media/'
 
 STATICFILES_DIRS = [

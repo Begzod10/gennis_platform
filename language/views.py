@@ -7,7 +7,7 @@ from permissions.response import CustomResponseMixin
 from .serializers import (Language, LanguageSerializers)
 
 
-class CreateLanguageList( generics.ListCreateAPIView):
+class CreateLanguageList(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     queryset = Language.objects.all()
