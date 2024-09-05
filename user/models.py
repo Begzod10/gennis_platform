@@ -10,7 +10,6 @@ from language.models import Language
 from payments.models import PaymentTypes
 
 
-
 class CustomAutoGroup(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='custom_permission')
     salary = models.IntegerField(blank=True, null=True)
@@ -36,7 +35,7 @@ class CustomUser(AbstractUser):
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
     language = models.ForeignKey(Language, on_delete=models.SET_NULL, null=True)
     old_id = models.IntegerField(null=True, unique=True)
-    turon_old_id = models.IntegerField(null=True, unique=True)
+    # turon_old_id = models.IntegerField(null=True, unique=True)
     groups = models.ManyToManyField(
         Group,
         related_name='custom_user_set',  # related_name'ni o'zgartiring
@@ -51,6 +50,7 @@ class CustomUser(AbstractUser):
         help_text='Specific permissions for this user.',
         related_query_name='custom_user',
     )
+    file = models.FileField(upload_to='documents/', null=True, blank=True, default="")
 
     # acces models.ManyToManyField(Student)
 

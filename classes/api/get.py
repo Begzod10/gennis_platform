@@ -1,10 +1,13 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from classes.models import ClassNumber, ClassCoin, CoinInfo, StudentCoin, ClassColors
+from group.models import Group
 from classes.serializers import (ClassCoinListSerializers, CoinInfoListSerializers, StudentCoinListSerializers,
                                  ClassNumberListSerializers, ClassColorsSerializers)
+from subjects.serializers import SubjectSerializer
 
 
 class ClassNumberRetrieveAPIView(generics.RetrieveAPIView):
@@ -180,3 +183,13 @@ class ClassColorsView(generics.ListAPIView):
             queryset = queryset.filter(location_id=location_id)
 
         return queryset
+
+
+class ClassSubjects(APIView):
+    def get(self, request):
+        group = Group.objects.filter(pk=request.query_params.get('group')).first()
+
+        subjects = group.class_number.subjects.all()
+        print(subjects)
+        serializer = SubjectSerializer(subjects, many=True)
+        return Response(serializer.data)

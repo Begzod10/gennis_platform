@@ -105,7 +105,6 @@ class DeleteItemTimeTableSerializers(serializers.ModelSerializer):
 
 
 class WeekDaysSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = WeekDays
         fields = ['id', 'name_en']
@@ -170,7 +169,6 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                         'subject': {},
                         'room': room.id,
                         'is_flow': False,
-
                     })
             time_tables.append(info)
         return time_tables
@@ -181,10 +179,8 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
             {
                 'id': hour.id,
                 'name': hour.name,
-                'start_time': f'{hour.start_time.hour}:{hour.start_time.minute}',
-                'end_time': f'{hour.end_time.hour}:{hour.end_time.minute}'
+                'start_time': hour.start_time.strftime('%H:%M'),
+                'end_time': hour.end_time.strftime('%H:%M'),
             }
             for hour in hours
         ]
-
-

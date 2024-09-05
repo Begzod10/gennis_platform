@@ -2,8 +2,9 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from teachers.models import TeacherAttendance, Teacher
-from teachers.serializers import TeacherAttendanceListSerializers, TeacherSerializerRead
+from teachers.models import TeacherAttendance, Teacher, TeacherSalaryType
+from teachers.serializers import TeacherAttendanceListSerializers, TeacherSerializerRead, \
+    TeacherSalaryTypeSerializerRead
 
 
 class TeacherAttendanceListView(generics.ListAPIView):
@@ -48,3 +49,8 @@ class TeachersForSubject(generics.ListAPIView):
         subject_id = self.request.query_params.get('subject')
 
         return Teacher.objects.filter(branches__in=[branch_id], subject__in=[subject_id])
+
+
+class SalaryType(generics.ListAPIView):
+    serializer_class = TeacherSalaryTypeSerializerRead
+    queryset = TeacherSalaryType.objects.all()

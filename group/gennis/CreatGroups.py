@@ -6,7 +6,7 @@ from group.models import Group, GroupReason, CourseTypes
 from group.serializers import GroupSerializer, GroupReasonSerializers, CourseTypesSerializers, \
     GroupCreateUpdateSerializer
 from permissions.response import QueryParamFilterMixin
-
+from time_table.functions.time_table_archive import creat_time_table_archive
 
 class CreateCourseTypesList(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -67,3 +67,9 @@ class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
         instance = Group.objects.get(pk=write_serializer.data['id'])
         read_serializer = GroupSerializer(instance)
         return Response(read_serializer.data)
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        creat_time_table_archive()
+        return Response(serializer.data)

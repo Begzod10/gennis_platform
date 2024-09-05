@@ -13,6 +13,7 @@ from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
 from permissions.models import ManySystem, ManyBranch, ManyLocation
 
+
 class UserSerializerRead(serializers.ModelSerializer):
     branch = BranchSerializer(read_only=True)
     language = LanguageSerializers(read_only=True)

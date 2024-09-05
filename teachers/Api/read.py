@@ -51,14 +51,13 @@ class TeacherRetrieveView(generics.RetrieveAPIView):
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializerRead
 
-    def get_object(self):
-        pk = self.kwargs.get('pk')
-        obj = self.get_queryset().filter(pk=pk).first()
-        self.check_object_permissions(self.request, obj)
-
-        # calculate_teacher_salary(obj)  # eror bergani uchun yopdim
-
-        return obj
+    def get(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        if not instance.teacher_salary_type:
+            data['msg'] = "O'qituvchiga toifa tanlanmagan"
+        return Response(data)
 
 
 class TeacherSalaryListAPIView(QueryParamFilterMixin, generics.ListAPIView):

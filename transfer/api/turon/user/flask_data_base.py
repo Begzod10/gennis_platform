@@ -89,7 +89,7 @@ def get_users_jobs():
 def get_users():
     user_list = []
     with engine.connect() as conn:
-        result = conn.execute(users.select()).fetchall()
+        result = conn.execute(users.select().order_by(users.c.id)).fetchall()
     for row in result:
         user = dict(zip(users.columns.keys(), row))
         birth_date = user['birth_date'].strftime("%Y-%m-%d") if user and user.get('birth_date') else None

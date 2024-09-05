@@ -18,10 +18,11 @@ class Student(models.Model):
     representative_name = models.CharField(null=True)
     representative_surname = models.CharField(null=True)
     old_id = models.IntegerField(null=True, unique=True)
-    # turon_old_id = models.IntegerField(null=True, unique=True)
+    turon_old_id = models.IntegerField(null=True, unique=True)
     old_money = models.BigIntegerField(null=True)
     group_time_table = models.ManyToManyField('time_table.GroupTimeTable', blank=True)
     system = models.ForeignKey('system.System', on_delete=models.SET_NULL, null=True)
+    class_number = models.ForeignKey('classes.ClassNumber', on_delete=models.SET_NULL, null=True)
 
 
 class StudentCharity(models.Model):
