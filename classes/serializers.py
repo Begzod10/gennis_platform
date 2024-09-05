@@ -41,7 +41,7 @@ class ClassNumberSerializers(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance = super().update(instance, validated_data)
-        return ClassNumberListSerializers(instance,many=True).data
+        return instance
 
 
 

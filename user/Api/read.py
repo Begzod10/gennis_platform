@@ -8,7 +8,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from permissions.response import IsAdminOrIsSelf
 from gennis_platform import settings
 from gennis_platform.settings import classroom_server
 from permissions.response import QueryParamFilterMixin
@@ -30,8 +30,11 @@ class UserListCreateView(generics.ListAPIView):
         return Response(serializer.data)
 
 
+
+
+
 class UserDetailView(generics.RetrieveAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdminOrIsSelf]
 
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializerRead
