@@ -7,11 +7,13 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from werkzeug.security import check_password_hash
 
+from django.contrib.auth.hashers import make_password, check_password
 from branch.serializers import BranchSerializer
 from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
 from permissions.models import ManySystem, ManyBranch, ManyLocation
+
 
 class UserSerializerRead(serializers.ModelSerializer):
     branch = BranchSerializer(read_only=True)
@@ -183,6 +185,18 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         user = CustomUser.objects.get(username=username)
         if user.password.startswith('sha256$'):
             if check_password_hash(user.password, password):
+                new_password = make_password(password)
+                user.password = new_password
+                user.save()
+                data = super().validate(attrs)
+                refresh = self.get_token(self.user)
+                data['refresh'] = str(refresh)
+                data['access'] = str(refresh.access_token)
+                return data
+            else:
+                raise AuthenticationFailed("No active account found with the given credentials")
+        elif user.password.startswith('pbkdf2:sha256'):
+            if check_password(password, user.password):
                 new_password = make_password(password)
                 user.password = new_password
                 user.save()
