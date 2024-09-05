@@ -7,7 +7,7 @@ from students.models import Student
 class ClassColors(models.Model):
     name = models.CharField(max_length=100, null=True)
     value = models.CharField(max_length=100, null=True)
-    # old_id = models.IntegerField(unique=True, null=True)
+    old_id = models.IntegerField(unique=True, null=True)
 
     class Meta:
         ordering = ['id']
@@ -26,7 +26,7 @@ class ClassNumber(models.Model):
     curriculum_hours = models.IntegerField(null=True)
     class_types = models.ForeignKey(ClassTypes, on_delete=models.SET_NULL, null=True)
     subjects = models.ManyToManyField(Subject)
-    # old_id = models.IntegerField(unique=True, null=True)
+    old_id = models.IntegerField(unique=True, null=True)
 
     class Meta:
         ordering = ['id']
