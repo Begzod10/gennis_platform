@@ -13,8 +13,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from attendances.models import AttendancePerMonth
 from branch.models import Branch
 from permissions.response import QueryParamFilterMixin
+from teachers.models import TeacherBlackSalary
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
 from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
@@ -321,7 +323,6 @@ class PaymentDatas(APIView):
 class GetMonth(APIView):
 
     def get(self, request, student_id, attendance_id):
-        from attendances.models import AttendancePerMonth
         month = AttendancePerMonth.objects.exclude(total_debt=0).filter(student_id=student_id, status=False).all()
         data = []
         for mont in month:
