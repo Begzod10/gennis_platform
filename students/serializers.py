@@ -29,6 +29,7 @@ class StudentSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'subject', 'parents_number', 'shift', 'class_number']
 
     def create(self, validated_data):
+        print(validated_data)
         user_data = validated_data.pop('user')
         if isinstance(user_data.get('language'), Language):
             user_data['language'] = user_data['language'].id
