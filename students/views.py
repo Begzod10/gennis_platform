@@ -13,8 +13,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from attendances.models import AttendancePerMonth
 from branch.models import Branch
 from permissions.response import QueryParamFilterMixin
+from teachers.models import TeacherBlackSalary
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
 from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
@@ -93,7 +95,6 @@ class NewRegisteredStudents(QueryParamFilterMixin, APIView):
     search_fields = ['user__name', 'user__surname', 'user__username']
 
     def get(self, request, *args, **kwargs):
-
         excluded_ids = list(DeletedStudent.objects.values_list('student_id', flat=True)) + \
                        list(DeletedNewStudent.objects.values_list('student_id', flat=True))
 
@@ -321,7 +322,6 @@ class PaymentDatas(APIView):
 class GetMonth(APIView):
 
     def get(self, request, student_id, attendance_id):
-        from attendances.models import AttendancePerMonth
         month = AttendancePerMonth.objects.exclude(total_debt=0).filter(student_id=student_id, status=False).all()
         data = []
         for mont in month:
@@ -345,12 +345,15 @@ class GetMonth(APIView):
         return Response(data)
 
     def post(self, request, student_id, attendance_id):
+
         from attendances.models import AttendancePerMonth
         attendance_id = request.data.get('id')
+
         attendance_per_month = AttendancePerMonth.objects.get(pk=attendance_id)
         if attendance_per_month.total_debt != attendance_per_month.payment and attendance_per_month.remaining_debt == 0:
             attendance_per_month.remaining_debt = attendance_per_month.total_debt
             attendance_per_month.save()
+
         payment_sum = request.data['payment_sum']
         branch = request.data['branch']
         student_payment = StudentPayment.objects.create(student_id=student_id, payment_sum=payment_sum,
@@ -389,3 +392,63 @@ class shahakota(APIView):
                 'price': month.remaining_debt
             }
         return Response(data)
+
+        student = Student.objects.get(pk=student_id)
+        data = json.loads(request.body)
+        payment_sum = data['payment_sum']
+        branch = data['branch']
+        student_payment = StudentPayment.objects.create(student=student, payment_sum=payment_sum, branch=branch)
+        if student_payment.extra_payment:
+            payment_sum = student_payment.payment_sum + student_payment.extra_payment
+        else:
+            payment_sum = 0
+        for attendance_per_month_ in attendance_per_month:
+            if attendance_per_month_.remaining_debt >= payment_sum:
+                attendance_per_month_.remaining_debt -= payment_sum
+                attendance_per_month_.payment += payment_sum
+                payment_sum = 0
+                if attendance_per_month_.remaining_debt == 0:
+                    attendance_per_month_.status = True
+            else:
+                payment_sum -= attendance_per_month_.remaining_debt
+                attendance_per_month_.payment += attendance_per_month_.remaining_debt
+                attendance_per_month_.remaining_debt = 0
+                attendance_per_month_.status = True
+            attendance_per_month_.save()
+
+        student_payment.extra_payment += payment_sum
+        student_payment.save()
+
+        total_debt = 0
+        remaining_debt = 0
+        attendance_per_months = AttendancePerMonth.objects.exclude(total_debt=0).filter(student_id=student_id,
+                                                                                        status=False).order_by(
+            AttendancePerMonth.pk).all()
+
+        for attendance_per_month in attendance_per_months:
+            if attendance_per_month.remaining_debt > 0 and payment_sum != 0:
+                if attendance_per_month.remaining_debt >= payment_sum:
+                    attendance_per_month.remaining_debt -= payment_sum
+                    attendance_per_month.payment += payment_sum
+                    payment_sum = 0
+                    if attendance_per_month.remaining_debt == 0:
+                        attendance_per_month.status = True
+                else:
+                    payment_sum -= attendance_per_month.remaining_debt
+                    attendance_per_month.payment += attendance_per_month.remaining_debt
+                    attendance_per_month.remaining_debt = 0
+                    attendance_per_month.status = True
+                attendance_per_month.save()
+
+            total_debt += attendance_per_month.total_debt
+            remaining_debt += attendance_per_month.remaining_debt
+
+        if remaining_debt == 0:
+            student.debt_status = 0
+        elif student.total_payment_month > total_debt:
+            student.debt_status = 1
+            TeacherBlackSalary.objects.filter(student=student, status=False).update(status=True)
+        elif student.total_payment_month < total_debt:
+            student.debt_status = 2
+        student.save()
+        return Response(attendance_per_months)
