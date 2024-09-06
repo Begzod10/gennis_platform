@@ -53,6 +53,5 @@ class OldCapital(models.Model):
     old_id = models.IntegerField(null=True, unique=True)
     deleted = models.BooleanField(default=False)
 
-
     class Meta:
         ordering = ['id']

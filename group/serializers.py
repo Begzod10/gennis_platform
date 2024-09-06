@@ -152,7 +152,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                             for attendance in attendances_per_month:
                                 attendance.delete()
                             instance.students.remove(student)
-                            DeletedNewStudent.objects.create(student=student, comment=comment)
+                            # DeletedNewStudent.objects.create(student=student, comment=comment)
                             student_history_group = StudentHistoryGroups.objects.get(group=instance,
                                                                                      teacher=instance.teacher.all()[0],
                                                                                      student=student)
