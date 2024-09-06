@@ -29,6 +29,7 @@ class StudentSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'subject', 'parents_number', 'shift', 'class_number']
 
     def create(self, validated_data):
+        print(validated_data)
         user_data = validated_data.pop('user')
         if isinstance(user_data.get('language'), Language):
             user_data['language'] = user_data['language'].id
@@ -132,7 +133,6 @@ class StudentListSerializer(serializers.ModelSerializer):
             for i in group.teacher.all():
                 for salary in i.teacher_black_salary.filter(student_id=obj.id).all():
                     debt += salary.black_salary if salary.black_salary else 0
-
         return debt
 
     def get_contract(self, obj):
@@ -349,4 +349,4 @@ class DeletedStudentListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DeletedStudent
-        fields = ['id', 'student', 'group', 'teacher', 'group_reason']
+        fields = ['id', 'student', 'group', 'teacher', 'group_reason', 'deleted_date']

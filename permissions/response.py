@@ -1,6 +1,7 @@
 from datetime import date
 
 from django.db.models import Q
+from rest_framework import permissions
 
 from mobile.get_user import get_user
 from permissions.models import ManyBranch, ManyLocation
@@ -95,6 +96,10 @@ class GetModelsMixin:
         {
             'name': 'Rooms',
             'value': ['rooms']
+        },
+        {
+            'name': 'Accounting',
+            'value': ['studentsPayments', 'teachersSalary', 'employeesSalary', 'overhead', 'capital']
         }
     ]
 
@@ -205,3 +210,29 @@ class GetModelsMixin:
             from rooms.models import Room
             if type_name == 'rooms':
                 branch_data['count'] = Room.objects.filter(branch_id=branch.id).count()
+        if model == 'Accounting':
+            from encashment.views import OldCapital,Overhead,UserSalaryList,StudentPayment,TeacherSalaryList
+            if type_name == 'capital':
+                branch_data['count'] = OldCapital.objects.filter(branch_id=branch.id).count()
+            if type_name == 'overhead':
+                branch_data['count'] = Overhead.objects.filter(branch_id=branch.id).count()
+            if type_name == 'employeesSalary':
+                branch_data['count'] = UserSalaryList.objects.filter(branch_id=branch.id).count()
+            if type_name == 'studentsPayments':
+                branch_data['count'] = StudentPayment.objects.filter(branch_id=branch.id).count()
+            if type_name == 'teachersSalary':
+                branch_data['count'] = TeacherSalaryList.objects.filter(branch_id=branch.id).count()
+
+
+class IsAdminOrIsSelf(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_superuser:
+            return True
+
+        if obj == request.user:
+            return True
+        if request.user.has_perm(f'{obj._meta.app_label}.view_{obj._meta.model_name}'):
+            return True
+
+        return False

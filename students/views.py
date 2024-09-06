@@ -18,7 +18,7 @@ from branch.models import Branch
 from permissions.response import QueryParamFilterMixin
 from teachers.models import TeacherBlackSalary
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
-from .serializers import StudentCharity
+from .serializers import StudentCharity, DeletedStudentSerializer
 from .serializers import (StudentListSerializer,
                           DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
 
@@ -56,11 +56,15 @@ class DeletedFromRegistered(QueryParamFilterMixin, APIView):
     }
 
     def get(self, request, *args, **kwargs):
-        deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
-        delete_new_students = DeletedNewStudent.objects.exclude(id__in=deleted_student_ids)
+        deleted_students = DeletedStudent.objects.all()
 
-        delete_new_students = self.filter_queryset(delete_new_students)
-        delete_new_student_serializer = DeletedNewStudentListSerializer(delete_new_students, many=True)
+        # delete_new_students = DeletedNewStudent.objects.exclude(id__in=deleted_student_ids)
+
+        delete_new_students = self.filter_queryset(deleted_students)
+        # student_ids = delete_new_students.values_list('student_id', flat=True)
+        #
+        # students = Student.objects.filter(id__in=student_ids)
+        delete_new_student_serializer = DeletedStudentListSerializer(delete_new_students, many=True)
         return Response(delete_new_student_serializer.data)
 
 
@@ -75,6 +79,7 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
 
     def get(self, request, *args, **kwargs):
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
+        print(deleted_new_student_ids)
         active_students = Student.objects.exclude(id__in=deleted_new_student_ids)
         active_students = self.filter_queryset(active_students)
         student_serializer = StudentListSerializer(active_students, many=True)
