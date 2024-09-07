@@ -153,14 +153,12 @@ class CustomAutoGroupSerializers(serializers.ModelSerializer):
 
 class UserSalarySerializers(serializers.ModelSerializer):
     permission = CustomAutoGroupSerializers(read_only=True)
-    date = serializers.SerializerMethodField()
 
     class Meta:
         model = UserSalary
         fields = '__all__'
 
-    def get_date(self, obj):
-        return obj.date.strftime('%Y-%m')
+
 
 
 class UserSalaryListSerializersRead(serializers.ModelSerializer):
@@ -235,14 +233,10 @@ class UserSalarySerializersRead(serializers.ModelSerializer):
     branch = BranchSerializer(read_only=True)
     # user_salary = UserSalarySerializers(read_only=True)
     payment_types = PaymentTypesSerializers(read_only=True)
-    date = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = UserSalary
         fields = '__all__'
-
-    def get_date(self, obj):
-        return obj.date.strftime('%Y-%m-%d')
 
 
 class CustomUserSerializer(serializers.ModelSerializer):

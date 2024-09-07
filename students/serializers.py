@@ -1,3 +1,6 @@
+from datetime import date
+
+from django.db.models import Sum
 from rest_framework import serializers
 
 from attendances.models import AttendancePerMonth
@@ -98,6 +101,17 @@ class GroupSerializerStudents(serializers.ModelSerializer):
         return ClassColorsSerializers(obj.color).data
 
 
+def get_remaining_debt_for_student(student_id):
+    current_date = date.today()
+    remaining_debt_sum = AttendancePerMonth.objects.filter(
+        student_id=student_id,
+        month_date__lte=current_date
+    ).aggregate(total_remaining_debt=Sum('remaining_debt'))
+    total_remaining_debt = remaining_debt_sum['total_remaining_debt'] or 0
+
+    return total_remaining_debt
+
+
 class StudentListSerializer(serializers.ModelSerializer):
     user = UserSerializerRead(read_only=True)
     subject = SubjectSerializer(many=True)
@@ -126,12 +140,15 @@ class StudentListSerializer(serializers.ModelSerializer):
         return color
 
     def get_debt(self, obj):
-        groups = obj.groups_student.all()
         debt = 0
-        for group in groups:
-            for i in group.teacher.all():
-                for salary in i.teacher_black_salary.filter(student_id=obj.id).all():
-                    debt += salary.black_salary if salary.black_salary else 0
+        if obj.user.branch.location.system.type == 'school':
+            debt = get_remaining_debt_for_student(obj.id)
+        else:
+            groups = obj.groups_student.all()
+            for group in groups:
+                for i in group.teacher.all():
+                    for salary in i.teacher_black_salary.filter(student_id=obj.id).all():
+                        debt += salary.black_salary if salary.black_salary else 0
 
         return debt
 
@@ -206,7 +223,6 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
     status = serializers.BooleanField(required=False)
     name = serializers.SerializerMethodField(required=False, read_only=True)
     surname = serializers.SerializerMethodField(required=False, read_only=True)
-    date = serializers.SerializerMethodField(required=False, read_only=True)
     payment_type_name = serializers.SerializerMethodField(required=False, read_only=True)
 
     class Meta:
@@ -220,8 +236,7 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
     def get_surname(self, obj):
         return obj.student.user.surname
 
-    def get_date(self, obj):
-        return obj.added_data.strftime('%Y-%m-%d')
+
 
     def get_payment_type_name(self, obj):
         return obj.payment_type.name
@@ -277,14 +292,11 @@ class StudentPaymentListSerializer(serializers.ModelSerializer):
     payment_type = PaymentTypesSerializers(required=True)
     payment_sum = serializers.IntegerField(required=False)
     status = serializers.BooleanField(required=False)
-    added_data = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = StudentPayment
         fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'added_data']
 
-    def get_added_data(self, obj):
-        return obj.added_data.strftime('%Y-%m-%d')
 
 
 class DeletedNewStudentSerializer(serializers.ModelSerializer):
