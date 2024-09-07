@@ -2,13 +2,14 @@ from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from permissions.models import ManySystem, ManyLocation, ManyBranch
+from permissions.models import ManySystem, ManyLocation, ManyBranch, System
 from permissions.response import GetModelsMixin
 from system.serializers import SystemSerializersUsers
 from user.functions.functions import check_auth
 
 
 class SystemListUser(generics.ListAPIView):
+    system = System.objects.all()
     queryset = ManySystem.objects.all()
     serializer_class = SystemSerializersUsers
 
@@ -25,7 +26,7 @@ class SystemListUser(generics.ListAPIView):
                 'id': info.system.id,
                 'name': info.system.name,
                 'number': info.system.number,
-                'type': info.system.type
+                'type': info.system.name
             })
         return Response(data)
 
