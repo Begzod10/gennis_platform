@@ -2,7 +2,7 @@ from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from permissions.models import ManySystem, ManyLocation, ManyBranch, System
+from permissions.models import ManySystem, ManyLocation, ManyBranch, System, CustomUser, Location, Branch
 from permissions.response import GetModelsMixin
 from system.serializers import SystemSerializersUsers
 from user.functions.functions import check_auth
@@ -15,6 +15,25 @@ class SystemListUser(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         user, auth_error = check_auth(request)
+        user_get = CustomUser.objects.get(id=user.id)
+        # system = System.objects.all()
+        # for sys_item in system:
+        #     exist = ManySystem.objects.filter(user_id=user.id, system_id=sys_item.id).exists()
+        #     if not exist:
+        #         ManySystem.objects.create(user=user, system=sys_item)
+
+        # location = Location.objects.all()
+        # for sys_item in location:
+        #     exist = ManyLocation.objects.filter(user_id=user.id, location_id=sys_item.id).exists()
+        #     if not exist:
+        #         ManyLocation.objects.create(user=user, location=sys_item)
+
+        # branch = Branch.objects.all()
+        # for sys_item in branch:
+        #     exist = ManyBranch.objects.filter(user_id=user.id, branch_id=sys_item.id).exists()
+        #     if not exist:
+        #         ManyBranch.objects.create(user=user, branch=sys_item)
+
         if auth_error:
             return Response(auth_error)
 
