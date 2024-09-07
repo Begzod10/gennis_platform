@@ -51,7 +51,7 @@ class DeletedNewStudent(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student_new')
     created = models.DateField(auto_now_add=True)
     comment = models.CharField(null=True)
-    # old_id = models.IntegerField(unique=True, null=True)
+    old_id = models.IntegerField(unique=True, null=True)
 
 
 class StudentHistoryGroups(models.Model):
