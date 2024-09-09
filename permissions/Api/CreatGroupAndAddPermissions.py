@@ -64,7 +64,11 @@ class JobProfile(APIView):
 class Jobs(APIView):
     def post(self, request):
         data = json.loads(request.body)
-        group = Group.objects.get_or_create(name=data['name'])
+
+
+
+        group, created = Group.objects.get_or_create(name=data['name'])
+
         AuthGroupSystem.objects.create(group_id=group.pk, system_id_id=data['system_id'])
         serializers = GroupSerializer(group)
         return Response({'job': serializers.data})
@@ -80,3 +84,26 @@ class Jobs(APIView):
         groups_serializers = AuthGroupSystemSerializer(auth_group_systems, many=True)
         print(groups_serializers.data)
         return Response({'systems': serializers.data, 'jobs': groups_serializers.data})
+
+
+class EditJob(APIView):
+    def put(self, request, pk):
+        data = json.loads(request.body)
+        group = Group.objects.get(pk=pk)
+        group.name = data['name']
+        group.save()
+        gr = AuthGroupSystem.objects.get(group_id=group.pk)
+        gr.system_id_id = data['system_id']
+        gr.save()
+
+        return Response({'job': group.name})
+
+
+from permissions.response import CustomResponseMixin
+
+
+class DeleteJob(CustomResponseMixin, APIView):
+    def delete(self, request, pk):
+        group = AuthGroupSystem.objects.get(pk=pk)
+        group.delete()
+        return Response({'success': 'True'})

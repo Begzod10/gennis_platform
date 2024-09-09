@@ -32,7 +32,7 @@ class ClassNumberSerializers(serializers.ModelSerializer):
     number = serializers.IntegerField(required=False)
     price = serializers.IntegerField(required=False)
     curriculum_hours = serializers.IntegerField(required=False)
-    class_types = serializers.PrimaryKeyRelatedField(queryset=ClassTypes.objects.all(), required=True)
+    class_types = serializers.PrimaryKeyRelatedField(queryset=ClassTypes.objects.all(), required=False,allow_null=True,allow_empty=True)
     subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), required=False, allow_null=True,
                                                   many=True)
 

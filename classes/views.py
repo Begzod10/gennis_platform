@@ -15,9 +15,15 @@ class CreateClassColorsList(generics.ListCreateAPIView):
     serializer_class = ClassColorsSerializers
 
     def get(self, request, *args, **kwargs):
+        from group.models import Group
         queryset = ClassColors.objects.all()
-        serializer = ClassColorsSerializers(queryset, many=True)
-        return Response(serializer.data)
+        datas = []
+        for data in queryset:
+            info = ClassColorsSerializers(data).data
+            info['status'] = False if Group.objects.filter(color_id=data.id).exists() else True
+            datas.append(info)
+
+        return Response(datas)
 
 
 class ClassColorsRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
