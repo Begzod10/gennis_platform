@@ -355,13 +355,12 @@ class GetMonth(APIView):
         attendance_id = request.data.get('id')
 
         attendance_per_month = AttendancePerMonth.objects.get(pk=attendance_id)
-<<<<<<< HEAD
+
         if attendance_per_month.total_debt != attendance_per_month.payment and attendance_per_month.remaining_debt == 0:
             attendance_per_month.remaining_debt = attendance_per_month.total_debt
             attendance_per_month.save()
 
-=======
->>>>>>> 9ee6fd0fa303e7c8ef6471ff772f4a102ee12024
+
         payment_sum = request.data['payment_sum']
         branch = request.data['branch']
 
@@ -400,7 +399,7 @@ class shahakota(APIView):
             }
         return Response(data)
 
-<<<<<<< HEAD
+
         student = Student.objects.get(pk=student_id)
         data = json.loads(request.body)
         payment_sum = data['payment_sum']
@@ -460,7 +459,7 @@ class shahakota(APIView):
             student.debt_status = 2
         student.save()
         return Response(attendance_per_months)
-=======
+
 
 class DeleteStudentPayment(APIView):
     def delete(self, request, pk):
@@ -480,4 +479,4 @@ class DeleteStudentPayment(APIView):
         attendance_per_month.save()
 
         return Response({'msg': "Success"}, status=status.HTTP_200_OK)
->>>>>>> 9ee6fd0fa303e7c8ef6471ff772f4a102ee12024
+

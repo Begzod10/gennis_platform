@@ -177,12 +177,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         # from students.models import Student
         # from teachers.models import Teacher
-        # from classes.models import ClassNumber
+        from classes.models import ClassNumber
         # CustomUser.objects.exclude(username='dr_max').all().delete()
         # Student.objects.all().delete()
         # Teacher.objects.all().delete()
-        # ClassNumber.objects.all().delete()
-
+        # ClassNumber.objects.filter(branch_id=None).delete()
+        # classes = ClassNumber.objects.all()
+        # for cl in classes:
+        #     print(cl.branch_id)
         username = attrs.get('username')
         password = attrs.get('password')
         user = CustomUser.objects.get(username=username)
