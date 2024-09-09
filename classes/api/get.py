@@ -11,7 +11,10 @@ from permissions.response import QueryParamFilterMixin
 from subjects.serializers import SubjectSerializer
 
 
-class ClassNumberRetrieveAPIView(generics.RetrieveAPIView):
+class ClassNumberRetrieveAPIView(QueryParamFilterMixin,generics.RetrieveAPIView):
+    filter_mappings = {
+        'branch': 'branch_id',
+    }
     permission_classes = [IsAuthenticated]
 
     queryset = ClassNumber.objects.all()
@@ -21,6 +24,7 @@ class ClassNumberRetrieveAPIView(generics.RetrieveAPIView):
 
         pk = int(self.kwargs.get('pk'))
         class_number = ClassNumber.objects.all()
+        class_number =self.filter_queryset(class_number)
         datas = []
 
         for class_num in class_number:
