@@ -17,7 +17,7 @@ from attendances.models import AttendancePerMonth
 from branch.models import Branch
 from permissions.response import QueryParamFilterMixin
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
-from .serializers import StudentCharity, DeletedStudentSerializer
+from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
                           DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
 
@@ -353,9 +353,6 @@ class GetMonth(APIView):
         from attendances.models import AttendancePerMonth
         attendance_id = request.data.get('id')
         attendance_per_month = AttendancePerMonth.objects.get(pk=attendance_id)
-        if attendance_per_month.total_debt != attendance_per_month.payment and attendance_per_month.remaining_debt == 0:
-            attendance_per_month.remaining_debt = attendance_per_month.total_debt
-            attendance_per_month.save()
         payment_sum = request.data['payment_sum']
         branch = request.data['branch']
 
@@ -396,5 +393,20 @@ class shahakota(APIView):
 
 
 class DeleteStudentPayment(APIView):
-    def delete(self, id, *args, **kwargs):
-        pass
+    def delete(self, request, pk):
+        student_payment = get_object_or_404(StudentPayment, id=pk)
+        attendance_per_month = get_object_or_404(AttendancePerMonth, month_date__year=student_payment.added_data.year,
+                                                 month_date__month=student_payment.added_data.month,
+                                                 student=student_payment.student)
+
+        attendance_per_month.remaining_debt += student_payment.payment_sum
+        attendance_per_month.payment -= student_payment.payment_sum
+        student_payment.deleted = True
+        student_payment.save()
+
+        if attendance_per_month.remaining_debt != 0:
+            attendance_per_month.status = False
+
+        attendance_per_month.save()
+
+        return Response({'msg': "Success"}, status=status.HTTP_200_OK)
