@@ -33,7 +33,6 @@ class AttendanceDatas(APIView):
         today = datetime.today()
         group = Group.objects.get(pk=group_id)
         attendance_records = AttendancePerMonth.objects.filter(group=group)
-        print(f"Attendance records for group {group_id}: {attendance_records}")
 
         years = {attendance.month_date.year for attendance in attendance_records}
         months = {attendance.month_date.month for attendance in attendance_records}

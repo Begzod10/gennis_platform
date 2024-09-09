@@ -98,7 +98,7 @@ class ClassNumberUpdateView(CustomResponseMixin, generics.UpdateAPIView):
 
         if class_types_data is not None:
             instance.class_types = class_types_data
-        elif class_types_data is None and subjects_data is not None:
+        elif class_types_data is None and subjects_data is None:
             instance.class_types = None
 
         if subjects_data is not None:
