@@ -32,7 +32,13 @@ class ClassColorsRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIV
         return Response(class_colors_data)
 
 
-class CreateClassTypesList(generics.ListCreateAPIView):
+from permissions.response import QueryParamFilterMixin
+
+
+class CreateClassTypesList(QueryParamFilterMixin, generics.ListCreateAPIView):
+    filter_mappings = {
+        'branch': 'branch_id',
+    }
     queryset = ClassTypes.objects.all()
     serializer_class = ClassTypesSerializers
 
@@ -42,6 +48,7 @@ class CreateClassTypesList(generics.ListCreateAPIView):
         datas = []
 
         class_numbers = ClassNumber.objects.all()
+        class_numbers = self.filter_queryset(class_numbers)
 
         for data in serializer.data:
             class_type_id = data.get('id')
