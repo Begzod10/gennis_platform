@@ -9,7 +9,7 @@ from .models import CustomUser, UserSalary
 
 
 class CreateMonthly(CronJobBase):
-    RUN_EVERY_MINS = 60*24
+    RUN_EVERY_MINS = 60 * 24
     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
     code = 'user.create_monthly'
 
@@ -26,7 +26,8 @@ class CreateMonthly(CronJobBase):
                         permission=permission,
                         total_salary=permission.salary,
                         taken_salary=0,
-                        remaining_salary=permission.salary
+                        remaining_salary=permission.salary,
+                        date=now()
                     )
         teachers = Teacher.objects.all()
         for teacher in teachers:

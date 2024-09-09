@@ -1,4 +1,4 @@
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -42,7 +42,7 @@ class ClassNumberRetrieveAPIView(generics.RetrieveAPIView):
                             'id': i.id,
                             'name': i.name
                         }
-                        for i in  class_num.subjects.all()
+                        for i in class_num.subjects.all()
                     ]
                 }
                 datas.append(data)
@@ -176,13 +176,22 @@ class ClassColorsView(generics.ListAPIView):
         queryset = ClassColors.objects.all()
         location_id = self.request.query_params.get('location_id', None)
         branch_id = self.request.query_params.get('branch_id', None)
-
         if branch_id is not None:
             queryset = queryset.filter(branch_id=branch_id)
         if location_id is not None:
             queryset = queryset.filter(location_id=location_id)
-
         return queryset
+
+
+class ClassColorsDeleteView(generics.RetrieveDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = ClassColors.objects.all()
+    serializer_class = ClassColorsSerializers
+
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({"msg": "Rang o'chirildi"}, status=status.HTTP_200_OK)
 
 
 class ClassSubjects(APIView):

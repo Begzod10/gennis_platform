@@ -33,7 +33,8 @@ class ClassNumberSerializers(serializers.ModelSerializer):
     price = serializers.IntegerField(required=False)
     curriculum_hours = serializers.IntegerField(required=False)
     class_types = serializers.PrimaryKeyRelatedField(queryset=ClassTypes.objects.all(), required=True)
-    subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), required=False, allow_null=True, many=True)
+    subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), required=False, allow_null=True,
+                                                  many=True)
 
     class Meta:
         model = ClassNumber
@@ -42,7 +43,6 @@ class ClassNumberSerializers(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance = super().update(instance, validated_data)
         return instance
-
 
 
 class ClassColorsSerializers(serializers.ModelSerializer):

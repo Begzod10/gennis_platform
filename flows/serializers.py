@@ -11,6 +11,8 @@ from teachers.serializers import TeacherSerializer
 from students.serializers import StudentSerializer
 from branch.serializers import BranchSerializer
 
+from .functions.flowClasses import flow_classes
+
 
 class FlowCreateUpdateSerializer(serializers.ModelSerializer):
     update_type = serializers.CharField(default=None, allow_blank=True)
@@ -22,7 +24,16 @@ class FlowCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Flow
-        fields = ['id', 'name', 'level', 'activity', 'subject', 'teacher', 'students', 'update_type', 'branch']
+        fields = ['id', 'name', 'level', 'activity', 'subject', 'teacher', 'students', 'update_type', 'branch',
+                  'classes']
+
+    def create(self, validated_data):
+        students = validated_data.pop('students')
+        flow = Flow.objects.create(**validated_data)
+        flow.students.set(students)
+        flow.save()
+        flow_classes(flow)
+        return flow
 
     def update(self, instance, validated_data):
         update_type = validated_data.get('update_type', None)
@@ -48,6 +59,7 @@ class FlowCreateUpdateSerializer(serializers.ModelSerializer):
                     for time_table in instance.classtimetable_set.all():
                         student.class_time_table.remove(time_table)
         instance.save()
+        flow_classes(instance)
         return instance
 
 
@@ -61,4 +73,4 @@ class FlowsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Flow
-        fields = ['id', 'name', 'level', 'activity', 'subject', 'teacher', 'students', 'branch', 'type']
+        fields = ['id', 'name', 'level', 'activity', 'subject', 'teacher', 'students', 'branch', 'type', 'classes']

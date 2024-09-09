@@ -361,4 +361,4 @@ class DeletedStudentListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DeletedStudent
-        fields = ['id', 'student', 'group', 'teacher', 'group_reason']
+        fields = ['id', 'student', 'group', 'teacher', 'group_reason', 'deleted_date']

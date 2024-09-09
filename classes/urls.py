@@ -5,7 +5,7 @@ from .views import (CreateClassTypesList, CreateClassColorsList,
                     ClassTypesRetrieveUpdateDestroyAPIView, )
 from .api.get import ClassNumberRetrieveAPIView, ClassCoinRetrieveAPIView, CoinInfoRetrieveAPIView, \
     StudentCoinRetrieveAPIView, StudentCoinListView, ClassCoinListView, ClassNumberListView, CoinInfoListView, \
-    ClassColorsView, ClassSubjects
+    ClassColorsView, ClassSubjects, ClassColorsDeleteView
 from .api.createdeleteupdate import CoinInfoCreateView, CoinInfoDestroyView, CoinInfoUpdateView, StudentCoinDestroyView, \
     ClassCoinCreateView, ClassCoinDestroyView, ClassNumberDestroyView, ClassCoinUpdateView, StudentCoinCreateView, \
     StudentCoinUpdateView, ClassNumberCreateView, ClassNumberUpdateView
@@ -36,5 +36,6 @@ urlpatterns = [
     path('class_types/', CreateClassTypesList.as_view(), name='class-types-list-create'),
     path('class_types/<int:pk>/', ClassTypesRetrieveUpdateDestroyAPIView.as_view(), name='class-types-detail'),
     path('class_colors/', ClassColorsView.as_view(), name='class_colors'),
+    path('class_colors-delete/<int:pk>/', ClassColorsDeleteView.as_view(), name='class_colors'),
     path('class-subjects/', ClassSubjects.as_view(), name='class-subjects'),
 ]
