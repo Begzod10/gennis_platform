@@ -388,3 +388,8 @@ class shahakota(APIView):
                 'price': month.remaining_debt
             }
         return Response(data)
+
+
+class DeleteStudentPayment(APIView):
+    def delete(self, id, *args, **kwargs):
+        pass

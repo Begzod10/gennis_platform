@@ -54,10 +54,10 @@ class CustomTokenRefreshView(TokenRefreshView):
         user_serializer = CustomUserSerializer(user)
         response_data = user_serializer.data
         response_data.update({
-            "access_token": str(serializer.validated_data.get('access')),
+            # "access_token": str(serializer.validated_data.get('access')),
             "access": str(serializer.validated_data.get('access')),
             "refresh_token": str(RefreshToken.for_user(user)),
-            'permissions': permissions
+            # 'permissions': permissions
         })
         # time.sleep(3)
         return Response(response_data, status=status.HTTP_200_OK)
