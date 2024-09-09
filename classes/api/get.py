@@ -7,8 +7,8 @@ from classes.models import ClassNumber, ClassCoin, CoinInfo, StudentCoin, ClassC
 from classes.serializers import (ClassCoinListSerializers, CoinInfoListSerializers, StudentCoinListSerializers,
                                  ClassNumberListSerializers, ClassColorsSerializers)
 from group.models import Group
-from subjects.serializers import SubjectSerializer
 from permissions.response import QueryParamFilterMixin
+from subjects.serializers import SubjectSerializer
 
 
 class ClassNumberRetrieveAPIView(generics.RetrieveAPIView):
@@ -148,9 +148,7 @@ class StudentCoinListView(generics.ListAPIView):
         return Response(serializer.data)
 
 
-
-
-class ClassNumberListView( QueryParamFilterMixin,generics.ListAPIView):
+class ClassNumberListView(QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     filter_mappings = {
         'branch': 'branch_id',
