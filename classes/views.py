@@ -1,7 +1,9 @@
 from rest_framework import generics
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from permissions.response import CustomResponseMixin
 from .models import ClassTypes, ClassColors, ClassNumber
 from .serializers import (ClassTypesSerializers, ClassColorsSerializers)
 
@@ -62,7 +64,7 @@ class CreateClassTypesList(generics.ListCreateAPIView):
         return Response(datas)
 
 
-class ClassTypesRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+class ClassTypesRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView, CustomResponseMixin):
     permission_classes = [IsAuthenticated]
 
     queryset = ClassTypes.objects.all()
@@ -72,3 +74,7 @@ class ClassTypesRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVi
         class_types = self.get_object()
         class_types_data = self.get_serializer(class_types).data
         return Response(class_types_data)
+
+    def destroy(self, request, *args, **kwargs):
+        super().destroy(self, request, *args, **kwargs)
+        return Response({'msg': "Maʼlumotlar muvaffaqiyatli o'chirildi."}, status=status.HTTP_200_OK)
