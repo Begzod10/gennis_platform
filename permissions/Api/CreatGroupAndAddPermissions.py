@@ -64,7 +64,7 @@ class JobProfile(APIView):
 class Jobs(APIView):
     def post(self, request):
         data = json.loads(request.body)
-        group = Group.objects.create(name=data['name'])
+        group = Group.objects.get_or_create(name=data['name'])
         AuthGroupSystem.objects.create(group_id=group.pk, system_id_id=data['system_id'])
         serializers = GroupSerializer(group)
         return Response({'job': serializers.data})
@@ -73,7 +73,10 @@ class Jobs(APIView):
         systems = System.objects.all()
         serializers = SystemSerializers(systems, many=True)
         groups = Group.objects.all()
+        print(groups)
         group_ids = [group.pk for group in groups]
         auth_group_systems = AuthGroupSystem.objects.filter(group_id__in=group_ids)
+        print(auth_group_systems)
         groups_serializers = AuthGroupSystemSerializer(auth_group_systems, many=True)
+        print(groups_serializers.data)
         return Response({'systems': serializers.data, 'jobs': groups_serializers.data})

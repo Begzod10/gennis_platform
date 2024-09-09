@@ -185,6 +185,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # classes = ClassNumber.objects.all()
         # for cl in classes:
         #     print(cl.branch_id)
+
         username = attrs.get('username')
         password = attrs.get('password')
         user = CustomUser.objects.get(username=username)
