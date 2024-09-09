@@ -15,7 +15,6 @@ class AttendanceList(APIView):
     def get_attendances_json(self, group, month_date, student_id):
         attendances = AttendancePerDay.objects.filter(group=group, day__month=month_date.month,
                                                       student__id=student_id).distinct()
-        print(attendances)
 
         days = sorted(set(attendance.day.day for attendance in attendances))
         attendances_json = {day: [] for day in days}
