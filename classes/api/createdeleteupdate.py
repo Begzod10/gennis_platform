@@ -92,13 +92,13 @@ class ClassNumberUpdateView(CustomResponseMixin, generics.UpdateAPIView):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
-        class_types_data = validated_data.get('class_types',None)
-        subjects_data = validated_data.get('subjects')
+        class_types_data = validated_data.get('class_types', None)
+        subjects_data = validated_data.get('subjects', None)
         instance = serializer.update(instance, validated_data)
 
         if class_types_data is not None:
             instance.class_types = class_types_data
-        else:
+        elif class_types_data is None and subjects_data is not None:
             instance.class_types = None
 
         if subjects_data is not None:
