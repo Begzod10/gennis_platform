@@ -17,6 +17,7 @@ class ClassNumberRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = ClassNumberListSerializers
 
     def retrieve(self, request, *args, **kwargs):
+
         pk = int(self.kwargs.get('pk'))
         class_number = ClassNumber.objects.all()
         datas = []
