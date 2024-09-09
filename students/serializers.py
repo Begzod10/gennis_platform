@@ -113,6 +113,8 @@ def get_remaining_debt_for_student(student_id):
 
 
 class StudentListSerializer(serializers.ModelSerializer):
+    from classes.serializers import ClassNumberSerializers
+
     user = UserSerializerRead(read_only=True)
     subject = SubjectSerializer(many=True)
     parents_number = serializers.CharField()
@@ -121,6 +123,7 @@ class StudentListSerializer(serializers.ModelSerializer):
     contract = serializers.SerializerMethodField(required=False)
     color = serializers.SerializerMethodField(required=False)
     debt = serializers.SerializerMethodField(required=False)
+    class_number = ClassNumberSerializers()
 
     class Meta:
         model = Student
@@ -236,8 +239,6 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
     def get_surname(self, obj):
         return obj.student.user.surname
 
-
-
     def get_payment_type_name(self, obj):
         return obj.payment_type.name
 
@@ -296,7 +297,6 @@ class StudentPaymentListSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentPayment
         fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'added_data']
-
 
 
 class DeletedNewStudentSerializer(serializers.ModelSerializer):
