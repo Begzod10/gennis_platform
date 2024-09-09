@@ -177,7 +177,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         # from students.models import Student
         # from teachers.models import Teacher
-        from classes.models import ClassNumber
+
+        from django.contrib.auth.models import Group
         # CustomUser.objects.exclude(username='dr_max').all().delete()
         # Student.objects.all().delete()
         # Teacher.objects.all().delete()
@@ -185,7 +186,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # classes = ClassNumber.objects.all()
         # for cl in classes:
         #     print(cl.branch_id)
-
+        # Group.objects.exclude(name='director')
+        groups = Group.objects.get(name="director")
+        user = CustomUser.objects.get(pk=1)
+        user.groups.add(groups)
+        user.save()
         username = attrs.get('username')
         password = attrs.get('password')
         user = CustomUser.objects.get(username=username)
