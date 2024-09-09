@@ -119,7 +119,6 @@ class GetModelsMixin:
         return response
 
     def filter(self):
-
         locations = self.request.data['locations']
         table_names = self.get_models(self.request.data['types'])
         datas = []

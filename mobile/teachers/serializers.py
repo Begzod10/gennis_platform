@@ -1,13 +1,28 @@
 from django.db.models import Sum
+from django.db.models.functions import ExtractMonth, ExtractYear
 from django.utils.timezone import localtime
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 
 from attendances.models import AttendancePerDay
+from group.serializers import GroupCreateUpdateSerializer
 from teachers.models import TeacherSalary, Teacher
 from user.models import CustomUser
 from ..get_user import get_user
-from group.serializers import GroupCreateUpdateSerializer
+
+BASE_URL = 'http://192.168.0.101:8000'
+
+
+class YearMonthSerializer(serializers.Serializer):
+    year = serializers.IntegerField()
+    months = serializers.ListField(child=serializers.IntegerField())
+
+    def to_representation(self, instance):
+        return {
+            'year': instance['year'],
+            'months': sorted(instance['months'])
+        }
+
 
 class TeachersSalariesSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
@@ -16,10 +31,27 @@ class TeachersSalariesSerializer(serializers.ModelSerializer):
     remaining_salary = serializers.IntegerField()
     taken_salary = serializers.IntegerField()
     total_black_salary = serializers.IntegerField()
+    datas = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = TeacherSalary
-        fields = ['id', 'month_date', 'total_salary', 'remaining_salary', 'taken_salary', 'total_black_salary']
+        fields = ['id', 'month_date', 'total_salary', 'remaining_salary', 'taken_salary', 'total_black_salary','datas']
+
+    def get_datas(self):
+        print(self)
+        unique_dates = TeacherSalary.objects.annotate(
+            year=ExtractYear('month_date'),
+            month=ExtractMonth('month_date')
+        ).values('year', 'month').distinct().order_by('year', 'month')
+        year_months = {}
+        for date in unique_dates:
+            year = date['year']
+            month = date['month']
+            if year not in year_months:
+                year_months[year] = []
+            year_months[year].append(month)
+        year_month_list = [{'year': year, 'months': months} for year, months in year_months.items()]
+        return YearMonthSerializer(year_month_list, many=True).data
 
 
 class TeachersDebtedStudents(serializers.ModelSerializer):
@@ -89,7 +121,7 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
             "age": user.calculate_age(),
             "birth_date": user.birth_date.strftime('%Y-%m-%d'),
             "phone": user.phone,
-            "profile_img": user.profile_img.url if user.profile_img else None,
+            "profile_img": BASE_URL + user.profile_img.url if user.profile_img else None,
             "balance": total_salary
         }
 
@@ -138,13 +170,16 @@ class AttendancesTodayStudentsSerializer(serializers.ModelSerializer):
                 })
 
         return datas
+
+
 # class GetLessonPlanSerializer(serializers.ModelSerializer):
 #
 #     class Meta:
 #         model = Teacher
 #         fields = ['id', 'name', 'description']
 class GroupListSeriliazersMobile(serializers.ModelSerializer):
-    groups=serializers.SerializerMethodField(read_only=True)
+    groups = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Teacher
         fields = ['groups']
