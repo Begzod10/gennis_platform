@@ -44,7 +44,6 @@ class FlowCreateUpdateSerializer(serializers.ModelSerializer):
         instance.teacher = validated_data.get('teacher', instance.teacher)
 
         if update_type:
-            print(instance.classtimetable_set.all())
             if update_type == 'add_students':
                 students = validated_data.get('students')
                 for student in students:

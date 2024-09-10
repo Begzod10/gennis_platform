@@ -78,7 +78,6 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
 
     def get(self, request, *args, **kwargs):
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
-        print(deleted_new_student_ids)
         active_students = Student.objects.exclude(id__in=deleted_new_student_ids)
         active_students = self.filter_queryset(active_students)
         student_serializer = StudentListSerializer(active_students, many=True)

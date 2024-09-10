@@ -55,18 +55,14 @@ def validate_and_convert_date(date_str):
 
 
 def run2(self):
-    start = time.time()
     list = get_jobs()
     for info in list:
         serializer = GroupSerializer(data=info)
         if serializer.is_valid():
             serializer.save()
         else:
-            print(info)
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time gennis job list: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
+
     list = get_users()
     for info in list:
         serializer = TransferUserSerializer(data=info)
@@ -85,22 +81,16 @@ def run2(self):
         if serializer.is_valid():
             serializer.save()
         else:
-            print(info)
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time gennis users: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
+
     list = get_users_jobs()
     for info in list:
         serializer = TransferUserJobs(data=info)
         if serializer.is_valid():
             serializer.save()
         else:
-            print(info)
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time gennis users job list: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
+
     list = get_students()
     for info in list:
         serializer = StudentSerializerTransfer(data=info)
@@ -108,9 +98,7 @@ def run2(self):
             serializer.save()
         else:
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time students: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
+
     list = get_deleted_students()
     for info in list:
         serializer = TransferDeletedNewStudentSerializer(data=info)
@@ -118,13 +106,11 @@ def run2(self):
             serializer.save()
         else:
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time deleted students: {(end - start) * 10 ** 3:.03f}ms")
     return True
 
 
 def run4(self):
-    start = time.time()
+
     list = get_groups()
     for info in list:
         serializer = TransferGroupCreateUpdateSerializer(data=info)
@@ -132,9 +118,8 @@ def run4(self):
             serializer.save()
         else:
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time group: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
+
+
     list = get_AttendancePerMonths()
     for info in list:
         serializer = TransferAttendancePerMonthSerializer(data=info)
@@ -142,9 +127,7 @@ def run4(self):
             serializer.save()
         else:
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time attendance per month: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
+
     list = get_attendancedays()
     for info in list:
         serializer = TransferAttendancePerDaySerializer(data=info)
@@ -152,9 +135,7 @@ def run4(self):
             serializer.save()
         else:
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time attendance per day: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
+
     list = get_studentpayments()
     for info in list:
         serializer = StudentPaymentSerializerTransfer(data=info)
@@ -162,9 +143,8 @@ def run4(self):
             serializer.save()
         else:
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time students payment: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
+
+
     list = get_studentcharity()
     for info in list:
         serializer = StudentCharitySerializerTransfer(data=info)
@@ -172,9 +152,6 @@ def run4(self):
             serializer.save()
         else:
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time students charity: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
     list = get_studenthistorygroups()
     for info in list:
         serializer = StudentHistoryGroupCreateSerializerTransfer(data=info)
@@ -182,17 +159,13 @@ def run4(self):
             serializer.save()
         else:
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time students history group: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
+
     try:
         teachers(self)
         self.stdout.write(self.style.SUCCESS('Gennis Teacher data transfer completed successfully!'))
     except Exception as e:
         self.stdout.write(self.style.ERROR(f'Error during gennis teacher data transfer: {e}'))
-    end = time.time()
-    print(f"Run time Teacher Branch Black Salary Salary Salary List: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
+
     list = get_overheads()
     for info in list:
         serializer = TransferOverheadSerializerCreate(data=info)
@@ -200,13 +173,11 @@ def run4(self):
             serializer.save()
         else:
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time overhead: {(end - start) * 10 ** 3:.03f}ms")
+
     return True
 
 
 def run6(self):
-    start = time.time()
     list = get_group_room_week()
     creat_week_days()
     for info in list:
@@ -215,9 +186,6 @@ def run6(self):
             serializer.save()
         else:
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time GroupTimeTable: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
     list = get_salaries()
     for info in list:
         serializer = TransferStaffsSalary(data=info)
@@ -225,9 +193,6 @@ def run6(self):
             serializer.save()
         else:
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time salary: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
     list = get_staffsalaries()
     for info in list:
         serializer = TransferStaffsSalaryList(data=info)
@@ -235,8 +200,6 @@ def run6(self):
             serializer.save()
         else:
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time salary list: {(end - start) * 10 ** 3:.03f}ms")
     return True
 
 # def run4(self):

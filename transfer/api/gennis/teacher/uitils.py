@@ -73,7 +73,6 @@ class TeacherDataTransfer:
 
             for row in teachers_result:
                 row_dict = self.row_to_dict(row, self.teachers_table)
-                print(row_dict)
                 self._transfer_individual_teacher(row_dict)
         except Exception as e:
             logging.error(f"Error transferring teachers: {e}")

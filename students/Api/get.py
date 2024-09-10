@@ -183,7 +183,6 @@ class FilteredStudentsListView(APIView):
     def post(self, request):
         # location_id = branch_id
         location_id = self.request.query_params.get('branch')
-        print(location_id)
         teachers_list = []
 
         subjects = Subject.objects.filter(student__subject__student__isnull=False).all()
@@ -244,7 +243,6 @@ class FilteredStudentsListView(APIView):
                 ).first()
 
                 if time_table_st:
-                    print(time_table)
                     student_data['extra_info'] = {
                         'status': False,
                         'reason': f"{student.user.name} {student.user.surname} o'quvchini {time_table.group.name} guruhida darsi bor"

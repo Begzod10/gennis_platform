@@ -36,7 +36,6 @@ class AttendanceDatas(APIView):
 
         years = {attendance.month_date.year for attendance in attendance_records}
         months = {attendance.month_date.month for attendance in attendance_records}
-        print(attendance_records)
 
         year = today.year
         month = today.month
