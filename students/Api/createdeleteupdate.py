@@ -107,8 +107,8 @@ class StudentPaymentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
         instance = self.get_object()
         if instance.branch.location.system.name == 'school':
             from django.shortcuts import get_object_or_404
-            from classes.models import AttendancePerMonth
-            student_payment = get_object_or_404(StudentPayment, instance)
+            from attendances.models import AttendancePerMonth
+            student_payment = get_object_or_404(StudentPayment, id=instance.id)
             attendance_per_month = get_object_or_404(AttendancePerMonth,
                                                      month_date__year=student_payment.added_data.year,
                                                      month_date__month=student_payment.added_data.month,
