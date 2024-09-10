@@ -23,7 +23,8 @@ class FlowListCreateView(generics.ListCreateAPIView):
         self.perform_create(write_serializer)
         instance = Flow.objects.get(pk=write_serializer.data['id'])
         read_serializer = FlowsSerializer(instance)
-        return Response(read_serializer.data)
+
+        return Response({'flow': read_serializer.data, 'msg': 'Patok muvaffaqqiyatli kiritildi'})
 
 
 class FlowListView(generics.ListAPIView):
