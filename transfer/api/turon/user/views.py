@@ -43,49 +43,49 @@ def users_turon(self):
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
     end = time.time()
     print(f"Run time job: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
-    list = get_users()
-    for info in list:
-        if info['turon_old_id'] == 258:
-            new_password = make_password('1234')
-            info['password'] = new_password
-            serializer = TransferUserSerializer(data=info)
-            if serializer.is_valid():
-                serializer.save()
-            else:
-                print(serializer.errors)
-        serializer = TransferUserSerializer(data=info)
-        if not serializer.is_valid():
-            try:
-                if serializer.errors['username']:
-                    username = info['username']
-                    cleaned_text = username.replace(" ", "")
-                    username = check_user_name(cleaned_text)
-                    info['username'] = username
-                    serializer = TransferUserSerializer(data=info)
-                elif serializer.errors['birth_date']:
-                    info['birth_date'] = validate_and_convert_date(info['birth_date'])
-                    serializer = TransferUserSerializer(data=info)
-            except KeyError:
-                if serializer.errors['birth_date']:
-                    info['birth_date'] = validate_and_convert_date(info['birth_date'])
-                    serializer = TransferUserSerializer(data=info)
-        if not info['birth_date']:
-            info['birth_date'] = None
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time users: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
-    list = get_users_jobs()
-    for info in list:
-        serializer = TransferUserJobs(data=info)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time users job: {(end - start) * 10 ** 3:.03f}ms")
+    # start = time.time()
+    # list = get_users()
+    # for info in list:
+    #     if info['turon_old_id'] == 258:
+    #         new_password = make_password('1234')
+    #         info['password'] = new_password
+    #         serializer = TransferUserSerializer(data=info)
+    #         if serializer.is_valid():
+    #             serializer.save()
+    #         else:
+    #             print(serializer.errors)
+    #     serializer = TransferUserSerializer(data=info)
+    #     if not serializer.is_valid():
+    #         try:
+    #             if serializer.errors['username']:
+    #                 username = info['username']
+    #                 cleaned_text = username.replace(" ", "")
+    #                 username = check_user_name(cleaned_text)
+    #                 info['username'] = username
+    #                 serializer = TransferUserSerializer(data=info)
+    #             elif serializer.errors['birth_date']:
+    #                 info['birth_date'] = validate_and_convert_date(info['birth_date'])
+    #                 serializer = TransferUserSerializer(data=info)
+    #         except KeyError:
+    #             if serializer.errors['birth_date']:
+    #                 info['birth_date'] = validate_and_convert_date(info['birth_date'])
+    #                 serializer = TransferUserSerializer(data=info)
+    #     if not info['birth_date']:
+    #         info['birth_date'] = None
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    # end = time.time()
+    # print(f"Run time users: {(end - start) * 10 ** 3:.03f}ms")
+    # start = time.time()
+    # list = get_users_jobs()
+    # for info in list:
+    #     serializer = TransferUserJobs(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    # end = time.time()
+    # print(f"Run time users job: {(end - start) * 10 ** 3:.03f}ms")
     return True

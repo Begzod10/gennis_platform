@@ -5,3 +5,4 @@ media
 **/migrations/*
 !**/migrations/__init__.py
 frontend/build
+transfer

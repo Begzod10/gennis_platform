@@ -23,11 +23,11 @@ class Command(BaseCommand):
         #     self.stdout.write(self.style.SUCCESS('Gennis run 6 transfer completed successfully!'))
         # except Exception as e:
         #     self.stdout.write(self.style.ERROR(f'Error during run 6 transfer: {e}'))
-        # try:
-        #     users_turon(self)
-        #     self.stdout.write(self.style.SUCCESS('Turon User data transfer completed successfully!'))
-        # except Exception as e:
-        #     self.stdout.write(self.style.ERROR(f'Error during turon user data transfer: {e}'))
+        try:
+            users_turon(self)
+            self.stdout.write(self.style.SUCCESS('Turon User data transfer completed successfully!'))
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'Error during turon user data transfer: {e}'))
         # try:
         #     teachers_turon(self)
         #     self.stdout.write(self.style.SUCCESS('Turon Teachers data transfer completed successfully!'))
@@ -43,3 +43,4 @@ class Command(BaseCommand):
         #     self.stdout.write(self.style.SUCCESS('Turon Class data transfer completed successfully!'))
         # except Exception as e:
         #     self.stdout.write(self.style.ERROR(f'Error during turon class data transfer: {e}'))
+        self.stdout.write(self.style.SUCCESS('Report generated successfully!'))

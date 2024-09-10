@@ -66,60 +66,60 @@ def run2(self):
             self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
     end = time.time()
     print(f"Run time gennis job list: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
-    list = get_users()
-    for info in list:
-        serializer = TransferUserSerializer(data=info)
-        if not serializer.is_valid():
-            try:
-                if serializer.errors['username']:
-                    username = info['username']
-                    cleaned_text = username.replace(" ", "")
-                    username = check_user_name(cleaned_text)
-                    info['username'] = username
-                    serializer = TransferUserSerializer(data=info)
-            except KeyError:
-                if serializer.errors['birth_date']:
-                    info['birth_date'] = validate_and_convert_date(info['birth_date'])
-                    serializer = TransferUserSerializer(data=info)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            print(info)
-            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time gennis users: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
-    list = get_users_jobs()
-    for info in list:
-        serializer = TransferUserJobs(data=info)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            print(info)
-            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time gennis users job list: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
-    list = get_students()
-    for info in list:
-        serializer = StudentSerializerTransfer(data=info)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time students: {(end - start) * 10 ** 3:.03f}ms")
-    start = time.time()
-    list = get_deleted_students()
-    for info in list:
-        serializer = TransferDeletedNewStudentSerializer(data=info)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    end = time.time()
-    print(f"Run time deleted students: {(end - start) * 10 ** 3:.03f}ms")
+    # start = time.time()
+    # list = get_users()
+    # for info in list:
+    #     serializer = TransferUserSerializer(data=info)
+    #     if not serializer.is_valid():
+    #         try:
+    #             if serializer.errors['username']:
+    #                 username = info['username']
+    #                 cleaned_text = username.replace(" ", "")
+    #                 username = check_user_name(cleaned_text)
+    #                 info['username'] = username
+    #                 serializer = TransferUserSerializer(data=info)
+    #         except KeyError:
+    #             if serializer.errors['birth_date']:
+    #                 info['birth_date'] = validate_and_convert_date(info['birth_date'])
+    #                 serializer = TransferUserSerializer(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         print(info)
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    # end = time.time()
+    # print(f"Run time gennis users: {(end - start) * 10 ** 3:.03f}ms")
+    # start = time.time()
+    # list = get_users_jobs()
+    # for info in list:
+    #     serializer = TransferUserJobs(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         print(info)
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    # end = time.time()
+    # print(f"Run time gennis users job list: {(end - start) * 10 ** 3:.03f}ms")
+    # start = time.time()
+    # list = get_students()
+    # for info in list:
+    #     serializer = StudentSerializerTransfer(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    # end = time.time()
+    # print(f"Run time students: {(end - start) * 10 ** 3:.03f}ms")
+    # start = time.time()
+    # list = get_deleted_students()
+    # for info in list:
+    #     serializer = TransferDeletedNewStudentSerializer(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    # end = time.time()
+    # print(f"Run time deleted students: {(end - start) * 10 ** 3:.03f}ms")
     return True
 
 
