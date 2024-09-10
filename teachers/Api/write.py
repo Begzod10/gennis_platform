@@ -1,20 +1,18 @@
-from rest_framework import generics
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 from rest_framework.views import APIView
-from teachers.models import Teacher, TeacherSalaryList, TeacherSalary
+from teachers.models import TeacherSalaryList, TeacherSalary
 from teachers.serializers import (
     TeacherSerializer, TeacherSalaryListCreateSerializers, TeacherSalaryCreateSerializersUpdate
 )
 from user.models import CustomUser
+from permissions.response import CustomResponseMixin
 
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from teachers.models import TeacherAttendance, Teacher, TeacherSalaryType
-from teachers.serializers import TeacherAttendanceListSerializers, TeacherSerializerRead, \
+from teachers.models import Teacher, TeacherSalaryType
+from teachers.serializers import \
     TeacherSalaryTypeSerializerRead
 
 
@@ -93,6 +91,10 @@ class UploadFile(APIView):
         return Response({"msg": "File uploaded successfully"}, status=status.HTTP_200_OK)
 
 
-class SalaryTypeUpdate(generics.RetrieveUpdateDestroyAPIView):
+class SalaryTypeUpdate(CustomResponseMixin, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TeacherSalaryTypeSerializerRead
     queryset = TeacherSalaryType.objects.all()
+
+    def destroy(self, request, *args, **kwargs):
+        super().destroy(request, *args, **kwargs)
+        return Response({"status": "succes"}, status=status.HTTP_200_OK)
