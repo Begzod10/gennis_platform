@@ -26,9 +26,7 @@ class AddPermissionManagersAndDirectors(APIView):
     def post(self, request):
         data = json.loads(request.body)
         for key in ['locations', 'branchs', 'systems']:
-            print(key)
             if key in data:
-                print(True)
                 for item in data[key]:
                     serializer = globals()[f'Many{key.capitalize()[:-1]}Serializer'](user=data['user'],
                                                                                      **{key[:-1]: item})

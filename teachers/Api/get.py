@@ -51,6 +51,6 @@ class TeachersForSubject(generics.ListAPIView):
         return Teacher.objects.filter(branches__in=[branch_id], subject__in=[subject_id])
 
 
-class SalaryType(generics.ListAPIView):
+class SalaryType(generics.ListCreateAPIView):
     serializer_class = TeacherSalaryTypeSerializerRead
     queryset = TeacherSalaryType.objects.all()

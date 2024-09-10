@@ -24,10 +24,9 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Teacher
-        fields = ['user', 'subject', 'color', 'total_students', 'id', 'teacher_salary_type']
+        fields = ['user', 'subject', 'color', 'total_students', 'id', 'teacher_salary_type', 'salary_percentage']
 
     def create(self, validated_data):
-        print(validated_data)
         user_data = validated_data.pop('user')
         subject_data = validated_data.pop('subject')
         if isinstance(user_data.get('language'), Language):
@@ -40,7 +39,6 @@ class TeacherSerializer(serializers.ModelSerializer):
         user = user_serializer.save()
         teacher = Teacher.objects.create(user=user, **validated_data)
         teacher.subject.set(subject_data)
-        print(user_data['branch'])
         branch = Branch.objects.get(pk=user_data['branch'])
         teacher.branches.add(branch)
         return teacher
@@ -123,6 +121,7 @@ class GroupSerializerTeachers(serializers.ModelSerializer):
     def get_color(self, obj):
         from classes.serializers import ClassColorsSerializers
         return ClassColorsSerializers(obj.color).data
+
 
 
 class TeacherSerializerRead(serializers.ModelSerializer):

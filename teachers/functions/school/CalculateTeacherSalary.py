@@ -39,7 +39,6 @@ def calculate_teacher_salary(teacher):
         if salary.salary_id_salary_list:
             summ = 0
             salaries = salary.salary_id_salary_list.filter(deleted=False).all()
-            print(salaries)
             for salary2 in salaries:
                 summ += salary2.salary
             remaining_salary = overall - summ

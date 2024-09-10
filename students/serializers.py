@@ -31,6 +31,7 @@ class StudentSerializer(serializers.ModelSerializer):
         model = Student
         fields = ['id', 'user', 'subject', 'parents_number', 'shift', 'class_number']
 
+
     def create(self, validated_data):
         user_data = validated_data.pop('user')
         if isinstance(user_data.get('language'), Language):
