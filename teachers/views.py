@@ -31,7 +31,7 @@ class GetGroupStudents(APIView):
                     groups = student.groups_student.all()
                     for group in groups:
                         for i in group.teacher.all():
-                            for salary in i.teacher_black_salary.filter(student_id=obj.id).all():
+                            for salary in i.teacher_black_salary.filter(student_id=student.id).all():
                                 debt += salary.black_salary if salary.black_salary else 0
                 datas.append({
                     'id': student.id,
