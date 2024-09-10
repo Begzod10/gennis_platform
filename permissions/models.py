@@ -11,6 +11,8 @@ from django.conf import settings
 class AuthGroupSystem(models.Model):
     group = models.OneToOneField(Group, on_delete=models.CASCADE)
     system_id = models.ForeignKey(System, on_delete=models.CASCADE)
+    class Meta:
+        ordering = ['id']
 
 
 class Access(models.Model):

@@ -25,8 +25,9 @@ class CustomResponseMixin:
         if not (200 <= response.status_code < 300 and isinstance(response.data, (dict, list))):
             return response
         custom_message = self.get_custom_message(request.method)
-
+        print(response.data)
         if isinstance(response.data, dict):
+            print('sardor', response.data)
             response.data['msg'] = custom_message
         elif isinstance(response.data, list):
             response.data = {
@@ -119,7 +120,6 @@ class GetModelsMixin:
         return response
 
     def filter(self):
-
         locations = self.request.data['locations']
         table_names = self.get_models(self.request.data['types'])
         datas = []
@@ -211,7 +211,7 @@ class GetModelsMixin:
             if type_name == 'rooms':
                 branch_data['count'] = Room.objects.filter(branch_id=branch.id).count()
         if model == 'Accounting':
-            from encashment.views import OldCapital,Overhead,UserSalaryList,StudentPayment,TeacherSalaryList
+            from encashment.views import OldCapital, Overhead, UserSalaryList, StudentPayment, TeacherSalaryList
             if type_name == 'capital':
                 branch_data['count'] = OldCapital.objects.filter(branch_id=branch.id).count()
             if type_name == 'overhead':

@@ -31,10 +31,15 @@ class GroupSerializer(serializers.ModelSerializer):
 class AuthGroupSystemSerializer(serializers.ModelSerializer):
     group = GroupSerializer(read_only=True)
     system_id = SystemSerializers(read_only=True)
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = AuthGroupSystem
-        fields = ['id', 'group', 'system_id']
+        fields = ['id', 'group', 'system_id','status']
+
+    def get_status(self, obj):
+        status = False if Access.objects.filter(auth_group_system=obj).exists() else True
+        return status
 
 
 class AccessSerializer(serializers.ModelSerializer):

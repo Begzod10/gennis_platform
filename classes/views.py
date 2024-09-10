@@ -1,7 +1,9 @@
 from rest_framework import generics
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from permissions.response import CustomResponseMixin
 from .models import ClassTypes, ClassColors, ClassNumber
 from .serializers import (ClassTypesSerializers, ClassColorsSerializers)
 
@@ -13,9 +15,15 @@ class CreateClassColorsList(generics.ListCreateAPIView):
     serializer_class = ClassColorsSerializers
 
     def get(self, request, *args, **kwargs):
+        from group.models import Group
         queryset = ClassColors.objects.all()
-        serializer = ClassColorsSerializers(queryset, many=True)
-        return Response(serializer.data)
+        datas = []
+        for data in queryset:
+            info = ClassColorsSerializers(data).data
+            info['status'] = False if Group.objects.filter(color_id=data.id).exists() else True
+            datas.append(info)
+
+        return Response(datas)
 
 
 class ClassColorsRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
@@ -30,7 +38,13 @@ class ClassColorsRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIV
         return Response(class_colors_data)
 
 
-class CreateClassTypesList(generics.ListCreateAPIView):
+from permissions.response import QueryParamFilterMixin
+
+
+class CreateClassTypesList(QueryParamFilterMixin, generics.ListCreateAPIView):
+    filter_mappings = {
+        'branch': 'branch_id',
+    }
     queryset = ClassTypes.objects.all()
     serializer_class = ClassTypesSerializers
 
@@ -40,6 +54,7 @@ class CreateClassTypesList(generics.ListCreateAPIView):
         datas = []
 
         class_numbers = ClassNumber.objects.all()
+        class_numbers = self.filter_queryset(class_numbers)
 
         for data in serializer.data:
             class_type_id = data.get('id')
@@ -62,7 +77,7 @@ class CreateClassTypesList(generics.ListCreateAPIView):
         return Response(datas)
 
 
-class ClassTypesRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+class ClassTypesRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView, CustomResponseMixin):
     permission_classes = [IsAuthenticated]
 
     queryset = ClassTypes.objects.all()
@@ -72,3 +87,7 @@ class ClassTypesRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVi
         class_types = self.get_object()
         class_types_data = self.get_serializer(class_types).data
         return Response(class_types_data)
+
+    def destroy(self, request, *args, **kwargs):
+        super().destroy(self, request, *args, **kwargs)
+        return Response({'msg': "Maʼlumotlar muvaffaqiyatli o'chirildi."}, status=status.HTTP_200_OK)

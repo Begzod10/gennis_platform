@@ -25,7 +25,6 @@ class SystemListUser(generics.ListAPIView):
                 'id': info.system.id,
                 'name': info.system.name,
                 'number': info.system.number,
-                'type': info.system.type
             })
         return Response(data)
 

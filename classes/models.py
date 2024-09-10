@@ -1,7 +1,10 @@
 from django.db import models
-from subjects.models import Subject
+from django.db.models.signals import post_migrate
+from django.dispatch import receiver
+
 from group.models import Group
 from students.models import Student
+from subjects.models import Subject
 
 
 class ClassColors(models.Model):
@@ -26,10 +29,20 @@ class ClassNumber(models.Model):
     curriculum_hours = models.IntegerField(null=True)
     class_types = models.ForeignKey(ClassTypes, on_delete=models.SET_NULL, null=True)
     subjects = models.ManyToManyField(Subject)
+    branch = models.ForeignKey('branch.Branch', on_delete=models.SET_NULL, null=True)
     old_id = models.IntegerField(unique=True, null=True)
 
     class Meta:
         ordering = ['id']
+
+
+@receiver(post_migrate)
+def create_default_overhead_types(sender, **kwargs):
+    from branch.models import Branch
+    branches = Branch.objects.filter(location__system__name='school')
+    for branch in branches:
+        for i in range(1, 12):
+            ClassNumber.objects.get_or_create(number=i, price=0, curriculum_hours=0, branch=branch)
 
 
 class ClassCoin(models.Model):

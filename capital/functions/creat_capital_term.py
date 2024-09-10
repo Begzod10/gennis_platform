@@ -4,7 +4,6 @@ from capital.models import CapitalTerm, Capital
 
 
 # def creat_capital_term(capital):
-#     print(capital)
 #
 #     today = datetime.now()
 #     year = today.year
