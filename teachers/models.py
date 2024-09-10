@@ -25,6 +25,7 @@ class Teacher(models.Model):
     turon_old_id = models.IntegerField(null=True, unique=True)
     branches = models.ManyToManyField(Branch, blank=True)
     group_time_table = models.ManyToManyField('time_table.GroupTimeTable', blank=True)
+    salary_percentage = models.IntegerField(default=50,null=True,blank=True)
     # system = models.ForeignKey('system.System', on_delete=models.SET_NULL, null=True)
 
 
