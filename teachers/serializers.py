@@ -102,13 +102,12 @@ class GroupSerializerTeachers(serializers.ModelSerializer):
     level = SubjectLevelSerializer()
     subject = SubjectSerializer()
     system = SystemSerializers()
-    students = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
                   'branch', 'language', 'level', 'subject', 'teacher', 'system', 'class_number', 'color',
-                  'course_types', 'students']
+                  'course_types']
 
     @property
     def course_types(self):
@@ -123,9 +122,6 @@ class GroupSerializerTeachers(serializers.ModelSerializer):
         from classes.serializers import ClassColorsSerializers
         return ClassColorsSerializers(obj.color).data
 
-    def get_students(self, obj):
-        from students.serializers import StudentSerializer
-        return StudentSerializer(obj.students.all(), many=True).data
 
 
 class TeacherSerializerRead(serializers.ModelSerializer):

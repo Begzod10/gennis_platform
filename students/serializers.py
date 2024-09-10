@@ -26,24 +26,11 @@ class StudentSerializer(serializers.ModelSerializer):
     parents_number = serializers.CharField()
     shift = serializers.CharField()
     class_number = serializers.PrimaryKeyRelatedField(queryset=ClassNumber.objects.all())
-    debt = serializers.SerializerMethodField(required=False, read_only=True)
 
     class Meta:
         model = Student
-        fields = ['id', 'user', 'subject', 'parents_number', 'shift', 'class_number', 'debt']
+        fields = ['id', 'user', 'subject', 'parents_number', 'shift', 'class_number']
 
-    def get_debt(self, obj):
-        debt = 0
-        if obj.user.branch.location.system.name == 'school':
-            debt = get_remaining_debt_for_student(obj.id)
-        else:
-            groups = obj.groups_student.all()
-            for group in groups:
-                for i in group.teacher.all():
-                    for salary in i.teacher_black_salary.filter(student_id=obj.id).all():
-                        debt += salary.black_salary if salary.black_salary else 0
-
-        return debt
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
