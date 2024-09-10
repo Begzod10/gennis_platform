@@ -105,16 +105,39 @@ class StudentPaymentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        instance.deleted = True
-        instance.save()
-        student = instance.student
-        if not instance.payment_sum:
-            instance.payment_sum = 0
-        if student.extra_payment:
-            extra_payment = float(student.extra_payment)
-            student.extra_payment = extra_payment - instance.payment_sum
-            student.save()
-        return Response({'message': 'Payment record successfully deleted.'}, status=status.HTTP_200_OK)
+        if instance.branch.location.system.name == 'school':
+            from django.shortcuts import get_object_or_404
+            from classes.models import AttendancePerMonth
+            student_payment = get_object_or_404(StudentPayment, instance)
+            attendance_per_month = get_object_or_404(AttendancePerMonth,
+                                                     month_date__year=student_payment.added_data.year,
+                                                     month_date__month=student_payment.added_data.month,
+                                                     student=student_payment.student)
+
+            attendance_per_month.remaining_debt += student_payment.payment_sum
+            attendance_per_month.payment -= student_payment.payment_sum
+            student_payment.deleted = True
+            student_payment.save()
+
+            if attendance_per_month.remaining_debt != 0:
+                attendance_per_month.status = False
+
+            attendance_per_month.save()
+
+            return Response({'msg': 'Payment record successfully deleted.'}, status=status.HTTP_200_OK)
+
+        elif instance.branch.location.system.name == 'center':
+            instance.deleted = True
+            instance.save()
+            student = instance.student
+            if not instance.payment_sum:
+                instance.payment_sum = 0
+            if student.extra_payment:
+                extra_payment = float(student.extra_payment)
+                student.extra_payment = extra_payment - instance.payment_sum
+                student.save()
+
+        return Response({'msg': 'Payment record successfully deleted.'}, status=status.HTTP_200_OK)
 
 
 class DeletedStudentDestroy(CustomResponseMixin, generics.DestroyAPIView):

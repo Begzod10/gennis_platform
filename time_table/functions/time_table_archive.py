@@ -5,8 +5,8 @@ from time_table.functions.creatWeekDays import creat_week_days
 
 
 def creat_time_table_archive():
-    creat_time_table_archive()
-    creat_week_days()
+    # creat_time_table_archive()
+
     now = datetime.now()
     current_date = datetime.now().date()
     current_time = datetime.now().time().replace(second=0, microsecond=0)

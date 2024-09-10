@@ -4,21 +4,27 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from classes.models import ClassNumber, ClassCoin, CoinInfo, StudentCoin, ClassColors
-from group.models import Group
 from classes.serializers import (ClassCoinListSerializers, CoinInfoListSerializers, StudentCoinListSerializers,
                                  ClassNumberListSerializers, ClassColorsSerializers)
+from group.models import Group
+from permissions.response import QueryParamFilterMixin
 from subjects.serializers import SubjectSerializer
 
 
-class ClassNumberRetrieveAPIView(generics.RetrieveAPIView):
+class ClassNumberRetrieveAPIView(QueryParamFilterMixin,generics.RetrieveAPIView):
+    filter_mappings = {
+        'branch': 'branch_id',
+    }
     permission_classes = [IsAuthenticated]
 
     queryset = ClassNumber.objects.all()
     serializer_class = ClassNumberListSerializers
 
     def retrieve(self, request, *args, **kwargs):
+
         pk = int(self.kwargs.get('pk'))
         class_number = ClassNumber.objects.all()
+        class_number =self.filter_queryset(class_number)
         datas = []
 
         for class_num in class_number:
@@ -146,23 +152,19 @@ class StudentCoinListView(generics.ListAPIView):
         return Response(serializer.data)
 
 
-class ClassNumberListView(generics.ListAPIView):
+class ClassNumberListView(QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated]
+    filter_mappings = {
+        'branch': 'branch_id',
+    }
 
     queryset = ClassNumber.objects.all()
     serializer_class = ClassNumberListSerializers
 
     def get(self, request, *args, **kwargs):
-
         queryset = ClassNumber.objects.all()
-        location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch_id', None)
-
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        if location_id is not None:
-            queryset = queryset.filter(location_id=location_id)
-        serializer = ClassNumberListSerializers(queryset, many=True)
+        queryset_branch = self.filter_queryset(queryset)
+        serializer = ClassNumberListSerializers(queryset_branch, many=True)
         return Response(serializer.data)
 
 
@@ -199,6 +201,5 @@ class ClassSubjects(APIView):
         group = Group.objects.filter(pk=request.query_params.get('group')).first()
 
         subjects = group.class_number.subjects.all()
-        print(subjects)
         serializer = SubjectSerializer(subjects, many=True)
         return Response(serializer.data)

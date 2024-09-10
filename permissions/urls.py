@@ -2,10 +2,11 @@ from django.urls import path
 
 from .Api.Tables import Tables
 from .Api.DescriptionTables import DescriptionTables
-from .Api.CreatGroupAndAddPermissions import AddPermissions, Jobs, JobProfile
+from .Api.CreatGroupAndAddPermissions import AddPermissions, Jobs, JobProfile, EditJob, DeleteJob
 from .Api.AddUserJob import AddUserGroup
 from .Api.AddPermissionManagersAndDirectors import AddPermissionManagersAndDirectors
-from permissions.views import SystemListUser,LocationListUser,BranchListUser,DynamicModelListView
+from permissions.views import SystemListUser, LocationListUser, BranchListUser, DynamicModelListView
+
 urlpatterns = [
     path('tables/', Tables.as_view(), name='tables'),
     path('description_for_table/', DescriptionTables.as_view(), name='description_for_table'),
@@ -17,6 +18,10 @@ urlpatterns = [
          name='add_permissions_managers_and_directors'),
     path('jobs/', Jobs.as_view(),
          name='jobs'),
+    path('jobss/<int:pk>/', EditJob.as_view(),
+         name='jobs_edit'),
+    path('jobs_delete/<int:pk>/', DeleteJob.as_view(),
+         name='jobs_edit'),
     path('job_profile/<int:pk>', JobProfile.as_view(),
          name='job_profile'),
     path('user_systems/', SystemListUser.as_view(), name='user_systems'),

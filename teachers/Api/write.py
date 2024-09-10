@@ -9,6 +9,14 @@ from teachers.serializers import (
 )
 from user.models import CustomUser
 
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from teachers.models import TeacherAttendance, Teacher, TeacherSalaryType
+from teachers.serializers import TeacherAttendanceListSerializers, TeacherSerializerRead, \
+    TeacherSalaryTypeSerializerRead
+
 
 class TeacherCreateView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -82,5 +90,9 @@ class UploadFile(APIView):
         file = request.FILES.get('file')
         username = self.request.query_params.get('username')
         CustomUser.objects.filter(username=username).update(file=file)
-        print(file)
         return Response({"msg": "File uploaded successfully"}, status=status.HTTP_200_OK)
+
+
+class SalaryTypeUpdate(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = TeacherSalaryTypeSerializerRead
+    queryset = TeacherSalaryType.objects.all()

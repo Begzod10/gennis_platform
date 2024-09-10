@@ -226,7 +226,6 @@ class UpdateFlowTimeTable(APIView):
                                         f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.flow.name}" patokida darsi bor')
             if status == True:
                 time_table.delete()
-            print(msg)
         else:
             lesson_room = ClassTimeTable.objects.filter(week_id=day, room_id=room, hours_id=hour).first()
             if lesson_room:

@@ -27,7 +27,6 @@ class TeacherSerializer(serializers.ModelSerializer):
         fields = ['user', 'subject', 'color', 'total_students', 'id', 'teacher_salary_type']
 
     def create(self, validated_data):
-        print(validated_data)
         user_data = validated_data.pop('user')
         subject_data = validated_data.pop('subject')
         if isinstance(user_data.get('language'), Language):
@@ -40,7 +39,6 @@ class TeacherSerializer(serializers.ModelSerializer):
         user = user_serializer.save()
         teacher = Teacher.objects.create(user=user, **validated_data)
         teacher.subject.set(subject_data)
-        print(user_data['branch'])
         branch = Branch.objects.get(pk=user_data['branch'])
         teacher.branches.add(branch)
         return teacher
@@ -179,7 +177,7 @@ class TeacherSalaryCreateSerializersUpdate(serializers.ModelSerializer):
         if worked is not None:
 
             from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
-            if instance.teacher.user.branch.location.system.type == 'school':
+            if instance.teacher.user.branch.location.system.name == 'school':
                 calculate_teacher_salary(instance.teacher)
 
         return salary
@@ -214,7 +212,7 @@ class TeacherSalaryListReadSerializers(serializers.ModelSerializer):
 
     def get_date(self, obj):
         from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
-        if obj.teacher.user.branch.location.system.type == 'school':
+        if obj.teacher.user.branch.location.system.name == 'school':
             calculate_teacher_salary(obj.teacher)
         return obj.date.strftime('%Y-%m-%d %H:%M')
 
