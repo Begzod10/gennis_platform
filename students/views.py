@@ -12,7 +12,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from teachers.models import TeacherBlackSalary
 from attendances.models import AttendancePerMonth
 from branch.models import Branch
 from permissions.response import QueryParamFilterMixin
@@ -350,29 +350,14 @@ class GetMonth(APIView):
         return Response(data)
 
     def post(self, request, student_id, attendance_id):
-
         from attendances.models import AttendancePerMonth
         attendance_id = request.data.get('id')
-
         attendance_per_month = AttendancePerMonth.objects.get(pk=attendance_id)
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> 1a4bb5f1470be04c4b8e8801e8c4a2a4e7090657
         if attendance_per_month.total_debt != attendance_per_month.payment and attendance_per_month.remaining_debt == 0:
             attendance_per_month.remaining_debt = attendance_per_month.total_debt
             attendance_per_month.save()
-
-<<<<<<< HEAD
-=======
->>>>>>> 4ee5700a87d831506ef0cf7a2e904cb71172a50e
-=======
-
->>>>>>> 1a4bb5f1470be04c4b8e8801e8c4a2a4e7090657
         payment_sum = request.data['payment_sum']
         branch = request.data['branch']
-
         if attendance_per_month.remaining_debt >= payment_sum:
             attendance_per_month.remaining_debt -= payment_sum
             attendance_per_month.payment += payment_sum
@@ -384,35 +369,7 @@ class GetMonth(APIView):
 
             if attendance_per_month.remaining_debt == 0:
                 attendance_per_month.status = True
-
         attendance_per_month.save()
-
-        from attendances.serializers import AttendancePerMonthSerializer
-
-        return Response(AttendancePerMonthSerializer(attendance_per_month).data)
-
-
-class shahakota(APIView):
-    def post(self, request):
-        from attendances.models import AttendancePerMonth
-        attendance_id = request.data['id']
-        month = AttendancePerMonth.objects.get(id=attendance_id, status=False)
-        if month.remaining_debt == 0 and month.payment == 0:
-
-            data = {
-                'price': month.total_debt
-            }
-        else:
-            data = {
-                'price': month.remaining_debt
-            }
-        return Response(data)
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> 1a4bb5f1470be04c4b8e8801e8c4a2a4e7090657
         student = Student.objects.get(pk=student_id)
         data = json.loads(request.body)
         payment_sum = data['payment_sum']
@@ -444,7 +401,6 @@ class shahakota(APIView):
         attendance_per_months = AttendancePerMonth.objects.exclude(total_debt=0).filter(student_id=student_id,
                                                                                         status=False).order_by(
             AttendancePerMonth.pk).all()
-
         for attendance_per_month in attendance_per_months:
             if attendance_per_month.remaining_debt > 0 and payment_sum != 0:
                 if attendance_per_month.remaining_debt >= payment_sum:
@@ -462,7 +418,6 @@ class shahakota(APIView):
 
             total_debt += attendance_per_month.total_debt
             remaining_debt += attendance_per_month.remaining_debt
-
         if remaining_debt == 0:
             student.debt_status = 0
         elif student.total_payment_month > total_debt:
@@ -472,11 +427,26 @@ class shahakota(APIView):
             student.debt_status = 2
         student.save()
         return Response(attendance_per_months)
-<<<<<<< HEAD
-=======
-=======
 
->>>>>>> 1a4bb5f1470be04c4b8e8801e8c4a2a4e7090657
+        return Response(AttendancePerMonthSerializer(attendance_per_month).data)
+
+
+class shahakota(APIView):
+    def post(self, request):
+        from attendances.models import AttendancePerMonth
+        attendance_id = request.data['id']
+        month = AttendancePerMonth.objects.get(id=attendance_id, status=False)
+        if month.remaining_debt == 0 and month.payment == 0:
+
+            data = {
+                'price': month.total_debt
+            }
+        else:
+            data = {
+                'price': month.remaining_debt
+            }
+        return Response(data)
+
 
 class DeleteStudentPayment(APIView):
     def delete(self, request, pk):
@@ -496,8 +466,3 @@ class DeleteStudentPayment(APIView):
         attendance_per_month.save()
 
         return Response({'msg': "Success"}, status=status.HTTP_200_OK)
-<<<<<<< HEAD
->>>>>>> 4ee5700a87d831506ef0cf7a2e904cb71172a50e
-=======
-
->>>>>>> 1a4bb5f1470be04c4b8e8801e8c4a2a4e7090657
