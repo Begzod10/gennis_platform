@@ -4,6 +4,8 @@ from time_table.serializers import WeekDaysSerializer
 from rest_framework.response import Response
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
+from time_table.functions.creatWeekDays import creat_week_days
+
 
 class WeekDaysView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
@@ -12,6 +14,7 @@ class WeekDaysView(generics.ListAPIView):
     queryset = WeekDays.objects.all()
 
     def get(self, request, *args, **kwargs):
+        creat_week_days()
         response = super().get(request, *args, **kwargs)
         today = datetime.now()
         day_name = today.strftime('%A')
