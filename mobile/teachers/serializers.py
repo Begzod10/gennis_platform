@@ -38,7 +38,6 @@ class TeachersSalariesSerializer(serializers.ModelSerializer):
         fields = ['id', 'month_date', 'total_salary', 'remaining_salary', 'taken_salary', 'total_black_salary','datas']
 
     def get_datas(self):
-        print(self)
         unique_dates = TeacherSalary.objects.annotate(
             year=ExtractYear('month_date'),
             month=ExtractMonth('month_date')

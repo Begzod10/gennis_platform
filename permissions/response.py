@@ -25,9 +25,7 @@ class CustomResponseMixin:
         if not (200 <= response.status_code < 300 and isinstance(response.data, (dict, list))):
             return response
         custom_message = self.get_custom_message(request.method)
-        print(response.data)
         if isinstance(response.data, dict):
-            print('sardor', response.data)
             response.data['msg'] = custom_message
         elif isinstance(response.data, list):
             response.data = {

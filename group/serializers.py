@@ -1,4 +1,3 @@
-import pprint
 from datetime import datetime
 from rest_framework import serializers
 from branch.models import Branch

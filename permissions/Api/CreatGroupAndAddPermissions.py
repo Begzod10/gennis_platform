@@ -77,12 +77,9 @@ class Jobs(APIView):
         systems = System.objects.all()
         serializers = SystemSerializers(systems, many=True)
         groups = Group.objects.all()
-        print(groups)
         group_ids = [group.pk for group in groups]
         auth_group_systems = AuthGroupSystem.objects.filter(group_id__in=group_ids)
-        print(auth_group_systems)
         groups_serializers = AuthGroupSystemSerializer(auth_group_systems, many=True)
-        print(groups_serializers.data)
         return Response({'systems': serializers.data, 'jobs': groups_serializers.data})
 
 

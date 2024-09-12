@@ -201,6 +201,5 @@ class ClassSubjects(APIView):
         group = Group.objects.filter(pk=request.query_params.get('group')).first()
 
         subjects = group.class_number.subjects.all()
-        print(subjects)
         serializer = SubjectSerializer(subjects, many=True)
         return Response(serializer.data)
