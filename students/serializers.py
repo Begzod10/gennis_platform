@@ -26,10 +26,13 @@ class StudentSerializer(serializers.ModelSerializer):
     parents_number = serializers.CharField()
     shift = serializers.CharField()
     class_number = serializers.PrimaryKeyRelatedField(queryset=ClassNumber.objects.all())
+    mother_passport_number = serializers.CharField(required=False)
+    father_passport_number = serializers.CharField(required=False)
 
     class Meta:
         model = Student
-        fields = ['id', 'user', 'subject', 'parents_number', 'shift', 'class_number']
+        fields = ['id', 'user', 'subject', 'parents_number', 'shift', 'class_number', 'mother_passport_number',
+                  'father_passport_number']
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -43,6 +46,8 @@ class StudentSerializer(serializers.ModelSerializer):
         user = user_serializer.save()
 
         student = Student.objects.create(user=user, parents_number=validated_data.get('parents_number'),
+                                         mother_passport_number=validated_data.get('mother_passport_number'),
+                                         father_passport_number=validated_data.get('father_passport_number'),
                                          shift=validated_data.get('shift'),
                                          class_number=validated_data.get('class_number'))
         if validated_data.get('subject'):
@@ -122,6 +127,8 @@ class StudentListSerializer(serializers.ModelSerializer):
     group = serializers.SerializerMethodField(required=False)
     contract = serializers.SerializerMethodField(required=False)
     color = serializers.SerializerMethodField(required=False)
+    father_passport_number = serializers.CharField(required=False)
+    mother_passport_number = serializers.CharField(required=False)
     debt = serializers.SerializerMethodField(required=False)
     class_number = ClassNumberSerializers()
 
