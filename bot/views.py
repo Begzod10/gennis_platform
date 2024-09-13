@@ -5,6 +5,8 @@ from students.models import Student
 from django.db.models import Q
 from user.models import CustomUser
 from django.contrib.auth import authenticate
+from time_table.models import GroupTimeTable, WeekDays
+import datetime
 
 
 class get_user_with_telegram_username(APIView):
@@ -47,19 +49,32 @@ class get_table_with_student_username(APIView):
         student = Student.objects.filter(telegram_username=username).first()
         if student:
             groups = student.groups_student.all()
-            print(groups)
             data = []
-            for group in groups:
-                data.append({
-                    'group_name': group.name,
-                    'subject': group.subject.name,
-                    'level': group.level.name,
-                    'teacher': [f"{teacher.user.name} {teacher.user.surname}" for teacher in group.teacher.all()],
-                    'language': group.language.name if group.language else None
-                })
-            return Response({'table': data, 'status': True})
+            if groups:
+                for group in groups:
+                    today = datetime.datetime.now()
+                    name_en = today.strftime("%A")
+                    week = WeekDays.objects.get(name_en=name_en)
+                    group_time_table = GroupTimeTable.objects.filter(group=group, week=week).first()
+                    if group_time_table:
+                        data.append({
+                            'group_name': group.name,
+                            'start_time': group_time_table.start_time,
+                            'end_time': group_time_table.end_time,
+                            'room': group_time_table.room.name,
+                            'subject': group.subject.name,
+                            'level': group.level.name,
+                            'teacher': [f"{teacher.user.name} {teacher.user.surname}" for teacher in
+                                        group.teacher.all()],
+                            'language': group.language.name if group.language else None
+                        })
+                    else:
+                        return Response({'table': "Bugun dars yo'q", 'status': False})
+                return Response({'table': data, 'status': True})
+            else:
+                return Response({'table': "Dars yo'q", 'status': False})
         else:
-            return Response({'table': "Register error", 'status': False})
+            return Response({'table': "Serverda hatolik", 'status': False})
 
 
 class get_user_with_passport_number(APIView):
