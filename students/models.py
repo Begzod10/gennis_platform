@@ -15,11 +15,6 @@ class Student(models.Model):
     shift = models.CharField(max_length=50, null=True)
     debt_status = models.BigIntegerField(null=True)
     parents_number = models.CharField(max_length=250, null=True)
-    father_passport_number = models.CharField(null=True)
-    father_username = models.CharField(null=True)
-    mother_passport_number = models.CharField(null=True)
-    mother_username = models.CharField(null=True)
-    telegram_username = models.CharField(null=True)
     representative_name = models.CharField(null=True)
     representative_surname = models.CharField(null=True)
     old_id = models.IntegerField(null=True, unique=True)
@@ -56,7 +51,7 @@ class DeletedNewStudent(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student_new')
     created = models.DateField(auto_now_add=True)
     comment = models.CharField(null=True)
-    old_id = models.IntegerField(unique=True, null=True)
+    # old_id = models.IntegerField(unique=True, null=True)
 
 
 class StudentHistoryGroups(models.Model):

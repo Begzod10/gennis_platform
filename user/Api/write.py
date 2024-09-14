@@ -10,7 +10,7 @@ from user.serializers import UserSerializerWrite, UserSalaryListSerializers, Cus
 
 
 class UserCreateView(generics.CreateAPIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializerWrite
