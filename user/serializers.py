@@ -35,7 +35,7 @@ class UserSerializerRead(serializers.ModelSerializer):
 
 class UserSerializerWrite(serializers.ModelSerializer):
     old_id = serializers.IntegerField(required=False)
-    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), required=False)
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all())
     profession = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), required=False, allow_null=True)
 

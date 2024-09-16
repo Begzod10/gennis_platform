@@ -13,7 +13,7 @@ class System(models.Model):
 
 @receiver(post_migrate)
 def create_default_overhead_types(sender, **kwargs):
-    default_values = [{"name": "center", "number": 1},
-                      {"name": "school", "number": 2}]
+    default_values = [{"number": 1, 'name': 'center'},
+                      {"number": 2, 'name': 'school'}]
     for value in default_values:
         System.objects.get_or_create(name=value['name'], number=value['number'])

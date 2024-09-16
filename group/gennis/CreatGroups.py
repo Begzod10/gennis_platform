@@ -9,7 +9,7 @@ from permissions.response import QueryParamFilterMixin
 from time_table.functions.time_table_archive import creat_time_table_archive
 
 class CreateCourseTypesList(generics.ListCreateAPIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     queryset = CourseTypes.objects.all()
     serializer_class = CourseTypesSerializers
