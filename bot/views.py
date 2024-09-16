@@ -6,6 +6,7 @@ from django.db.models import Q
 from user.models import CustomUser
 from django.contrib.auth import authenticate
 from time_table.models import GroupTimeTable, WeekDays
+from attendances.models import AttendancePerMonth
 import datetime
 
 
@@ -24,6 +25,57 @@ class get_user_with_telegram_username(APIView):
         return Response({'status': status})
 
 
+class get_attendances_with_student_username(APIView):
+    # permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        student = Student.objects.filter(telegram_username=username).first()
+        if student:
+            attendances = AttendancePerMonth.objects.filter(student=student, status=False).all()
+            data = []
+            for attendance in attendances:
+                data.append({
+                    'month_date': attendance.month_date,
+                    'total_debt': attendance.total_debt,
+                    'remaining_debt': attendance.remaining_debt,
+                    'payment': attendance.payment,
+                    'group': attendance.group.name,
+                })
+            balance = 0
+            for payment in attendances:
+                balance += payment.payment
+            for remaining_debt in attendances:
+                balance -= remaining_debt.remaining_debt
+            return Response({'attendances': data, 'balance': balance, 'status': True})
+        else:
+            return Response({'table': "Serverda hatolik", 'status': False})
+
+
+class check_student(APIView):
+    # permission_classes = [IsAuthenticated]
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        student = Student.objects.filter(telegram_username=username).first()
+        if student:
+            return Response({'status': True, 'student': f"{student.user.name} {student.user.surname}"})
+        else:
+            return Response({'status': False})
+
+
+class logout_student(APIView):
+    # permission_classes = [IsAuthenticated]
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        student = Student.objects.filter(telegram_username=username).first()
+        if student:
+            student.telegram_username = None
+            student.save()
+            return Response({'status': True})
+        else:
+            return Response({'status': False})
+
+
 class get_user_with_username_and_password(APIView):
     # permission_classes = [IsAuthenticated]
 
@@ -40,6 +92,20 @@ class get_user_with_username_and_password(APIView):
             return Response({'data': data, 'status': True})
         else:
             return Response({'data': 'Invalid username or password', 'status': False})
+
+
+class get_table_week_with_student_username(APIView):
+    # permission_classes = [IsAuthenticated]
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        student = Student.objects.filter(telegram_username=username).first()
+        if student:
+            groups = student.groups_student.all()
+            print(groups)
+            data = []
+            return Response({'table': data, 'status': True})
+        else:
+            return Response({'table': "Serverda hatolik", 'status': False})
 
 
 class get_table_with_student_username(APIView):
