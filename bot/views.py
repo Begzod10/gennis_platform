@@ -9,7 +9,7 @@ from time_table.models import GroupTimeTable, WeekDays
 from attendances.models import AttendancePerMonth
 import datetime
 
-
+ 
 class get_user_with_telegram_username(APIView):
     # permission_classes = [IsAuthenticated]
 
