@@ -205,7 +205,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         #     for i in range(1, 12):
         #         ClassNumber.objects.get_or_create(number=i, branch=branch)
         reg = DeletedNewStudent.objects.all()
-        print(reg)
+        print("regs",reg)
         username = attrs.get('username')
         password = attrs.get('password')
         user = CustomUser.objects.get(username=username)
