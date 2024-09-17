@@ -1,14 +1,17 @@
 from datetime import datetime
 
 from django.db.models import Sum
+from django.db.models.functions import ExtractMonth, ExtractYear
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from attendances.models import AttendancePerMonth
 from books.models import BranchPayment
 from books.serializers import BranchPaymentListSerializers
 from capital.models import Capital
 from capital.serializers import OldCapital, OldCapitalListSerializers
+from group.models import Group
 from overhead.models import Overhead
 from overhead.serializers import OverheadSerializerGet
 from payments.models import PaymentTypes
@@ -156,7 +159,7 @@ class Encashments(APIView):
                     'total_capital': total_capital,
                 },
                 'overall': student_total_payment - (
-                            teacher_total_salary + worker_total_salary + total_capital + total_overhead_payment)
+                        teacher_total_salary + worker_total_salary + total_capital + total_overhead_payment)
             })
 
         except KeyError as e:
@@ -241,3 +244,129 @@ class Encashments(APIView):
             return Response({'error': f'Missing required parameter: {str(e)}'}, status=400)
         except Exception as e:
             return Response({'error': str(e)}, status=500)
+
+
+class GetSchoolStudents(APIView):
+
+    def get(self, request, *args, **kwargs):
+        branch = request.query_params.get('branch', None)
+        classes = Group.objects.filter(deleted=False, class_number__isnull=False, branch_id=branch).all().order_by(
+            'class_number__number')
+        data = {
+            'class': [],
+            'dates': []
+        }
+        for _class in classes:
+            sinflar = {
+                'class_number': _class.class_number.number,
+                'class_color': _class.color.name,
+
+                'students': []
+            }
+            for student in _class.students.all():
+                attendance = AttendancePerMonth.objects.filter(student=student, month_date__year=datetime.now().year,
+                                                               month_date__month=datetime.now().month).first()
+                sinflar['students'].append({
+                    'id': student.user.id,
+                    'name': student.user.name,
+                    'surname': student.user.surname,
+                    'phone': student.user.phone,
+                    'total_debt': attendance.total_debt if attendance else 0,
+                    'remaining_debt': attendance.remaining_debt if attendance else 0,
+                    'cash': StudentPayment.objects.filter(student=student, deleted=False, payment_type__name='cash',
+                                                          added_data__year=datetime.now().year,
+                                                          added_data__month=datetime.now().month).aggregate(
+                        total=Sum('payment_sum'))['total'] or 0,
+                    'bank': StudentPayment.objects.filter(student=student, deleted=False, payment_type__name='bank',
+                                                          added_data__year=datetime.now().year,
+                                                          added_data__month=datetime.now().month).aggregate(
+                        total=Sum('payment_sum'))['total'] or 0,
+                    'click': StudentPayment.objects.filter(student=student, deleted=False, payment_type__name='click',
+                                                           added_data__year=datetime.now().year,
+                                                           added_data__month=datetime.now().month).aggregate(
+                        total=Sum('payment_sum'))['total'] or 0,
+                })
+                data['class'].append(sinflar)
+
+                unique_dates = AttendancePerMonth.objects.annotate(
+                    year=ExtractYear('month_date'),
+                    month=ExtractMonth('month_date')
+                ).filter(system__name='school').values('year', 'month').distinct().order_by('year', 'month')
+
+                year_month_dict = {}
+                for date in unique_dates:
+                    year = date['year']
+                    month = date['month']
+                    if year not in year_month_dict:
+                        year_month_dict[year] = []
+                    year_month_dict[year].append(
+                        month,
+                    )
+
+                year_month_list = [{'year': year, 'months': months} for year, months in year_month_dict.items()]
+
+                data['dates'] = year_month_list
+
+        return Response(data)
+
+    def post(self, request, *args, **kwargs):
+        month = request.data.get('month', None)
+        year = request.data.get('year', None)
+        branch = request.query_params.get('branch', None)
+        classes = Group.objects.filter(deleted=False, class_number__isnull=False, branch_id=branch).all().order_by(
+            'class_number__number')
+        data = {
+            'class': [],
+            'dates': []
+        }
+        for _class in classes:
+            sinflar = {
+                'class_number': _class.class_number.number,
+                'class_color': _class.color.name,
+
+                'students': []
+            }
+            for student in _class.students.all():
+                attendance = AttendancePerMonth.objects.filter(student=student, month_date__year=year,
+                                                               month_date__month=month).first()
+                sinflar['students'].append({
+                    'id': student.user.id,
+                    'name': student.user.name,
+                    'surname': student.user.surname,
+                    'phone': student.user.phone,
+                    'total_debt': attendance.total_debt if attendance else 0,
+                    'remaining_debt': attendance.remaining_debt if attendance else 0,
+                    'cash': StudentPayment.objects.filter(student=student, deleted=False, payment_type__name='cash',
+                                                          added_data__year=year,
+                                                          added_data__month=month).aggregate(
+                        total=Sum('payment_sum'))['total'] or 0,
+                    'bank': StudentPayment.objects.filter(student=student, deleted=False, payment_type__name='bank',
+                                                          added_data__year=year,
+                                                          added_data__month=month).aggregate(
+                        total=Sum('payment_sum'))['total'] or 0,
+                    'click': StudentPayment.objects.filter(student=student, deleted=False, payment_type__name='click',
+                                                           added_data__year=year,
+                                                           added_data__month=month).aggregate(
+                        total=Sum('payment_sum'))['total'] or 0,
+                })
+                data['class'].append(sinflar)
+                unique_dates = AttendancePerMonth.objects.annotate(
+                    year=ExtractYear('month_date'),
+                    month=ExtractMonth('month_date')
+                ).filter(system__name='school').values('year', 'month').distinct().order_by('year', 'month')
+
+                year_month_dict = {}
+                for date in unique_dates:
+                    year = date['year']
+                    month = date['month']
+                    if year not in year_month_dict:
+                        year_month_dict[year] = []
+                    year_month_dict[year].append(
+                        month,
+                    )
+
+                year_month_list = [{'year': year, 'months': months} for year, months in year_month_dict.items()]
+
+                data['dates'] = year_month_list
+
+        return Response(data)
