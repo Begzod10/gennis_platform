@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
-
-class TransferConfig(AppConfig):
+ 
+class BotConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'transfer'
+    name = 'bot'

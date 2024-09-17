@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'students.apps.StudentsConfig',
     'subjects.apps.SubjectsConfig',
     'teachers.apps.TeachersConfig',
+    'bot.apps.BotConfig',
     # 'transfer.apps.TransferConfig',
     'rooms.apps.RoomsConfig',
     'capital.apps.CapitalConfig',

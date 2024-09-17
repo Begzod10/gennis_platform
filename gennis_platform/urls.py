@@ -1,4 +1,3 @@
-
 """
 URL configuration for gennis_platform project.
 
@@ -55,6 +54,7 @@ urlpatterns = [
     path('api/Lesson_plan/', include('lesson_plan.urls')),
     path('api/SchoolTimeTable/', include('school_time_table.urls')),
     path('api/Calendar/', include('Calendar.urls')),
+    path('api/Bot/', include('bot.urls')),
     # path('api/Transfer/', include('transfer.urls')),
     path('api/Encashment/', include('encashment.urls')),
     path('api/Mobile/', include('mobile.urls')),

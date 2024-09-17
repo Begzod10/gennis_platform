@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from group.models import Group
 from ...models import ClassTimeTable
 from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTableReadSerializers, \
-    ClassTimeTableTest2Serializer
+    ClassTimeTableTest2Serializer, ClassTimeTableForClassSerializer2
 
 from group.serializers import GroupClassSerializer
 from time_table.functions.creatWeekDays import creat_week_days
@@ -75,6 +75,20 @@ class ClassTimeTableLessonsView(APIView):
         branch = Branch.objects.get(id=branch_id)
         week = WeekDays.objects.get(id=week_id)
         serializer = ClassTimeTableTest2Serializer(context={'week': week, 'branch': branch})
+        data = {
+            'time_tables': serializer.get_time_tables(None),
+            'hours_list': serializer.get_hours_list(None)
+        }
+        return Response(data)
+
+
+class ClassTimeTableForClassView(APIView):
+    def get(self, request):
+        week_id = self.request.query_params.get('week')
+        branch_id = self.request.query_params.get('branch')
+        branch = Branch.objects.get(id=branch_id)
+        week = WeekDays.objects.get(id=week_id)
+        serializer = ClassTimeTableForClassSerializer2(context={'week': week, 'branch': branch})
         data = {
             'time_tables': serializer.get_time_tables(None),
             'hours_list': serializer.get_hours_list(None)
@@ -155,6 +169,3 @@ class CheckClassTimeTable(APIView):
                             msg.append(
                                 f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.flow.name}" patokida darsi bor')
         return Response({'status': status, 'msg': msg})
-
-
-

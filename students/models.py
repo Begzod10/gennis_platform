@@ -15,14 +15,17 @@ class Student(models.Model):
     shift = models.CharField(max_length=50, null=True)
     debt_status = models.BigIntegerField(null=True)
     parents_number = models.CharField(max_length=250, null=True)
-    representative_name = models.CharField(null=True)
-    representative_surname = models.CharField(null=True)
+    representative_name = models.CharField(max_length=255, null=True)
+    representative_surname = models.CharField(max_length=255, null=True)
+    # father_username = models.CharField(max_length=255, null=True, blank=True)  # Add this field
+    # mother_username = models.CharField(max_length=255, null=True, blank=True)  # Add this field
     old_id = models.IntegerField(null=True, unique=True)
     turon_old_id = models.IntegerField(null=True, unique=True)
     old_money = models.BigIntegerField(null=True)
     group_time_table = models.ManyToManyField('time_table.GroupTimeTable', blank=True)
     system = models.ForeignKey('system.System', on_delete=models.SET_NULL, null=True)
     class_number = models.ForeignKey('classes.ClassNumber', on_delete=models.SET_NULL, null=True)
+
 
 
 class StudentCharity(models.Model):
