@@ -291,6 +291,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
             info = {
                 'id': group.id,
                 'name': f'{group.class_number.number}-{group.color.name}',
+                'color': group.color.value,
                 'lessons': []
             }
 
@@ -329,11 +330,13 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                 elif flow_class_time_table:
                     flow_info = {'id': flow_class_time_table.flow.id, 'name': flow_class_time_table.flow.name,
                                  'classes': flow_class_time_table.flow.classes} if flow_class_time_table.flow else None
-                    teacher_info = {'id': flow_class_time_table.teacher.id, 'name': flow_class_time_table.teacher.user.name,
+                    teacher_info = {'id': flow_class_time_table.teacher.id,
+                                    'name': flow_class_time_table.teacher.user.name,
                                     'surname': flow_class_time_table.teacher.user.surname} if flow_class_time_table.teacher else None
                     subject_info = {'id': flow_class_time_table.subject.id,
                                     'name': flow_class_time_table.subject.name} if flow_class_time_table.subject else None
-                    room_info = {'id': flow_class_time_table.room.id, 'name': flow_class_time_table.room.name} if flow_class_time_table.room else None
+                    room_info = {'id': flow_class_time_table.room.id,
+                                 'name': flow_class_time_table.room.name} if flow_class_time_table.room else None
                     info['lessons'].append({
                         'id': flow_class_time_table.id,
                         'status': flow_class_time_table.hours == hour,
