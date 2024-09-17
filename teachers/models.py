@@ -10,6 +10,7 @@ from system.models import System
 class TeacherSalaryType(models.Model):
     name = models.CharField()
     salary = models.IntegerField()
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
     turon_old_id = models.IntegerField(null=True, unique=True)
 
 
