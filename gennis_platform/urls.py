@@ -26,9 +26,9 @@ from user.Api.read import GetUserAPIView, SetObserverView
 from user.Api.write import CustomTokenObtainPairView
 from user.views import CustomTokenRefreshView
 from .swagger import urlpatterns as doc_urls
- 
+
 urlpatterns = [
-    # path('api/admin/', admin.site.urls),
+    path('api/admin/', admin.site.urls),
     path('api/Users/', include('user.urls')),
     path('api/System/', include('system.urls')),
     path('api/Location/', include('location.urls')),
