@@ -12,7 +12,6 @@ from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from permissions.models import ManySystem, ManyBranch, ManyLocation
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
-from students.models import DeletedNewStudent
 
 
 class UserSerializerRead(serializers.ModelSerializer):
@@ -204,8 +203,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # for branch in branches:
         #     for i in range(1, 12):
         #         ClassNumber.objects.get_or_create(number=i, branch=branch)
-        reg = DeletedNewStudent.objects.all()
-        print("regs",reg)
+
         username = attrs.get('username')
         password = attrs.get('password')
         user = CustomUser.objects.get(username=username)
