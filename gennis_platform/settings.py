@@ -284,3 +284,4 @@ JAZZMIN_SETTINGS = {
 
     "language_chooser": False,
 }
+
