@@ -191,3 +191,48 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"detail": errors})
         else:
             return attendance_per_day
+
+
+class AttendancePerDayCreateUpdateSerializerSchool(serializers.ModelSerializer):
+    students = serializers.ListField(
+        child=StudentDetailSerializer(),
+        write_only=True
+    )
+    date = serializers.CharField(default=None, allow_blank=True)
+    teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
+    group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
+
+    class Meta:
+        model = AttendancePerDay
+        fields = ['id', 'status', 'debt_per_day', 'salary_per_day', 'charity_per_day', 'day',
+                  'homework_ball', 'dictionary_ball', 'activeness_ball', 'average', 'teacher', 'students',
+                  'status', 'group', 'attendance_per_month', 'date']
+
+    def create(self, validated_data):
+        teacher = validated_data.get('teacher')
+        group = validated_data.get('group')
+        students = validated_data.pop('students', [])
+        date = validated_data.get('date')
+        today = datetime.today()
+        month_date = f"{today.year}-{date}"
+        day = datetime.strptime(f"{today.year}-{date}", "%Y-%m-%d")
+
+        errors = []
+        status = False
+        attendance_per_day = None
+
+        for student in students:
+
+            student_data = Student.objects.get(pk=student['id'])
+            try:
+                AttendancePerDay.objects.get(group_id=group.id, teacher=teacher, day=day, student_id=student['id'])
+                errors.append(
+                    {'msg': f'bu kunda {student_data.user.name} {student_data.user.surname} davomat qilingan'})
+            except AttendancePerDay.DoesNotExist:
+                status = True
+
+        calculate_group_attendances(group.id, month_date)
+        if not status:
+            raise serializers.ValidationError({"detail": errors})
+        else:
+            return attendance_per_day
