@@ -3,7 +3,6 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from students.models import Student
 from django.db.models import Q
-from user.models import CustomUser
 from django.contrib.auth import authenticate
 from time_table.models import GroupTimeTable, WeekDays
 from attendances.models import AttendancePerMonth
