@@ -185,7 +185,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # CustomUser.objects.exclude(username='dr_max').all().delete()
         # Student.objects.all().delete()
         # Teacher.objects.all().delete()
-        # ClassNumber.objects.filter(pk=67).delete()
+        # numbers = ClassNumber.objects.filter(id__gte=56).all()
+        # for number in numbers:
+        #     number.delete()
         # classes = ClassNumber.objects.all()
         # for cl in classes:
 
@@ -195,6 +197,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # user = CustomUser.objects.get(pk=1)
         # user.groups.add(groups)
         # user.save()
+
+        # from branch.models import Branch
+        # branches = Branch.objects.filter(location__system__name='school')
+        # for branch in branches:
+        #     for i in range(1, 12):
+        #         ClassNumber.objects.get_or_create(number=i, branch=branch)
 
         username = attrs.get('username')
         password = attrs.get('password')

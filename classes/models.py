@@ -40,9 +40,9 @@ class ClassNumber(models.Model):
 def create_default_overhead_types(sender, **kwargs):
     from branch.models import Branch
     branches = Branch.objects.filter(location__system__name='school')
-    for branch in branches:
-        for i in range(1, 12):
-            ClassNumber.objects.get_or_create(number=i, branch=branch)
+    # for branch in branches:
+    #     for i in range(1, 12):
+    #         ClassNumber.objects.get_or_create(number=i, branch=branch)
 
 
 class ClassCoin(models.Model):
