@@ -248,10 +248,7 @@ class Encashments(APIView):
 
 class GetSchoolStudents(APIView):
 
-    def get(self, request, *args, **kwargs):
-        branch = request.query_params.get('branch', None)
-        classes = Group.objects.filter(deleted=False, class_number__isnull=False, branch_id=branch).all().order_by(
-            'class_number__number')
+    def get_class_data(self, classes, year=None, month=None):
         data = {
             'class': [],
             'dates': []
@@ -260,12 +257,36 @@ class GetSchoolStudents(APIView):
             sinflar = {
                 'class_number': _class.class_number.number,
                 'class_color': _class.color.name,
-
                 'students': []
             }
-            for student in _class.students.all():
-                attendance = AttendancePerMonth.objects.filter(student=student, month_date__year=datetime.now().year,
-                                                               month_date__month=datetime.now().month).first()
+            data['class'].append(sinflar)
+            students = _class.students.all()
+
+            attendance_data = AttendancePerMonth.objects.filter(
+                student__in=students,
+                month_date__year=year if year else datetime.now().year,
+                month_date__month=month if month else datetime.now().month
+            ).select_related('student')
+
+            payment_data = StudentPayment.objects.filter(
+                student__in=students,
+                deleted=False,
+                added_data__year=year if year else datetime.now().year,
+                added_data__month=month if month else datetime.now().month
+            ).values('student_id', 'payment_type__name').annotate(total=Sum('payment_sum'))
+
+            student_attendance_map = {att.student.id: att for att in attendance_data}
+            student_payment_map = {}
+            for payment in payment_data:
+                student_id = payment['student_id']
+                payment_type = payment['payment_type__name']
+                if student_id not in student_payment_map:
+                    student_payment_map[student_id] = {'cash': 0, 'bank': 0, 'click': 0}
+                student_payment_map[student_id][payment_type] = payment['total']
+
+            for student in students:
+                attendance = student_attendance_map.get(student.id)
+                payments = student_payment_map.get(student.id, {'cash': 0, 'bank': 0, 'click': 0})
                 sinflar['students'].append({
                     'id': student.user.id,
                     'name': student.user.name,
@@ -273,100 +294,48 @@ class GetSchoolStudents(APIView):
                     'phone': student.user.phone,
                     'total_debt': attendance.total_debt if attendance else 0,
                     'remaining_debt': attendance.remaining_debt if attendance else 0,
-                    'cash': StudentPayment.objects.filter(student=student, deleted=False, payment_type__name='cash',
-                                                          added_data__year=datetime.now().year,
-                                                          added_data__month=datetime.now().month).aggregate(
-                        total=Sum('payment_sum'))['total'] or 0,
-                    'bank': StudentPayment.objects.filter(student=student, deleted=False, payment_type__name='bank',
-                                                          added_data__year=datetime.now().year,
-                                                          added_data__month=datetime.now().month).aggregate(
-                        total=Sum('payment_sum'))['total'] or 0,
-                    'click': StudentPayment.objects.filter(student=student, deleted=False, payment_type__name='click',
-                                                           added_data__year=datetime.now().year,
-                                                           added_data__month=datetime.now().month).aggregate(
-                        total=Sum('payment_sum'))['total'] or 0,
+                    'cash': payments['cash'],
+                    'bank': payments['bank'],
+                    'click': payments['click'],
                 })
-                data['class'].append(sinflar)
 
-                unique_dates = AttendancePerMonth.objects.annotate(
-                    year=ExtractYear('month_date'),
-                    month=ExtractMonth('month_date')
-                ).filter(system__name='school').values('year', 'month').distinct().order_by('year', 'month')
+        unique_dates = AttendancePerMonth.objects.annotate(
+            year=ExtractYear('month_date'),
+            month=ExtractMonth('month_date')
+        ).filter(system__name='school').values('year', 'month').distinct().order_by('year', 'month')
 
-                year_month_dict = {}
-                for date in unique_dates:
-                    year = date['year']
-                    month = date['month']
-                    if year not in year_month_dict:
-                        year_month_dict[year] = []
-                    year_month_dict[year].append(
-                        month,
-                    )
+        year_month_dict = {}
+        for date in unique_dates:
+            year = date['year']
+            month = date['month']
+            if year not in year_month_dict:
+                year_month_dict[year] = []
+            year_month_dict[year].append(month)
 
-                year_month_list = [{'year': year, 'months': months} for year, months in year_month_dict.items()]
+        data['dates'] = [{'year': year, 'months': months} for year, months in year_month_dict.items()]
 
-                data['dates'] = year_month_list
+        return data
 
+    def get(self, request, *args, **kwargs):
+        branch = request.query_params.get('branch')
+        classes = Group.objects.filter(
+            deleted=False,
+            class_number__isnull=False,
+            branch_id=branch
+        ).order_by('class_number__number')
+
+        data = self.get_class_data(classes)
         return Response(data)
 
     def post(self, request, *args, **kwargs):
-        month = request.data.get('month', None)
-        year = request.data.get('year', None)
-        branch = request.query_params.get('branch', None)
-        classes = Group.objects.filter(deleted=False, class_number__isnull=False, branch_id=branch).all().order_by(
-            'class_number__number')
-        data = {
-            'class': [],
-            'dates': []
-        }
-        for _class in classes:
-            sinflar = {
-                'class_number': _class.class_number.number,
-                'class_color': _class.color.name,
+        month = request.data.get('month')
+        year = request.data.get('year')
+        branch = request.query_params.get('branch')
+        classes = Group.objects.filter(
+            deleted=False,
+            class_number__isnull=False,
+            branch_id=branch
+        ).order_by('class_number__number')
 
-                'students': []
-            }
-            for student in _class.students.all():
-                attendance = AttendancePerMonth.objects.filter(student=student, month_date__year=year,
-                                                               month_date__month=month).first()
-                sinflar['students'].append({
-                    'id': student.user.id,
-                    'name': student.user.name,
-                    'surname': student.user.surname,
-                    'phone': student.user.phone,
-                    'total_debt': attendance.total_debt if attendance else 0,
-                    'remaining_debt': attendance.remaining_debt if attendance else 0,
-                    'cash': StudentPayment.objects.filter(student=student, deleted=False, payment_type__name='cash',
-                                                          added_data__year=year,
-                                                          added_data__month=month).aggregate(
-                        total=Sum('payment_sum'))['total'] or 0,
-                    'bank': StudentPayment.objects.filter(student=student, deleted=False, payment_type__name='bank',
-                                                          added_data__year=year,
-                                                          added_data__month=month).aggregate(
-                        total=Sum('payment_sum'))['total'] or 0,
-                    'click': StudentPayment.objects.filter(student=student, deleted=False, payment_type__name='click',
-                                                           added_data__year=year,
-                                                           added_data__month=month).aggregate(
-                        total=Sum('payment_sum'))['total'] or 0,
-                })
-                data['class'].append(sinflar)
-                unique_dates = AttendancePerMonth.objects.annotate(
-                    year=ExtractYear('month_date'),
-                    month=ExtractMonth('month_date')
-                ).filter(system__name='school').values('year', 'month').distinct().order_by('year', 'month')
-
-                year_month_dict = {}
-                for date in unique_dates:
-                    year = date['year']
-                    month = date['month']
-                    if year not in year_month_dict:
-                        year_month_dict[year] = []
-                    year_month_dict[year].append(
-                        month,
-                    )
-
-                year_month_list = [{'year': year, 'months': months} for year, months in year_month_dict.items()]
-
-                data['dates'] = year_month_list
-
+        data = self.get_class_data(classes, year, month)
         return Response(data)
