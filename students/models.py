@@ -15,8 +15,8 @@ class Student(models.Model):
     shift = models.CharField(max_length=50, null=True)
     debt_status = models.BigIntegerField(null=True)
     parents_number = models.CharField(max_length=250, null=True)
-    # representative_name = models.CharField(max_length=255, null=True)
-    # representative_surname = models.CharField(max_length=255, null=True)
+    representative_name = models.CharField(max_length=255, null=True)
+    representative_surname = models.CharField(max_length=255, null=True)
     # father_username = models.CharField(max_length=255, null=True, blank=True)  # Add this field
     # mother_username = models.CharField(max_length=255, null=True, blank=True)  # Add this field
     old_id = models.IntegerField(null=True, unique=True)
