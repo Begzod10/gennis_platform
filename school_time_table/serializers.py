@@ -291,6 +291,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
             info = {
                 'id': group.id,
                 'name': f'{group.class_number.number}-{group.color.name}',
+                'color': group.color.value,
                 'lessons': []
             }
 
