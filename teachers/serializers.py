@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from branch.models import Branch
 from branch.serializers import BranchSerializer
+from flows.models import Flow
 from group.models import Group
 from language.models import Language
 from language.serializers import LanguageSerializers
@@ -58,6 +59,7 @@ class TeacherSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
 
 
 class TeacherAttendanceSerializers(serializers.ModelSerializer):
@@ -123,13 +125,13 @@ class GroupSerializerTeachers(serializers.ModelSerializer):
         return ClassColorsSerializers(obj.color).data
 
 
-
 class TeacherSerializerRead(serializers.ModelSerializer):
     user = UserSerializerRead(read_only=True)
     subject = SubjectSerializer(many=True)
     teacher_salary_type = TeacherSalaryTypeSerializerRead(read_only=True)
     group = GroupSerializerTeachers(many=True, source='group_set')
     calculate = serializers.SerializerMethodField(read_only=True, required=False, allow_null=True)
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Teacher
@@ -139,6 +141,14 @@ class TeacherSerializerRead(serializers.ModelSerializer):
         from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
         if obj.user.branch.location.system.name == 'school':
             calculate_teacher_salary(obj)
+
+    def get_status(self, obj):
+        flows = Flow.objects.filter(teacher=obj).exists()
+        group = Group.objects.filter(teacher=obj).exists()
+        if flows or group:
+            return False
+        else:
+            return True
 
 
 class TeacherSalaryReadSerializers(serializers.ModelSerializer):

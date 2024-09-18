@@ -41,7 +41,7 @@ class TeacherListView(QueryParamFilterMixin, generics.ListAPIView):
     serializer_class = TeacherSerializerRead
 
     def get_queryset(self):
-        queryset = Teacher.objects.all()
+        queryset = Teacher.objects.filter(deleted=False).all()
         queryset = self.filter_queryset(queryset)
         return queryset
 
