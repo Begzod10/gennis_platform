@@ -44,8 +44,10 @@ class TeacherDestroyView(generics.DestroyAPIView):
     serializer_class = TeacherSerializer
 
     def delete(self, request, *args, **kwargs):
+        from datetime import date
         instance = self.get_object()
         instance.deleted = True
+        instance.deleted_date = date.today()
         instance.save()
         return Response({"msg": "Teacher deleted successfully"}, status=status.HTTP_200_OK)
 

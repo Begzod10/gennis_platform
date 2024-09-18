@@ -28,6 +28,7 @@ class Teacher(models.Model):
     group_time_table = models.ManyToManyField('time_table.GroupTimeTable', blank=True)
     salary_percentage = models.IntegerField(default=50, null=True, blank=True)
     deleted = models.BooleanField(default=False)
+    deleted_date = models.DateField(null=True)
     # system = models.ForeignKey('system.System', on_delete=models.SET_NULL, null=True)
 
 
