@@ -179,9 +179,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Room.objects.filter(branch_id=None).all().delete()
         # from students.models import Student
         # from teachers.models import Teacher
-        from classes.models import ClassNumber
 
-        from django.contrib.auth.models import Group
         # CustomUser.objects.exclude(username='dr_max').all().delete()
         # Student.objects.all().delete()
         # Teacher.objects.all().delete()
@@ -203,6 +201,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # for branch in branches:
         #     for i in range(1, 12):
         #         ClassNumber.objects.get_or_create(number=i, branch=branch)
+        from subjects.models import Subject
+        from subjects.serializers import SubjectSerializer
+        subjects = Subject.objects.filter(classroom_id=None, teacher=None).all()
+        sdata = SubjectSerializer(subjects, many=True).data
 
         username = attrs.get('username')
         password = attrs.get('password')
@@ -216,6 +218,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 refresh = self.get_token(self.user)
                 data['refresh'] = str(refresh)
                 data['access'] = str(refresh.access_token)
+                data['subjects'] = sdata
+
                 return data
             else:
                 raise AuthenticationFailed("No active account found with the given credentials")
@@ -228,6 +232,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 refresh = self.get_token(self.user)
                 data['refresh'] = str(refresh)
                 data['access'] = str(refresh.access_token)
+                data['subjects'] = sdata
+
                 return data
             else:
                 raise AuthenticationFailed("No active account found with the given credentials")
@@ -236,6 +242,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             refresh = self.get_token(self.user)
             data['refresh'] = str(refresh)
             data['access'] = str(refresh.access_token)
+            data['subjects'] = sdata
             return data
 
 
