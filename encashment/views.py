@@ -17,7 +17,7 @@ from overhead.serializers import OverheadSerializerGet
 from payments.models import PaymentTypes
 from students.models import StudentPayment
 from students.serializers import StudentPaymentSerializer
-from teachers.models import TeacherSalaryList
+from teachers.models import TeacherSalaryList,TeacherSalary
 from teachers.serializers import TeacherSalaryListCreateSerializers
 from user.models import UserSalaryList
 from user.serializers import UserSalaryListSerializers
@@ -339,3 +339,9 @@ class GetSchoolStudents(APIView):
 
         data = self.get_class_data(classes, year, month)
         return Response(data)
+
+
+# class GetTeacherSalary(APIView):
+#     def get(self, request, *args, **kwargs):
+#         branch = request.query_params.get('branch')
+#         salary = TeacherSalary.objects.filter(month_date__month=now().month, month_date__year=now().year,branch_id=branch).all()
