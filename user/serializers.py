@@ -202,8 +202,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         #     for i in range(1, 12):
         #         ClassNumber.objects.get_or_create(number=i, branch=branch)
         from subjects.models import Subject
-        from subjects.serializers import SubjectSerializer
-        subjects = Subject.objects.filter(classroom_id=None, teacher=None).all().delete()
+        Subject.objects.filter(classroom_id=1, teacher=None).all().delete()
+        Subject.objects.filter(classroom_id=3, teacher=None).all().delete()
+        Subject.objects.get(name='Ingliz tili').update(classroom_id=1)
+        Subject.objects.get(name='Ona tili va Adabiyot').update(classroom_id=3)
 
         username = attrs.get('username')
         password = attrs.get('password')
