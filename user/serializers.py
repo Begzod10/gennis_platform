@@ -201,14 +201,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # for branch in branches:
         #     for i in range(1, 12):
         #         ClassNumber.objects.get_or_create(number=i, branch=branch)
-        from subjects.models import Subject
-        subject_english = Subject.objects.get(name='Ingliz tili')
-        subject_english.classroom_id = 1
-        subject_english.save()
-
-        subject_native_language = Subject.objects.get(name='Ona tili va Adabiyot')
-        subject_native_language.classroom_id = 3
-        subject_native_language.save()
+        # from subjects.models import Subject
+        # subject_english = Subject.objects.get(name='Ingliz tili')
+        # subject_english.classroom_id = 1
+        # subject_english.save()
+        #
+        # subject_native_language = Subject.objects.get(name='Ona tili va Adabiyot')
+        # subject_native_language.classroom_id = 3
+        # subject_native_language.save()
 
         username = attrs.get('username')
         password = attrs.get('password')
