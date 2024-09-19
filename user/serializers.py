@@ -203,8 +203,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         #         ClassNumber.objects.get_or_create(number=i, branch=branch)
         from subjects.models import Subject
         from subjects.serializers import SubjectSerializer
-        subjects = Subject.objects.filter(classroom_id=None, teacher=None).all()
-        sdata = SubjectSerializer(subjects, many=True).data
+        subjects = Subject.objects.filter(classroom_id=None, teacher=None).all().delete()
 
         username = attrs.get('username')
         password = attrs.get('password')
@@ -218,7 +217,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 refresh = self.get_token(self.user)
                 data['refresh'] = str(refresh)
                 data['access'] = str(refresh.access_token)
-                data['subjects'] = sdata
 
                 return data
             else:
@@ -232,7 +230,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 refresh = self.get_token(self.user)
                 data['refresh'] = str(refresh)
                 data['access'] = str(refresh.access_token)
-                data['subjects'] = sdata
 
                 return data
             else:
@@ -242,7 +239,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             refresh = self.get_token(self.user)
             data['refresh'] = str(refresh)
             data['access'] = str(refresh.access_token)
-            data['subjects'] = sdata
             return data
 
 
