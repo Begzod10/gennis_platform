@@ -17,9 +17,9 @@ from overhead.serializers import OverheadSerializerGet
 from payments.models import PaymentTypes
 from students.models import StudentPayment
 from students.serializers import StudentPaymentSerializer
-from teachers.models import TeacherSalaryList,TeacherSalary
+from teachers.models import TeacherSalaryList, TeacherSalary
 from teachers.serializers import TeacherSalaryListCreateSerializers
-from user.models import UserSalaryList
+from user.models import UserSalaryList, UserSalary
 from user.serializers import UserSalaryListSerializers
 from .models import Encashment
 
@@ -341,7 +341,280 @@ class GetSchoolStudents(APIView):
         return Response(data)
 
 
-# class GetTeacherSalary(APIView):
-#     def get(self, request, *args, **kwargs):
-#         branch = request.query_params.get('branch')
-#         salary = TeacherSalary.objects.filter(month_date__month=now().month, month_date__year=now().year,branch_id=branch).all()
+class GetTeacherSalary(APIView):
+    def get(self, request, *args, **kwargs):
+        branch = request.query_params.get('branch')
+        salaries = TeacherSalary.objects.filter(month_date__month=datetime.now().month,
+                                                month_date__year=datetime.now().year, branch_id=branch).all()
+        data = {
+            'salary': [],
+            'dates': []
+        }
+        for salary in salaries:
+            datas = {
+                'id': salary.id,
+                'name': salary.teacher.user.name,
+                'surname': salary.teacher.user.surname,
+                'phone': salary.teacher.user.phone,
+                'total_salary': salary.total_salary,
+                'taken_salary': salary.taken_salary,
+                'remaining_salary': salary.remaining_salary,
+                'subject': salary.teacher.subject.name,
+                'cash': TeacherSalaryList.objects.filter(salary_id=salary.id, payment__name='cash').aggregate(
+                    total=Sum('salary'))['total'] or 0,
+                'bank': TeacherSalaryList.objects.filter(salary_id=salary.id, payment__name='bank').aggregate(
+                    total=Sum('salary'))['total'] or 0,
+                'click': TeacherSalaryList.objects.filter(salary_id=salary.id, payment__name='click').aggregate(
+                    total=Sum('salary'))['total'] or 0,
+
+            }
+            data['salary'].append(datas)
+        unique_dates = TeacherSalary.objects.annotate(
+            year=ExtractYear('month_date'),
+            month=ExtractMonth('month_date')
+        ).filter(branch__location__system__name='school').values('year', 'month').distinct().order_by('year', 'month')
+
+        year_month_dict = {}
+        for date in unique_dates:
+            year = date['year']
+            month = date['month']
+            if year not in year_month_dict:
+                year_month_dict[year] = []
+            year_month_dict[year].append(month)
+
+        data['dates'] = [{'year': year, 'months': months} for year, months in year_month_dict.items()]
+
+        return Response(data)
+
+    def post(self, request, *args, **kwargs):
+        month = request.data.get('month')
+        year = request.data.get('year')
+        branch = request.query_params.get('branch')
+        salaries = TeacherSalary.objects.filter(month_date__month=month,
+                                                month_date__year=year, branch_id=branch).all()
+        data = {}
+        for salary in salaries:
+            datas = {
+                'id': salary.id,
+                'name': salary.teacher.user.name,
+                'surname': salary.teacher.user.surname,
+                'phone': salary.teacher.user.phone,
+                'total_salary': salary.salary,
+                'taken_salary': salary.taken_salary,
+                'remaining_salary': salary.remaining_salary,
+                'subject': salary.teacher.subject.name,
+                'cash': TeacherSalaryList.objects.filter(salary_id=salary.id, payment__name='cash').aggregate(
+                    total=Sum('salary'))['total'] or 0,
+                'bank': TeacherSalaryList.objects.filter(salary_id=salary.id, payment__name='bank').aggregate(
+                    total=Sum('salary'))['total'] or 0,
+                'click': TeacherSalaryList.objects.filter(salary_id=salary.id, payment__name='click').aggregate(
+                    total=Sum('salary'))['total'] or 0,
+            }
+            data['salary'].append(datas)
+        unique_dates = TeacherSalary.objects.annotate(
+            year=ExtractYear('month_date'),
+            month=ExtractMonth('month_date')
+        ).filter(branch__location__system__name='school').values('year', 'month').distinct().order_by('year', 'month')
+
+        year_month_dict = {}
+        for date in unique_dates:
+            year = date['year']
+            month = date['month']
+            if year not in year_month_dict:
+                year_month_dict[year] = []
+            year_month_dict[year].append(month)
+
+        data['dates'] = [{'year': year, 'months': months} for year, months in year_month_dict.items()]
+
+        return Response(data)
+
+
+class GetEMployerSalary(APIView):
+    def get(self, request, *args, **kwargs):
+        branch = request.query_params.get('branch')
+        salaries = UserSalary.objects.filter(date__month=datetime.now().month,
+                                             date__year=datetime.now().year, user__branch__id=branch).all()
+        data = {
+            'salary': [],
+            'dates': []
+        }
+        for salary in salaries:
+            datas = {
+                'id': salary.id,
+                'name': salary.teacher.user.name,
+                'surname': salary.teacher.user.surname,
+                'phone': salary.teacher.user.phone,
+                'total_salary': salary.total_salary,
+                'taken_salary': salary.taken_salary,
+                'remaining_salary': salary.remaining_salary,
+                'subject': salary.teacher.subject.name,
+                'cash': UserSalaryList.objects.filter(user_salary_id=salary.id, payment_types__name='cash').aggregate(
+                    total=Sum('salary'))['total'] or 0,
+                'bank': UserSalaryList.objects.filter(user_salary_id=salary.id, payment_types__name='bank').aggregate(
+                    total=Sum('salary'))['total'] or 0,
+                'click': UserSalaryList.objects.filter(user_salary_id=salary.id, payment_types__name='click').aggregate(
+                    total=Sum('salary'))['total'] or 0,
+
+            }
+            data['salary'].append(datas)
+        unique_dates = UserSalary.objects.annotate(
+            year=ExtractYear('date'),
+            month=ExtractMonth('date')
+        ).filter(user__branch__location__system__name='school').values('year', 'month').distinct().order_by('year',
+                                                                                                            'month')
+
+        year_month_dict = {}
+        for date in unique_dates:
+            year = date['year']
+            month = date['month']
+            if year not in year_month_dict:
+                year_month_dict[year] = []
+            year_month_dict[year].append(month)
+
+        data['dates'] = [{'year': year, 'months': months} for year, months in year_month_dict.items()]
+
+        return Response(data)
+
+    def post(self, request, *args, **kwargs):
+        month = request.data.get('month')
+        year = request.data.get('year')
+        branch = request.query_params.get('branch')
+        salaries = UserSalary.objects.filter(date__month=month,
+                                             date__year=year, user__branch__id=branch).all()
+        data = {}
+        for salary in salaries:
+            datas = {
+                'id': salary.id,
+                'name': salary.teacher.user.name,
+                'surname': salary.teacher.user.surname,
+                'phone': salary.teacher.user.phone,
+                'total_salary': salary.salary,
+                'taken_salary': salary.taken_salary,
+                'remaining_salary': salary.remaining_salary,
+                'subject': salary.teacher.subject.name,
+                'cash': UserSalaryList.objects.filter(user_salary_id=salary.id, payment_types__name='cash').aggregate(
+                    total=Sum('salary'))['total'] or 0,
+                'bank': UserSalaryList.objects.filter(user_salary_id=salary.id, payment_types__name='bank').aggregate(
+                    total=Sum('salary'))['total'] or 0,
+                'click': UserSalaryList.objects.filter(user_salary_id=salary.id, payment_types__name='click').aggregate(
+                    total=Sum('salary'))['total'] or 0,
+            }
+            data['salary'].append(datas)
+        unique_dates = UserSalary.objects.annotate(
+            year=ExtractYear('date'),
+            month=ExtractMonth('date')
+        ).filter(user__branch__location__system__name='school').values('year', 'month').distinct().order_by('year',
+                                                                                                            'month')
+
+        year_month_dict = {}
+        for date in unique_dates:
+            year = date['year']
+            month = date['month']
+            if year not in year_month_dict:
+                year_month_dict[year] = []
+            year_month_dict[year].append(month)
+
+        data['dates'] = [{'year': year, 'months': months} for year, months in year_month_dict.items()]
+
+        return Response(data)
+
+
+class EncashmentsSchool(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            ot = int(request.data.get('year', datetime.now().year))
+            do = int(request.data.get('month', datetime.now().month))
+            branch = request.data.get('branch')
+
+            if not all([ot, do, branch]):
+                return Response({'error': 'Missing required parameters'}, status=400)
+
+            payment_types = PaymentTypes.objects.all()  # Bir nechta to'lov turini olish
+
+            if not payment_types:
+                return Response({'error': 'Missing payment types'}, status=400)
+
+            overall_total = 0  # Umumiy summani saqlash uchun
+
+            payment_results = []
+
+            for payment_type in payment_types:
+                student_payments = StudentPayment.objects.filter(
+                    added_data__month=do,
+                    added_data__year=ot,
+                    payment_type=payment_type,
+                    student__user__branch_id=branch,
+                    deleted=False,
+                    status=False
+                )
+                student_total_payment = student_payments.aggregate(total=Sum('payment_sum'))['total'] or 0
+
+                teacher_salaries = TeacherSalaryList.objects.filter(
+                    date__month=do,
+                    date__year=ot,
+                    payment=payment_type,
+                    branch_id=branch,
+                    deleted=False
+                )
+                teacher_total_salary = teacher_salaries.aggregate(total=Sum('salary'))['total'] or 0
+
+                worker_salaries = UserSalaryList.objects.filter(
+                    date__month=do,
+                    date__year=ot,
+                    payment_type=payment_type,
+                    branch_id=branch,
+                    deleted=False
+                )
+                worker_total_salary = worker_salaries.aggregate(total=Sum('salary'))['total'] or 0
+
+                branch_payments = BranchPayment.objects.filter(
+                    book_order__day__range=(ot, do),
+                    payment_type=payment_type,
+                    branch_id=branch
+                )
+                branch_total_payment = branch_payments.aggregate(total=Sum('payment_sum'))['total'] or 0
+
+                total_overhead_payment = Overhead.objects.filter(
+                    created__month=do,
+                    created__year=ot,
+                    payment=payment_type,
+                    branch_id=branch,
+                    deleted=False
+                ).aggregate(total=Sum('price'))['total'] or 0
+
+                total_capital = OldCapital.objects.filter(
+                    added_date__year=ot,
+                    added_date__month=do,
+                    payment_type=payment_type,
+                    branch_id=branch,
+                    deleted=False
+                ).aggregate(total=Sum('price'))['total'] or 0
+
+                payment_total = student_total_payment - (
+                        teacher_total_salary + worker_total_salary + total_capital + total_overhead_payment)
+
+                # Umumiy summani har bir to'lov turi bo'yicha yig'ish
+                overall_total += payment_total
+
+                payment_results.append({
+                    'payment_type': payment_type,
+                    'students': {'student_total_payment': student_total_payment},
+                    'teachers': {'teacher_total_salary': teacher_total_salary},
+                    'workers': {'worker_total_salary': worker_total_salary},
+                    'branch': {'branch_total_payment': branch_total_payment},
+                    'overheads': {'total_overhead_payment': total_overhead_payment},
+                    'capitals': {'total_capital': total_capital},
+                    'payment_total': payment_total
+                })
+
+            return Response({
+                'payment_results': payment_results,
+                'overall_total': overall_total
+            })
+
+        except KeyError as e:
+            return Response({'error': f'Missing required parameter: {str(e)}'}, status=400)
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)

@@ -23,14 +23,13 @@ from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayme
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializerWrite()
     subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True, required=False)
-    parents_number = serializers.CharField()
+    parents_number = serializers.CharField(allow_null=True, allow_blank=True, required=False)
     shift = serializers.CharField()
     class_number = serializers.PrimaryKeyRelatedField(queryset=ClassNumber.objects.all())
 
     class Meta:
         model = Student
-        fields = ['id', 'user', 'subject', 'parents_number', 'shift', 'class_number']
-
+        fields = '__all__'
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -43,9 +42,7 @@ class StudentSerializer(serializers.ModelSerializer):
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
 
-        student = Student.objects.create(user=user, parents_number=validated_data.get('parents_number'),
-                                         shift=validated_data.get('shift'),
-                                         class_number=validated_data.get('class_number'))
+        student = Student.objects.create(user=user,**validated_data)
         if validated_data.get('subject'):
             subject_data = validated_data.pop('subject')
             student.subject.set(subject_data)
