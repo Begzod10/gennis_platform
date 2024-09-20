@@ -563,7 +563,7 @@ class EncashmentsSchool(APIView):
                 worker_salaries = UserSalaryList.objects.filter(
                     date__month=do,
                     date__year=ot,
-                    payment_type=payment_type,
+                    payment_types=payment_type,
                     branch_id=branch,
                     deleted=False
                 )

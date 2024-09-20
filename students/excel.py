@@ -104,7 +104,7 @@ class ExcelDataList(APIView):
                 "district": student.district,
                 "old_school": student.old_school,
                 "full_name_student": f"{student.user.name} {student.user.surname}",
-                "birth_date": student.birth_date,
+                "birth_date": student.user.birth_date,
                 "student_seria": student.student_seria,
                 "student_seria_num": student.student_seria_num,
                 "parents_fullname": student.parents_fullname,
