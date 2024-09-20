@@ -175,6 +175,11 @@ class UserSalaryListSerializersRead(serializers.ModelSerializer):
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
+        # from students.models import Student
+        # stude =Student.objects.all()[:1000]
+        # for i  in stude:
+        #      i.delete()
+
         # from rooms.models import Room
         # Room.objects.filter(branch_id=None).all().delete()
         # from students.models import Student
