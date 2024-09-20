@@ -523,98 +523,93 @@ class EncashmentsSchool(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        try:
-            ot = int(request.data.get('year', datetime.now().year))
-            do = int(request.data.get('month', datetime.now().month))
-            branch = request.data.get('branch')
+        ot = int(request.data.get('year', datetime.now().year))
+        do = int(request.data.get('month', datetime.now().month))
+        branch = request.data.get('branch')
 
-            if not all([ot, do, branch]):
-                return Response({'error': 'Missing required parameters'}, status=400)
+        if not all([ot, do, branch]):
+            return Response({'error': 'Missing required parameters'}, status=400)
 
-            payment_types = PaymentTypes.objects.all()  # Bir nechta to'lov turini olish
+        payment_types = PaymentTypes.objects.all()
 
-            if not payment_types:
-                return Response({'error': 'Missing payment types'}, status=400)
+        if not payment_types:
+            return Response({'error': 'Missing payment types'}, status=400)
 
-            overall_total = 0  # Umumiy summani saqlash uchun
+        overall_total = 0  # For storing the overall total
 
-            payment_results = []
+        payment_results = []
 
-            for payment_type in payment_types:
-                student_payments = StudentPayment.objects.filter(
-                    added_data__month=do,
-                    added_data__year=ot,
-                    payment_type=payment_type,
-                    student__user__branch_id=branch,
-                    deleted=False,
-                    status=False
-                )
-                student_total_payment = student_payments.aggregate(total=Sum('payment_sum'))['total'] or 0
+        for payment_type in payment_types:
+            student_payments = StudentPayment.objects.filter(
+                added_data__month=do,
+                added_data__year=ot,
+                payment_type=payment_type,
+                student__user__branch_id=branch,
+                deleted=False,
+                status=False
+            )
+            student_total_payment = student_payments.aggregate(total=Sum('payment_sum'))['total'] or 0
 
-                teacher_salaries = TeacherSalaryList.objects.filter(
-                    date__month=do,
-                    date__year=ot,
-                    payment=payment_type,
-                    branch_id=branch,
-                    deleted=False
-                )
-                teacher_total_salary = teacher_salaries.aggregate(total=Sum('salary'))['total'] or 0
+            teacher_salaries = TeacherSalaryList.objects.filter(
+                date__month=do,
+                date__year=ot,
+                payment=payment_type,
+                branch_id=branch,
+                deleted=False
+            )
+            teacher_total_salary = teacher_salaries.aggregate(total=Sum('salary'))['total'] or 0
 
-                worker_salaries = UserSalaryList.objects.filter(
-                    date__month=do,
-                    date__year=ot,
-                    payment_types=payment_type,
-                    branch_id=branch,
-                    deleted=False
-                )
-                worker_total_salary = worker_salaries.aggregate(total=Sum('salary'))['total'] or 0
+            worker_salaries = UserSalaryList.objects.filter(
+                date__month=do,
+                date__year=ot,
+                payment_types=payment_type,
+                branch_id=branch,
+                deleted=False
+            )
+            worker_total_salary = worker_salaries.aggregate(total=Sum('salary'))['total'] or 0
 
-                branch_payments = BranchPayment.objects.filter(
-                    book_order__day__range=(ot, do),
-                    payment_type=payment_type,
-                    branch_id=branch
-                )
-                branch_total_payment = branch_payments.aggregate(total=Sum('payment_sum'))['total'] or 0
+            branch_payments = BranchPayment.objects.filter(
+                book_order__day__month=do,
+                book_order__day__year=ot,
+                payment_type=payment_type,
+                branch_id=branch
+            )
+            branch_total_payment = branch_payments.aggregate(total=Sum('payment_sum'))['total'] or 0
 
-                total_overhead_payment = Overhead.objects.filter(
-                    created__month=do,
-                    created__year=ot,
-                    payment=payment_type,
-                    branch_id=branch,
-                    deleted=False
-                ).aggregate(total=Sum('price'))['total'] or 0
+            total_overhead_payment = Overhead.objects.filter(
+                created__month=do,
+                created__year=ot,
+                payment=payment_type,
+                branch_id=branch,
+                deleted=False
+            ).aggregate(total=Sum('price'))['total'] or 0
 
-                total_capital = OldCapital.objects.filter(
-                    added_date__year=ot,
-                    added_date__month=do,
-                    payment_type=payment_type,
-                    branch_id=branch,
-                    deleted=False
-                ).aggregate(total=Sum('price'))['total'] or 0
+            total_capital = OldCapital.objects.filter(
+                added_date__year=ot,
+                added_date__month=do,
+                payment_type=payment_type,
+                branch_id=branch,
+                deleted=False
+            ).aggregate(total=Sum('price'))['total'] or 0
 
-                payment_total = student_total_payment - (
-                        teacher_total_salary + worker_total_salary + total_capital + total_overhead_payment)
+            payment_total = student_total_payment - (
+                    teacher_total_salary + worker_total_salary + total_capital + total_overhead_payment)
 
-                # Umumiy summani har bir to'lov turi bo'yicha yig'ish
-                overall_total += payment_total
+            # Accumulate the overall total
+            overall_total += payment_total
 
-                payment_results.append({
-                    'payment_type': payment_type,
-                    'students': {'student_total_payment': student_total_payment},
-                    'teachers': {'teacher_total_salary': teacher_total_salary},
-                    'workers': {'worker_total_salary': worker_total_salary},
-                    'branch': {'branch_total_payment': branch_total_payment},
-                    'overheads': {'total_overhead_payment': total_overhead_payment},
-                    'capitals': {'total_capital': total_capital},
-                    'payment_total': payment_total
-                })
-
-            return Response({
-                'payment_results': payment_results,
-                'overall_total': overall_total
+            payment_results.append({
+                'payment_type': payment_type.name,  # Convert to a string or use payment_type.id
+                'students': {'student_total_payment': student_total_payment},
+                'teachers': {'teacher_total_salary': teacher_total_salary},
+                'workers': {'worker_total_salary': worker_total_salary},
+                'branch': {'branch_total_payment': branch_total_payment},
+                'overheads': {'total_overhead_payment': total_overhead_payment},
+                'capitals': {'total_capital': total_capital},
+                'payment_total': payment_total
             })
 
-        except KeyError as e:
-            return Response({'error': f'Missing required parameter: {str(e)}'}, status=400)
-        except Exception as e:
-            return Response({'error': str(e)}, status=500)
+        return Response({
+            'payment_results': payment_results,
+            'overall_total': overall_total
+        })
