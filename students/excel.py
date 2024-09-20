@@ -70,6 +70,6 @@ class ExcelData(APIView):
 
         response = HttpResponse(buffer,
                                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename=populated_student_data.xlsx'
+        response['Content-Disposition'] = 'attachment; filename=students.xlsx'
 
         return response
