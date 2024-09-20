@@ -72,7 +72,7 @@ class StudentSerializer(serializers.ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-        return instance
+        return StudentPaymentSerializer(instance)
 
 
 class GroupSerializerStudents(serializers.ModelSerializer):
