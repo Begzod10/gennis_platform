@@ -1,6 +1,7 @@
 from copy import copy
 from io import BytesIO
 
+from django.db.models import Q
 from django.http import HttpResponse
 from openpyxl import load_workbook
 from rest_framework.views import APIView
@@ -20,13 +21,14 @@ class ExcelData(APIView):
 
         # Fetch all students from the database
         branch = request.query_params.get('branch')
-        deleted_student_ids = DeletedStudent.objects.filter(student__user__branch__id=branch).values_list('student_id',
-                                                                                                          flat=True)
-        deleted_new_student_ids = DeletedNewStudent.objects.filter(student__user__branch__id=branch).values_list(
-            'student_id', flat=True)
-        students = Student.objects.exclude(id__in=deleted_student_ids) \
-            .exclude(id__in=deleted_new_student_ids) \
-            .filter(user__branch__id=branch).distinct()
+        excluded_ids = list(
+            DeletedStudent.objects.filter(student__user__branch__id=branch).values_list('student_id', flat=True)) + \
+                       list(DeletedNewStudent.objects.filter(student__user__branch__id=branch).values_list('student_id',
+                                                                                                           flat=True))
+
+        students = Student.objects.select_related('user').filter(
+            ~Q(id__in=excluded_ids) & Q(user__branch__id=branch)
+        ).distinct()
 
         # Helper function to copy cell styles
         def copy_cell_style(source_cell, target_cell):
