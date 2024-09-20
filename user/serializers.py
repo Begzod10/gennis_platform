@@ -175,13 +175,16 @@ class UserSalaryListSerializersRead(serializers.ModelSerializer):
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
+        # from students.models import Student
+        # stude =Student.objects.all()[:1000]
+        # for i  in stude:
+        #      i.delete()
+
         # from rooms.models import Room
         # Room.objects.filter(branch_id=None).all().delete()
         # from students.models import Student
         # from teachers.models import Teacher
-        from classes.models import ClassNumber
 
-        from django.contrib.auth.models import Group
         # CustomUser.objects.exclude(username='dr_max').all().delete()
         # Student.objects.all().delete()
         # Teacher.objects.all().delete()
@@ -203,6 +206,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # for branch in branches:
         #     for i in range(1, 12):
         #         ClassNumber.objects.get_or_create(number=i, branch=branch)
+        # from subjects.models import Subject
+        # subject_english = Subject.objects.get(name='Ingliz tili')
+        # subject_english.classroom_id = 1
+        # subject_english.save()
+        #
+        # subject_native_language = Subject.objects.get(name='Ona tili va Adabiyot')
+        # subject_native_language.classroom_id = 3
+        # subject_native_language.save()
 
         username = attrs.get('username')
         password = attrs.get('password')
@@ -228,6 +239,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 refresh = self.get_token(self.user)
                 data['refresh'] = str(refresh)
                 data['access'] = str(refresh.access_token)
+
                 return data
             else:
                 raise AuthenticationFailed("No active account found with the given credentials")

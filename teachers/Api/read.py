@@ -35,13 +35,14 @@ class TeacherListView(QueryParamFilterMixin, generics.ListAPIView):
         'age': 'user__birth_date',
         "subject": 'subject__id',
         'language': 'user__language_id',
+        'deleted': 'deleted',
 
     }
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializerRead
 
     def get_queryset(self):
-        queryset = Teacher.objects.filter(deleted=False).all()
+        queryset = Teacher.objects.all()
         queryset = self.filter_queryset(queryset)
         return queryset
 
