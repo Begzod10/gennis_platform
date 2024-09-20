@@ -4,6 +4,7 @@ from io import BytesIO
 from django.db.models import Q
 from django.http import HttpResponse
 from openpyxl import load_workbook
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from students.models import Student, DeletedStudent, DeletedNewStudent
@@ -62,7 +63,7 @@ class ExcelData(APIView):
             sheet[f"C{row_num}"] = student.district
             sheet[f"D{row_num}"] = student.old_school
             sheet[f"E{row_num}"] = f"{student.user.name} {student.user.surname}"
-            sheet[f"F{row_num}"] = student.born_date
+            sheet[f"F{row_num}"] = student.user.birth_date
             sheet[f"G{row_num}"] = student.student_seria
             sheet[f"H{row_num}"] = student.student_seria_num
             sheet[f"I{row_num}"] = student.parents_fullname
@@ -81,3 +82,36 @@ class ExcelData(APIView):
         response['Content-Disposition'] = 'attachment; filename=students.xlsx'
 
         return response
+
+
+class ExcelDataList(APIView):
+    def get(self, request, *args, **kwargs):
+        branch = request.query_params.get('branch')
+        excluded_ids = list(
+            DeletedStudent.objects.values_list('student_id', flat=True)) + \
+                       list(DeletedNewStudent.objects.values_list('student_id',
+                                                                  flat=True))
+
+        students = Student.objects.select_related('user').filter(
+            ~Q(id__in=excluded_ids) & Q(user__branch__id=branch)
+        ).distinct()
+        data = []
+        i = 0
+        for student in students:
+            data.append({
+                "tr": i + 1,
+                "region": student.region,
+                "district": student.district,
+                "old_school": student.old_school,
+                "full_name_student": f"{student.user.name} {student.user.surname}",
+                "birth_date": student.birth_date,
+                "student_seria": student.student_seria,
+                "student_seria_num": student.student_seria_num,
+                "parents_fullname": student.parents_fullname,
+                "parent_region": student.parent_region,  # Яшаш манзили
+                "parent_seria": student.parent_seria,  # Ota ona paspor
+                "parent_seria_num": student.parent_seria_num,  # Яшаш манзили
+                "parents_born_date": student.born_date,  # Яшаш манзили
+                "parents_number": student.parents_number,
+            })
+        return Response(data)
