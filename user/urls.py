@@ -24,7 +24,7 @@ from user.Api.write import (
 )
 app_name = 'user'
 urlpatterns = [
-    path('users/create/', UserCreateView.as_view(), name='user-create'),
+    #path('users/create/', UserCreateView.as_view(), name='user-create'),
     path('users/update/<int:pk>/', UserUpdateView.as_view(), name='user-update'),
     path('users/delete/<int:pk>/', UserDestroyView.as_view(), name='user-delete'),
     path('users/', UserListCreateView.as_view(), name='user-list-create'),
