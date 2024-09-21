@@ -17,15 +17,19 @@ class Student(models.Model):
     parents_number = models.CharField(max_length=250, null=True)
     representative_name = models.CharField(max_length=255, null=True)
     representative_surname = models.CharField(max_length=255, null=True)
-    # father_username = models.CharField(max_length=255, null=True, blank=True)  # Add this field
-    # mother_username = models.CharField(max_length=255, null=True, blank=True)  # Add this field
+    telegram_id = models.BigIntegerField(null=True)
+    mother_choose = models.BooleanField(default=False)
+    father_choose = models.BooleanField(default=False)
+    father_passport_number = models.CharField(max_length=255, null=True, blank=True)
+    mother_passport_number = models.CharField(max_length=255, null=True, blank=True)
+    father_telegram_id = models.BigIntegerField(null=True)
+    mother_telegram_id = models.BigIntegerField(null=True)
     old_id = models.IntegerField(null=True, unique=True)
     turon_old_id = models.IntegerField(null=True, unique=True)
     old_money = models.BigIntegerField(null=True)
     group_time_table = models.ManyToManyField('time_table.GroupTimeTable', blank=True)
     system = models.ForeignKey('system.System', on_delete=models.SET_NULL, null=True)
     class_number = models.ForeignKey('classes.ClassNumber', on_delete=models.SET_NULL, null=True)
-
 
 
 class StudentCharity(models.Model):
