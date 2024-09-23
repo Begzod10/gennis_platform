@@ -71,6 +71,10 @@ class UserSerializerWrite(serializers.ModelSerializer):
                 user.is_superuser = True
                 user.is_staff = True
                 user.save()
+            elif profession.name == 'director':
+                user.is_staff = True
+                user.is_superuser = True
+                user.save()
         return user
 
     # def send_data(self, user_data):

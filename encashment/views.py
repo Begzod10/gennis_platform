@@ -11,10 +11,11 @@ from books.models import BranchPayment
 from books.serializers import BranchPaymentListSerializers
 from capital.models import Capital
 from capital.serializers import OldCapital, OldCapitalListSerializers
-from group.models import Group
+from classes.models import ClassNumber
 from overhead.models import Overhead
 from overhead.serializers import OverheadSerializerGet
 from payments.models import PaymentTypes
+from students.models import Student
 from students.models import StudentPayment
 from students.serializers import StudentPaymentSerializer
 from teachers.models import TeacherSalaryList, TeacherSalary
@@ -255,12 +256,11 @@ class GetSchoolStudents(APIView):
         }
         for _class in classes:
             sinflar = {
-                'class_number': _class.class_number.number,
-                'class_color': _class.color.name,
+                'class_number': _class.number,
                 'students': []
             }
             data['class'].append(sinflar)
-            students = _class.students.all()
+            students = Student.objects.filter(groups_student__class_number=_class)
 
             attendance_data = AttendancePerMonth.objects.filter(
                 student__in=students,
@@ -318,11 +318,10 @@ class GetSchoolStudents(APIView):
 
     def get(self, request, *args, **kwargs):
         branch = request.query_params.get('branch')
-        classes = Group.objects.filter(
-            deleted=False,
-            class_number__isnull=False,
+        classes = ClassNumber.objects.filter(
+            price__isnull=False,
             branch_id=branch
-        ).order_by('class_number__number')
+        ).order_by('number')
 
         data = self.get_class_data(classes)
         return Response(data)
@@ -331,11 +330,10 @@ class GetSchoolStudents(APIView):
         month = request.data.get('month')
         year = request.data.get('year')
         branch = request.query_params.get('branch')
-        classes = Group.objects.filter(
-            deleted=False,
-            class_number__isnull=False,
+        classes = ClassNumber.objects.filter(
+            price__isnull=False,
             branch_id=branch
-        ).order_by('class_number__number')
+        ).order_by('number')
 
         data = self.get_class_data(classes, year, month)
         return Response(data)
@@ -608,8 +606,22 @@ class EncashmentsSchool(APIView):
                 'capitals': {'total_capital': total_capital},
                 'payment_total': payment_total
             })
+        unique_dates = UserSalary.objects.annotate(
+            year=ExtractYear('date'),
+            month=ExtractMonth('date')
+        ).filter(user__branch__location__system__name='school').values('year', 'month').distinct().order_by('year',
+                                                                                                            'month')
+
+        year_month_dict = {}
+        for date in unique_dates:
+            year = date['year']
+            month = date['month']
+            if year not in year_month_dict:
+                year_month_dict[year] = []
+            year_month_dict[year].append(month)
 
         return Response({
             'payment_results': payment_results,
-            'overall_total': overall_total
+            'overall_total': overall_total,
+            'dates': [{'year': year, 'months': months} for year, months in year_month_dict.items()],
         })
