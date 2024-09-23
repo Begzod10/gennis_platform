@@ -129,7 +129,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
     def get_time_tables(self, obj):
         week = self.context['week']
         branch = self.context['branch']
-        rooms = Room.objects.all()
+        rooms = Room.objects.filter(branch=branch, deleted=False).all()
         hours = Hours.objects.all().order_by('order')
         time_tables = []
 
