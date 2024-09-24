@@ -24,7 +24,7 @@ class UserSerializerRead(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
                   'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff', 'age', 'job']
+                  'branch', 'is_superuser', 'is_staff', 'age', 'job','file']
 
     def get_age(self, obj):
         return obj.calculate_age()

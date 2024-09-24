@@ -42,7 +42,7 @@ class StudentSerializer(serializers.ModelSerializer):
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
 
-        student = Student.objects.create(user=user,**validated_data)
+        student = Student.objects.create(user=user, **validated_data)
         if validated_data.get('subject'):
             subject_data = validated_data.pop('subject')
             student.subject.set(subject_data)
@@ -305,12 +305,29 @@ class DeletedNewStudentSerializer(serializers.ModelSerializer):
         fields = ['id', 'student']
 
 
+class StudentSerializerLists(serializers.ModelSerializer):
+    user = UserSerializerRead(read_only=True)
+    group = serializers.SerializerMethodField(required=False)
+
+    class Meta:
+        model = Student
+        fields = ['id', 'user', 'group']
+
+    def get_group(self, obj):
+        return [GroupSerializerStudents(group).data for group in obj.groups_student.all()]
+
+
 class DeletedNewStudentListSerializer(serializers.ModelSerializer):
-    student = StudentListSerializer(read_only=True)
+    student = StudentSerializerLists(read_only=True)
 
     class Meta:
         model = DeletedNewStudent
         fields = ['id', 'student']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        return {'id': representation['student']['id'], 'user': representation['student']['user'],
+                'class': representation['student']['group'], "deleted": True}
 
 
 class DeletedStudentSerializer(serializers.ModelSerializer):

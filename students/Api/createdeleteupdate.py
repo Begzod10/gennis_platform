@@ -24,7 +24,7 @@ class StudentUpdateView(CustomResponseMixin, generics.UpdateAPIView):
     serializer_class = StudentSerializer
 
 
-class StudentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
+class StudentDestroyView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     queryset = Student.objects.all()
@@ -32,8 +32,13 @@ class StudentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         student = self.get_object()
-        DeletedNewStudent.objects.create(student=student)  # new studentni ochirish
-        return Response({"detail": "Student was deleted successfully"}, status=status.HTTP_200_OK)
+        new_student, created = DeletedNewStudent.objects.get_or_create(student=student)  # new studentni ochirish
+        if not created:
+            new_student.delete()
+            return Response({"msg": "O'quvchi muvofaqqiyatlik qaytarildi !"}, status=status.HTTP_200_OK)
+
+        else:
+            return Response({"msg": "O'quvchi muvofaqqiyatlik o'chirildi !"}, status=status.HTTP_200_OK)
 
 
 class StudentHistoryGroupsCreateView(CustomResponseMixin, generics.CreateAPIView):
