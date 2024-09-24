@@ -20,7 +20,7 @@ class Teacher(models.Model):
     color = models.CharField(max_length=50, null=True)
     total_students = models.IntegerField(null=True)
     premium_rate = models.IntegerField(null=True)
-    class_type = models.IntegerField(null=True)
+    class_type = models.ForeignKey('classes.ClassTypes', on_delete=models.SET_NULL, null=True)
     teacher_salary_type = models.ForeignKey(TeacherSalaryType, on_delete=models.SET_NULL, null=True)
     old_id = models.IntegerField(unique=True, null=True)
     turon_old_id = models.IntegerField(null=True, unique=True)

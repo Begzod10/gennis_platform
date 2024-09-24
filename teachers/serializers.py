@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from branch.models import Branch
 from branch.serializers import BranchSerializer
+from classes.models import ClassTypes
 from flows.models import Flow
 from group.models import Group
 from language.models import Language
@@ -22,10 +23,12 @@ class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializerWrite()
     subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)
     teacher_salary_type = serializers.PrimaryKeyRelatedField(queryset=TeacherSalaryType.objects.all(), required=False)
+    class_type = serializers.PrimaryKeyRelatedField(queryset=ClassTypes.objects.all(), required=False)
 
     class Meta:
         model = Teacher
-        fields = ['user', 'subject', 'color', 'total_students', 'id', 'teacher_salary_type', 'salary_percentage']
+        fields = ['user', 'subject', 'color', 'total_students', 'id', 'teacher_salary_type', 'salary_percentage',
+                  'class_type']
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -59,7 +62,6 @@ class TeacherSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
-
 
 
 class TeacherAttendanceSerializers(serializers.ModelSerializer):
