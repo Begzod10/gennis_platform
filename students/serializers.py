@@ -217,7 +217,7 @@ class StudentCharityListSerializer(serializers.ModelSerializer):
 
 
 class StudentPaymentSerializer(serializers.ModelSerializer):
-    student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
+    student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), required=False)
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     payment_type = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
     payment_sum = serializers.IntegerField(required=False)
