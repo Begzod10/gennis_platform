@@ -2,16 +2,19 @@ import calendar
 import json
 from datetime import datetime
 
+from django.db.models.functions import ExtractMonth, ExtractYear
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, permissions
+from rest_framework import permissions, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from attendances.models import AttendancePerDay, Student, AttendancePerMonth, Group
-from mobile.teachers.serializers import TeachersSalariesSerializer, TeachersDebtedStudents, Teacher, \
-    TeacherProfileSerializer, AttendancesTodayStudentsSerializer, GroupListSeriliazersMobile
+from mobile.teachers.serializers import TeachersDebtedStudents, TeacherProfileSerializer, \
+    AttendancesTodayStudentsSerializer, GroupListSeriliazersMobile
 from permissions.response import QueryParamFilterMixin
+from teachers.models import Teacher, TeacherSalary
 from user.models import CustomUser
+from .serializers import TeachersSalariesSerializer
 from ..get_user import get_user
 
 
@@ -23,9 +26,44 @@ class TeacherPaymentsListView(QueryParamFilterMixin, generics.ListAPIView):
         'year': 'month_date__year',
     }
 
+    def get(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        teacher_salaries_data = serializer.data
+
+        def get_datas():
+            current_year = datetime.now().year
+            current_month = datetime.now().month
+
+            unique_dates = TeacherSalary.objects.annotate(
+                year=ExtractYear('month_date'),
+                month=ExtractMonth('month_date')
+            ).filter(teacher__user=self.request.user).values('year', 'month').distinct().order_by('year', 'month')
+
+            year_month_dict = {}
+            for date in unique_dates:
+                year = date['year']
+                month = date['month']
+                if year not in year_month_dict:
+                    year_month_dict[year] = []
+                year_month_dict[year].append(
+                  month,
+                )
+
+            year_month_list = [{'year': year, 'months': months} for year, months in year_month_dict.items()]
+
+            return year_month_list
+
+        combined_data = {
+            'salaries': teacher_salaries_data,
+            'dates': get_datas()
+        }
+
+        return Response(combined_data)
+
     def get_queryset(self):
         user = self.request.user
-        teacher = get_object_or_404(Teacher, user_id=user.id)
+        teacher = get_object_or_404(Teacher, user=user)
         return teacher.teacher_id_salary.all().distinct()
 
 

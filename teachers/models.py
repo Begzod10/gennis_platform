@@ -10,6 +10,7 @@ from system.models import System
 class TeacherSalaryType(models.Model):
     name = models.CharField()
     salary = models.IntegerField()
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
     turon_old_id = models.IntegerField(null=True, unique=True)
 
 
@@ -19,13 +20,15 @@ class Teacher(models.Model):
     color = models.CharField(max_length=50, null=True)
     total_students = models.IntegerField(null=True)
     premium_rate = models.IntegerField(null=True)
-    class_type = models.IntegerField(null=True)
+    class_type = models.ForeignKey('classes.ClassTypes', on_delete=models.SET_NULL, null=True)
     teacher_salary_type = models.ForeignKey(TeacherSalaryType, on_delete=models.SET_NULL, null=True)
     old_id = models.IntegerField(unique=True, null=True)
     turon_old_id = models.IntegerField(null=True, unique=True)
     branches = models.ManyToManyField(Branch, blank=True)
     group_time_table = models.ManyToManyField('time_table.GroupTimeTable', blank=True)
-    salary_percentage = models.IntegerField(default=50,null=True,blank=True)
+    salary_percentage = models.IntegerField(default=50, null=True, blank=True)
+    deleted = models.BooleanField(default=False)
+    deleted_date = models.DateField(null=True)
     # system = models.ForeignKey('system.System', on_delete=models.SET_NULL, null=True)
 
 

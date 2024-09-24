@@ -2,6 +2,7 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from permissions.response import QueryParamFilterMixin
 from teachers.models import TeacherAttendance, Teacher, TeacherSalaryType
 from teachers.serializers import TeacherAttendanceListSerializers, TeacherSerializerRead, \
     TeacherSalaryTypeSerializerRead
@@ -51,6 +52,9 @@ class TeachersForSubject(generics.ListAPIView):
         return Teacher.objects.filter(branches__in=[branch_id], subject__in=[subject_id])
 
 
-class SalaryType(generics.ListCreateAPIView):
+class SalaryType(QueryParamFilterMixin, generics.ListCreateAPIView):
+    filter_mappings = {
+        'branch': 'branch_id',
+    }
     serializer_class = TeacherSalaryTypeSerializerRead
     queryset = TeacherSalaryType.objects.all()

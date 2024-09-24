@@ -55,15 +55,11 @@ class DeletedFromRegistered(QueryParamFilterMixin, APIView):
     }
 
     def get(self, request, *args, **kwargs):
-        deleted_students = DeletedStudent.objects.all()
-
-        # delete_new_students = DeletedNewStudent.objects.exclude(id__in=deleted_student_ids)
-
+        deleted_students = DeletedNewStudent.objects.all()
         delete_new_students = self.filter_queryset(deleted_students)
-        # student_ids = delete_new_students.values_list('student_id', flat=True)
-        #
-        # students = Student.objects.filter(id__in=student_ids)
-        delete_new_student_serializer = DeletedStudentListSerializer(delete_new_students, many=True)
+        # delete_new_student_serializer = DeletedStudentListSerializer(delete_new_students, many=True)
+
+        delete_new_student_serializer = DeletedNewStudentListSerializer(delete_new_students, many=True)
         return Response(delete_new_student_serializer.data)
 
 
