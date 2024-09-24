@@ -7,29 +7,40 @@ from django.contrib.auth import authenticate
 from time_table.models import GroupTimeTable, WeekDays
 from attendances.models import AttendancePerMonth
 import datetime
+from user.models import CustomUser
 
- 
+
 class get_user_with_telegram_username(APIView):
-    # permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        username = request.data.get('username')
+        telegram_id = request.data.get('telegram_id')
         students = Student.objects.filter(
-            Q(father_username=username) | Q(mother_username=username)
+            Q(father_telegram_id=telegram_id) | Q(mother_telegram_id=telegram_id)
         ).order_by('pk').all()
         if students:
-            status = True
+            list = []
+            for student in students:
+                list.append({
+                    'full_name': f"{student.user.name} {student.user.surname}",
+                    'username': student.user.username
+                })
+            return Response({'status': True, 'students': list})
         else:
-            status = False
-        return Response({'status': status})
+            return Response({'status': False})
 
 
 class get_attendances_with_student_username(APIView):
-    # permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        username = request.data.get('username')
-        student = Student.objects.filter(telegram_username=username).first()
+        telegram_id = request.data.get('telegram_id')
+        student = Student.objects.filter(telegram_id=telegram_id).first()
+        parent = False
+        if not student:
+            student = Student.objects.filter(
+                Q(father_telegram_id=telegram_id) | Q(mother_telegram_id=telegram_id) and
+                Q(father_choose=True) | Q(mother_choose=True)
+            ).first()
+            parent = True
         if student:
             attendances = AttendancePerMonth.objects.filter(student=student, status=False).all()
             data = []
@@ -46,29 +57,86 @@ class get_attendances_with_student_username(APIView):
                 balance += payment.payment
             for remaining_debt in attendances:
                 balance -= remaining_debt.remaining_debt
-            return Response({'attendances': data, 'balance': balance, 'status': True})
+            return Response({'attendances': data, 'balance': balance, 'status': True, 'parent': parent})
         else:
-            return Response({'table': "Serverda hatolik", 'status': False})
+            return Response({'table': "Serverda hatolik", 'status': False, 'parent': parent})
 
 
 class check_student(APIView):
-    # permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
-        username = request.data.get('username')
-        student = Student.objects.filter(telegram_username=username).first()
+        telegram_id = request.data.get('telegram_id')
+        student = Student.objects.filter(telegram_id=telegram_id).first()
+
         if student:
             return Response({'status': True, 'student': f"{student.user.name} {student.user.surname}"})
         else:
             return Response({'status': False})
 
 
-class logout_student(APIView):
-    # permission_classes = [IsAuthenticated]
+class parent_active(APIView):
+    def post(self, request, *args, **kwargs):
+        telegram_id = request.data.get('telegram_id')
+        student = Student.objects.filter(
+            Q(father_telegram_id=telegram_id) | Q(mother_telegram_id=telegram_id) and Q(mother_choose=True) | Q(
+                father_choose=True)
+        ).first()
+        if student:
+            return Response({'status': True})
+        else:
+            return Response({'status': False})
+
+
+class parent_choose(APIView):
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
-        student = Student.objects.filter(telegram_username=username).first()
+        telegram_id = request.data.get('telegram_id')
+        user = CustomUser.objects.filter(username=username).first()
+        student = Student.objects.filter(user=user).first()
+        students = Student.objects.filter(
+            Q(father_telegram_id=telegram_id) | Q(mother_telegram_id=telegram_id)
+        ).order_by('pk').all()
+        for item in students:
+            if item.father_telegram_id == telegram_id:
+                item.father_choose = False
+                item.save()
+            else:
+                item.mother_choose = False
+                item.save()
         if student:
-            student.telegram_username = None
+            if student.father_telegram_id == telegram_id:
+                student.father_choose = True
+            else:
+                student.mother_choose = True
+            student.save()
+            return Response({'status': True, 'student': f"{user.name} {user.surname}"})
+        else:
+            return Response({'status': False})
+
+
+class logout_parent(APIView):
+    def post(self, request, *args, **kwargs):
+        telegram_id = request.data.get('telegram_id')
+        students = Student.objects.filter(
+            Q(father_telegram_id=telegram_id) | Q(mother_telegram_id=telegram_id)
+        ).order_by('pk').all()
+        for item in students:
+            if item.father_telegram_id == telegram_id:
+                item.father_choose = False
+                item.father_telegram_id = None
+                item.save()
+            else:
+                item.mother_choose = False
+                item.mother_telegram_id = None
+                item.save()
+        return Response({'status': True})
+
+
+class logout_student(APIView):
+    def post(self, request, *args, **kwargs):
+        telegram_id = request.data.get('telegram_id')
+        student = Student.objects.filter(telegram_id=telegram_id).first()
+        if student:
+            student.telegram_id = None
             student.save()
             return Response({'status': True})
         else:
@@ -76,16 +144,15 @@ class logout_student(APIView):
 
 
 class get_user_with_username_and_password(APIView):
-    # permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        tg_username = request.data.get('tg_username')
+        telegram_id = request.data.get('telegram_id')
         username = request.data.get('username')
         password = request.data.get('password')
         user = authenticate(username=username, password=password)
         if user:
             student = Student.objects.get(user=user)
-            student.telegram_username = tg_username
+            student.telegram_id = telegram_id
             student.save()
             data = {'full_name': f"{user.name} {user.surname}"}
             return Response({'data': data, 'status': True})
@@ -94,24 +161,57 @@ class get_user_with_username_and_password(APIView):
 
 
 class get_table_week_with_student_username(APIView):
-    # permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
-        username = request.data.get('username')
-        student = Student.objects.filter(telegram_username=username).first()
+        telegram_id = request.data.get('telegram_id')
+        student = Student.objects.filter(telegram_id=telegram_id).first()
+        parent = False
+        if not student:
+            student = Student.objects.filter(
+                Q(father_telegram_id=telegram_id) | Q(mother_telegram_id=telegram_id) and
+                Q(father_choose=True) | Q(mother_choose=True)
+            ).first()
+            parent = True
         if student:
             groups = student.groups_student.all()
-            print(groups)
             data = []
-            return Response({'table': data, 'status': True})
+            if groups:
+                for group in groups:
+                    week = WeekDays.objects.get(order=request.data.get('day'))
+                    group_time_table = GroupTimeTable.objects.filter(group=group, week=week).first()
+                    if group_time_table:
+                        data.append({
+                            'group_name': group.name,
+                            'start_time': group_time_table.start_time,
+                            'end_time': group_time_table.end_time,
+                            'room': group_time_table.room.name,
+                            'subject': group.subject.name,
+                            'level': group.level.name,
+                            'teacher': [f"{teacher.user.name} {teacher.user.surname}" for teacher in
+                                        group.teacher.all()],
+                            'language': group.language.name if group.language else None
+                        })
+                if data:
+                    return Response({'table': data, 'day': week.name_uz, 'status': True, 'parent': parent})
+                else:
+                    return Response({'table': "Bu kunda dars yo'q", 'status': False, 'parent': parent})
+            else:
+                return Response({'table': "Dars yo'q", 'status': False, 'parent': parent})
         else:
             return Response({'table': "Serverda hatolik", 'status': False})
 
 
 class get_table_with_student_username(APIView):
-    # permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
-        username = request.data.get('username')
-        student = Student.objects.filter(telegram_username=username).first()
+        telegram_id = request.data.get('telegram_id')
+        student = Student.objects.filter(telegram_id=telegram_id).first()
+        parent = False
+
+        if not student:
+            student = Student.objects.filter(
+                Q(father_telegram_id=telegram_id) | Q(mother_telegram_id=telegram_id) and
+                Q(father_choose=True) | Q(mother_choose=True)
+            ).first()
+            parent = True
         if student:
             groups = student.groups_student.all()
             data = []
@@ -133,21 +233,21 @@ class get_table_with_student_username(APIView):
                                         group.teacher.all()],
                             'language': group.language.name if group.language else None
                         })
-                    else:
-                        return Response({'table': "Bugun dars yo'q", 'status': False})
-                return Response({'table': data, 'status': True})
+                if data:
+                    return Response({'table': data, 'status': True, 'parent': parent})
+                else:
+                    return Response({'table': "Bugun dars yo'q", 'status': False, 'parent': parent})
             else:
-                return Response({'table': "Dars yo'q", 'status': False})
+                return Response({'table': "Dars yo'q", 'status': False, 'parent': parent})
         else:
             return Response({'table': "Serverda hatolik", 'status': False})
 
 
 class get_user_with_passport_number(APIView):
-    # permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         passport_number = request.data.get('passport_number')
-        username = request.data.get('username')
+        telegram_id = request.data.get('telegram_id')
         students = Student.objects.filter(
             Q(father_passport_number=passport_number) | Q(mother_passport_number=passport_number)
         ).order_by('pk').all()
@@ -156,11 +256,14 @@ class get_user_with_passport_number(APIView):
             status = True
             for student in students:
                 if student.father_passport_number == passport_number:
-                    student.father_username = username
+                    student.father_telegram_id = telegram_id
                 else:
-                    student.mother_username = username
+                    student.mother_telegram_id = telegram_id
                 student.save()
-                list.append({'full_name': student.user.name + ' ' + student.user.surname})
+                list.append({
+                    'full_name': f"{student.user.name} {student.user.surname}",
+                    'username': student.user.username
+                })
         else:
             status = False
         return Response({'status': status, 'students': list})
