@@ -45,7 +45,6 @@ class get_attendances_with_student_username(APIView):
             ).first()
             parent = True
         if student:
-            print(student)
             attendances = AttendancePerMonth.objects.filter(student=student, status=False).all()
             data = []
             for attendance in attendances:
@@ -61,10 +60,9 @@ class get_attendances_with_student_username(APIView):
                 balance += payment.payment
             for remaining_debt in attendances:
                 balance -= remaining_debt.remaining_debt
-            print(parent)
             return Response({'attendances': data, 'balance': balance, 'status': True, 'parent': parent})
         else:
-            return Response({'table': "Serverda hatolik", 'status': False})
+            return Response({'table': "Serverda hatolik", 'status': False, 'parent': parent})
 
 
 class check_student(APIView):
