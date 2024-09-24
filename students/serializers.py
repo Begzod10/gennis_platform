@@ -327,7 +327,8 @@ class DeletedNewStudentListSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         return {'id': representation['student']['id'], 'user': representation['student']['user'],
-                'class': representation['student']['group'], "deleted": True}
+                'class': representation['student']['group'], "deleted": True, 'date': instance.created,
+                'comment': instance.comment}
 
 
 class DeletedStudentSerializer(serializers.ModelSerializer):
