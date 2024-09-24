@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import path
 from .views import get_user_with_telegram_username, get_user_with_passport_number, get_user_with_username_and_password, \
     get_table_with_student_username, get_table_week_with_student_username, get_attendances_with_student_username, \
     check_student, logout_student,parent_choose,parent_active,logout_parent

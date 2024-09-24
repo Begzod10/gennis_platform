@@ -11,7 +11,6 @@ from user.models import CustomUser
 
 
 class get_user_with_telegram_username(APIView):
-    # permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         telegram_id = request.data.get('telegram_id')
@@ -31,8 +30,6 @@ class get_user_with_telegram_username(APIView):
 
 
 class get_attendances_with_student_username(APIView):
-
-    # permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         telegram_id = request.data.get('telegram_id')
@@ -66,7 +63,6 @@ class get_attendances_with_student_username(APIView):
 
 
 class check_student(APIView):
-    # permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
         telegram_id = request.data.get('telegram_id')
         student = Student.objects.filter(telegram_id=telegram_id).first()
@@ -78,7 +74,6 @@ class check_student(APIView):
 
 
 class parent_active(APIView):
-    # permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
         telegram_id = request.data.get('telegram_id')
         student = Student.objects.filter(
@@ -92,7 +87,6 @@ class parent_active(APIView):
 
 
 class parent_choose(APIView):
-    # permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
         telegram_id = request.data.get('telegram_id')
@@ -120,7 +114,6 @@ class parent_choose(APIView):
 
 
 class logout_parent(APIView):
-    # permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
         telegram_id = request.data.get('telegram_id')
         students = Student.objects.filter(
@@ -139,7 +132,6 @@ class logout_parent(APIView):
 
 
 class logout_student(APIView):
-    # permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
         telegram_id = request.data.get('telegram_id')
         student = Student.objects.filter(telegram_id=telegram_id).first()
@@ -152,7 +144,6 @@ class logout_student(APIView):
 
 
 class get_user_with_username_and_password(APIView):
-    # permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         telegram_id = request.data.get('telegram_id')
@@ -170,7 +161,6 @@ class get_user_with_username_and_password(APIView):
 
 
 class get_table_week_with_student_username(APIView):
-    # permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
         telegram_id = request.data.get('telegram_id')
         student = Student.objects.filter(telegram_id=telegram_id).first()
@@ -211,7 +201,6 @@ class get_table_week_with_student_username(APIView):
 
 
 class get_table_with_student_username(APIView):
-    # permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
         telegram_id = request.data.get('telegram_id')
         student = Student.objects.filter(telegram_id=telegram_id).first()
@@ -255,7 +244,6 @@ class get_table_with_student_username(APIView):
 
 
 class get_user_with_passport_number(APIView):
-    # permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         passport_number = request.data.get('passport_number')
