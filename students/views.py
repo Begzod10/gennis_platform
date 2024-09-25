@@ -74,7 +74,8 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
 
     def get(self, request, *args, **kwargs):
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
-        active_students = Student.objects.exclude(id__in=deleted_new_student_ids)
+        deleted = DeletedStudent.objects.values_list('student_id', flat=True)
+        active_students = Student.objects.exclude(id__in=deleted_new_student_ids).filter(id__in=deleted)
         active_students = self.filter_queryset(active_students)
         student_serializer = StudentListSerializer(active_students, many=True)
         return Response(student_serializer.data)
@@ -355,7 +356,6 @@ class GetMonth(APIView):
             attendance_per_month.remaining_debt = attendance_per_month.total_debt
             attendance_per_month.save()
 
-
         payment_sum = request.data['payment_sum']
         branch = request.data['branch']
 
@@ -393,7 +393,6 @@ class shahakota(APIView):
                 'price': month.remaining_debt
             }
         return Response(data)
-
 
         student = Student.objects.get(pk=student_id)
         data = json.loads(request.body)
@@ -474,4 +473,3 @@ class DeleteStudentPayment(APIView):
         attendance_per_month.save()
 
         return Response({'msg': "Success"}, status=status.HTTP_200_OK)
-

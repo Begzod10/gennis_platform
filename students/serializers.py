@@ -51,28 +51,16 @@ class StudentSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', None)
         subject_data = validated_data.pop('subject', None)
-
         if user_data:
-            user = instance.user
-            for attr, value in user_data.items():
-                if attr == 'password':
-                    user.set_password(value)
-                else:
-                    setattr(user, attr, value)
-            user.save()
-
+            user_serializer = UserSerializerWrite(instance=instance.user, data=user_data, partial=True)
+            user_serializer.is_valid(raise_exception=True)
+            user_serializer.save()
         if subject_data:
-            subjects = []
-            for subj_data in subject_data:
-                subject, created = Subject.objects.get_or_create(**subj_data)
-                subjects.append(subject)
-            instance.subject.set(subjects)
-
-        # Update other fields
+            instance.subject.set(subject_data)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-        return StudentPaymentSerializer(instance)
+        return instance
 
 
 class GroupSerializerStudents(serializers.ModelSerializer):
@@ -113,8 +101,8 @@ def get_remaining_debt_for_student(student_id):
 class StudentListSerializer(serializers.ModelSerializer):
     from classes.serializers import ClassNumberSerializers
 
-    user = UserSerializerRead(read_only=True)
-    subject = SubjectSerializer(many=True)
+    user = UserSerializerRead(required=False)
+    subject = SubjectSerializer(many=True,required=False)
     parents_number = serializers.CharField()
     shift = serializers.CharField()
     group = serializers.SerializerMethodField(required=False)
