@@ -4,6 +4,7 @@ from .Api.AttendanceDatas import AttendanceDatas, AttendanceDatasForGroup, Atten
 from .Api.AttendanceDelete import AttendanceDelete
 from .Api.AttendanceList import AttendanceList, AttendanceListForAllGroups
 from .Api.ToAttend import ToAttend, ToAttendSchool
+from .Api.attend_dates import WeekdaysInMonthAPIView
 
 urlpatterns = [
     path('to_attend/<int:group_id>/', ToAttend.as_view(), name='to-attend'),
@@ -15,4 +16,5 @@ urlpatterns = [
     path('attendance_datas_group/<int:group_id>/', AttendanceDatasForGroup.as_view(), name='attendance_datas'),
     path('attendance_datas_group_all/<int:student_id>/', AttendanceDatasForAllGroup.as_view(), name='attendance_datas'),
     path('attendance_delete/<int:group_id>/', AttendanceDelete.as_view(), name='attendance_delete'),
+    path('school-to-attend-days/', WeekdaysInMonthAPIView.as_view(), name='school-to-attend-days'),
 ]

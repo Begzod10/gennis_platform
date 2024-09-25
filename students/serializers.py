@@ -52,6 +52,8 @@ class StudentSerializer(serializers.ModelSerializer):
         user_data = validated_data.pop('user', None)
         subject_data = validated_data.pop('subject', None)
         if user_data:
+            if isinstance(user_data.get('language'), Language):
+                user_data['language'] = user_data['language'].id
             user_serializer = UserSerializerWrite(instance=instance.user, data=user_data, partial=True)
             user_serializer.is_valid(raise_exception=True)
             user_serializer.save()
