@@ -7,7 +7,7 @@ from permissions.response import CustomResponseMixin
 from students.models import DeletedStudent, StudentPayment, StudentCharity, StudentHistoryGroups, DeletedNewStudent, \
     Student
 from students.serializers import DeletedStudentSerializer, StudentPaymentSerializer, StudentCharitySerializer, \
-    StudentHistoryGroupsSerializer, StudentSerializer
+    StudentHistoryGroupsSerializer, StudentSerializer,StudentListSerializer
 
 
 class StudentCreateView(CustomResponseMixin, generics.CreateAPIView):
@@ -28,26 +28,11 @@ class StudentUpdateView(CustomResponseMixin, generics.UpdateAPIView):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-
         if getattr(instance, '_prefetched_objects_cache', None):
-            # Invalidate the prefetch cache if it was applied
             instance._prefetched_objects_cache = {}
+        other_serializer = StudentListSerializer(instance)
+        return Response(other_serializer.data, status=status.HTTP_200_OK)
 
-        return Response(serializer.data)
-
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-
-        if getattr(instance, '_prefetched_objects_cache', None):
-            # If 'prefetch_related' has been applied to a queryset, we need to
-            # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
-
-        return Response(serializer.data)
 
 
 class StudentDestroyView(generics.DestroyAPIView):

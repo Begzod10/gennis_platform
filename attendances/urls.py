@@ -16,5 +16,5 @@ urlpatterns = [
     path('attendance_datas_group/<int:group_id>/', AttendanceDatasForGroup.as_view(), name='attendance_datas'),
     path('attendance_datas_group_all/<int:student_id>/', AttendanceDatasForAllGroup.as_view(), name='attendance_datas'),
     path('attendance_delete/<int:group_id>/', AttendanceDelete.as_view(), name='attendance_delete'),
-    path('school-to-attend-days/', WeekdaysInMonthAPIView.as_view(), name='school-to-attend-days'),
+    path('school-to-attend-days/<int:group_id>/', WeekdaysInMonthAPIView.as_view(), name='school-to-attend-days'),
 ]
