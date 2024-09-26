@@ -36,7 +36,8 @@ class SubjectSerializer(serializers.ModelSerializer):
             subjects.append(subject)
             subject_ids.append(subject.id)
 
-        Subject.objects.exclude(id__in=subject_ids).filter(teacher=None, student=None, group=None).delete()
+        test =Subject.objects.exclude(id__in=subject_ids).filter(teacher=None, student=None, group=None).all()
+        print(test)
 
         return subjects
 
