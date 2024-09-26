@@ -17,6 +17,7 @@ class SubjectSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         subjects = []
+        subject_ids = []
         for data in validated_data['data']:
             try:
                 subject = Subject.objects.get(classroom_id=data['id'])
@@ -24,6 +25,7 @@ class SubjectSerializer(serializers.ModelSerializer):
                 subject.desc = data.get('desc', subject.desc)
                 subject.disabled = data.get('disabled', subject.disabled)
                 subject.save()
+                subject_ids.append(subject.id)
             except ObjectDoesNotExist:
                 subject = Subject.objects.create(
                     name=data['name'],
@@ -32,6 +34,9 @@ class SubjectSerializer(serializers.ModelSerializer):
                     classroom_id=data['id']
                 )
             subjects.append(subject)
+            subject_ids.append(subject.id)
+
+        Subject.objects.exclude(id__in=subject_ids).filter(teacher=None, student=None, group=None).delete()
 
         return subjects
 
@@ -61,7 +66,7 @@ class SubjectLevelSerializer(serializers.ModelSerializer):
             except ObjectDoesNotExist:
                 level = SubjectLevel.objects.create(
                     name=data['name'],
-                    subject= Subject.objects.get(classroom_id=data['subject']['id']),
+                    subject=Subject.objects.get(classroom_id=data['subject']['id']),
                     disabled=data.get('disabled', False),
                     desc=data.get('desc', ''),
                     classroom_id=data['id']
