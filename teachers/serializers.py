@@ -22,8 +22,9 @@ from .models import (TeacherSalaryList, TeacherSalary, TeacherSalaryType)
 class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializerWrite()
     subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)
-    teacher_salary_type = serializers.PrimaryKeyRelatedField(queryset=TeacherSalaryType.objects.all(), required=False)
-    class_type = serializers.PrimaryKeyRelatedField(queryset=ClassTypes.objects.all(), required=False)
+    teacher_salary_type = serializers.PrimaryKeyRelatedField(queryset=TeacherSalaryType.objects.all(), required=False,
+                                                             allow_null=True)
+    class_type = serializers.PrimaryKeyRelatedField(queryset=ClassTypes.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = Teacher

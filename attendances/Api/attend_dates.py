@@ -4,6 +4,7 @@ from datetime import datetime
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from attendances.models import AttendancePerDay
 from students.models import Student
 
 
@@ -20,7 +21,12 @@ class WeekdaysInMonthAPIView(APIView):
             date = datetime(year, month, day)
             if date.weekday() < 5:
                 weekdays.append(date.strftime('%d'))
-        students = Student.objects.filter(group_id=group_id)
+
+        attendances = AttendancePerDay.objects.filter(day=current_date, group=group_id).values_list('student_id',
+                                                                                                    flat=True)
+
+        students = Student.objects.filter(groups_student=group_id).exclude(id__in=attendances).all()
+
         data = []
 
         for student in students:
@@ -28,12 +34,11 @@ class WeekdaysInMonthAPIView(APIView):
                 "id": student.id,
                 "name": student.user.name,
                 "surname": student.user.surname,
-
             })
 
         return Response({
             "month": current_date.strftime('%B'),
             "year": year,
             "weekdays": weekdays,
-            "students":data
+            "students": data
         })
