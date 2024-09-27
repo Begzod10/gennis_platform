@@ -226,7 +226,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # GroupReason.objects.get_or_create(name="Kursni tamomladi")
         from subjects.models import SubjectLevel
         from subjects.serializers import SubjectLevelListSerializer
-        subjects = SubjectLevel.objects.filter(classroom_id__isnull=True).all()
+        subjects = SubjectLevel.objects.get(pk=2)
+        subjects.classroom_id =13
+        subjects.save()
+        SubjectLevel.objects.get(pk=25).delete()
+        subjects = SubjectLevel.objects.get(pk=1)
+        subjects.classroom_id = 6
+        subjects.save()
+        SubjectLevel.objects.get(pk=18).delete()
         subjects_all = SubjectLevel.objects.all()
         subjects = SubjectLevelListSerializer(subjects, many=True).data
         subjects_all =SubjectLevelListSerializer(subjects_all, many=True).data
