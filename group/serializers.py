@@ -249,7 +249,7 @@ class GroupSerializer(serializers.ModelSerializer):
         model = Group
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
                   'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system', 'class_number', 'color',
-                  'course_types']
+                  'course_types','deleted']
 
     def get_students(self, obj):
         from students.serializers import StudentListSerializer
