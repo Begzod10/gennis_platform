@@ -5,8 +5,10 @@ from group.models import Group
 from group.serializers import GroupSerializer
 
 from rest_framework.permissions import IsAuthenticated
+
+
 class ClassesView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
-    queryset = Group.objects.filter(class_number__isnull=False)
+    queryset = Group.objects.all()
     serializer_class = GroupSerializer
