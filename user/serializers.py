@@ -218,6 +218,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # subject_native_language = Subject.objects.get(name='Ona tili va Adabiyot')
         # subject_native_language.classroom_id = 3
         # subject_native_language.save()
+        from group.models import GroupReason
+        GroupReason.objects.get_or_create(name="O'qituvchi yoqmadi")
+        GroupReason.objects.get_or_create(name="Pul oilaviy sharoit")
+        GroupReason.objects.get_or_create(name="O'quvchi o'qishni eplolmadi")
+        GroupReason.objects.get_or_create(name="Boshqa")
+        GroupReason.objects.get_or_create(name="Kursni tamomladi")
 
         username = attrs.get('username')
         password = attrs.get('password')
