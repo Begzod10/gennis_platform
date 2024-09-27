@@ -77,7 +77,8 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
         deleted = DeletedStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_new_student_ids).filter(id__in=deleted)
         active_students = self.filter_queryset(active_students)
-        student_serializer = StudentListSerializer(active_students, many=True)
+        deleted_students = DeletedStudent.objects.filter(student__in=active_students)
+        student_serializer = DeletedStudentListSerializer(deleted_students, many=True)
         return Response(student_serializer.data)
 
 
