@@ -12,6 +12,7 @@ from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from permissions.models import ManySystem, ManyBranch, ManyLocation
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
+from group.models import Group as Gr
 
 
 class UserSerializerRead(serializers.ModelSerializer):
@@ -24,7 +25,7 @@ class UserSerializerRead(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
                   'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff', 'age', 'job','file']
+                  'branch', 'is_superuser', 'is_staff', 'age', 'job', 'file']
 
     def get_age(self, obj):
         return obj.calculate_age()
@@ -224,6 +225,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # GroupReason.objects.get_or_create(name="O'quvchi o'qishni eplolmadi")
         # GroupReason.objects.get_or_create(name="Boshqa")
         # GroupReason.objects.get_or_create(name="Kursni tamomladi")
+        Gr.objects.get(pk=20).update(deleted=True)
         from subjects.models import SubjectLevel
         username = attrs.get('username')
         password = attrs.get('password')
