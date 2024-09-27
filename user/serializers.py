@@ -227,8 +227,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         from subjects.models import SubjectLevel
         from subjects.serializers import SubjectLevelListSerializer
         subjects = SubjectLevel.objects.filter(classroom_id__isnull=True,flow__isnull=True).all()
+        subjects_all = SubjectLevel.objects.all()
         subjects = SubjectLevelListSerializer(subjects, many=True).data
-
+        subjects_all =SubjectLevelListSerializer(subjects_all, many=True).data
         username = attrs.get('username')
         password = attrs.get('password')
         user = CustomUser.objects.get(username=username)
@@ -242,6 +243,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 data['refresh'] = str(refresh)
                 data['access'] = str(refresh.access_token)
                 data['levels']=subjects
+                data['subjects_all']=subjects_all
 
                 return data
             else:
@@ -256,6 +258,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 data['refresh'] = str(refresh)
                 data['access'] = str(refresh.access_token)
                 data['levels']=subjects
+                data['subjects_all'] = subjects_all
 
                 return data
             else:
@@ -266,6 +269,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             data['refresh'] = str(refresh)
             data['access'] = str(refresh.access_token)
             data['levels'] = subjects
+            data['subjects_all'] = subjects_all
 
             return data
 
