@@ -25,7 +25,6 @@ class SubjectSerializer(serializers.ModelSerializer):
                 subject.desc = data.get('desc', subject.desc)
                 subject.disabled = data.get('disabled', subject.disabled)
                 subject.save()
-                subject_ids.append(data['id'])
             except ObjectDoesNotExist:
                 subject = Subject.objects.create(
                     name=data['name'],
