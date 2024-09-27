@@ -10,5 +10,5 @@ from rest_framework.permissions import IsAuthenticated
 class ClassesView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
-    queryset = Group.objects.all()
+    queryset = Group.objects.filter(class_number__isnull=False)
     serializer_class = GroupSerializer
