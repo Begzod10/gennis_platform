@@ -24,7 +24,7 @@ class UserSerializerRead(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
                   'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff', 'age', 'job','file']
+                  'branch', 'is_superuser', 'is_staff', 'age', 'job', 'file']
 
     def get_age(self, obj):
         return obj.calculate_age()
@@ -224,6 +224,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # GroupReason.objects.get_or_create(name="O'quvchi o'qishni eplolmadi")
         # GroupReason.objects.get_or_create(name="Boshqa")
         # GroupReason.objects.get_or_create(name="Kursni tamomladi")
+        from group.models import Group
+        Group.objects.filter(pk=20).update(deleted=False)
         from subjects.models import SubjectLevel
         username = attrs.get('username')
         password = attrs.get('password')
