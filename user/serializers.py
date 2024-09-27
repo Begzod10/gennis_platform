@@ -225,7 +225,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # GroupReason.objects.get_or_create(name="Boshqa")
         # GroupReason.objects.get_or_create(name="Kursni tamomladi")
         from subjects.models import SubjectLevel
-        subjects = SubjectLevel.objects.filter(classroom_id__isnull=True)
+        from subjects.serializers import SubjectLevelListSerializer
+        subjects = SubjectLevel.objects.filter(classroom_id__isnull=True,flow__isnull=True).all()
+        subjects = SubjectLevelListSerializer(subjects, many=True).data
 
         username = attrs.get('username')
         password = attrs.get('password')
@@ -239,6 +241,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 refresh = self.get_token(self.user)
                 data['refresh'] = str(refresh)
                 data['access'] = str(refresh.access_token)
+                data['levels']=subjects
+
                 return data
             else:
                 raise AuthenticationFailed("No active account found with the given credentials")
@@ -251,6 +255,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 refresh = self.get_token(self.user)
                 data['refresh'] = str(refresh)
                 data['access'] = str(refresh.access_token)
+                data['levels']=subjects
 
                 return data
             else:
@@ -260,6 +265,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             refresh = self.get_token(self.user)
             data['refresh'] = str(refresh)
             data['access'] = str(refresh.access_token)
+            data['levels'] = subjects
+
             return data
 
 
