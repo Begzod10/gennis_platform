@@ -17,7 +17,7 @@ from .functions.flowClasses import flow_classes
 class FlowCreateUpdateSerializer(serializers.ModelSerializer):
     update_type = serializers.CharField(default=None, allow_blank=True)
     subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())
-    teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
+    teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all(),required=False,allow_null=True)
     students = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), many=True)
     level = serializers.PrimaryKeyRelatedField(queryset=SubjectLevel.objects.all(), allow_null=True, required=False)
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())

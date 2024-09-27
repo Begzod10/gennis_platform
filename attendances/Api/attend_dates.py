@@ -4,7 +4,7 @@ from datetime import datetime
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from attendances.models import AttendancePerDay
+from attendances.models import AttendancePerDay, Group
 from students.models import Student
 
 
@@ -38,7 +38,36 @@ class WeekdaysInMonthAPIView(APIView):
 
         return Response({
             "month": current_date.strftime('%B'),
+            'month_number': current_date.strftime('%m'),
             "year": year,
             "weekdays": weekdays,
-            "students": data
+            "students": data,
+            'teachers': Group.objects.get(pk=group_id).teacher.first().id
+
+        })
+
+    def post(self, request, group_id):
+        date = request.data.get('date')
+        today = datetime.today()
+        day = datetime.strptime(f"{today.year}-{date}", "%Y-%m-%d")
+
+        attendances = AttendancePerDay.objects.filter(day=day, group=group_id).values_list('student_id',
+                                                                                            flat=True)
+
+        students = Student.objects.filter(groups_student=group_id).exclude(id__in=attendances).all()
+
+        data = []
+
+        for student in students:
+            data.append({
+                "id": student.id,
+                "name": student.user.name,
+                "surname": student.user.surname,
+            })
+
+        return Response({
+            'date': date,
+            "students": data,
+            'teachers': Group.objects.get(pk=group_id).teacher.first().id
+
         })
