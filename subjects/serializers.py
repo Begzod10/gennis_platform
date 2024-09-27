@@ -25,7 +25,7 @@ class SubjectSerializer(serializers.ModelSerializer):
                 subject.desc = data.get('desc', subject.desc)
                 subject.disabled = data.get('disabled', subject.disabled)
                 subject.save()
-                subject_ids.append(subject.classroom_id)
+                subject_ids.append(data['id'])
             except ObjectDoesNotExist:
                 subject = Subject.objects.create(
                     name=data['name'],
@@ -34,7 +34,7 @@ class SubjectSerializer(serializers.ModelSerializer):
                     classroom_id=data['id']
                 )
             subjects.append(subject)
-            subject_ids.append(subject.classroom_id)
+            subject_ids.append(data['id'])
         print(subject_ids)
         print("filter", Subject.objects.exclude(classroom_id__in=subject_ids).all())
         test = Subject.objects.exclude(classroom_id__in=subject_ids).filter(teacher=None, student=None,
