@@ -31,6 +31,14 @@ class TeacherSerializer(serializers.ModelSerializer):
         fields = ['user', 'subject', 'color', 'total_students', 'id', 'teacher_salary_type', 'salary_percentage',
                   'class_type']
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['subject'] = [{
+            'id': subject.id,
+            'name': subject.name
+        } for subject in instance.subject.all()]
+
+        return representation
     def create(self, validated_data):
         user_data = validated_data.pop('user')
         subject_data = validated_data.pop('subject')
@@ -43,13 +51,15 @@ class TeacherSerializer(serializers.ModelSerializer):
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
         teacher = Teacher.objects.create(user=user, **validated_data)
-        teacher.subject.set(subject_data)
+        teacher.subject.add(subject_data)
         branch = Branch.objects.get(pk=user_data['branch'])
         teacher.branches.add(branch)
         return teacher
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', None)
+        subject_data = validated_data.pop('subject')
+
         if user_data:
             user = instance.user
             for attr, value in user_data.items():
@@ -58,11 +68,21 @@ class TeacherSerializer(serializers.ModelSerializer):
                 else:
                     setattr(user, attr, value)
             user.save()
+        instance.subject.clear()
+        subjects_info = []
+        for subject in subject_data:
+            instance.subject.add(subject)
+            subjects_info.append({
+                'id': subject.id,
+                'name': subject.name
+            })
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
 
 
 class TeacherAttendanceSerializers(serializers.ModelSerializer):

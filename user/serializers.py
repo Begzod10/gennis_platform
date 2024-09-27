@@ -224,6 +224,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # GroupReason.objects.get_or_create(name="O'quvchi o'qishni eplolmadi")
         # GroupReason.objects.get_or_create(name="Boshqa")
         # GroupReason.objects.get_or_create(name="Kursni tamomladi")
+        from subjects.models import SubjectLevel
+        subjects = SubjectLevel.objects.filter(classroom_id__isnull=True)
 
         username = attrs.get('username')
         password = attrs.get('password')
