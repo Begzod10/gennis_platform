@@ -224,9 +224,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # GroupReason.objects.get_or_create(name="O'quvchi o'qishni eplolmadi")
         # GroupReason.objects.get_or_create(name="Boshqa")
         # GroupReason.objects.get_or_create(name="Kursni tamomladi")
-        from group.models import Group
-        Group.objects.filter(pk=20).update(deleted=False)
-        from subjects.models import SubjectLevel
+        from rooms.models import Room
+        Room.objects.get(name='1-xona').update(deleted=False)
+
+        # from group.models import Group
+        # Group.objects.filter(pk=20).update(deleted=False)
+        # from subjects.models import SubjectLevel
         username = attrs.get('username')
         password = attrs.get('password')
         user = CustomUser.objects.get(username=username)
