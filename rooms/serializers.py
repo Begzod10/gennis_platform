@@ -23,7 +23,7 @@ class RoomGetSerializer(serializers.ModelSerializer):
 
     def get_can_delete(self, obj):
         status = None
-        if obj.class_time_table:
+        if obj.classtimetable_set.exists():
             status = True
         else:
             status = False
