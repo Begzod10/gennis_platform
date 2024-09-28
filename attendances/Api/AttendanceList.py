@@ -92,3 +92,37 @@ class AttendanceListForAllGroups(APIView):
 
         attendances_json = self.get_attendances_json(groups, month_date, student_id)
         return Response({'students': attendances_json})
+
+
+class AttendanceListSchool(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_attendances_json(self, group, month_date):
+        attendances = AttendancePerDay.objects.filter(group=group, day__month=month_date.month).distinct()
+
+        days = sorted(set(attendance.day.day for attendance in attendances))
+        attendances_json = {day: [] for day in days}
+
+        for attendance in attendances:
+            day = attendance.day.day
+            attendances_json[day].append({
+                'status': attendance.status,
+                'name': attendance.student.user.name,
+                'surname': attendance.student.user.surname
+            })
+
+        return attendances_json
+
+    def post(self, request, group_id):
+        data = json.loads(request.body)
+        month_date = datetime(data['year'], data['month'], 1)
+        group = Group.objects.get(pk=group_id)
+        attendances_json = self.get_attendances_json(group, month_date)
+        return Response({'students': attendances_json})
+
+    def get(self, request, group_id):
+        today = datetime.today()
+        month_date = datetime(today.year, today.month, 1)
+        group = Group.objects.get(pk=group_id)
+        attendances_json = self.get_attendances_json(group, month_date)
+        return Response({'students': attendances_json})

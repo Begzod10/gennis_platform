@@ -235,7 +235,8 @@ class AttendancePerDayCreateUpdateSerializerSchool(serializers.ModelSerializer):
                     teacher=teacher,
                     group=group,
                     student=student_data,
-                    day=day
+                    day=day,
+                    status=student['status']
                 )
                 created_instances.append(attendance)
 
