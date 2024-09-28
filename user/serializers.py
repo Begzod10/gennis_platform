@@ -224,8 +224,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # GroupReason.objects.get_or_create(name="O'quvchi o'qishni eplolmadi")
         # GroupReason.objects.get_or_create(name="Boshqa")
         # GroupReason.objects.get_or_create(name="Kursni tamomladi")
-        from rooms.models import Room
-        Room.objects.filter(classtimetable__isnull=False, deleted=True).update(deleted=False)
+        # from rooms.models import Room
+        # Room.objects.filter(classtimetable__isnull=False, deleted=True).update(deleted=False)
 
         # from group.models import Group
         # Group.objects.filter(pk=20).update(deleted=False)
