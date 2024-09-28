@@ -19,7 +19,7 @@ class RoomGetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Room
-        fields = ['id', 'name', 'seats_number', 'electronic_board', 'deleted', 'branch']
+        fields = ['id', 'name', 'seats_number', 'electronic_board', 'deleted', 'branch','can_delete']
 
     def get_can_delete(self, obj):
         status = None
