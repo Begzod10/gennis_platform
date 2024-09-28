@@ -55,6 +55,7 @@ class SubjectLevelSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         levels = []
+        subject_ids = []
         for data in validated_data['data']:
             try:
                 level = SubjectLevel.objects.get(classroom_id=data['id'])
@@ -72,6 +73,9 @@ class SubjectLevelSerializer(serializers.ModelSerializer):
                     classroom_id=data['id']
                 )
             levels.append(level)
+            subject_ids.append(data['id'])
+            test = SubjectLevel.objects.exclude(classroom_id__in=subject_ids).filter(flow=None,
+                                                                                     group=None).delete()
 
         return levels
 
