@@ -72,7 +72,7 @@ class ExcelData(APIView):
             sheet[f"L{row_num}"] = f"{student.parent_seria_num}"  # Яшаш манзили
             sheet[f"M{row_num}"] = f"{student.born_date}"  # Яшаш манзили
             sheet[f"N{row_num}"] = f"{student.parents_number}"
-            sheet[f"T{row_num}"] = f"{student.class_number}"
+            sheet[f"O{row_num}"] = f"{student.class_number}"
 
         buffer = BytesIO()
         workbook.save(buffer)
