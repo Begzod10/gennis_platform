@@ -72,6 +72,7 @@ class ExcelData(APIView):
             sheet[f"L{row_num}"] = f"{student.parent_seria_num}"  # Яшаш манзили
             sheet[f"M{row_num}"] = f"{student.born_date}"  # Яшаш манзили
             sheet[f"N{row_num}"] = f"{student.parents_number}"
+            sheet[f"T{row_num}"] = f"{student.class_number}"
 
         buffer = BytesIO()
         workbook.save(buffer)
@@ -113,5 +114,6 @@ class ExcelDataList(APIView):
                 "parent_seria_num": student.parent_seria_num,  # Яшаш манзили
                 "parents_born_date": student.born_date,  # Яшаш манзили
                 "parents_number": student.parents_number,
+                "class_number": student.class_number
             })
         return Response(data)
