@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 from datetime import datetime
 
 from rest_framework.permissions import IsAuthenticated
@@ -99,17 +100,52 @@ class AttendanceListSchool(APIView):
 
     def get_attendances_json(self, group, month_date):
         attendances = AttendancePerDay.objects.filter(group=group, day__month=month_date.month).distinct()
+        year_month_data = defaultdict(set)
+        attendance_data = AttendancePerDay.objects.filter(group=group).order_by('day').distinct()
+        for attendance in attendance_data:
+            year = attendance.day.year
+            month = attendance.day.month
+            year_month_data[year].add(month)
+        year_month_result = [
+            {
+                'year': year,
+                'month': sorted(list(months))
+            } for year, months in year_month_data.items()
+        ]
 
         days = sorted(set(attendance.day.day for attendance in attendances))
-        attendances_json = {day: [] for day in days}
+        attendances_json = {
+            'students': [],
+            'days': days,
+            "years": year_month_result
 
-        for attendance in attendances:
-            day = attendance.day.day
-            attendances_json[day].append({
-                'status': attendance.status,
-                'name': attendance.student.user.name,
-                'surname': attendance.student.user.surname
-            })
+        }
+
+        for student in group.students.all():
+            student_data = {
+                'name': student.user.name,
+                'surname': student.user.surname,
+                'days': []
+            }
+
+            attendances_student = AttendancePerDay.objects.filter(group=group, student=student,
+                                                                  day__month=month_date.month).order_by(
+                'day').distinct()
+            for i in days:
+                attendance = attendances_student.filter(day__day=i).first()
+
+                if attendance:
+                    student_data['days'].append({
+                        'status': attendance.status,
+                        'day': i
+                    })
+                else:
+                    student_data['days'].append({
+                        'status': '',
+                        'day': i
+                    })
+
+            attendances_json['students'].append(student_data)
 
         return attendances_json
 

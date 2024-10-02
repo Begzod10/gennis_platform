@@ -42,6 +42,7 @@ class TeacherSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user_data = validated_data.pop('user')
         subject_data = validated_data.pop('subject')
+
         if isinstance(user_data.get('language'), Language):
             user_data['language'] = user_data['language'].id
         if isinstance(user_data.get('branch'), Branch):
@@ -51,7 +52,8 @@ class TeacherSerializer(serializers.ModelSerializer):
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
         teacher = Teacher.objects.create(user=user, **validated_data)
-        teacher.subject.add(subject_data)
+        for subject in subject_data:
+            teacher.subject.add(subject)
         branch = Branch.objects.get(pk=user_data['branch'])
         teacher.branches.add(branch)
         return teacher
