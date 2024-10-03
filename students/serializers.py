@@ -154,16 +154,15 @@ class StudentListSerializer(serializers.ModelSerializer):
         return contract_list
 
     def get_attendance_per_month(self, obj):
-        from attendances.models import AttendancePerMonth
-        from collections import defaultdict
-        monthly_attendance = defaultdict(int)
-        attendance_records = AttendancePerMonth.objects.filter(student=obj)
+        current_date = date.today()
+        remaining_debt_sum = AttendancePerMonth.objects.filter(
+            student=obj,
+            month_date__lte=current_date
+        ).aggregate(total_remaining_debt=Sum('remaining_debt'))
 
-        for record in attendance_records:
-            month = record.month_date.strftime("%Y-%m")
-            monthly_attendance[month] += 1
+        total_remaining_debt = remaining_debt_sum['total_remaining_debt'] or 0
 
-        return dict(monthly_attendance)
+        return total_remaining_debt
 
 
 class StudentHistoryGroupsSerializer(serializers.ModelSerializer):
