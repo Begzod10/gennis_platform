@@ -124,7 +124,8 @@ class StudentListSerializer(serializers.ModelSerializer):
 
     def get_attendances(self, obj):
         from attendances.serializers import AttendancePerMonthSerializer
-        return AttendancePerMonthSerializer(obj.attendances).data
+        attendances = AttendancePerMonth.objects.filter(student_id=obj.id).all()
+        return AttendancePerMonthSerializer(attendances, many=True).data
 
     def get_color(self, obj):
         color = ''
