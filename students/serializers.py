@@ -103,8 +103,6 @@ def get_remaining_debt_for_student(student_id):
 
 class StudentListSerializer(serializers.ModelSerializer):
     from classes.serializers import ClassNumberSerializers
-    attendances = serializers.SerializerMethodField()
-
     user = UserSerializerRead(required=False)
     subject = SubjectSerializer(many=True, required=False)
     parents_number = serializers.CharField()
@@ -122,10 +120,6 @@ class StudentListSerializer(serializers.ModelSerializer):
     def get_group(self, obj):
         return [GroupSerializerStudents(group).data for group in obj.groups_student.all()]
 
-    def get_attendances(self, obj):
-        from attendances.serializers import AttendancePerMonthSerializer
-        attendances = AttendancePerMonth.objects.filter(student_id=obj.id).all()
-        return AttendancePerMonthSerializer(attendances, many=True).data
 
     def get_color(self, obj):
         color = ''
