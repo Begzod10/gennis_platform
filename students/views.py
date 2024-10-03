@@ -99,10 +99,9 @@ class NewRegisteredStudents(QueryParamFilterMixin, APIView):
         excluded_ids = list(DeletedStudent.objects.values_list('student_id', flat=True)) + \
                        list(DeletedNewStudent.objects.values_list('student_id', flat=True))
 
-        active_students = Student.objects.select_related('user').filter(
+        active_students = Student.objects.filter(
             ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
         ).distinct()
-
         filtered_students = self.filter_queryset(active_students)
         search_filter = filters.SearchFilter()
         filtered_students = search_filter.filter_queryset(request, filtered_students, self)
@@ -121,7 +120,8 @@ class ActiveStudents(QueryParamFilterMixin, APIView):
     }
 
     def get(self, request, *args, **kwasrgs):
-        deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True).values_list('student_id', flat=True)
+        deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True).values_list(
+            'student_id', flat=True)
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_student_ids) \
             .exclude(id__in=deleted_new_student_ids) \
