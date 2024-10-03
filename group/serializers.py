@@ -178,7 +178,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                 month_date__lte=month_date,
                                 payment=0)
                             for attendance in attendances_per_month2:
-                                if attendance.group != instance:
+                                if attendance.group == instance:
                                     attendance.delete()
                             instance.students.remove(student)
                             DeletedStudent.objects.create(student=student, group=instance,
