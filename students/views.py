@@ -12,7 +12,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from rest_framework.generics import ListAPIView
 from attendances.models import AttendancePerMonth
 from branch.models import Branch
 from permissions.response import QueryParamFilterMixin
@@ -82,8 +82,10 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
         return Response(student_serializer.data)
 
 
-class NewRegisteredStudents(QueryParamFilterMixin, APIView):
+class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = StudentListSerializer
+    queryset = Student.objects.filter(groups_student__isnull=True).distinct()
 
     filter_mappings = {
         'branch': 'user__branch_id',
@@ -95,20 +97,13 @@ class NewRegisteredStudents(QueryParamFilterMixin, APIView):
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__name', 'user__surname', 'user__username']
 
-    def get(self, request, *args, **kwargs):
+    def get_queryset(self):
         excluded_ids = list(DeletedStudent.objects.values_list('student_id', flat=True)) + \
                        list(DeletedNewStudent.objects.values_list('student_id', flat=True))
 
-        active_students = Student.objects.filter(
+        return Student.objects.filter(
             ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
         ).distinct()
-        filtered_students = self.filter_queryset(active_students)
-        search_filter = filters.SearchFilter()
-        filtered_students = search_filter.filter_queryset(request, filtered_students, self)
-
-        student_serializer = StudentListSerializer(filtered_students, many=True)
-
-        return Response(student_serializer.data)
 
 
 class ActiveStudents(QueryParamFilterMixin, APIView):
