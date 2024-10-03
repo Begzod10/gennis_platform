@@ -231,7 +231,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Group.objects.filter(pk=20).update(deleted=False)
         # from subjects.models import SubjectLevel
         from attendances.models import AttendancePerMonth
-        AttendancePerMonth.objects.filter(student_id=74).exclude(
+        AttendancePerMonth.objects.filter(student_id=73).exclude(
             group_id=8).delete()
         username = attrs.get('username')
         password = attrs.get('password')
