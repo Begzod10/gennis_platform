@@ -119,7 +119,7 @@ class ActiveStudents(QueryParamFilterMixin, APIView):
         'language': 'user__language_id',
     }
 
-    def get(self, request, *args, **kwasrgs):
+    def get(self, request, *args, **kwargs):
         deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True).values_list(
             'student_id', flat=True)
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
