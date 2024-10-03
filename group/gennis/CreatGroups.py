@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -7,6 +8,7 @@ from group.serializers import GroupSerializer, GroupReasonSerializers, CourseTyp
     GroupCreateUpdateSerializer
 from permissions.response import QueryParamFilterMixin
 from time_table.functions.time_table_archive import creat_time_table_archive
+
 
 class CreateCourseTypesList(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -50,7 +52,17 @@ class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
     serializer_class = GroupCreateUpdateSerializer
 
     def get_queryset(self):
+        branch = self.request.query_params.get('branch')
         queryset = Group.objects.filter(deleted=False).all()
+        if branch is not None:
+            try:
+                from branch.models import Branch
+                branch_obj = Branch.objects.get(id=branch)
+                if branch_obj.location.system.name == 'school':
+                    queryset = queryset.order_by('class_number')
+
+            except ObjectDoesNotExist:
+                queryset = Group.objects.none()
         queryset = self.filter_queryset(queryset)
         return queryset
 
