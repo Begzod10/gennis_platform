@@ -125,7 +125,7 @@ class ActiveStudents(QueryParamFilterMixin, APIView):
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_student_ids) \
             .exclude(id__in=deleted_new_student_ids) \
-            .filter(groups_student__isnull=False).distinct()
+            .filter(groups_student__isnull=False).distinct().select_related('user', 'user__branch', 'user__branch__location', 'user__branch__location__system').prefetch_related('groups_student', 'groups_student__teacher', 'groups_student__teacher__teacher_black_salary')
 
         active_students = self.filter_queryset(active_students)
 
