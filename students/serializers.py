@@ -160,7 +160,7 @@ class StudentListSerializer(serializers.ModelSerializer):
         attendance_records = AttendancePerMonth.objects.filter(student=obj)
 
         for record in attendance_records:
-            month = record.date.strftime("%Y-%m")
+            month = record.month_date.strftime("%Y-%m")
             monthly_attendance[month] += 1
 
         return dict(monthly_attendance)
