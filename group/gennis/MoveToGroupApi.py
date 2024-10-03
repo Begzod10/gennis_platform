@@ -43,6 +43,13 @@ class MoveToGroupApi(APIView):
                 student_history_group.save()
                 group.students.remove(student)
                 to_group.students.add(student)
+                attendances_per_month = student.attendancepermonth_set.filter(group=group,
+                                                                              student=student,
+                                                                              month_date__gte=today.strftime("%Y-%m-%d"),
+                                                                              payment=0)
+                for attendance in attendances_per_month:
+                    attendance.group = to_group
+                    attendance.save()
                 StudentHistoryGroups.objects.create(group=to_group, student=student,
                                                     teacher=to_group.teacher.all()[0],
                                                     joined_day=today)

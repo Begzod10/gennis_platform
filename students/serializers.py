@@ -345,16 +345,16 @@ class DeletedStudentSerializer(serializers.ModelSerializer):
                                                                       group_reason=validated_data.get(
                                                                           'group_reason'))
         if teacher_group_statistics:
-            deleted_students_number = len(DeletedStudent.objects.get(teacher=validated_data.get('teacher')).all()) / 100
+            deleted_students_number = len(DeletedStudent.objects.get(teacher=validated_data.get('teacher'),deleted=False).all()) / 100
 
             number_students = len(DeletedStudent.objects.get(reason=validated_data.get('group_reason'),
-                                                             teacher=validated_data.get('teacher')).all())
+                                                             teacher=validated_data.get('teacher'),deleted=False).all())
             percentage = deleted_students_number * number_students
             teacher_group_statistics.number_students = number_students
             teacher_group_statistics.percentage = percentage
             teacher_group_statistics.save()
         else:
-            deleted_students_number = len(DeletedStudent.objects.get(teacher=validated_data.get('teacher')).all()) / 100
+            deleted_students_number = len(DeletedStudent.objects.get(teacher=validated_data.get('teacher'),deleted=False).all()) / 100
 
             number_students = 1
             percentage = deleted_students_number * number_students

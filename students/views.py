@@ -24,13 +24,13 @@ from .serializers import (StudentListSerializer,
 
 class StudentListView(APIView):
     def get(self, request, *args, **kwargs):
-        deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
+        deleted_student_ids = DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_student_ids).exclude(id__in=deleted_new_student_ids)[
                           :100]
         student_serializer = StudentListSerializer(active_students, many=True)
 
-        deleted_students = DeletedStudent.objects.all()
+        deleted_students = DeletedStudent.objects.filter(deleted=False).all()
         deleted_student_serializer = DeletedStudentListSerializer(deleted_students, many=True)
         delete_new_students = DeletedNewStudent.objects.exclude(id__in=deleted_student_ids)
         delete_new_student_serializer = DeletedNewStudentListSerializer(delete_new_students, many=True)
@@ -74,10 +74,10 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
 
     def get(self, request, *args, **kwargs):
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
-        deleted = DeletedStudent.objects.values_list('student_id', flat=True)
+        deleted = DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_new_student_ids).filter(id__in=deleted)
         active_students = self.filter_queryset(active_students)
-        deleted_students = DeletedStudent.objects.filter(student__in=active_students)
+        deleted_students = DeletedStudent.objects.filter(student__in=active_students,deleted=False)
         student_serializer = DeletedStudentListSerializer(deleted_students, many=True)
         return Response(student_serializer.data)
 
@@ -98,7 +98,7 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     search_fields = ['user__name', 'user__surname', 'user__username']
 
     def get_queryset(self):
-        excluded_ids = list(DeletedStudent.objects.values_list('student_id', flat=True)) + \
+        excluded_ids = list(DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
                        list(DeletedNewStudent.objects.values_list('student_id', flat=True))
 
         return Student.objects.filter(
@@ -115,7 +115,7 @@ class ActiveStudents(QueryParamFilterMixin, APIView):
     }
 
     def get(self, request, *args, **kwargs):
-        deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True).values_list(
+        deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True,deleted=False).values_list(
             'student_id', flat=True)
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_student_ids) \
@@ -469,3 +469,10 @@ class DeleteStudentPayment(APIView):
         attendance_per_month.save()
 
         return Response({'msg': "Success"}, status=status.HTTP_200_OK)
+class DeleteFromDeleted(APIView):
+    def delete(self,request,pk):
+        deleted = DeletedStudent.objects.filter(student_id=pk).all()
+        for i in deleted:
+            i.deleted=True
+            i.save()
+        return  Response({'msg': "Student muvoffaqiyatlik orqaga qaytarildi"}, status=status.HTTP_200_OK)

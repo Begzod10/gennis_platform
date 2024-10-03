@@ -91,6 +91,7 @@ class DeletedStudent(models.Model):
     deleted_date = models.DateField(auto_now_add=True)
     old_id = models.IntegerField(unique=True, null=True)
     comment = models.CharField(max_length=255, null=True)
+    deleted = models.BooleanField(default=False)
 
 
 class ContractStudent(models.Model):

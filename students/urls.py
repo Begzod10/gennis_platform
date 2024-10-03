@@ -12,7 +12,7 @@ from .Api.get import StudentCharityAPIView, StudentPaymentAPIView, StudentHistor
 from .excel import ExcelData,ExcelDataList
 from .views import (CreateContractView, UploadPDFContractView, StudentListView, DeletedFromRegistered,
                     DeletedGroupStudents, NewRegisteredStudents, ActiveStudents, PaymentDatas, GetMonth, shahakota,
-                    DeleteStudentPayment
+                    DeleteStudentPayment,DeleteFromDeleted
                     )
 
 app_name = 'Students'
@@ -64,5 +64,6 @@ urlpatterns = [
     path('student_payment_delete_for_month/<int:pk>/', DeleteStudentPayment.as_view(), name='student-payment-delete'),
     path('export-students/', ExcelData.as_view(), name='export_students_excel'),
     path('student-school-list/', ExcelDataList.as_view(), name='export_students_excel'),
+    path('delete-student-from-deleted/<int:pk>/',DeleteFromDeleted.as_view())
 
 ]

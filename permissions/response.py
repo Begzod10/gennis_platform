@@ -176,7 +176,7 @@ class GetModelsMixin:
     def get_student_data(self, branch, type_name, branch_data, model):
         from students.models import DeletedStudent, DeletedNewStudent, Student
         if model == 'Students':
-            deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
+            deleted_student_ids = DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
             deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
 
             if type_name == 'new_students':

@@ -159,5 +159,5 @@ class StudentPaymentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
 class DeletedStudentDestroy(CustomResponseMixin, generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
-    queryset = DeletedStudent.objects.all()
+    queryset = DeletedStudent.objects.filter(deleted=False).all()
     serializer_class = DeletedStudentSerializer
