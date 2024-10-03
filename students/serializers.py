@@ -97,6 +97,13 @@ def get_remaining_debt_for_student(student_id):
     ).aggregate(total_remaining_debt=Sum('remaining_debt'))
 
     total_remaining_debt = remaining_debt_sum['total_remaining_debt'] or 0
+    if total_remaining_debt <= 0:
+        remaining_debt_sum = AttendancePerMonth.objects.filter(
+            student_id=student_id,
+            month_date__lte=current_date
+        ).aggregate(total_remaining_debt=Sum('total_debt'))
+
+        total_remaining_debt = remaining_debt_sum['total_remaining_debt'] or 0
 
     return total_remaining_debt
 
@@ -112,7 +119,6 @@ class StudentListSerializer(serializers.ModelSerializer):
     color = serializers.SerializerMethodField(required=False)
     debt = serializers.SerializerMethodField(required=False)
     class_number = ClassNumberSerializers()
-    attendance_per_month = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Student
@@ -120,7 +126,6 @@ class StudentListSerializer(serializers.ModelSerializer):
 
     def get_group(self, obj):
         return [GroupSerializerStudents(group).data for group in obj.groups_student.all()]
-
 
     def get_color(self, obj):
         color = ''
@@ -152,17 +157,6 @@ class StudentListSerializer(serializers.ModelSerializer):
         else:
             contract_list = []
         return contract_list
-
-    def get_attendance_per_month(self, obj):
-        current_date = date.today()
-        remaining_debt_sum = AttendancePerMonth.objects.filter(
-            student=obj,
-            month_date__lte=current_date
-        ).aggregate(total_remaining_debt=Sum('remaining_debt'))
-
-        total_remaining_debt = remaining_debt_sum['total_remaining_debt']
-
-        return total_remaining_debt
 
 
 class StudentHistoryGroupsSerializer(serializers.ModelSerializer):
