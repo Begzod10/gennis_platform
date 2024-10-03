@@ -140,7 +140,7 @@ class StudentListSerializer(serializers.ModelSerializer):
             for group in groups:
                 for i in group.teacher.all():
                     for salary in i.teacher_black_salary.filter(student_id=obj.id).all():
-                        debt += salary.black_salary if salary.black_salary else 0
+                        debt += salary.black_salary if salary.black_salary else 1213233
 
         return debt
 
