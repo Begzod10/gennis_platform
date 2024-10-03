@@ -112,6 +112,7 @@ class StudentListSerializer(serializers.ModelSerializer):
     color = serializers.SerializerMethodField(required=False)
     debt = serializers.SerializerMethodField(required=False)
     class_number = ClassNumberSerializers()
+    attendance_per_month = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Student
@@ -151,6 +152,18 @@ class StudentListSerializer(serializers.ModelSerializer):
         else:
             contract_list = []
         return contract_list
+
+    def get_attendance_per_month(self, obj):
+        from attendances.models import AttendancePerMonth
+        from collections import defaultdict
+        monthly_attendance = defaultdict(int)
+        attendance_records = AttendancePerMonth.objects.filter(student=obj)
+
+        for record in attendance_records:
+            month = record.date.strftime("%Y-%m")
+            monthly_attendance[month] += 1
+
+        return dict(monthly_attendance)
 
 
 class StudentHistoryGroupsSerializer(serializers.ModelSerializer):
