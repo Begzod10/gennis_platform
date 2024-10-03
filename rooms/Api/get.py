@@ -19,11 +19,11 @@ class RoomListView(QueryParamFilterMixin, generics.ListAPIView):
         'deleted': 'deleted'
 
     }
-    queryset = Room.objects.all()
+    queryset = Room.objects.all().order_by('id')
     serializer_class = RoomGetSerializer
 
     def get(self, request, *args, **kwargs):
-        queryset = Room.objects.all()
+        queryset = Room.objects.all().order_by('id')
 
         querysets = self.filter_queryset(queryset)
         serializer = RoomGetSerializer(querysets, many=True)
