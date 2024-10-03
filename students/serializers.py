@@ -134,13 +134,13 @@ class StudentListSerializer(serializers.ModelSerializer):
     def get_debt(self, obj):
         debt = 0
         if obj.user.branch.location.system.name == 'school':
-            debt =546
+            debt = get_remaining_debt_for_student(obj.id)
         else:
             groups = obj.groups_student.all()
             for group in groups:
                 for i in group.teacher.all():
                     for salary in i.teacher_black_salary.filter(student_id=obj.id).all():
-                        debt += salary.black_salary if salary.black_salary else 1213233
+                        debt += salary.black_salary if salary.black_salary else 0
 
         return debt
 
