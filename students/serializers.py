@@ -134,7 +134,7 @@ class StudentListSerializer(serializers.ModelSerializer):
     def get_debt(self, obj):
         debt = 0
         if obj.user.branch.location.system.name == 'school':
-            debt = get_remaining_debt_for_student(obj.id)
+            debt =546
         else:
             groups = obj.groups_student.all()
             for group in groups:
