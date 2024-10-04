@@ -25,7 +25,7 @@ class HoursSerializers(serializers.ModelSerializer):
         fields = ['id', 'start_time', 'end_time', 'name', 'order', 'can_delete']
 
     def get_can_delete(self, obj):
-        if obj.time_table_set.exists():
+        if obj.classtimetable_set.exists():
             return False
         else:
             return True
