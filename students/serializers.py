@@ -225,7 +225,7 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentPayment
         fields = ['student', 'payment_type', 'payment_sum', 'status', 'branch', 'name', 'surname', 'added_data',
-                  'payment_type_name']
+                  'payment_type_name','date']
 
     def get_name(self, obj):
         return obj.student.user.name
