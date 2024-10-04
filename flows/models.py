@@ -13,8 +13,8 @@ class FlowTypes(models.Model):
 class Flow(models.Model):
     name = models.CharField()
     # flow_type = models.ForeignKey(FlowTypes, on_delete=models.CASCADE)
-    subject = models.ForeignKey('subjects.Subject', on_delete=models.CASCADE)
-    teacher = models.ForeignKey('teachers.Teacher', on_delete=models.CASCADE)
+    subject = models.ForeignKey('subjects.Subject', on_delete=models.CASCADE,null=True,blank=True)
+    teacher = models.ForeignKey('teachers.Teacher', on_delete=models.CASCADE,null=True,blank=True)
     students = models.ManyToManyField('students.Student')
     desc = models.CharField(null=True)
     activity = models.BooleanField(default=False)
