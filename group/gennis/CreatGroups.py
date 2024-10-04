@@ -59,7 +59,7 @@ class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
                 from branch.models import Branch
                 branch_obj = Branch.objects.get(id=branch)
                 if branch_obj.location.system.name == 'school':
-                    queryset = queryset.order_by('class_number')
+                    queryset = queryset.order_by('class_number__number')
 
             except ObjectDoesNotExist:
                 queryset = Group.objects.none()
