@@ -293,7 +293,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
         branch = self.context['branch']
         hours = Hours.objects.all().order_by('order')
         time_tables = []
-        groups = Group.objects.filter(branch=branch, deleted=False).all()
+        groups = Group.objects.filter(branch=branch, deleted=False).all().order_by('class_number__number')
         for group in groups:
             info = {
                 'id': group.id,
