@@ -100,7 +100,7 @@ def get_remaining_debt_for_student(student_id):
         student_id=student_id,
         month_date__lte=current_date
     ).aggregate(total_remaining_debt=Sum('remaining_debt'))
-    total_remaining_debt = remaining_debt_sum['total_remaining_debt'] or 0
+    total_remaining_debt = f"-{remaining_debt_sum}" or 0
     if total_remaining_debt == 0:
         remaining_debt_sum = AttendancePerMonth.objects.filter(
             student_id=student_id,
@@ -108,7 +108,7 @@ def get_remaining_debt_for_student(student_id):
         ).aggregate(total_remaining_debt=Sum('payment'))
 
         total_remaining_debt = remaining_debt_sum['total_remaining_debt'] or 0
-    return f"-{total_remaining_debt}" if total_remaining_debt > 0 else "0"
+    return f"{total_remaining_debt}" if total_remaining_debt > 0 else "0"
 
 
 class StudentListSerializer(serializers.ModelSerializer):
