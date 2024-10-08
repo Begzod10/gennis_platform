@@ -196,6 +196,7 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
 class StudentDetailSchoolSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     status = serializers.BooleanField()
+    reason = serializers.CharField(required=False,allow_null=True,allow_blank=True)
 
 
 class AttendancePerDayCreateUpdateSerializerSchool(serializers.ModelSerializer):
@@ -227,17 +228,19 @@ class AttendancePerDayCreateUpdateSerializerSchool(serializers.ModelSerializer):
             try:
                 AttendancePerDay.objects.get(group_id=group.id, teacher=teacher, day=day, student_id=student['id'])
                 errors.append(
-                    {'msg': f'Attendance already exists for {student_data.user.name} {student_data.user.surname} on this day.'}
+                    {
+                        'msg': f'Attendance already exists for {student_data.user.name} {student_data.user.surname} on this day.'}
                 )
             except AttendancePerDay.DoesNotExist:
-                # Create the attendance record if it doesn't already exist
                 attendance = AttendancePerDay.objects.create(
                     teacher=teacher,
                     group=group,
                     student=student_data,
                     day=day,
-                    status=student['status']
+                    status=student['status'],
+                    reason=student.get('reason', None)
                 )
+                print(student)
                 created_instances.append(attendance)
 
         if errors:

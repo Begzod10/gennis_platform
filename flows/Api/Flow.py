@@ -34,7 +34,12 @@ class FlowListCreateView(QueryParamFilterMixin, generics.ListCreateAPIView):
         return Response({'flow': read_serializer.data, 'msg': 'Patok muvaffaqqiyatli kiritildi'})
 
 
-class FlowListView(generics.ListAPIView):
+class FlowListView(QueryParamFilterMixin, generics.ListCreateAPIView):
+    filter_mappings = {
+        'teacher': 'teacher__id',
+        'subject': 'subject__id'
+
+    }
     permission_classes = [IsAuthenticated]
 
     queryset = Flow.objects.all()

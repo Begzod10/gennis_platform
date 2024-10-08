@@ -137,7 +137,8 @@ class AttendanceListSchool(APIView):
                 if attendance:
                     student_data['days'].append({
                         'status': attendance.status,
-                        'day': i
+                        'day': i,
+                        'reason': attendance.reason
                     })
                 else:
                     student_data['days'].append({

@@ -29,6 +29,7 @@ class Teacher(models.Model):
     salary_percentage = models.IntegerField(default=50, null=True, blank=True)
     deleted = models.BooleanField(default=False)
     deleted_date = models.DateField(null=True)
+    working_hours = models.CharField(max_length=50, null=True)
     # system = models.ForeignKey('system.System', on_delete=models.SET_NULL, null=True)
 
 
