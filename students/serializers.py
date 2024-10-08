@@ -110,7 +110,7 @@ def get_remaining_debt_for_student(student_id):
 
         return remaining_debt_sum['total_remaining_debt'] or 0
     else:
-        return total_remaining_debt
+        return f"-{total_remaining_debt}"
 
 
 class StudentListSerializer(serializers.ModelSerializer):
