@@ -108,7 +108,7 @@ def get_remaining_debt_for_student(student_id):
         ).aggregate(total_remaining_debt=Sum('payment'))
 
         total_remaining_debt = remaining_debt_sum['total_remaining_debt'] or 0
-    return f"{total_remaining_debt}" if total_remaining_debt > 0 else "0"
+    return f"{total_remaining_debt}" if int(total_remaining_debt) > 0 else "0"
 
 
 class StudentListSerializer(serializers.ModelSerializer):
