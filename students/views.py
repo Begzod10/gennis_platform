@@ -6,8 +6,10 @@ from datetime import datetime
 
 import docx
 from django.db.models import Q
+from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from rest_framework import filters
+from rest_framework import generics
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -394,7 +396,6 @@ class shahakota(APIView):
         return Response(data)
 
 
-
 class DeleteStudentPayment(APIView):
     def delete(self, request, pk):
         student_payment = get_object_or_404(StudentPayment, id=pk)
@@ -422,3 +423,131 @@ class DeleteFromDeleted(APIView):
             i.deleted = True
             i.save()
         return Response({'msg': "Student muvoffaqiyatlik orqaga qaytarildi"}, status=status.HTTP_200_OK)
+
+
+import calendar
+from django.db.models.functions import ExtractMonth
+
+
+class MissingAttendanceListView(generics.RetrieveAPIView):
+
+    def get_queryset(self):
+        student_id = self.kwargs.get('student_id')
+        return AttendancePerMonth.objects.filter(
+            student_id=student_id,
+            month_date__month__in=[9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
+        ).annotate(month_number=ExtractMonth('month_date'))
+
+    def retrieve(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        student_id = self.kwargs.get('student_id')
+
+        months_with_attendance = queryset.values_list('month_number', flat=True).distinct()
+        data = []
+        student = Student.objects.get(pk=student_id)
+        group = student.groups_student.first()
+        attendances = AttendancePerMonth.objects.filter(
+            student_id=student_id, group_id=group.id
+        ).all()
+        for attendance in attendances:
+            data.append({
+                'id': attendance.id,
+                'month': attendance.month_date,
+                'total_debt': attendance.total_debt,
+                'remaining_debt': attendance.remaining_debt,
+                'cash': StudentPayment.objects.filter(
+                    date__month=attendance.month_date.month,
+                    student_id=student_id,
+                    payment_type__name='cash',
+                    deleted=False,
+                    date__year=attendance.month_date.year
+                ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
+                'bank': StudentPayment.objects.filter(
+                    date__month=attendance.month_date.month,
+                    student_id=student_id,
+                    payment_type__name='bank',
+                    deleted=False,
+                    date__year=attendance.month_date.year
+                ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
+                'click': StudentPayment.objects.filter(
+                    date__month=attendance.month_date.month,
+                    student_id=student_id,
+                    payment_type__name='click',
+                    deleted=False,
+                    date__year=attendance.month_date.year
+                ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
+
+            })
+
+        all_months = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
+        missing_months = set(all_months) - set(months_with_attendance)
+        month_names = [calendar.month_name[month] for month in sorted(missing_months)]
+
+        return Response({
+            "month": month_names,
+            "data": data
+        })
+
+
+class MissingAttendanceView(APIView):
+    def post(self, request, student_id):
+        student = Student.objects.get(pk=student_id)
+        group = student.groups_student.first()
+        data = json.loads(request.body)
+        month = data['month']
+        year = datetime.now().year
+        month_date = datetime.strptime(f"01 {month} {year}", "%d %B %Y")
+        attendance = AttendancePerMonth.objects.create(
+            student_id=student_id,
+            month_date=month_date,
+            group_id=group.id,
+            total_debt=group.class_number.price,
+            system=group.system
+
+        )
+        attendances = AttendancePerMonth.objects.filter(
+            student_id=student_id, group_id=group.id
+        ).all()
+        queryset = AttendancePerMonth.objects.filter(
+            student_id=student_id,
+            month_date__month__in=[9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
+        ).annotate(month_number=ExtractMonth('month_date'))
+        months_with_attendance = queryset.values_list('month_number', flat=True).distinct()
+        all_months = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
+        missing_months = set(all_months) - set(months_with_attendance)
+        month_names = [calendar.month_name[month] for month in sorted(missing_months)]
+        data = []
+        for attendance in attendances:
+            data.append({
+                'id': attendance.id,
+                'month': attendance.month_date,
+                'total_debt': attendance.total_debt,
+                'remaining_debt': attendance.remaining_debt,
+                'cash': StudentPayment.objects.filter(
+                    date__month=attendance.month_date.month,
+                    student_id=student_id,
+                    payment_type__name='cash',
+                    deleted=False,
+                    date__year=attendance.month_date.year
+                ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
+                'bank': StudentPayment.objects.filter(
+                    date__month=attendance.month_date.month,
+                    student_id=student_id,
+                    payment_type__name='bank',
+                    deleted=False,
+                    date__year=attendance.month_date.year
+                ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
+                'click': StudentPayment.objects.filter(
+                    date__month=attendance.month_date.month,
+                    student_id=student_id,
+                    payment_type__name='click',
+                    deleted=False,
+                    date__year=attendance.month_date.year
+                ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
+
+            })
+        return Response({
+            "month": month_names,
+            "data": data,
+            "msg": "Qarz muvaffaqiyatli yaratildi"
+        })
