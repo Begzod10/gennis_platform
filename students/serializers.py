@@ -296,7 +296,7 @@ class StudentPaymentListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentPayment
-        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'added_data']
+        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'added_data','date']
 
 
 class DeletedNewStudentSerializer(serializers.ModelSerializer):
