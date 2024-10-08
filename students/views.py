@@ -322,7 +322,7 @@ class PaymentDatas(APIView):
 class GetMonth(APIView):
 
     def get(self, request, student_id, attendance_id):
-        month = AttendancePerMonth.objects.filter(student_id=student_id, status=False).all()
+        month = AttendancePerMonth.objects.filter(student_id=student_id, status=False).all().order_by('month_date__month')
         data = []
         for mont in month:
             if isinstance(mont.month_date, str):
@@ -448,7 +448,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
         group = student.groups_student.first()
         attendances = AttendancePerMonth.objects.filter(
             student_id=student_id, group_id=group.id
-        ).all()
+        ).all().order_by('month_date__month')
         for attendance in attendances:
             data.append({
                 'id': attendance.id,
@@ -507,7 +507,7 @@ class MissingAttendanceView(APIView):
         )
         attendances = AttendancePerMonth.objects.filter(
             student_id=student_id, group_id=group.id
-        ).all()
+        ).all().order_by('month_date__month')
         queryset = AttendancePerMonth.objects.filter(
             student_id=student_id,
             month_date__month__in=[9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
