@@ -100,15 +100,17 @@ def get_remaining_debt_for_student(student_id):
         student_id=student_id,
         month_date__lte=current_date
     ).aggregate(total_remaining_debt=Sum('remaining_debt'))
-    total_remaining_debt = f"-{remaining_debt_sum}" or 0
+    total_remaining_debt = remaining_debt_sum['total_remaining_debt'] or 0
+
     if total_remaining_debt == 0:
         remaining_debt_sum = AttendancePerMonth.objects.filter(
             student_id=student_id,
             month_date__gte=current_date
         ).aggregate(total_remaining_debt=Sum('payment'))
 
-        total_remaining_debt = remaining_debt_sum['total_remaining_debt'] or 0
-    return f"{total_remaining_debt}" if int(total_remaining_debt) > 0 else "0"
+        return remaining_debt_sum['total_remaining_debt'] or 0
+    else:
+        return total_remaining_debt
 
 
 class StudentListSerializer(serializers.ModelSerializer):
@@ -229,7 +231,7 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentPayment
         fields = ['student', 'payment_type', 'payment_sum', 'status', 'branch', 'name', 'surname', 'added_data',
-                  'payment_type_name','date']
+                  'payment_type_name', 'date']
 
     def get_name(self, obj):
         return obj.student.user.name
@@ -349,16 +351,19 @@ class DeletedStudentSerializer(serializers.ModelSerializer):
                                                                       group_reason=validated_data.get(
                                                                           'group_reason'))
         if teacher_group_statistics:
-            deleted_students_number = len(DeletedStudent.objects.get(teacher=validated_data.get('teacher'),deleted=False).all()) / 100
+            deleted_students_number = len(
+                DeletedStudent.objects.get(teacher=validated_data.get('teacher'), deleted=False).all()) / 100
 
             number_students = len(DeletedStudent.objects.get(reason=validated_data.get('group_reason'),
-                                                             teacher=validated_data.get('teacher'),deleted=False).all())
+                                                             teacher=validated_data.get('teacher'),
+                                                             deleted=False).all())
             percentage = deleted_students_number * number_students
             teacher_group_statistics.number_students = number_students
             teacher_group_statistics.percentage = percentage
             teacher_group_statistics.save()
         else:
-            deleted_students_number = len(DeletedStudent.objects.get(teacher=validated_data.get('teacher'),deleted=False).all()) / 100
+            deleted_students_number = len(
+                DeletedStudent.objects.get(teacher=validated_data.get('teacher'), deleted=False).all()) / 100
 
             number_students = 1
             percentage = deleted_students_number * number_students
