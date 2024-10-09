@@ -96,7 +96,7 @@ def get_remaining_debt_for_student(student_id):
         if month.payment == 0 and month.remaining_debt == 0:
             month.remaining_debt = month.total_debt
             month.save()
-        if month.total_debt < month.remaining_debt:
+        if month.remaining_debt > month.total_debt:
             month.remaining_debt = month.total_debt - month.payment
             month.save()
     remaining_debt_sum = AttendancePerMonth.objects.filter(
