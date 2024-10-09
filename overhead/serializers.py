@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from rest_framework import serializers
 
 from branch.models import Branch
@@ -8,7 +10,7 @@ from .models import Overhead, OverheadType
 
 class OverheadSerializerCreate(serializers.ModelSerializer):
     price = serializers.IntegerField(required=False)
-    name = serializers.CharField(required=False,allow_blank=True,allow_null=True)
+    name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     payment = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     type = serializers.PrimaryKeyRelatedField(queryset=OverheadType.objects.all(), allow_null=True, required=False)
@@ -16,6 +18,14 @@ class OverheadSerializerCreate(serializers.ModelSerializer):
     class Meta:
         model = Overhead
         fields = ['id', 'name', 'payment', 'price', 'branch', 'type']
+
+    def create(self, validated_data):
+        month = validated_data.get('month')
+        day = validated_data.get('day')
+        current_year = datetime.now().year
+        date = datetime(year=current_year, month=month, day=day)
+        overhead = Overhead.objects.create(**validated_data, created=date)
+        return overhead
 
 
 class OverheadSerializerGet(serializers.ModelSerializer):
