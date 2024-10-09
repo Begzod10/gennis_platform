@@ -95,6 +95,8 @@ class OldCapitalSerializers(serializers.ModelSerializer):
     payment_type = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
     by_who = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), required=False, allow_null=True)
     added_date = serializers.DateField(required=False)
+    day = serializers.CharField(required=False, write_only=True)
+    month = serializers.CharField(required=False, write_only=True)
 
     class Meta:
         model = OldCapital
