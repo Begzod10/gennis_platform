@@ -14,8 +14,8 @@ class OverheadSerializerCreate(serializers.ModelSerializer):
     payment = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     type = serializers.PrimaryKeyRelatedField(queryset=OverheadType.objects.all(), allow_null=True, required=False)
-    # day = serializers.SerializerMethodField(required=False, write_only=True)
-    # month = serializers.SerializerMethodField(required=False, write_only=True)
+    day = serializers.CharField(required=False, write_only=True)
+    month = serializers.CharField(required=False, write_only=True)
 
     class Meta:
         model = Overhead
