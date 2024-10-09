@@ -103,6 +103,8 @@ class OldCapitalSerializers(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
+        month = int(validated_data.pop('month'))
+        day = int(validated_data.pop('day'))
         jwt_auth = JWTAuthentication()
         request = self.context['request']
         header = request.META.get('HTTP_AUTHORIZATION')
@@ -111,8 +113,6 @@ class OldCapitalSerializers(serializers.ModelSerializer):
             validated_token = jwt_auth.get_validated_token(raw_token)
             user_id = validated_token['user_id']
             validated_data['by_who_id'] = user_id
-        month = int(validated_data.pop('month'))
-        day = int(validated_data.pop('day'))
         current_year = datetime.now().year
         date = datetime(year=current_year, month=month, day=day)
         return OldCapital.objects.create(**validated_data, added_date=date)
