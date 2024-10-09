@@ -23,8 +23,8 @@ class OverheadSerializerCreate(serializers.ModelSerializer):
         fields = ['id', 'name', 'payment', 'price', 'branch', 'type', 'day', 'month', 'created']
 
     def create(self, validated_data):
-        month = int(validated_data.get('month'))
-        day = int(validated_data.get('day'))
+        month = int(validated_data.pop('month'))
+        day = int(validated_data.pop('day'))
         current_year = datetime.now().year
         date = datetime(year=current_year, month=month, day=day)
         overhead = Overhead.objects.create(**validated_data, created=date)
