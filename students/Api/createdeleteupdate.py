@@ -1,3 +1,5 @@
+import json
+
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -156,3 +158,17 @@ class DeletedStudentDestroy(CustomResponseMixin, generics.DestroyAPIView):
 
     queryset = DeletedStudent.objects.filter(deleted=False).all()
     serializer_class = DeletedStudentSerializer
+
+
+class CreateDiscountForSchool(generics.GenericAPIView):
+    def post(self, request, *args, **kwargs):
+        from attendances.models import AttendancePerMonth
+        data = json.loads(request.body)
+        discount = data['discount']
+        student = data['student']
+        attendances = AttendancePerMonth.objects.filter(student_id=student)
+        for attendance in attendances:
+            attendance.discount = discount
+            attendance.save()
+
+        return Response({"msg": "Chegirma muvaffaqiyatli yaratildi !"}, status=status.HTTP_200_OK)
