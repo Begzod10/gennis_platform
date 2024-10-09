@@ -455,11 +455,8 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 'remaining_debt': attendance.remaining_debt,
                 'payment': attendance.payment,
                 'cash': attendance.studentpayment_set.filter(
-                    date__month=attendance.month_date.month,
-                    student_id=student_id,
                     payment_type__name='cash',
                     deleted=False,
-                    date__year=attendance.month_date.year
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
                 'bank': attendance.studentpayment_set.filter(
                     payment_type__name='bank',
@@ -520,11 +517,8 @@ class MissingAttendanceView(APIView):
                 'total_debt': attendance.total_debt,
                 'remaining_debt': attendance.remaining_debt,
                 'cash':attendance.studentpayment_set.filter(
-                    date__month=attendance.month_date.month,
-                    student_id=student_id,
                     payment_type__name='cash',
                     deleted=False,
-                    date__year=attendance.month_date.year
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
                 'bank':attendance.studentpayment_set.filter(
                     payment_type__name='bank',
