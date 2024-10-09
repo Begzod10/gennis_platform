@@ -454,18 +454,18 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 'total_debt': attendance.total_debt,
                 'remaining_debt': attendance.remaining_debt,
                 'payment': attendance.payment,
-                'cash': StudentPayment.objects.filter(
+                'cash': attendance.studentpayment_set.filter(
                     date__month=attendance.month_date.month,
                     student_id=student_id,
                     payment_type__name='cash',
                     deleted=False,
                     date__year=attendance.month_date.year
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
-                'bank': attendance.studentpayment_set.objects.filter(
+                'bank': attendance.studentpayment_set.filter(
                     payment_type__name='bank',
                     deleted=False,
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
-                'click': attendance.studentpayment_set.objects.filter(
+                'click': attendance.studentpayment_set.filter(
                     date__month=attendance.month_date.month,
                     student_id=student_id,
                     payment_type__name='click',
@@ -519,18 +519,18 @@ class MissingAttendanceView(APIView):
                 'month': attendance.month_date,
                 'total_debt': attendance.total_debt,
                 'remaining_debt': attendance.remaining_debt,
-                'cash': StudentPayment.objects.filter(
+                'cash':attendance.studentpayment_set.filter(
                     date__month=attendance.month_date.month,
                     student_id=student_id,
                     payment_type__name='cash',
                     deleted=False,
                     date__year=attendance.month_date.year
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
-                'bank': attendance.studentpayment_set.objects.filter(
+                'bank':attendance.studentpayment_set.filter(
                     payment_type__name='bank',
                     deleted=False,
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
-                'click': attendance.studentpayment_set.objects.filter(
+                'click': attendance.studentpayment_set.filter(
                     date__month=attendance.month_date.month,
                     student_id=student_id,
                     payment_type__name='click',
