@@ -453,6 +453,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 'month': attendance.month_date,
                 'total_debt': attendance.total_debt,
                 'remaining_debt': attendance.remaining_debt,
+                'payment': attendance.payment,
                 'cash': StudentPayment.objects.filter(
                     date__month=attendance.month_date.month,
                     student_id=student_id,
