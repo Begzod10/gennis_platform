@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from rest_framework import serializers
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
@@ -60,10 +62,10 @@ class CapitalListSerializers(serializers.ModelSerializer):
     class Meta:
         model = Capital
         fields = ['id', 'name', 'id_number', 'price', 'total_down_cost', 'term',
-                  'curriculum_hours', 'img', 'branch', 'payment_type', 'category','date']
-    def get_date(self,obj):
-        return obj.added_date.strftime('%Y-%m-%d')
+                  'curriculum_hours', 'img', 'branch', 'payment_type', 'category', 'date']
 
+    def get_date(self, obj):
+        return obj.added_date.strftime('%Y-%m-%d')
 
 
 class CapitalTermSerializers(serializers.ModelSerializer):
@@ -106,11 +108,11 @@ class OldCapitalSerializers(serializers.ModelSerializer):
             validated_token = jwt_auth.get_validated_token(raw_token)
             user_id = validated_token['user_id']
             validated_data['by_who_id'] = user_id
-            # data = [{
-            #     'capital': OldCapital.objects.create(**validated_data),
-            #     'message': "Capital muvaffaqiyatli qo'shildi"
-            # }]
-        return  OldCapital.objects.create(**validated_data)
+        month = int(validated_data.pop('month'))
+        day = int(validated_data.pop('day'))
+        current_year = datetime.now().year
+        date = datetime(year=current_year, month=month, day=day)
+        return OldCapital.objects.create(**validated_data, added_date=date)
 
 
 class OldCapitalListSerializers(serializers.ModelSerializer):
