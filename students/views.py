@@ -365,7 +365,7 @@ class GetMonth(APIView):
                                                             status=request.data['status'],
                                                             payment_type_id=request.data['payment_type'],
                                                             date=request.data['date'],
-                                                            attendances=attendance_per_month
+                                                            attendance=attendance_per_month
                                                             )
             student_payment.save()
 
@@ -399,7 +399,7 @@ class shahakota(APIView):
 class DeleteStudentPayment(APIView):
     def delete(self, request, pk):
         student_payment = get_object_or_404(StudentPayment, id=pk)
-        attendance_per_month = get_object_or_404(AttendancePerMonth, id=student_payment.attendances.id)
+        attendance_per_month = get_object_or_404(AttendancePerMonth, id=student_payment.attendance.id)
 
         attendance_per_month.remaining_debt += student_payment.payment_sum
         attendance_per_month.payment -= student_payment.payment_sum
