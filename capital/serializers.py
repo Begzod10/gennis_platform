@@ -106,7 +106,7 @@ class OldCapitalSerializers(serializers.ModelSerializer):
         month = int(validated_data.pop('month'))
         day = int(validated_data.pop('day'))
         current_year = datetime.now().year
-        date = datetime(year=current_year, month=month, day=day)
+        date = datetime(year=current_year, month=month, day=day).date()
 
         jwt_auth = JWTAuthentication()
         request = self.context['request']
