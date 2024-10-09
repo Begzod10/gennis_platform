@@ -229,13 +229,19 @@ class get_table_with_student_username(APIView):
                     week = WeekDays.objects.get(name_en=name_en)
                     group_time_table = GroupTimeTable.objects.filter(group=group, week=week).first()
                     if group_time_table:
+                        subject = None
+                        if group.subject:
+                            subject = group.subject.name
+                        level = None
+                        if group.level:
+                            level = group.level.name
                         data.append({
                             'group_name': group.name,
-                            'start_time': group_time_table.start_time,
-                            'end_time': group_time_table.end_time,
+                            'start_time': group_time_table.hours.start_time,
+                            'end_time': group_time_table.hours.end_time,
                             'room': group_time_table.room.name,
-                            'subject': group.subject.name,
-                            'level': group.level.name,
+                            'subject': subject,
+                            'level': level,
                             'teacher': [f"{teacher.user.name} {teacher.user.surname}" for teacher in
                                         group.teacher.all()],
                             'language': group.language.name if group.language else None
