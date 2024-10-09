@@ -58,11 +58,12 @@ class StudentPayment(models.Model):
     payment_sum = models.IntegerField(default=0)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
     added_data = models.DateField(auto_now_add=True)
-    date=models.DateField(null=True)
+    date = models.DateField(null=True)
     status = models.BooleanField()
     extra_payment = models.IntegerField(null=True, default=0)
     deleted = models.BooleanField(default=False)
     old_id = models.IntegerField(unique=True, null=True)
+    attendance = models.ForeignKey('attendances.AttendancePerMonth', on_delete=models.SET_NULL, null=True)
 
 
 class DeletedNewStudent(models.Model):

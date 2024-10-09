@@ -364,7 +364,9 @@ class GetMonth(APIView):
                                                             branch_id=branch,
                                                             status=request.data['status'],
                                                             payment_type_id=request.data['payment_type'],
-                                                            date=request.data['date'])
+                                                            date=request.data['date'],
+                                                            attendances=attendance_per_month
+                                                            )
             student_payment.save()
 
             if attendance_per_month.remaining_debt == 0:
@@ -397,9 +399,7 @@ class shahakota(APIView):
 class DeleteStudentPayment(APIView):
     def delete(self, request, pk):
         student_payment = get_object_or_404(StudentPayment, id=pk)
-        attendance_per_month = get_object_or_404(AttendancePerMonth, month_date__year=student_payment.added_data.year,
-                                                 month_date__month=student_payment.added_data.month,
-                                                 student=student_payment.student)
+        attendance_per_month = get_object_or_404(AttendancePerMonth, id=student_payment.attendances.id)
 
         attendance_per_month.remaining_debt += student_payment.payment_sum
         attendance_per_month.payment -= student_payment.payment_sum
@@ -461,14 +461,11 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                     deleted=False,
                     date__year=attendance.month_date.year
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
-                'bank': StudentPayment.objects.filter(
-                    date__month=attendance.month_date.month,
-                    student_id=student_id,
+                'bank': attendance.studentpayment_set.objects.filter(
                     payment_type__name='bank',
                     deleted=False,
-                    date__year=attendance.month_date.year
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
-                'click': StudentPayment.objects.filter(
+                'click': attendance.studentpayment_set.objects.filter(
                     date__month=attendance.month_date.month,
                     student_id=student_id,
                     payment_type__name='click',
@@ -529,14 +526,11 @@ class MissingAttendanceView(APIView):
                     deleted=False,
                     date__year=attendance.month_date.year
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
-                'bank': StudentPayment.objects.filter(
-                    date__month=attendance.month_date.month,
-                    student_id=student_id,
+                'bank': attendance.studentpayment_set.objects.filter(
                     payment_type__name='bank',
                     deleted=False,
-                    date__year=attendance.month_date.year
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
-                'click': StudentPayment.objects.filter(
+                'click': attendance.studentpayment_set.objects.filter(
                     date__month=attendance.month_date.month,
                     student_id=student_id,
                     payment_type__name='click',
