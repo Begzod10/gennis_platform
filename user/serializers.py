@@ -235,8 +235,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         #     group_id=12).delete()
         # from students.models import StudentPayment
         # StudentPayment.objects.all().delete()
-        from attendances.models import AttendancePerMonth
-        AttendancePerMonth.objects.all().update(status=False, remaining_debt=0, payment=0)
+        # from attendances.models import AttendancePerMonth
+        # AttendancePerMonth.objects.all().update(status=False, remaining_debt=0, payment=0)
         username = attrs.get('username')
         password = attrs.get('password')
         user = CustomUser.objects.get(username=username)
