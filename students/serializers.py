@@ -96,6 +96,9 @@ def get_remaining_debt_for_student(student_id):
         if month.payment == 0 and month.remaining_debt == 0:
             month.remaining_debt = month.total_debt
             month.save()
+        if month.total_debt < month.remaining_debt:
+            month.remaining_debt = month.total_debt - month.payment
+            month.save()
     remaining_debt_sum = AttendancePerMonth.objects.filter(
         student_id=student_id,
         month_date__lte=current_date
@@ -296,7 +299,7 @@ class StudentPaymentListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentPayment
-        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'added_data','date']
+        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'added_data', 'date']
 
 
 class DeletedNewStudentSerializer(serializers.ModelSerializer):

@@ -332,9 +332,6 @@ class GetMonth(APIView):
                 month_date = mont.month_date
             month_name = month_date.strftime("%B")
             month_number = month_date.strftime("%m")
-            if mont.payment == 0 and mont.remaining_debt == 0:
-                mont.remaining_debt = mont.total_debt
-                mont.save()
             data.append(
                 {
                     'id': mont.id,
