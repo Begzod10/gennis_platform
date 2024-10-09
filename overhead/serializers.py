@@ -16,6 +16,7 @@ class OverheadSerializerCreate(serializers.ModelSerializer):
     type = serializers.PrimaryKeyRelatedField(queryset=OverheadType.objects.all(), allow_null=True, required=False)
     day = serializers.CharField(required=False, write_only=True)
     month = serializers.CharField(required=False, write_only=True)
+    created = serializers.DateField(read_only=True)
 
     class Meta:
         model = Overhead
