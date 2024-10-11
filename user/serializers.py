@@ -108,7 +108,6 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
     payment_types = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all(), required=False)
     name = serializers.SerializerMethodField(required=False, read_only=True)
     surname = serializers.SerializerMethodField(required=False, read_only=True)
-    date = serializers.SerializerMethodField(required=False, read_only=True)
     payment_type_name = serializers.SerializerMethodField(required=False, read_only=True)
 
     class Meta:
@@ -121,8 +120,7 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
     def get_surname(self, obj):
         return obj.user.surname
 
-    def get_date(self, obj):
-        return obj.date.strftime('%Y-%m-%d')
+
 
     def get_payment_type_name(self, obj):
         return obj.payment_types.name
