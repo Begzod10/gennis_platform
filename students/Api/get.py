@@ -60,8 +60,9 @@ class StudentCharityAPIView(generics.RetrieveAPIView):
     serializer_class = StudentCharityListSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        student_charity = self.get_object()
-        student_charity_data = self.get_serializer(student_charity).data
+        student_charity = self.kwargs.get('pk')
+        charity = StudentCharity.objects.filter(student=student_charity).first()
+        student_charity_data = self.get_serializer(charity).data
         return Response(student_charity_data)
 
 

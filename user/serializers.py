@@ -38,12 +38,13 @@ class UserSerializerWrite(serializers.ModelSerializer):
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all())
     profession = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), required=False, allow_null=True)
+    money = serializers.CharField(required=False)
 
     class Meta:
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
                   'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff', 'old_id', 'profession']
+                  'branch', 'is_superuser', 'is_staff', 'old_id', 'profession', 'money']
         extra_kwargs = {
             'password': {'write_only': True, 'required': True},
             'birth_date': {'required': False},
@@ -87,6 +88,9 @@ class UserSerializerWrite(serializers.ModelSerializer):
     #         raise serializers.ValidationError({"error": str(e)})
 
     def update(self, instance, validated_data):
+
+        salary = validated_data.pop('money')
+        CustomAutoGroup.objects.filter(user=instance).update(salary=salary)
         user = super().update(instance, validated_data)
         if 'password' in validated_data:
             user.set_password(validated_data['password'])
@@ -98,10 +102,10 @@ class UserSerializerWrite(serializers.ModelSerializer):
 
 
 class UserSalaryListSerializers(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
-    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
-    user_salary = serializers.PrimaryKeyRelatedField(queryset=UserSalary.objects.all())
-    payment_types = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
+    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), required=False)
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), required=False)
+    user_salary = serializers.PrimaryKeyRelatedField(queryset=UserSalary.objects.all(), required=False)
+    payment_types = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all(), required=False)
     name = serializers.SerializerMethodField(required=False, read_only=True)
     surname = serializers.SerializerMethodField(required=False, read_only=True)
     date = serializers.SerializerMethodField(required=False, read_only=True)
@@ -135,7 +139,7 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
             user_salary=user_salary,
             payment_types=payment_types,
             user=user,
-            date=datetime.now(),
+            date=validated_data.get('date'),
             branch=branch,
             salary=validated_data.get('salary'),
             comment=validated_data.get('comment', ''),
@@ -143,7 +147,9 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
         return user
 
     def update(self, instance, validated_data):
-        instance.payment_types = validated_data['payment_types'],
+        payment_types = validated_data.get('payment_types')
+        if payment_types:
+            instance.payment_types_id = payment_types.id
         instance.save()
         return instance
 

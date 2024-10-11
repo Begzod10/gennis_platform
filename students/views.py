@@ -443,6 +443,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
         months_with_attendance = queryset.values_list('month_number', flat=True).distinct()
         data = []
         student = Student.objects.get(pk=student_id)
+
         group = student.groups_student.first()
         attendances = AttendancePerMonth.objects.filter(
             student_id=student_id, group_id=group.id
@@ -455,6 +456,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 'remaining_debt': attendance.remaining_debt,
                 'payment': attendance.payment,
                 "discount": attendance.discount,
+                "reason": StudentCharity.objects.filter(student_id=student_id).first().name if StudentCharity.objects.filter(student_id=student_id).first() else None,
                 'cash': attendance.studentpayment_set.filter(
                     payment_type__name='cash',
                     deleted=False,
@@ -518,12 +520,12 @@ class MissingAttendanceView(APIView):
                 'total_debt': attendance.total_debt,
                 'remaining_debt': attendance.remaining_debt,
                 "discount": attendance.discount,
-
-                'cash':attendance.studentpayment_set.filter(
+                "reason": StudentCharity.objects.filter(student_id=student_id).first().name if StudentCharity.objects.filter(student_id=student_id).first() else None,
+                'cash': attendance.studentpayment_set.filter(
                     payment_type__name='cash',
                     deleted=False,
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
-                'bank':attendance.studentpayment_set.filter(
+                'bank': attendance.studentpayment_set.filter(
                     payment_type__name='bank',
                     deleted=False,
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,

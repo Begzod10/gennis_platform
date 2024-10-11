@@ -1,5 +1,3 @@
-import datetime
-
 from django.utils.timezone import now
 from django_cron import CronJobBase, Schedule
 
@@ -14,21 +12,6 @@ class CreateMonthly(CronJobBase):
     code = 'user.create_monthly'
 
     def do(self):
-        users = CustomUser.objects.all()
-        for user in users:
-            for permission in user.customautogroup_set.all():
-                current_year = now().year
-                current_month = now().month
-                user_salary = UserSalary.objects.filter(date__year=current_year, date__month=current_month, user=user)
-                if not user_salary:
-                    UserSalary.objects.create(
-                        user=user,
-                        permission=permission,
-                        total_salary=permission.salary,
-                        taken_salary=0,
-                        remaining_salary=permission.salary,
-                        date=now()
-                    )
         teachers = Teacher.objects.all()
         for teacher in teachers:
             current_year = now().year
@@ -51,3 +34,32 @@ class CreateMonthly(CronJobBase):
                         total_black_salary=0,
                         branch=teacher.user.branch
                     )
+
+
+def create_user_salary(user_id):
+    print(user_id)
+    user = CustomUser.objects.get(id=user_id)
+    for permission in user.customautogroup_set.all():
+        current_year = now().year
+        current_month = now().month
+        user_salary = UserSalary.objects.filter(date__year=current_year, date__month=current_month, user=user)
+        if not user_salary:
+            UserSalary.objects.create(
+                user=user,
+                permission=permission,
+                total_salary=permission.salary,
+                taken_salary=0,
+                remaining_salary=permission.salary,
+                date=now()
+            )
+        else:
+            user = UserSalary.objects.get(
+                user=user,
+                permission=permission,
+                date__year=current_year,
+                date__month=current_month
+            )
+            user.total_salary = permission.salary
+            user.remaining_salary = permission.salary - int(user.taken_salary)
+            user.taken_salary = user.taken_salary
+            user.save()

@@ -170,5 +170,17 @@ class CreateDiscountForSchool(generics.GenericAPIView):
         for attendance in attendances:
             attendance.discount = discount
             attendance.save()
+        student = Student.objects.get(pk=student)
+        StudentCharity.objects.update_or_create(
+            student=student,
+            defaults={
+                'charity_sum': discount,
+                'name': data['reason'],
+                "group": student.groups_student.first(),
+                "branch": student.user.branch
+
+            }
+
+        )
 
         return Response({"msg": "Chegirma muvaffaqiyatli yaratildi !"}, status=status.HTTP_200_OK)
