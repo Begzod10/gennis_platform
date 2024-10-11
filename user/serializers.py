@@ -180,7 +180,7 @@ class UserSalaryListSerializersRead(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_date(self, obj):
-        return obj.date.strftime('%Y-%m-%d')
+        return obj.date.strftime('%Y-%m-%d') if obj.date else ''
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
