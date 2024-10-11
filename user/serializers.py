@@ -173,14 +173,10 @@ class UserSalaryListSerializersRead(serializers.ModelSerializer):
     branch = BranchSerializer(read_only=True)
     user_salary = UserSalarySerializers(read_only=True)
     payment_types = PaymentTypesSerializers(read_only=True)
-    date = serializers.SerializerMethodField(required=False, read_only=True)
 
     class Meta:
         model = UserSalaryList
         fields = '__all__'
-
-    def get_date(self, obj):
-        return obj.date.strftime('%Y-%m-%d') if obj.date else ''
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
