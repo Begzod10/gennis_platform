@@ -622,8 +622,8 @@ class StudentCharityModelView(APIView):
 
         return Response({"msg": "Chegirma muvaffaqiyatli yaratildi"})
 
-    def update(self, request, *args, **kwargs):
-        id = self.kwargs('student_id')
+    def put(self, request, *args, **kwargs):
+        id = self.kwargs['student_id']
         sum = int(request.data.get('payment_sum'))
         payment = StudentPayment.objects.get(pk=id)
         attendance = AttendancePerMonth.objects.get(pk=payment.attendance.id)
