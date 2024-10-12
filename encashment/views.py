@@ -453,13 +453,12 @@ class GetEMployerSalary(APIView):
         for salary in salaries:
             datas = {
                 'id': salary.id,
-                'name': salary.teacher.user.name,
-                'surname': salary.teacher.user.surname,
-                'phone': salary.teacher.user.phone,
+                'name': salary.user.name,
+                'surname': salary.user.surname,
+                'phone': salary.user.phone,
                 'total_salary': salary.total_salary,
                 'taken_salary': salary.taken_salary,
                 'remaining_salary': salary.remaining_salary,
-                'subject': salary.teacher.subject.name,
                 'cash': UserSalaryList.objects.filter(user_salary_id=salary.id, payment_types__name='cash').aggregate(
                     total=Sum('salary'))['total'] or 0,
                 'bank': UserSalaryList.objects.filter(user_salary_id=salary.id, payment_types__name='bank').aggregate(
@@ -497,13 +496,12 @@ class GetEMployerSalary(APIView):
         for salary in salaries:
             datas = {
                 'id': salary.id,
-                'name': salary.teacher.user.name,
-                'surname': salary.teacher.user.surname,
-                'phone': salary.teacher.user.phone,
+                'name': salary.user.name,
+                'surname': salary.user.surname,
+                'phone': salary.user.phone,
                 'total_salary': salary.salary,
                 'taken_salary': salary.taken_salary,
                 'remaining_salary': salary.remaining_salary,
-                'subject': salary.teacher.subject.name,
                 'cash': UserSalaryList.objects.filter(user_salary_id=salary.id, payment_types__name='cash').aggregate(
                     total=Sum('salary'))['total'] or 0,
                 'bank': UserSalaryList.objects.filter(user_salary_id=salary.id, payment_types__name='bank').aggregate(

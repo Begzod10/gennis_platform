@@ -56,6 +56,7 @@ class UserSerializerWrite(serializers.ModelSerializer):
 
     def create(self, validated_data):
         profession = validated_data.pop('profession', None)
+
         user = super().create(validated_data)
         user.set_password(validated_data['password'])
         user.save()
@@ -88,6 +89,11 @@ class UserSerializerWrite(serializers.ModelSerializer):
     #         raise serializers.ValidationError({"error": str(e)})
 
     def update(self, instance, validated_data):
+        profession = validated_data.pop('profession', None)
+        if profession is not None:
+            instance.groups.clear()
+            instance.groups.add(profession)
+            CustomAutoGroup.objects.filter(user=instance).update(group=profession)
 
         salary = validated_data.pop('money')
         CustomAutoGroup.objects.filter(user=instance).update(salary=salary)

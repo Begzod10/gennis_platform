@@ -4,7 +4,7 @@ from .Api.createdeleteupdate import StudentCreateView, StudentCharityCreateView,
     StudentPaymentCreateView, \
     StudentDestroyView, StudentCharityUpdateView, StudentPaymentUpdateView, StudentCharityDestroyView, \
     StudentPaymentDestroyView, StudentUpdateView, StudentHistoryGroupsCreateView, StudentHistoryGroupsDestroyView, \
-    StudentHistoryGroupsUpdateView, DeletedStudentDestroy,CreateDiscountForSchool
+    StudentHistoryGroupsUpdateView, DeletedStudentDestroy, CreateDiscountForSchool
 from .Api.get import SchoolStudents
 from .Api.get import StudentCharityAPIView, StudentPaymentAPIView, StudentHistoryGroupsAPIView, \
     StudentCharityListAPIView, StudentPaymentListAPIView, StudentHistoryGroupsListAPIView, StudentRetrieveAPIView, \
@@ -12,7 +12,8 @@ from .Api.get import StudentCharityAPIView, StudentPaymentAPIView, StudentHistor
 from .excel import ExcelData, ExcelDataList
 from .views import (CreateContractView, UploadPDFContractView, StudentListView, DeletedFromRegistered,
                     DeletedGroupStudents, NewRegisteredStudents, ActiveStudents, PaymentDatas, GetMonth, shahakota,
-                    DeleteStudentPayment, DeleteFromDeleted, MissingAttendanceListView, MissingAttendanceView
+                    DeleteStudentPayment, DeleteFromDeleted, MissingAttendanceListView, MissingAttendanceView,
+                    StudentCharityModelView
                     )
 
 app_name = 'Students'
@@ -68,4 +69,5 @@ urlpatterns = [
     path('missing_month/<int:student_id>/', MissingAttendanceListView.as_view(), name='missing_month'),
     path('missing_month_post/<int:student_id>/', MissingAttendanceView.as_view(), name='missing_month'),
     path('discount/', CreateDiscountForSchool.as_view(), name='discount'),
+    path('charity_month/<int:student_id>/', StudentCharityModelView.as_view(), name='charity_month'),
 ]

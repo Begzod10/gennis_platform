@@ -1,3 +1,4 @@
+import calendar
 import datetime
 import json
 import os
@@ -7,6 +8,7 @@ from datetime import datetime
 import docx
 from django.db.models import Q
 from django.db.models import Sum
+from django.db.models.functions import ExtractMonth
 from django.shortcuts import get_object_or_404
 from rest_framework import filters
 from rest_framework import generics
@@ -423,10 +425,6 @@ class DeleteFromDeleted(APIView):
         return Response({'msg': "Student muvoffaqiyatlik orqaga qaytarildi"}, status=status.HTTP_200_OK)
 
 
-import calendar
-from django.db.models.functions import ExtractMonth
-
-
 class MissingAttendanceListView(generics.RetrieveAPIView):
 
     def get_queryset(self):
@@ -456,7 +454,17 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 'remaining_debt': attendance.remaining_debt,
                 'payment': attendance.payment,
                 "discount": attendance.discount,
-                "reason": StudentCharity.objects.filter(student_id=student_id).first().name if StudentCharity.objects.filter(student_id=student_id).first() else None,
+                "discount_sum": StudentPayment.objects.get(
+                    attendance=attendance
+
+                ).reason,
+                "discount_reason": StudentPayment.objects.get(
+                    attendance=attendance
+
+                ).payment_sum,
+                "reason": StudentCharity.objects.filter(
+                    student_id=student_id).first().name if StudentCharity.objects.filter(
+                    student_id=student_id).first() else None,
                 'cash': attendance.studentpayment_set.filter(
                     payment_type__name='cash',
                     deleted=False,
@@ -520,7 +528,17 @@ class MissingAttendanceView(APIView):
                 'total_debt': attendance.total_debt,
                 'remaining_debt': attendance.remaining_debt,
                 "discount": attendance.discount,
-                "reason": StudentCharity.objects.filter(student_id=student_id).first().name if StudentCharity.objects.filter(student_id=student_id).first() else None,
+                "discount_sum": StudentPayment.objects.get(
+                    attendance=attendance
+
+                ).reason,
+                "discount_reason": StudentPayment.objects.get(
+                    attendance=attendance
+
+                ).payment_sum,
+                "reason": StudentCharity.objects.filter(
+                    student_id=student_id).first().name if StudentCharity.objects.filter(
+                    student_id=student_id).first() else None,
                 'cash': attendance.studentpayment_set.filter(
                     payment_type__name='cash',
                     deleted=False,
@@ -543,3 +561,58 @@ class MissingAttendanceView(APIView):
             "data": data,
             "msg": "Qarz muvaffaqiyatli yaratildi"
         })
+
+
+class StudentCharityModelView(APIView):
+    def get(self, request, student_id):
+        queryset = StudentPayment.objects.filter(
+            student_id=student_id,
+            date__month__in=[9, 10, 11, 12, 1, 2, 3, 4, 5, 6],
+            deleted=False,
+            status=True
+        ).annotate(month_number=ExtractMonth('date'))
+        months_with_attendance = queryset.values_list('month_number', flat=True).distinct()
+        all_months = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
+        missing_months = set(all_months) - set(months_with_attendance)
+        month_names = [calendar.month_name[month] for month in sorted(missing_months)]
+
+        return Response(month_names)
+
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        month = data.pop('date')
+        month_number = list(calendar.month_name).index(month.capitalize())
+        current_year = datetime.now().year
+        date = datetime(year=current_year, month=int(month_number), day=int(datetime.now().day)).date()
+        student_id = self.kwargs['student_id']
+        attendance_per_month = AttendancePerMonth.objects.get(student_id=student_id,
+                                                              month_date__month=month_number,
+                                                              month_date__year=current_year)
+
+        if attendance_per_month.total_debt != attendance_per_month.payment and attendance_per_month.remaining_debt == 0:
+            attendance_per_month.remaining_debt = attendance_per_month.total_debt
+            attendance_per_month.save()
+
+        payment_sum = request.data['payment_sum']
+        branch = request.data['branch']
+
+        if attendance_per_month.remaining_debt >= payment_sum:
+            attendance_per_month.remaining_debt -= payment_sum
+            attendance_per_month.payment += payment_sum
+            student_payment = StudentPayment.objects.create(student_id=student_id, payment_sum=payment_sum,
+                                                            branch_id=branch,
+                                                            status=request.data['status'],
+                                                            payment_type_id=request.data['payment_type'],
+                                                            date=date,
+                                                            attendance=attendance_per_month,
+                                                            reason=request.data['reason']
+
+                                                            )
+            student_payment.save()
+
+            if attendance_per_month.remaining_debt == 0:
+                attendance_per_month.status = True
+
+        attendance_per_month.save()
+
+        return Response({"msg": "Chegirma muvaffaqiyatli yaratildi"})

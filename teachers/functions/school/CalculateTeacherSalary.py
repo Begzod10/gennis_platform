@@ -25,6 +25,10 @@ def calculate_teacher_salary(teacher):
                 'percentage': 50,
             }
         )
+        if salary.total_salary != salary.teacher.teacher_salary_type.salary:
+            salary.total_salary = salary.teacher.teacher_salary_type.salary
+            salary.remaining_salary = salary.teacher.teacher_salary_type.salary - salary.taken_salary
+            salary.save()
 
         summ_for_percentage = (teacher.teacher_salary_type.salary * salary.percentage) / 100
         if salary.worked_days:
