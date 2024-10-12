@@ -1,6 +1,6 @@
 from django.utils.timezone import now
 from django_cron import CronJobBase, Schedule
-
+from datetime import date
 from attendances.models import AttendancePerMonth
 from teachers.models import Teacher, TeacherSalary
 from .models import CustomUser, UserSalary
@@ -37,15 +37,38 @@ class CreateMonthly(CronJobBase):
 
 
 def create_user_salary(user_id):
-    print(user_id)
-    user = CustomUser.objects.get(id=user_id)
-    for permission in user.customautogroup_set.all():
+    user_1 = CustomUser.objects.get(id=user_id)
+    for permission in user_1.customautogroup_set.all():
+        current_year_old = 2024
+        current_month_old = 9
+        user_salary_old = UserSalary.objects.filter(date__year=current_year_old, date__month=current_month_old,
+                                                    user=user_1)
+        if not user_salary_old:
+            UserSalary.objects.create(
+                user=user_1,
+                permission=permission,
+                total_salary=permission.salary,
+                taken_salary=0,
+                remaining_salary=permission.salary,
+                date=date(current_year_old, current_month_old, 1)
+            )
+        else:
+            user = UserSalary.objects.get(
+                user=user_1,
+                permission=permission,
+                date__year=current_year_old,
+                date__month=current_month_old
+            )
+            user.total_salary = permission.salary
+            user.remaining_salary = permission.salary - int(user.taken_salary)
+            user.taken_salary = user.taken_salary
+            user.save()
         current_year = now().year
         current_month = now().month
-        user_salary = UserSalary.objects.filter(date__year=current_year, date__month=current_month, user=user)
+        user_salary = UserSalary.objects.filter(date__year=current_year, date__month=current_month, user=user_1)
         if not user_salary:
             UserSalary.objects.create(
-                user=user,
+                user=user_1,
                 permission=permission,
                 total_salary=permission.salary,
                 taken_salary=0,
@@ -54,7 +77,7 @@ def create_user_salary(user_id):
             )
         else:
             user = UserSalary.objects.get(
-                user=user,
+                user=user_1,
                 permission=permission,
                 date__year=current_year,
                 date__month=current_month

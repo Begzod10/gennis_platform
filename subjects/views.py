@@ -62,7 +62,7 @@ class DataSyncView(APIView):
 
 
 class CreateSubjectList(generics.ListCreateAPIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
 

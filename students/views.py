@@ -446,7 +446,12 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
         attendances = AttendancePerMonth.objects.filter(
             student_id=student_id, group_id=group.id
         ).all().order_by('month_date__year', 'month_date__month')
+
         for attendance in attendances:
+            student_payemnt = StudentPayment.objects.filter(
+                attendance=attendance
+
+            ).first()
             data.append({
                 'id': attendance.id,
                 'month': attendance.month_date,
@@ -454,14 +459,8 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 'remaining_debt': attendance.remaining_debt,
                 'payment': attendance.payment,
                 "discount": attendance.discount,
-                "discount_sum": StudentPayment.objects.get(
-                    attendance=attendance
-
-                ).reason,
-                "discount_reason": StudentPayment.objects.get(
-                    attendance=attendance
-
-                ).payment_sum,
+                "discount_sum": student_payemnt.payment_sum if student_payemnt else 0,
+                "discount_reason": student_payemnt.reason if student_payemnt else 0,
                 "reason": StudentCharity.objects.filter(
                     student_id=student_id).first().name if StudentCharity.objects.filter(
                     student_id=student_id).first() else None,
@@ -520,6 +519,10 @@ class MissingAttendanceView(APIView):
         all_months = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
         missing_months = set(all_months) - set(months_with_attendance)
         month_names = [calendar.month_name[month] for month in sorted(missing_months)]
+        student_payemnt = StudentPayment.objects.filter(
+            attendance=attendance
+
+        ).first()
         data = []
         for attendance in attendances:
             data.append({
@@ -528,14 +531,8 @@ class MissingAttendanceView(APIView):
                 'total_debt': attendance.total_debt,
                 'remaining_debt': attendance.remaining_debt,
                 "discount": attendance.discount,
-                "discount_sum": StudentPayment.objects.get(
-                    attendance=attendance
-
-                ).reason,
-                "discount_reason": StudentPayment.objects.get(
-                    attendance=attendance
-
-                ).payment_sum,
+                "discount_sum": student_payemnt.payment_sum if student_payemnt else 0,
+                "discount_reason": student_payemnt.reason if student_payemnt else 0,
                 "reason": StudentCharity.objects.filter(
                     student_id=student_id).first().name if StudentCharity.objects.filter(
                     student_id=student_id).first() else None,
@@ -599,7 +596,8 @@ class StudentCharityModelView(APIView):
         if attendance_per_month.remaining_debt >= payment_sum:
             attendance_per_month.remaining_debt -= payment_sum
             attendance_per_month.payment += payment_sum
-            student_payment = StudentPayment.objects.create(student_id=student_id, payment_sum=payment_sum,
+            student_payment = StudentPayment.objects.create(student_id=student_id,
+                                                            payment_sum=payment_sum,
                                                             branch_id=branch,
                                                             status=request.data['status'],
                                                             payment_type_id=request.data['payment_type'],
