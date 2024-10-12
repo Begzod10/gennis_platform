@@ -254,39 +254,52 @@ class GetSchoolStudents(APIView):
             'class': [],
             'dates': []
         }
+
+        current_year = year if year else datetime.now().year
+        current_month = month if month else datetime.now().month
+
         for _class in classes:
             sinflar = {
                 'class_number': _class.number,
                 'students': []
             }
             data['class'].append(sinflar)
+
             students = Student.objects.filter(groups_student__class_number=_class)
 
             attendance_data = AttendancePerMonth.objects.filter(
                 student__in=students,
-                month_date__year=year if year else datetime.now().year,
-                month_date__month=month if month else datetime.now().month
+                month_date__year=current_year,
+                month_date__month=current_month
             ).select_related('student')
 
-            payment_data = StudentPayment.objects.filter(
-                student__in=students,
-                deleted=False,
-                added_data__year=year if year else datetime.now().year,
-                added_data__month=month if month else datetime.now().month
-            ).values('student_id', 'payment_type__name').annotate(total=Sum('payment_sum'))
-
             student_attendance_map = {att.student.id: att for att in attendance_data}
+
+            payment_data = StudentPayment.objects.filter(
+                student_id__in=students,
+                date__month=current_month,
+                date__year=current_year,
+                deleted=False
+            ).values('student_id', 'payment_type__name').annotate(total_sum=Sum('payment_sum'))
+
             student_payment_map = {}
             for payment in payment_data:
                 student_id = payment['student_id']
                 payment_type = payment['payment_type__name']
+                total_sum = payment['total_sum']
+
                 if student_id not in student_payment_map:
-                    student_payment_map[student_id] = {'cash': 0, 'bank': 0, 'click': 0}
-                student_payment_map[student_id][payment_type] = payment['total']
+                    student_payment_map[student_id] = {}
+                student_payment_map[student_id][payment_type] = total_sum
 
             for student in students:
                 attendance = student_attendance_map.get(student.id)
-                payments = student_payment_map.get(student.id, {'cash': 0, 'bank': 0, 'click': 0})
+
+                payments = student_payment_map.get(student.id, {})
+                cash_payment = payments.get('cash', 0)
+                bank_payment = payments.get('bank', 0)
+                click_payment = payments.get('click', 0)
+
                 sinflar['students'].append({
                     'id': student.user.id,
                     'name': student.user.name,
@@ -294,9 +307,9 @@ class GetSchoolStudents(APIView):
                     'phone': student.user.phone,
                     'total_debt': attendance.total_debt if attendance else 0,
                     'remaining_debt': attendance.remaining_debt if attendance else 0,
-                    'cash': payments['cash'],
-                    'bank': payments['bank'],
-                    'click': payments['click'],
+                    'cash': cash_payment,
+                    'bank': bank_payment,
+                    'click': click_payment,
                 })
 
         unique_dates = AttendancePerMonth.objects.annotate(
@@ -330,12 +343,13 @@ class GetSchoolStudents(APIView):
         month = request.data.get('month')
         year = request.data.get('year')
         branch = request.query_params.get('branch')
+
         classes = ClassNumber.objects.filter(
             price__isnull=False,
             branch_id=branch
         ).order_by('number')
 
-        data = self.get_class_data(classes, year, month)
+        data = self.get_class_data(classes, year=year, month=month)
         return Response(data)
 
 

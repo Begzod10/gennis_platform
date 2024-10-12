@@ -15,13 +15,20 @@ from teachers.models import Teacher
 from teachers.serializers import TeacherSerializer
 from time_table.models import WeekDays
 from time_table.serializers import WeekDaysSerializer
-from .functions.checkStudentRoomTeacher import check_student_room_teacher
 
 
 class HoursSerializers(serializers.ModelSerializer):
+    can_delete = serializers.SerializerMethodField()
+
     class Meta:
         model = Hours
-        fields = ['id', 'start_time', 'end_time', 'name', 'order']
+        fields = ['id', 'start_time', 'end_time', 'name', 'order', 'can_delete']
+
+    def get_can_delete(self, obj):
+        if obj.classtimetable_set.exists():
+            return False
+        else:
+            return True
 
 
 class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
@@ -286,7 +293,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
         branch = self.context['branch']
         hours = Hours.objects.all().order_by('order')
         time_tables = []
-        groups = Group.objects.filter(branch=branch, deleted=False).all()
+        groups = Group.objects.filter(branch=branch, deleted=False).all().order_by('class_number__number')
         for group in groups:
             info = {
                 'id': group.id,

@@ -23,7 +23,7 @@ class ExcelData(APIView):
         # Fetch all students from the database
         branch = request.query_params.get('branch')
         excluded_ids = list(
-            DeletedStudent.objects.values_list('student_id', flat=True)) + \
+            DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
                        list(DeletedNewStudent.objects.values_list('student_id',
                                                                   flat=True))
 
@@ -72,6 +72,7 @@ class ExcelData(APIView):
             sheet[f"L{row_num}"] = f"{student.parent_seria_num}"  # Яшаш манзили
             sheet[f"M{row_num}"] = f"{student.born_date}"  # Яшаш манзили
             sheet[f"N{row_num}"] = f"{student.parents_number}"
+            sheet[f"O{row_num}"] = f"{student.class_number.number}"
 
         buffer = BytesIO()
         workbook.save(buffer)
@@ -88,7 +89,7 @@ class ExcelDataList(APIView):
     def get(self, request, *args, **kwargs):
         branch = request.query_params.get('branch')
         excluded_ids = list(
-            DeletedStudent.objects.values_list('student_id', flat=True)) + \
+            DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
                        list(DeletedNewStudent.objects.values_list('student_id',
                                                                   flat=True))
 
@@ -113,5 +114,6 @@ class ExcelDataList(APIView):
                 "parent_seria_num": student.parent_seria_num,  # Яшаш манзили
                 "parents_born_date": student.born_date,  # Яшаш манзили
                 "parents_number": student.parents_number,
+                "class_number": student.class_number.number
             })
         return Response(data)

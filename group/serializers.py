@@ -1,21 +1,23 @@
 from datetime import datetime
+
 from rest_framework import serializers
+
 from branch.models import Branch
+from branch.serializers import BranchSerializer
+from classes.models import ClassNumber, ClassColors
 from language.models import Language
+from language.serializers import LanguageSerializers
+from students.models import DeletedNewStudent
 from students.models import Student, DeletedStudent, StudentHistoryGroups
 from subjects.models import Subject, SubjectLevel
-from system.models import System
-from teachers.models import Teacher, TeacherHistoryGroups
-from .models import Group, GroupReason, CourseTypes
-from classes.models import ClassNumber, ClassColors
-from time_table.models import GroupTimeTable
-from branch.serializers import BranchSerializer
-from language.serializers import LanguageSerializers
 from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
+from system.models import System
 from system.serializers import SystemSerializers
+from teachers.models import Teacher, TeacherHistoryGroups
 from teachers.serializers import TeacherSerializer
+from time_table.models import GroupTimeTable
 from .functions.CreateSchoolStudentDebts import create_school_student_debts
-from students.models import DeletedNewStudent
+from .models import Group, GroupReason, CourseTypes
 
 
 class CourseTypesSerializers(serializers.ModelSerializer):
@@ -151,7 +153,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                             for attendance in attendances_per_month:
                                 attendance.delete()
                             instance.students.remove(student)
-                            # DeletedNewStudent.objects.create(student=student, comment=comment)
+                            DeletedNewStudent.objects.create(student=student, comment=comment)
                             student_history_group = StudentHistoryGroups.objects.get(group=instance,
                                                                                      teacher=instance.teacher.all()[0],
                                                                                      student=student)
@@ -171,6 +173,13 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                                                                           payment=0)
                             for attendance in attendances_per_month:
                                 attendance.delete()
+                            attendances_per_month2 = student.attendancepermonth_set.filter(
+                                student=student,
+                                month_date__lte=month_date,
+                                payment=0)
+                            for attendance in attendances_per_month2:
+                                if attendance.group == instance:
+                                    attendance.delete()
                             instance.students.remove(student)
                             DeletedStudent.objects.create(student=student, group=instance,
                                                           comment=comment if comment else None,
@@ -249,7 +258,7 @@ class GroupSerializer(serializers.ModelSerializer):
         model = Group
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
                   'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system', 'class_number', 'color',
-                  'course_types']
+                  'course_types', 'deleted']
 
     def get_students(self, obj):
         from students.serializers import StudentListSerializer

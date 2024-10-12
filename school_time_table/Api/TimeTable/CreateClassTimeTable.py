@@ -40,7 +40,7 @@ class ClassesFlows(generics.ListAPIView):
             queryset = Flow.objects.filter(branch_id=branch_id)
 
         if type == 'group':
-            queryset = Group.objects.filter(class_number__isnull=False, branch_id=branch_id, deleted=False)
+            queryset = Group.objects.filter(class_number__isnull=False, branch_id=branch_id, deleted=False).order_by('class_number__number')
         return queryset
 
     def get_serializer_class(self):

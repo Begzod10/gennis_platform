@@ -8,6 +8,7 @@ from time_table.models import GroupTimeTable, WeekDays
 from attendances.models import AttendancePerMonth
 import datetime
 from user.models import CustomUser
+from school_time_table.models import ClassTimeTable
 
 
 class get_user_with_telegram_username(APIView):
@@ -177,15 +178,21 @@ class get_table_week_with_student_username(APIView):
             if groups:
                 for group in groups:
                     week = WeekDays.objects.get(order=request.data.get('day'))
-                    group_time_table = GroupTimeTable.objects.filter(group=group, week=week).first()
+                    group_time_table = ClassTimeTable.objects.filter(group=group, week=week).first()
                     if group_time_table:
+                        subject = None
+                        if group.subject:
+                            subject = group.subject.name
+                        level = None
+                        if group.level:
+                            level = group.level.name
                         data.append({
                             'group_name': group.name,
-                            'start_time': group_time_table.start_time,
-                            'end_time': group_time_table.end_time,
+                            'start_time': group_time_table.hours.start_time,
+                            'end_time': group_time_table.hours.end_time,
                             'room': group_time_table.room.name,
-                            'subject': group.subject.name,
-                            'level': group.level.name,
+                            'subject': subject,
+                            'level': level,
                             'teacher': [f"{teacher.user.name} {teacher.user.surname}" for teacher in
                                         group.teacher.all()],
                             'language': group.language.name if group.language else None
@@ -220,15 +227,21 @@ class get_table_with_student_username(APIView):
                     today = datetime.datetime.now()
                     name_en = today.strftime("%A")
                     week = WeekDays.objects.get(name_en=name_en)
-                    group_time_table = GroupTimeTable.objects.filter(group=group, week=week).first()
+                    group_time_table = ClassTimeTable.objects.filter(group=group, week=week).first()
                     if group_time_table:
+                        subject = None
+                        if group.subject:
+                            subject = group.subject.name
+                        level = None
+                        if group.level:
+                            level = group.level.name
                         data.append({
                             'group_name': group.name,
-                            'start_time': group_time_table.start_time,
-                            'end_time': group_time_table.end_time,
+                            'start_time': group_time_table.hours.start_time,
+                            'end_time': group_time_table.hours.end_time,
                             'room': group_time_table.room.name,
-                            'subject': group.subject.name,
-                            'level': group.level.name,
+                            'subject': subject,
+                            'level': level,
                             'teacher': [f"{teacher.user.name} {teacher.user.surname}" for teacher in
                                         group.teacher.all()],
                             'language': group.language.name if group.language else None

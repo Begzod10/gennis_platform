@@ -42,7 +42,7 @@ class StudentSerializer(serializers.ModelSerializer):
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
 
-        student = Student.objects.create(user=user,**validated_data)
+        student = Student.objects.create(user=user, **validated_data)
         if validated_data.get('subject'):
             subject_data = validated_data.pop('subject')
             student.subject.set(subject_data)
@@ -51,28 +51,18 @@ class StudentSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', None)
         subject_data = validated_data.pop('subject', None)
-
         if user_data:
-            user = instance.user
-            for attr, value in user_data.items():
-                if attr == 'password':
-                    user.set_password(value)
-                else:
-                    setattr(user, attr, value)
-            user.save()
-
+            if isinstance(user_data.get('language'), Language):
+                user_data['language'] = user_data['language'].id
+            user_serializer = UserSerializerWrite(instance=instance.user, data=user_data, partial=True)
+            user_serializer.is_valid(raise_exception=True)
+            user_serializer.save()
         if subject_data:
-            subjects = []
-            for subj_data in subject_data:
-                subject, created = Subject.objects.get_or_create(**subj_data)
-                subjects.append(subject)
-            instance.subject.set(subjects)
-
-        # Update other fields
+            instance.subject.set(subject_data)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-        return StudentPaymentSerializer(instance)
+        return instance
 
 
 class GroupSerializerStudents(serializers.ModelSerializer):
@@ -100,21 +90,40 @@ class GroupSerializerStudents(serializers.ModelSerializer):
 
 
 def get_remaining_debt_for_student(student_id):
+    attendances = AttendancePerMonth.objects.filter(student_id=student_id).all()
     current_date = date.today()
+    for month in attendances:
+        if month.payment == 0 and month.remaining_debt == 0:
+            month.remaining_debt = month.total_debt
+            month.save()
+        if month.payment < 0:
+            month.payment = 0
+            month.save()
+        month.remaining_debt = month.total_debt - month.payment-month.discount
+        month.save()
+
+
     remaining_debt_sum = AttendancePerMonth.objects.filter(
         student_id=student_id,
         month_date__lte=current_date
     ).aggregate(total_remaining_debt=Sum('remaining_debt'))
     total_remaining_debt = remaining_debt_sum['total_remaining_debt'] or 0
 
-    return total_remaining_debt
+    if total_remaining_debt == 0:
+        remaining_debt_sum = AttendancePerMonth.objects.filter(
+            student_id=student_id,
+            month_date__gte=current_date
+        ).aggregate(total_remaining_debt=Sum('payment'))
+
+        return remaining_debt_sum['total_remaining_debt'] or 0
+    else:
+        return f"-{total_remaining_debt}"
 
 
 class StudentListSerializer(serializers.ModelSerializer):
     from classes.serializers import ClassNumberSerializers
-
-    user = UserSerializerRead(read_only=True)
-    subject = SubjectSerializer(many=True)
+    user = UserSerializerRead(required=False)
+    subject = SubjectSerializer(many=True, required=False)
     parents_number = serializers.CharField()
     shift = serializers.CharField()
     group = serializers.SerializerMethodField(required=False)
@@ -217,7 +226,7 @@ class StudentCharityListSerializer(serializers.ModelSerializer):
 
 
 class StudentPaymentSerializer(serializers.ModelSerializer):
-    student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
+    student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), required=False)
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     payment_type = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
     payment_sum = serializers.IntegerField(required=False)
@@ -229,7 +238,7 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentPayment
         fields = ['student', 'payment_type', 'payment_sum', 'status', 'branch', 'name', 'surname', 'added_data',
-                  'payment_type_name']
+                  'payment_type_name', 'date']
 
     def get_name(self, obj):
         return obj.student.user.name
@@ -294,7 +303,7 @@ class StudentPaymentListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentPayment
-        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'added_data']
+        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'added_data', 'date']
 
 
 class DeletedNewStudentSerializer(serializers.ModelSerializer):
@@ -305,12 +314,30 @@ class DeletedNewStudentSerializer(serializers.ModelSerializer):
         fields = ['id', 'student']
 
 
+class StudentSerializerLists(serializers.ModelSerializer):
+    user = UserSerializerRead(read_only=True)
+    group = serializers.SerializerMethodField(required=False)
+
+    class Meta:
+        model = Student
+        fields = ['id', 'user', 'group']
+
+    def get_group(self, obj):
+        return [GroupSerializerStudents(group).data for group in obj.groups_student.all()]
+
+
 class DeletedNewStudentListSerializer(serializers.ModelSerializer):
-    student = StudentListSerializer(read_only=True)
+    student = StudentSerializerLists(read_only=True)
 
     class Meta:
         model = DeletedNewStudent
         fields = ['id', 'student']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        return {'id': representation['student']['id'], 'user': representation['student']['user'],
+                'class': representation['student']['group'], "deleted": True, 'date': instance.created,
+                'comment': instance.comment}
 
 
 class DeletedStudentSerializer(serializers.ModelSerializer):
@@ -331,16 +358,19 @@ class DeletedStudentSerializer(serializers.ModelSerializer):
                                                                       group_reason=validated_data.get(
                                                                           'group_reason'))
         if teacher_group_statistics:
-            deleted_students_number = len(DeletedStudent.objects.get(teacher=validated_data.get('teacher')).all()) / 100
+            deleted_students_number = len(
+                DeletedStudent.objects.get(teacher=validated_data.get('teacher'), deleted=False).all()) / 100
 
             number_students = len(DeletedStudent.objects.get(reason=validated_data.get('group_reason'),
-                                                             teacher=validated_data.get('teacher')).all())
+                                                             teacher=validated_data.get('teacher'),
+                                                             deleted=False).all())
             percentage = deleted_students_number * number_students
             teacher_group_statistics.number_students = number_students
             teacher_group_statistics.percentage = percentage
             teacher_group_statistics.save()
         else:
-            deleted_students_number = len(DeletedStudent.objects.get(teacher=validated_data.get('teacher')).all()) / 100
+            deleted_students_number = len(
+                DeletedStudent.objects.get(teacher=validated_data.get('teacher'), deleted=False).all()) / 100
 
             number_students = 1
             percentage = deleted_students_number * number_students

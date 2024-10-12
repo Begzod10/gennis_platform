@@ -2,11 +2,18 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from permissions.response import QueryParamFilterMixin
 from ..models import Flow
 from ..serializers import FlowCreateUpdateSerializer, FlowsSerializer
 
 
-class FlowListCreateView(generics.ListCreateAPIView):
+class FlowListCreateView(QueryParamFilterMixin, generics.ListCreateAPIView):
+    filter_mappings = {
+        'teacher': 'teacher__id',
+        'subject': 'subject__id'
+
+    }
+
     permission_classes = [IsAuthenticated]
 
     queryset = Flow.objects.all()
@@ -27,7 +34,12 @@ class FlowListCreateView(generics.ListCreateAPIView):
         return Response({'flow': read_serializer.data, 'msg': 'Patok muvaffaqqiyatli kiritildi'})
 
 
-class FlowListView(generics.ListAPIView):
+class FlowListView(QueryParamFilterMixin, generics.ListCreateAPIView):
+    filter_mappings = {
+        'teacher': 'teacher__id',
+        'subject': 'subject__id'
+
+    }
     permission_classes = [IsAuthenticated]
 
     queryset = Flow.objects.all()

@@ -8,9 +8,10 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from permissions.response import IsAdminOrIsSelf
+
 from gennis_platform import settings
 from gennis_platform.settings import classroom_server
+from permissions.response import IsAdminOrIsSelf
 from permissions.response import QueryParamFilterMixin
 from subjects.serializers import SubjectSerializer, Subject
 from user.models import CustomUser, UserSalaryList
@@ -28,9 +29,6 @@ class UserListCreateView(generics.ListAPIView):
         queryset = CustomUser.objects.all()
         serializer = UserSerializerRead(queryset, many=True)
         return Response(serializer.data)
-
-
-
 
 
 class UserDetailView(generics.RetrieveAPIView):
@@ -140,9 +138,16 @@ class EmployeersListView(QueryParamFilterMixin, generics.ListAPIView):
 class EmployerRetrieveView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
+    serializer_class = Employeers
     queryset = CustomAutoGroup.objects.all()
 
-    serializer_class = Employeers
+    def get_object(self):
+        from user.cron import create_user_salary
+        employer = super().get_object()
+        create_user_salary(employer.user_id)
+
+        return employer
+
 
 
 class UserSalaryMonthView(generics.RetrieveAPIView):

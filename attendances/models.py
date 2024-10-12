@@ -24,7 +24,7 @@ class AttendancePerMonth(models.Model):
     present_days = models.IntegerField(default=0, null=True)
     absent_days = models.IntegerField(default=0, null=True)
     scored_days = models.IntegerField(default=0, null=True)
-
+    # discount = models.IntegerField(null=True,default=0)
 
 class AttendancePerDay(models.Model):
     attendance_per_month = models.ForeignKey(AttendancePerMonth, on_delete=models.CASCADE, null=True)

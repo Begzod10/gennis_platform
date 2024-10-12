@@ -15,10 +15,20 @@ class RoomCreateSerializer(serializers.ModelSerializer):
 
 class RoomGetSerializer(serializers.ModelSerializer):
     branch = BranchSerializer(required=False)
+    can_delete = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Room
-        fields = ['id', 'name', 'seats_number', 'electronic_board', 'deleted', 'branch']
+        fields = ['id', 'name', 'seats_number', 'electronic_board', 'deleted', 'branch','can_delete']
+
+    def get_can_delete(self, obj):
+        status = None
+        if obj.classtimetable_set.exists():
+            status = False
+        else:
+            status = True
+
+        return status
 
 
 class RoomImagesGetSerializer(serializers.ModelSerializer):

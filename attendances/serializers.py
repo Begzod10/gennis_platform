@@ -193,9 +193,15 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
             return attendance_per_day
 
 
+class StudentDetailSchoolSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    status = serializers.BooleanField()
+    reason = serializers.CharField(required=False,allow_null=True,allow_blank=True)
+
+
 class AttendancePerDayCreateUpdateSerializerSchool(serializers.ModelSerializer):
     students = serializers.ListField(
-        child=StudentDetailSerializer(),
+        child=StudentDetailSchoolSerializer(),
         write_only=True
     )
     date = serializers.CharField(default=None, allow_blank=True)
@@ -204,9 +210,7 @@ class AttendancePerDayCreateUpdateSerializerSchool(serializers.ModelSerializer):
 
     class Meta:
         model = AttendancePerDay
-        fields = ['id', 'status', 'debt_per_day', 'salary_per_day', 'charity_per_day', 'day',
-                  'homework_ball', 'dictionary_ball', 'activeness_ball', 'average', 'teacher', 'students',
-                  'status', 'group', 'attendance_per_month', 'date']
+        fields = ['id', 'teacher', 'students', 'group', 'date']
 
     def create(self, validated_data):
         teacher = validated_data.get('teacher')
@@ -214,25 +218,32 @@ class AttendancePerDayCreateUpdateSerializerSchool(serializers.ModelSerializer):
         students = validated_data.pop('students', [])
         date = validated_data.get('date')
         today = datetime.today()
-        month_date = f"{today.year}-{date}"
         day = datetime.strptime(f"{today.year}-{date}", "%Y-%m-%d")
 
         errors = []
-        status = False
-        attendance_per_day = None
+        created_instances = []
 
         for student in students:
-
             student_data = Student.objects.get(pk=student['id'])
             try:
                 AttendancePerDay.objects.get(group_id=group.id, teacher=teacher, day=day, student_id=student['id'])
                 errors.append(
-                    {'msg': f'bu kunda {student_data.user.name} {student_data.user.surname} davomat qilingan'})
+                    {
+                        'msg': f'Attendance already exists for {student_data.user.name} {student_data.user.surname} on this day.'}
+                )
             except AttendancePerDay.DoesNotExist:
-                status = True
+                attendance = AttendancePerDay.objects.create(
+                    teacher=teacher,
+                    group=group,
+                    student=student_data,
+                    day=day,
+                    status=student['status'],
+                    reason=student.get('reason', None)
+                )
+                print(student)
+                created_instances.append(attendance)
 
-        calculate_group_attendances(group.id, month_date)
-        if not status:
+        if errors:
             raise serializers.ValidationError({"detail": errors})
-        else:
-            return attendance_per_day
+
+        return created_instances[0] if created_instances else None
