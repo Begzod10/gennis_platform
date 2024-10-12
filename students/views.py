@@ -467,17 +467,20 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 'cash': attendance.studentpayment_set.filter(
                     payment_type__name='cash',
                     deleted=False,
+                    status=False,
+
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
                 'bank': attendance.studentpayment_set.filter(
                     payment_type__name='bank',
                     deleted=False,
+                    status=False,
+
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
                 'click': attendance.studentpayment_set.filter(
-                    date__month=attendance.month_date.month,
-                    student_id=student_id,
                     payment_type__name='click',
                     deleted=False,
-                    date__year=attendance.month_date.year
+                    status=False,
+
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
 
             })
@@ -539,17 +542,19 @@ class MissingAttendanceView(APIView):
                 'cash': attendance.studentpayment_set.filter(
                     payment_type__name='cash',
                     deleted=False,
+                    status=False,
+
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
                 'bank': attendance.studentpayment_set.filter(
                     payment_type__name='bank',
                     deleted=False,
+                    status=False,
+
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
                 'click': attendance.studentpayment_set.filter(
-                    date__month=attendance.month_date.month,
-                    student_id=student_id,
                     payment_type__name='click',
                     deleted=False,
-                    date__year=attendance.month_date.year
+                    status=False,
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
 
             })
