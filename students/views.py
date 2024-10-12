@@ -356,7 +356,7 @@ class GetMonth(APIView):
             attendance_per_month.remaining_debt = attendance_per_month.total_debt
             attendance_per_month.save()
 
-        payment_sum = request.data['payment_sum']
+        payment_sum = int(request.data['payment_sum'])
         branch = request.data['branch']
 
         if attendance_per_month.remaining_debt >= payment_sum:
@@ -590,7 +590,7 @@ class StudentCharityModelView(APIView):
             attendance_per_month.remaining_debt = attendance_per_month.total_debt
             attendance_per_month.save()
 
-        payment_sum = request.data['payment_sum']
+        payment_sum = int(request.data['payment_sum'])
         branch = request.data['branch']
 
         if attendance_per_month.remaining_debt >= payment_sum:
