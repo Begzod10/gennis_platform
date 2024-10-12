@@ -279,7 +279,9 @@ class GetSchoolStudents(APIView):
                 student_id__in=students,
                 date__month=current_month,
                 date__year=current_year,
-                deleted=False
+                deleted=False,
+                status=False
+
             ).values('student_id', 'payment_type__name').annotate(total_sum=Sum('payment_sum'))
 
             student_payment_map = {}

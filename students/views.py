@@ -449,7 +449,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
 
         for attendance in attendances:
             student_payemnt = StudentPayment.objects.filter(
-                attendance=attendance
+                attendance=attendance, status=True
 
             ).first()
             data.append({
@@ -461,6 +461,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 "discount": attendance.discount,
                 "discount_sum": student_payemnt.payment_sum if student_payemnt else 0,
                 "discount_reason": student_payemnt.reason if student_payemnt else 0,
+                "discount_id": student_payemnt.id if student_payemnt else 0,
                 "reason": StudentCharity.objects.filter(
                     student_id=student_id).first().name if StudentCharity.objects.filter(
                     student_id=student_id).first() else None,
@@ -523,7 +524,7 @@ class MissingAttendanceView(APIView):
         missing_months = set(all_months) - set(months_with_attendance)
         month_names = [calendar.month_name[month] for month in sorted(missing_months)]
         student_payemnt = StudentPayment.objects.filter(
-            attendance=attendance
+            attendance=attendance, status=True
 
         ).first()
         data = []
@@ -536,6 +537,7 @@ class MissingAttendanceView(APIView):
                 "discount": attendance.discount,
                 "discount_sum": student_payemnt.payment_sum if student_payemnt else 0,
                 "discount_reason": student_payemnt.reason if student_payemnt else 0,
+                "discount_id": student_payemnt.id if student_payemnt else 0,
                 "reason": StudentCharity.objects.filter(
                     student_id=student_id).first().name if StudentCharity.objects.filter(
                     student_id=student_id).first() else None,
@@ -619,3 +621,18 @@ class StudentCharityModelView(APIView):
         attendance_per_month.save()
 
         return Response({"msg": "Chegirma muvaffaqiyatli yaratildi"})
+
+    def update(self, request, *args, **kwargs):
+        id = self.kwargs('student_id')
+        sum = int(request.data.get('payment_sum'))
+        payment = StudentPayment.objects.get(pk=id)
+        attendance = AttendancePerMonth.objects.get(pk=payment.attendance.id)
+        attendance.remaining_debt = attendance.total_debt - (
+                attendance.payment - payment.payment_sum) + attendance.discount + sum
+        attendance.payment = attendance.payment - payment.payment_sum + sum
+        attendance.save()
+        payment.payment_sum = sum
+        payment.reason = request.data.get('reason', None)
+        payment.save()
+
+        return Response({"msg": "Chegirma muvaffaqiyatli o'zgartirildi"})
