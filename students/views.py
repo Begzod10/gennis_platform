@@ -113,6 +113,7 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
 #             ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
 #         ).distinct()
 
+@method_decorator(cache_page(60 * 60 * 2), name='dispatch')
 class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = StudentListSerializer
@@ -126,8 +127,7 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__name', 'user__surname', 'user__username']
 
-    @method_decorator(cache_page(60 * 60 * 2))
-    async def get_queryset(self,request):
+    async def get_queryset(self):
         excluded_ids = await DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
         excluded_ids += await DeletedNewStudent.objects.values_list('student_id', flat=True)
         excluded_ids = list(excluded_ids)
@@ -136,7 +136,6 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
         ).distinct()
 
         return queryset
-
 
 class ActiveStudents(QueryParamFilterMixin, APIView):
     filter_mappings = {
