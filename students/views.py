@@ -127,7 +127,7 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     search_fields = ['user__name', 'user__surname', 'user__username']
 
     @method_decorator(cache_page(60 * 60 * 2))
-    async def get_queryset(self):
+    async def get_queryset(self,request):
         excluded_ids = await DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
         excluded_ids += await DeletedNewStudent.objects.values_list('student_id', flat=True)
         excluded_ids = list(excluded_ids)
