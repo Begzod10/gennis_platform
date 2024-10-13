@@ -10,6 +10,8 @@ from django.db.models import Q
 from django.db.models import Sum
 from django.db.models.functions import ExtractMonth
 from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import status
@@ -87,11 +89,33 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
         return Response(student_serializer.data)
 
 
+#
+# class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
+#     permission_classes = [IsAuthenticated]
+#     serializer_class = StudentListSerializer
+#     queryset = Student.objects.filter(groups_student__isnull=True).distinct()
+#
+#     filter_mappings = {
+#         'branch': 'user__branch_id',
+#         'subject': 'subject__id',
+#         'age': 'user__birth_date',
+#         'language': 'user__language_id',
+#         'number': 'class_number_id',
+#     }
+#     filter_backends = [filters.SearchFilter]
+#     search_fields = ['user__name', 'user__surname', 'user__username']
+#
+#     def get_queryset(self):
+#         excluded_ids = list(DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
+#                        list(DeletedNewStudent.objects.values_list('student_id', flat=True))
+#
+#         return Student.objects.filter(
+#             ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
+#         ).distinct()
+
 class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = StudentListSerializer
-    queryset = Student.objects.filter(groups_student__isnull=True).distinct()
-
     filter_mappings = {
         'branch': 'user__branch_id',
         'subject': 'subject__id',
@@ -102,13 +126,16 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__name', 'user__surname', 'user__username']
 
-    def get_queryset(self):
-        excluded_ids = list(DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
-                       list(DeletedNewStudent.objects.values_list('student_id', flat=True))
-
-        return Student.objects.filter(
+    @method_decorator(cache_page(60 * 60 * 2))
+    async def get_queryset(self):
+        excluded_ids = await DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
+        excluded_ids += await DeletedNewStudent.objects.values_list('student_id', flat=True)
+        excluded_ids = list(excluded_ids)
+        queryset = await Student.objects.filter(
             ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
         ).distinct()
+
+        return queryset
 
 
 class ActiveStudents(QueryParamFilterMixin, APIView):
