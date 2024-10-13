@@ -115,7 +115,7 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
 from asgiref.sync import sync_to_async
 
 @method_decorator(cache_page(60 * 60 * 2), name='dispatch')
-class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
+class NewRegisteredStudents( ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = StudentListSerializer
     filter_mappings = {
