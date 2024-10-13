@@ -89,35 +89,12 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
         return Response(student_serializer.data)
 
 
-#
-# class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
-#     permission_classes = [IsAuthenticated]
-#     serializer_class = StudentListSerializer
-#     queryset = Student.objects.filter(groups_student__isnull=True).distinct()
-#
-#     filter_mappings = {
-#         'branch': 'user__branch_id',
-#         'subject': 'subject__id',
-#         'age': 'user__birth_date',
-#         'language': 'user__language_id',
-#         'number': 'class_number_id',
-#     }
-#     filter_backends = [filters.SearchFilter]
-#     search_fields = ['user__name', 'user__surname', 'user__username']
-#
-#     def get_queryset(self):
-#         excluded_ids = list(DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
-#                        list(DeletedNewStudent.objects.values_list('student_id', flat=True))
-#
-#         return Student.objects.filter(
-#             ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
-#         ).distinct()
-from asgiref.sync import sync_to_async
-
-@method_decorator(cache_page(60 * 60 * 2), name='dispatch')
-class NewRegisteredStudents( ListAPIView):
+@method_decorator(cache_page(60 * 2), name='dispatch')
+class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = StudentListSerializer
+    queryset = Student.objects.filter(groups_student__isnull=True).distinct()
+
     filter_mappings = {
         'branch': 'user__branch_id',
         'subject': 'subject__id',
@@ -128,16 +105,14 @@ class NewRegisteredStudents( ListAPIView):
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__name', 'user__surname', 'user__username']
 
-    async def get_queryset(self):
-        excluded_ids = await sync_to_async(list)(
-            DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True))
-        excluded_ids += await sync_to_async(list)(DeletedNewStudent.objects.values_list('student_id', flat=True))
-        excluded_ids = list(excluded_ids)
-        queryset = await sync_to_async(list)(Student.objects.filter(
-            ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
-        ).distinct())
+    def get_queryset(self):
+        excluded_ids = list(DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
+                       list(DeletedNewStudent.objects.values_list('student_id', flat=True))
 
-        return queryset
+        return Student.objects.filter(
+            ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
+        ).distinct()
+
 
 class ActiveStudents(QueryParamFilterMixin, APIView):
     filter_mappings = {
