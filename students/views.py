@@ -112,6 +112,7 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
 #         return Student.objects.filter(
 #             ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
 #         ).distinct()
+from asgiref.sync import sync_to_async
 
 @method_decorator(cache_page(60 * 60 * 2), name='dispatch')
 class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
@@ -128,12 +129,13 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     search_fields = ['user__name', 'user__surname', 'user__username']
 
     async def get_queryset(self):
-        excluded_ids = await DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
-        excluded_ids += await DeletedNewStudent.objects.values_list('student_id', flat=True)
+        excluded_ids = await sync_to_async(list)(
+            DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True))
+        excluded_ids += await sync_to_async(list)(DeletedNewStudent.objects.values_list('student_id', flat=True))
         excluded_ids = list(excluded_ids)
-        queryset = await Student.objects.filter(
+        queryset = await sync_to_async(list)(Student.objects.filter(
             ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
-        ).distinct()
+        ).distinct())
 
         return queryset
 
