@@ -243,10 +243,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # from branch.models import Branch
         # for branch in Branch.objects.filter(location__system__name='school').all():
         #     ClassNumber.objects.get_or_create(number=0, branch=branch)
-        from overhead.models import Overhead
-        from capital.models import OldCapital
-        Overhead.objects.all().update(branch_id=8)
-        OldCapital.objects.all().update(branch_id=8)
+        # from overhead.models import Overhead
+        # from capital.models import OldCapital
+        # Overhead.objects.all().update(branch_id=8)
+        # OldCapital.objects.all().update(branch_id=8)
         username = attrs.get('username')
         password = attrs.get('password')
         user = CustomUser.objects.get(username=username)
