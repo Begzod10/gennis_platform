@@ -88,7 +88,7 @@ class Encashments(APIView):
                 branch_id=branch,
                 deleted=False
 
-            ).distinct()
+            )
             overhead_serializer = OverheadSerializerGet(overheads, many=True)
 
             # total_capital = Capital.objects.filter(
