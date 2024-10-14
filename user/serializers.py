@@ -240,10 +240,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # from attendances.models import AttendancePerMonth
         # AttendancePerMonth.objects.all().update(status=False, remaining_debt=0, payment=0)
         from classes.models import ClassNumber
-        # ClassNumber.objects.filter(number=0).all().delete()
-        from branch.models import Branch
-        for branch in Branch.objects.filter(location__system__name='school').all():
-            ClassNumber.objects.get_or_create(number=0, branch=branch)
+        ClassNumber.objects.filter(number=0).all().delete()
+        # from branch.models import Branch
+        # for branch in Branch.objects.filter(location__system__name='school').all():
+        #     ClassNumber.objects.get_or_create(number=0, branch=branch)
 
         username = attrs.get('username')
         password = attrs.get('password')
