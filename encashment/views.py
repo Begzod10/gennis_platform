@@ -77,16 +77,16 @@ class Encashments(APIView):
             branch_serializer = BranchPaymentListSerializers(branch_payments.distinct(), many=True)
 
             total_overhead_payment = Overhead.objects.filter(
-                # created__range=(ot, do),
+                created__range=(ot, do),
                 payment_id=payment_type,
                 branch_id=branch,
                 deleted=False
             ).aggregate(total=Sum('price'))['total'] or 0
             overheads = Overhead.objects.filter(
-                # created__range=(ot, do),
+                created__range=(ot, do),
                 payment_id=payment_type,
                 branch_id=branch,
-                # deleted=False
+                deleted=False
 
             )
             overhead_serializer = OverheadSerializerGet(overheads, many=True)
