@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth.models import Group
 from rest_framework import serializers
@@ -126,8 +124,6 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
     def get_surname(self, obj):
         return obj.user.surname
 
-
-
     def get_payment_type_name(self, obj):
         return obj.payment_types.name
 
@@ -243,6 +239,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # StudentPayment.objects.all().delete()
         # from attendances.models import AttendancePerMonth
         # AttendancePerMonth.objects.all().update(status=False, remaining_debt=0, payment=0)
+        from classes.models import ClassNumber
+        from branch.models import Branch
+        for branch in Branch.objects.filter(location__system__name='school').all():
+            ClassNumber.objects.get_or_create(number=0, branch=branch)
+
         username = attrs.get('username')
         password = attrs.get('password')
         user = CustomUser.objects.get(username=username)
