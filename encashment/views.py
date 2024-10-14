@@ -86,7 +86,7 @@ class Encashments(APIView):
                 # created__range=(ot, do),
                 payment_id=payment_type,
                 branch_id=branch,
-                deleted=False
+                # deleted=False
 
             )
             overhead_serializer = OverheadSerializerGet(overheads, many=True)
