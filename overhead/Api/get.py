@@ -18,7 +18,7 @@ class OverheadListView(generics.ListAPIView):
     }
     permission_classes = [IsAuthenticated]
 
-    queryset = Overhead.objects.all().order_by('created')
+    queryset = Overhead.objects.all().order_by('-created')
     serializer_class = OverheadSerializerGet
 
 
