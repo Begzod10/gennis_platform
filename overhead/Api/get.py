@@ -11,25 +11,17 @@ from overhead.serializers import OverheadSerializerGet, OverheadSerializerGetTYp
 
 
 class OverheadListView(generics.ListAPIView):
+    filter_mappings = {
+        'status': 'deleted',
+        'branch': 'branch_id'
+
+    }
     permission_classes = [IsAuthenticated]
 
-    queryset = Overhead.objects.all()
+    queryset = Overhead.objects.all().order_by('created')
     serializer_class = OverheadSerializerGet
 
-    def get(self, request, *args, **kwargs):
 
-        queryset = Overhead.objects.all()
-        location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch_id', None)
-        status = self.request.query_params.get('status', None)
-        if status is not None:
-            queryset = queryset.filter(deleted=status)
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        if location_id is not None:
-            queryset = queryset.filter(location_id=location_id)
-        serializer = OverheadSerializerGet(queryset, many=True)
-        return Response(serializer.data)
 
 
 class OverheadTYpeListView(generics.ListAPIView):
