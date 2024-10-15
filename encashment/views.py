@@ -39,7 +39,7 @@ class Encashments(APIView):
                 return Response({'error': 'Missing required parameters'}, status=400)
 
             student_payments = StudentPayment.objects.filter(
-                added_data__range=(ot, do),
+                date__range=(ot, do),
                 payment_type_id=payment_type,
                 student__user__branch_id=branch,
                 deleted=False,
