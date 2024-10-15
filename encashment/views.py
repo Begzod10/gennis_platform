@@ -44,7 +44,7 @@ class Encashments(APIView):
                 student__user__branch_id=branch,
                 deleted=False,
                 status=False
-            )
+            ).order_by('date')
             student_total_payment = student_payments.aggregate(total=Sum('payment_sum'))['total'] or 0
             student_serializer = StudentPaymentSerializer(student_payments.distinct(), many=True)
 
