@@ -294,8 +294,8 @@ class PaymentDatas(APIView):
         data = json.loads(request.body)
         year = data['year']
         month = data['month']
-        payments = StudentPayment.objects.filter(deleted=False, student_id=student_id, added_data__year=year,
-                                                 added_data__month=month).all()
+        payments = StudentPayment.objects.filter(deleted=False, student_id=student_id, date__year=year,
+                                                 date__month=month).all()
         data = StudentPaymentListSerializer(payments, many=True).data
 
         return Response(data)
@@ -307,8 +307,8 @@ class PaymentDatas(APIView):
         payments_by_year = {}
 
         for payment in student_payments:
-            year = payment.added_data.year
-            month = payment.added_data.month
+            year = payment.date.year
+            month = payment.date.month
 
             if year not in payments_by_year:
                 payments_by_year[year] = set()
