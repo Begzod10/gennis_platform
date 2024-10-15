@@ -8,9 +8,10 @@ from rest_framework.views import APIView
 
 from overhead.models import Overhead, OverheadType
 from overhead.serializers import OverheadSerializerGet, OverheadSerializerGetTYpe, MonthDaysSerializer
+from permissions.response import QueryParamFilterMixin
 
 
-class OverheadListView(generics.ListAPIView):
+class OverheadListView(QueryParamFilterMixin,generics.ListAPIView):
     filter_mappings = {
         'status': 'deleted',
         'branch': 'branch_id'
