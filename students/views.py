@@ -31,24 +31,10 @@ from .serializers import (StudentListSerializer,
 
 class StudentListView(APIView):
     def get(self, request, *args, **kwargs):
-        deleted_student_ids = DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
-        deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
-        active_students = Student.objects.exclude(id__in=deleted_student_ids).exclude(id__in=deleted_new_student_ids)[
-                          :100]
+        active_students = Student.objects.all()
         student_serializer = StudentListSerializer(active_students, many=True)
 
-        deleted_students = DeletedStudent.objects.filter(deleted=False).all()
-        deleted_student_serializer = DeletedStudentListSerializer(deleted_students, many=True)
-        delete_new_students = DeletedNewStudent.objects.exclude(id__in=deleted_student_ids)
-        delete_new_student_serializer = DeletedNewStudentListSerializer(delete_new_students, many=True)
-
-        data = {
-            'new_students': student_serializer.data,
-            'deleted_students': deleted_student_serializer.data,
-            'active': delete_new_student_serializer.data,
-        }
-
-        return Response(data)
+        return Response(student_serializer.data)
 
 
 class DeletedFromRegistered(QueryParamFilterMixin, APIView):
