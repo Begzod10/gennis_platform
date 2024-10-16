@@ -53,6 +53,7 @@ class UserSerializerWrite(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
+        #test
         profession = validated_data.pop('profession', None)
 
         user = super().create(validated_data)
