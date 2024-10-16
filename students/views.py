@@ -29,7 +29,7 @@ from .serializers import (StudentListSerializer,
                           DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
 
 
-class StudentListView(QueryParamFilterMixin, ListAPIView):
+class StudentListView(ListAPIView):
     filter_mappings = {
         'branch': 'user__branch_id',
     }
