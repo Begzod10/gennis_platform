@@ -253,6 +253,8 @@ class GetSchoolStudents(APIView):
         total_sum_test = 0
         total_debt = 0
         reaming_debt = 0
+        total_dis = 0
+        total_discount = 0
         data = {
             'class': [],
             'dates': []
@@ -320,10 +322,11 @@ class GetSchoolStudents(APIView):
                     date__year=current_year
                 ).aggregate(total=Sum('payment_sum'))['total'] or 0
 
-                total_debt += total_debt_student - paid_amount
-                total_sum_test += cash_payment+bank_payment+click_payment
+                total_debt += total_debt_student - discount
+                total_sum_test += cash_payment + bank_payment + click_payment
                 reaming_debt += remaining_debt_student
-
+                total_dis += discount
+                total_discount = paid_amount
                 class_data['students'].append({
                     'id': student.user.id,
                     'name': student.user.name,
@@ -334,6 +337,8 @@ class GetSchoolStudents(APIView):
                     'cash': cash_payment,
                     'bank': bank_payment,
                     'click': click_payment,
+                    "total_dis": discount,
+                    "total_discount": paid_amount
                 })
 
         unique_dates = AttendancePerMonth.objects.annotate(
@@ -354,6 +359,8 @@ class GetSchoolStudents(APIView):
         data['total_sum'] = total_sum_test
         data['total_debt'] = total_debt
         data['reaming_debt'] = reaming_debt
+        data['total_dis'] = total_dis
+        data['total_discount'] = total_discount
 
         return data
 
