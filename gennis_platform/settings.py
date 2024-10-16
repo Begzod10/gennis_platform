@@ -69,7 +69,8 @@ INSTALLED_APPS = [
     'lesson_plan.apps.LessonPlanConfig',
     'Calendar.apps.CalendarConfig',
     'encashment.apps.EncashmentConfig',
-    "mobile.apps.MobileConfig"
+    "mobile.apps.MobileConfig",
+    'django_filters',
 ]
 
 MIDDLEWARE = [
@@ -131,8 +132,8 @@ REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOf
                   'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication',
                                                      'rest_framework.authentication.BasicAuthentication',
                                                      'rest_framework.authentication.SessionAuthentication', ],
-                  # 'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend',
-                  #                             'rest_framework.filters.SearchFilter'],
+                  'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend',
+                                              'rest_framework.filters.SearchFilter'],
 
                   }
 SIMPLE_JWT = {'ACCESS_TOKEN_LIFETIME': timedelta(minutes=600), 'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
