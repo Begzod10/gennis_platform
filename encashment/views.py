@@ -250,6 +250,9 @@ class Encashments(APIView):
 class GetSchoolStudents(APIView):
 
     def get_class_data(self, classes, year=None, month=None):
+        total_sum = 0
+        total_debt = 0
+        reaming_debt = 0
         data = {
             'class': [],
             'dates': []
@@ -313,6 +316,9 @@ class GetSchoolStudents(APIView):
                     'bank': bank_payment,
                     'click': click_payment,
                 })
+                total_debt += attendance.total_debt if attendance else 0
+                total_sum += cash_payment + bank_payment + click_payment
+                reaming_debt += attendance.remaining_debt if attendance else 0
 
         unique_dates = AttendancePerMonth.objects.annotate(
             year=ExtractYear('month_date'),
@@ -328,6 +334,9 @@ class GetSchoolStudents(APIView):
             year_month_dict[year].append(month)
 
         data['dates'] = [{'year': year, 'months': months} for year, months in year_month_dict.items()]
+        data['total_sum'] = total_sum
+        data['total_debt'] = total_debt
+        data['reaming_debt'] = reaming_debt
 
         return data
 
