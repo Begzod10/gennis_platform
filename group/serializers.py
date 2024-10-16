@@ -260,8 +260,8 @@ class GroupSerializer(serializers.ModelSerializer):
                   'course_types', 'deleted']
 
     def get_students(self, obj):
-        from students.serializers import StudentListSerializer
-        return StudentListSerializer(obj.students.all(), many=True).data
+        from students.serializers import StudentSerializer
+        return StudentSerializer(obj.students.all(), many=True).data
 
     def get_class_number(self, obj):
         from classes.serializers import ClassNumberListSerializers
