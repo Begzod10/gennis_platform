@@ -99,7 +99,7 @@ class CreateTask(APIView):
                     })
 
             elif task.name == 'Yangi uquvchilar':
-                deleted_student_ids = DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
+                deleted_student_ids = DeletedStudent.objects.filter(deleted=True).values_list('student_id', flat=True)
                 deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
                 active_students = Student.objects.exclude(id__in=deleted_student_ids).exclude(
                     id__in=deleted_new_student_ids)

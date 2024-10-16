@@ -23,7 +23,7 @@ class ExcelData(APIView):
         # Fetch all students from the database
         branch = request.query_params.get('branch')
         excluded_ids = list(
-            DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
+            DeletedStudent.objects.filter(deleted=True).values_list('student_id', flat=True)) + \
                        list(DeletedNewStudent.objects.values_list('student_id',
                                                                   flat=True))
 
@@ -89,7 +89,7 @@ class ExcelDataList(APIView):
     def get(self, request, *args, **kwargs):
         branch = request.query_params.get('branch')
         excluded_ids = list(
-            DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
+            DeletedStudent.objects.filter(deleted=True).values_list('student_id', flat=True)) + \
                        list(DeletedNewStudent.objects.values_list('student_id',
                                                                   flat=True))
 
