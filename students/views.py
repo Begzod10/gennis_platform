@@ -29,7 +29,7 @@ from .serializers import (StudentListSerializer,
                           DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
 
 
-class StudentListView(QueryParamFilterMixin, ListAPIView):
+class StudentListView( ListAPIView):
     filter_mappings = {
         'branch': 'user__branch_id',
     }
@@ -37,6 +37,7 @@ class StudentListView(QueryParamFilterMixin, ListAPIView):
     serializer_class = StudentListSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__name', 'user__surname', 'user__username']
+
 
 class DeletedFromRegistered(QueryParamFilterMixin, APIView):
     permission_classes = [IsAuthenticated]
