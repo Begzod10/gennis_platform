@@ -326,7 +326,7 @@ class GetSchoolStudents(APIView):
                 total_sum_test += cash_payment + bank_payment + click_payment
                 reaming_debt += remaining_debt_student
                 total_dis += discount
-                total_discount = paid_amount
+                total_discount += paid_amount
                 class_data['students'].append({
                     'id': student.user.id,
                     'name': student.user.name,
