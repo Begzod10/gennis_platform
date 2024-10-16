@@ -29,17 +29,14 @@ from .serializers import (StudentListSerializer,
                           DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
 
 
-class StudentListView(QueryParamFilterMixin,APIView):
+class StudentListView(QueryParamFilterMixin, ListAPIView):
     filter_mappings = {
         'branch': 'user__branch_id',
     }
+    queryset = Student.objects.all()
+    serializer_class = StudentListSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__name', 'user__surname', 'user__username']
-    def get(self, request, *args, **kwargs):
-        active_students = Student.objects.all()
-        student_serializer = StudentListSerializer(active_students, many=True)
-
-        return Response(student_serializer.data)
 
 
 class DeletedFromRegistered(QueryParamFilterMixin, APIView):
