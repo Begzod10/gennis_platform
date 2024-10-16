@@ -130,7 +130,11 @@ REST_FRAMEWORK = {'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOf
 
                   'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication',
                                                      'rest_framework.authentication.BasicAuthentication',
-                                                     'rest_framework.authentication.SessionAuthentication', ]}
+                                                     'rest_framework.authentication.SessionAuthentication', ],
+                  'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend',
+                                              'rest_framework.filters.SearchFilter'],
+
+                  }
 SIMPLE_JWT = {'ACCESS_TOKEN_LIFETIME': timedelta(minutes=600), 'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
               'ROTATE_REFRESH_TOKENS': False, 'BLACKLIST_AFTER_ROTATION': False, 'UPDATE_LAST_LOGIN': False,
 
