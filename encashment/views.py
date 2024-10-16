@@ -321,7 +321,7 @@ class GetSchoolStudents(APIView):
                 ).aggregate(total=Sum('payment_sum'))['total'] or 0
 
                 total_debt += total_debt_student
-                total_sum_test += attendance.payment
+                total_sum_test += attendance.payment if attendance else 0
                 reaming_debt += remaining_debt_student
 
                 class_data['students'].append({
