@@ -317,7 +317,9 @@ class GetSchoolStudents(APIView):
                     'click': click_payment,
                 })
                 total_debt += attendance.total_debt if attendance else 0
-                total_sum += cash_payment + bank_payment + click_payment
+                total_sum += cash_payment
+                total_sum += bank_payment
+                total_sum += click_payment
                 reaming_debt += attendance.remaining_debt if attendance else 0
 
         unique_dates = AttendancePerMonth.objects.annotate(
