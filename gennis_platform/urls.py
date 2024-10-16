@@ -66,7 +66,9 @@ urlpatterns = [
     path('api/set_observer/<int:user_id>/', SetObserverView.as_view(), name='set_observer'),
     path('api/update_group_datas/', UpdateGroupDataAPIView.as_view(), name='update_group_datas'),
     path('api/get_group_datas/<int:group_id>/', GetGroupDataAPIView.as_view(), name='get_group_datas'),
+
 ]
+urlpatterns += [path('api/silk/', include('silk.urls', namespace='silk'))]
 
 urlpatterns += doc_urls
 

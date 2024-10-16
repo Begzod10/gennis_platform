@@ -36,7 +36,7 @@ class UserSerializerWrite(serializers.ModelSerializer):
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all())
     profession = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), required=False, allow_null=True)
-    money = serializers.CharField(required=False)
+    money = serializers.CharField(required=False,allow_null=True)
 
     class Meta:
         model = CustomUser
@@ -93,8 +93,9 @@ class UserSerializerWrite(serializers.ModelSerializer):
             instance.groups.add(profession)
             CustomAutoGroup.objects.filter(user=instance).update(group=profession)
 
-        salary = validated_data.pop('money')
-        CustomAutoGroup.objects.filter(user=instance).update(salary=salary)
+        salary = validated_data.pop('money', None)
+        if salary is not None:
+            CustomAutoGroup.objects.filter(user=instance).update(salary=salary)
         user = super().update(instance, validated_data)
         if 'password' in validated_data:
             user.set_password(validated_data['password'])

@@ -283,3 +283,5 @@ JAZZMIN_SETTINGS = {
 
     "language_chooser": False,
 }
+INSTALLED_APPS += ['silk']
+MIDDLEWARE += ['silk.middleware.SilkyMiddleware']
