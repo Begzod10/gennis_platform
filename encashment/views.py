@@ -316,7 +316,7 @@ class GetSchoolStudents(APIView):
                     'bank': bank_payment,
                     'click': click_payment,
                 })
-                total_debt += attendance.total_debt - (attendance.discount or 0) - \
+                total_debt += (attendance.total_debt or 0) - (attendance.discount or 0) - \
                               (StudentPayment.objects.filter(student=student, deleted=False, status=True,
                                                              attendance=attendance).aggregate(total=Sum('payment_sum'))[
                                    'total'] or 0 if attendance else 0)
