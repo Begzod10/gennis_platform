@@ -69,10 +69,10 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
 
     def get(self, request, *args, **kwargs):
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
-        deleted = DeletedStudent.objects.filter(deleted=True).values_list('student_id', flat=True)
+        deleted = DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_new_student_ids).filter(id__in=deleted)
         active_students = self.filter_queryset(active_students)
-        deleted_students = DeletedStudent.objects.filter(student__in=active_students, deleted=True)
+        deleted_students = DeletedStudent.objects.filter(student__in=active_students, deleted=False)
         student_serializer = DeletedStudentListSerializer(deleted_students, many=True)
         return Response(student_serializer.data)
 
@@ -94,7 +94,7 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     search_fields = ['user__name', 'user__surname', 'user__username']
 
     def get_queryset(self):
-        excluded_ids = list(DeletedStudent.objects.filter(deleted=True).values_list('student_id', flat=True)) + \
+        excluded_ids = list(DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
                        list(DeletedNewStudent.objects.values_list('student_id', flat=True))
 
         return Student.objects.filter(
