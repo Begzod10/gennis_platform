@@ -320,7 +320,7 @@ class GetSchoolStudents(APIView):
                     date__year=current_year
                 ).aggregate(total=Sum('payment_sum'))['total'] or 0
 
-                total_debt += total_debt_student
+                total_debt += total_debt_student - (discount + paid_amount)
                 total_sum_test += cash_payment + bank_payment + click_payment
                 reaming_debt += remaining_debt_student
 
