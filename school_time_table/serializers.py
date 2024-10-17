@@ -32,7 +32,7 @@ class HoursSerializers(serializers.ModelSerializer):
 
 
 class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
-    # type = serializers.CharField(default=None, allow_blank=True)
+    # type = serializers_list.CharField(default=None, allow_blank=True)
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
     week = serializers.PrimaryKeyRelatedField(queryset=WeekDays.objects.all())
     room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all(), allow_null=True, required=False)

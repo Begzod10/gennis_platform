@@ -6,7 +6,7 @@
 #
 # User = get_user_model()
 # from rest_framework.test import APITestCase
-# from user.serializers import UserSerializer
+# from user.serializers_list import UserSerializer
 # from user.models import CustomUser, Branch, Language
 #
 #

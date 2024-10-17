@@ -85,7 +85,7 @@ class UserSerializerWrite(serializers.ModelSerializer):
     #         response.raise_for_status()
     #         return response.json()
     #     except requests.RequestException as e:
-    #         raise serializers.ValidationError({"error": str(e)})
+    #         raise serializers_list.ValidationError({"error": str(e)})
 
     def update(self, instance, validated_data):
         profession = validated_data.pop('profession', None)

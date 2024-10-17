@@ -8,7 +8,7 @@ from .gennis.AddToGroupApi import AddToGroupApi
 from .gennis.TeacherGroupChange import TeacherGroupChange
 from .gennis.MoveToGroupApi import MoveToGroupApi
 from .gennis.DeleteStudentFromGroup import DeleteStudentFromGroup
-from .school.ClassesList import ClassesView
+from .school.ClassesList import ClassesView, AddClassesList
 from .gennis.GetChekedStudentsTeachers import GetCheckedStudentsTeachers
 from .gennis.GetGroupsForTeacher import GetGroupsForTeacher
 from .gennis.GetCheckedStudentsForClassTimeTable import GetCheckedStudentsForClassTimeTable, CheckedStudentsMoveToGroup
@@ -34,4 +34,5 @@ urlpatterns = [
          name='filtered_students_for_class_time_table'),
     path('filtered_students_move_to_class/', CheckedStudentsMoveToGroup.as_view(),
          name='filtered_students_move_to_class'),
+    path('add/class/filtered/<int:branch_id>', AddClassesList.as_view(), name='add_class_filtered'),
 ]
