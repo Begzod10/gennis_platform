@@ -109,31 +109,36 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
         return super().get_serializer(*args, **kwargs)
 
 
-class ActiveStudents(QueryParamFilterMixin, ListAPIView):
+class ActiveStudents(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ActiveListSerializer
-    filter_mappings = {
-        'branch': 'user__branch_id',
-        'subject': 'subject__id',
-        'age': 'user__birth_date',
-        'language': 'user__language_id',
-    }
 
-    def get_queryset(self, *args, **kwargs):
-        deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True,
-                                                            deleted=False).values_list('student_id', flat=True)
+    def get(self, request, *args, **kwargs):
+        branch = request.query_params.get('branch')
+        subject = request.query_params.get('subject')
+        age = request.query_params.get('age')
+        language = request.query_params.get('language')
+        deleted_student_ids = DeletedStudent.objects.filter(
+            student__groups_student__isnull=True, deleted=False
+        ).values_list('student_id', flat=True)
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
-
-        active_students = (
-            Student.objects.exclude(id__in=deleted_student_ids)
-            .exclude(id__in=deleted_new_student_ids)
-            .filter(groups_student__isnull=False)
-            .distinct()
-            .select_related('class_number')
-            .prefetch_related('groups_student')
+        active_students = Student.objects.exclude(id__in=deleted_student_ids) \
+            .exclude(id__in=deleted_new_student_ids) \
+            .filter(groups_student__isnull=False) \
+            .distinct() \
+            .select_related('class_number') \
+            .prefetch_related('groups_student') \
             .order_by('class_number__number')
-        )
-        return active_students
+        if branch:
+            active_students = active_students.filter(user__branch_id=branch)
+        if subject:
+            active_students = active_students.filter(subject__id=subject)
+        if age:
+            active_students = active_students.filter(user__birth_date=age)
+        if language:
+            active_students = active_students.filter(user__language_id=language)
+        serializer = self.serializer_class(active_students, many=True)
+        return Response(serializer.data)
 
 
 class CreateContractView(APIView):
