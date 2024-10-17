@@ -4,14 +4,16 @@ from .Api.createdeleteupdate import StudentCreateView, StudentCharityCreateView,
     StudentPaymentCreateView, \
     StudentDestroyView, StudentCharityUpdateView, StudentPaymentUpdateView, StudentCharityDestroyView, \
     StudentPaymentDestroyView, StudentUpdateView, StudentHistoryGroupsCreateView, StudentHistoryGroupsDestroyView, \
-    StudentHistoryGroupsUpdateView, DeletedStudentDestroy
+    StudentHistoryGroupsUpdateView, DeletedStudentDestroy, CreateDiscountForSchool
 from .Api.get import SchoolStudents
 from .Api.get import StudentCharityAPIView, StudentPaymentAPIView, StudentHistoryGroupsAPIView, \
     StudentCharityListAPIView, StudentPaymentListAPIView, StudentHistoryGroupsListAPIView, StudentRetrieveAPIView, \
     FilteredStudentsListView, StudentDeletedPaymentListAPIView
+from .excel import ExcelData, ExcelDataList
 from .views import (CreateContractView, UploadPDFContractView, StudentListView, DeletedFromRegistered,
                     DeletedGroupStudents, NewRegisteredStudents, ActiveStudents, PaymentDatas, GetMonth, shahakota,
-                    DeleteStudentPayment
+                    DeleteStudentPayment, DeleteFromDeleted, MissingAttendanceListView, MissingAttendanceView,
+                    StudentCharityModelView
                     )
 
 app_name = 'Students'
@@ -61,5 +63,11 @@ urlpatterns = [
     path('student_payment_month_for_month/', shahakota.as_view(),
          name='student_payment_month'),
     path('student_payment_delete_for_month/<int:pk>/', DeleteStudentPayment.as_view(), name='student-payment-delete'),
-
+    path('export-students/', ExcelData.as_view(), name='export_students_excel'),
+    path('student-school-list/', ExcelDataList.as_view(), name='export_students_excel'),
+    path('delete-student-from-deleted/<int:pk>/', DeleteFromDeleted.as_view()),
+    path('missing_month/<int:student_id>/', MissingAttendanceListView.as_view(), name='missing_month'),
+    path('missing_month_post/<int:student_id>/', MissingAttendanceView.as_view(), name='missing_month'),
+    path('discount/', CreateDiscountForSchool.as_view(), name='discount'),
+    path('charity_month/<int:student_id>/', StudentCharityModelView.as_view(), name='charity_month'),
 ]

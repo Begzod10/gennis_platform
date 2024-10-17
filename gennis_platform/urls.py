@@ -1,21 +1,3 @@
-
-"""
-URL configuration for gennis_platform project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/4.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() functions: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -26,7 +8,6 @@ from group.gennis.AddToGroupApi import UpdateGroupDataAPIView, GetGroupDataAPIVi
 from user.Api.read import GetUserAPIView, SetObserverView
 from user.Api.write import CustomTokenObtainPairView
 from user.views import CustomTokenRefreshView
-from .swagger import urlpatterns as doc_urls
 
 urlpatterns = [
     path('api/admin/', admin.site.urls),
@@ -55,6 +36,7 @@ urlpatterns = [
     path('api/Lesson_plan/', include('lesson_plan.urls')),
     path('api/SchoolTimeTable/', include('school_time_table.urls')),
     path('api/Calendar/', include('Calendar.urls')),
+    path('api/Bot/', include('bot.urls')),
     # path('api/Transfer/', include('transfer.urls')),
     path('api/Encashment/', include('encashment.urls')),
     path('api/Mobile/', include('mobile.urls')),
@@ -66,9 +48,8 @@ urlpatterns = [
     path('api/set_observer/<int:user_id>/', SetObserverView.as_view(), name='set_observer'),
     path('api/update_group_datas/', UpdateGroupDataAPIView.as_view(), name='update_group_datas'),
     path('api/get_group_datas/<int:group_id>/', GetGroupDataAPIView.as_view(), name='get_group_datas'),
-]
 
-urlpatterns += doc_urls
+]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

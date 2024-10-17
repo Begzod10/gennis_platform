@@ -45,8 +45,8 @@ class OldCapital(models.Model):
     name = models.CharField(max_length=500)
     price = models.IntegerField()
     by_who = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='old_capital_user',
-                               null=True)
-    added_date = models.DateField(auto_now_add=True)
+                               null=True, blank=True)
+    added_date = models.DateField(auto_now_add=False)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='old_capital_branch')
     payment_type = models.ForeignKey(PaymentTypes, on_delete=models.SET_NULL, null=True,
                                      related_name='old_capital_payment_type')

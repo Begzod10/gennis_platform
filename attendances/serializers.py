@@ -191,3 +191,59 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"detail": errors})
         else:
             return attendance_per_day
+
+
+class StudentDetailSchoolSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    status = serializers.BooleanField()
+    reason = serializers.CharField(required=False,allow_null=True,allow_blank=True)
+
+
+class AttendancePerDayCreateUpdateSerializerSchool(serializers.ModelSerializer):
+    students = serializers.ListField(
+        child=StudentDetailSchoolSerializer(),
+        write_only=True
+    )
+    date = serializers.CharField(default=None, allow_blank=True)
+    teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
+    group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
+
+    class Meta:
+        model = AttendancePerDay
+        fields = ['id', 'teacher', 'students', 'group', 'date']
+
+    def create(self, validated_data):
+        teacher = validated_data.get('teacher')
+        group = validated_data.get('group')
+        students = validated_data.pop('students', [])
+        date = validated_data.get('date')
+        today = datetime.today()
+        day = datetime.strptime(f"{today.year}-{date}", "%Y-%m-%d")
+
+        errors = []
+        created_instances = []
+
+        for student in students:
+            student_data = Student.objects.get(pk=student['id'])
+            try:
+                AttendancePerDay.objects.get(group_id=group.id, teacher=teacher, day=day, student_id=student['id'])
+                errors.append(
+                    {
+                        'msg': f'Attendance already exists for {student_data.user.name} {student_data.user.surname} on this day.'}
+                )
+            except AttendancePerDay.DoesNotExist:
+                attendance = AttendancePerDay.objects.create(
+                    teacher=teacher,
+                    group=group,
+                    student=student_data,
+                    day=day,
+                    status=student['status'],
+                    reason=student.get('reason', None)
+                )
+                print(student)
+                created_instances.append(attendance)
+
+        if errors:
+            raise serializers.ValidationError({"detail": errors})
+
+        return created_instances[0] if created_instances else None

@@ -27,6 +27,7 @@ class CreateGroupTimeTable(generics.ListCreateAPIView):
 #
 #     def get_queryset(self):
 #         group_id = self.kwargs['group_id']
+#         print(group_id)
 #         creat_week_days()
 #         return GroupTimeTable.objects.filter(group_id=group_id)
 #
@@ -56,6 +57,12 @@ class CreateGroupTimeTable(generics.ListCreateAPIView):
 #     creat_week_days()
 #     group = Group.objects.get(pk=group_id)
 #     time_table = group.grouptimetable_set.all()
-#     serializers = GroupTimeTableReadSerializer(data=time_table, many=True)
-#     serializers.is_valid()
-#     return Response({"data": serializers.data})
+
+#     serializers_list = GroupTimeTableReadSerializer(data=time_table, many=True)
+#     serializers_list.is_valid()
+#     return Response({"data": serializers_list.data})
+
+#     serializer = GroupTimeTableReadSerializer(data=time_table, many=True)
+#     serializer.is_valid()
+#     return Response({"data": serializer.data})
+

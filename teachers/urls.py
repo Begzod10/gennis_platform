@@ -11,11 +11,12 @@ from teachers.Api.read import (
 from teachers.Api.write import (
     TeacherCreateView, TeacherUpdateView, TeacherDestroyView,
     TeacherSalaryCreateAPIView, TeacherSalaryDeleteAPIView, TeacherSalaryUpdateAPIView, TeacherSalaryUpdateAPIViewPatch,
-    UploadFile,SalaryTypeUpdate
+    UploadFile, SalaryTypeUpdate
 )
 from .Api.createdeleteupdate import TeacherAttendanceCreateView, TeacherAttendanceDestroyView
 from .Api.get import TeacherAttendanceListView, TeacherAttendanceRetrieveView, TeachersForBranches, TeachersForSubject, \
     SalaryType
+from .views import GetGroupStudents
 
 app_name = 'Teachers'
 
@@ -51,4 +52,6 @@ urlpatterns = [
          name='salary-types'),
     path('salary-types/<int:pk>/', SalaryTypeUpdate.as_view(),
          name='salary-types'),
+    path('group-student/<int:pk>/', GetGroupStudents.as_view(),
+         name='group-student'),
 ]

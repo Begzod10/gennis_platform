@@ -15,7 +15,6 @@ urlpatterns = [
     path('timetable-list-update/<int:pk>', UpdateClassTimeTable.as_view(), name='timetable-list-update'),
     path('timetable-list-delete_item/<int:pk>', DeleteItemClassTimeTable.as_view(), name='timetable-list-delete_item'),
     path('timetable-list-delete/<int:pk>', DeleteItemClassTimeTable.as_view(), name='timetable-list-delete_item'),
-
     # path('timetable-classes/<int:pk>', Classes.as_view(), name='timetable-list-delete_item'),
     path('timetable-class-flow/', ClassesFlows.as_view(), name='timetable-classes'),
     path('timetable-update-hours-rooms/', UpdateClassTimeTableHours.as_view(), name='timetable-update-hours-rooms'),

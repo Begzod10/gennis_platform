@@ -35,6 +35,7 @@ class TeacherListView(QueryParamFilterMixin, generics.ListAPIView):
         'age': 'user__birth_date',
         "subject": 'subject__id',
         'language': 'user__language_id',
+        'deleted': 'deleted',
 
     }
     queryset = Teacher.objects.all()
@@ -44,6 +45,9 @@ class TeacherListView(QueryParamFilterMixin, generics.ListAPIView):
         queryset = Teacher.objects.all()
         queryset = self.filter_queryset(queryset)
         return queryset
+
+
+
 
 
 class TeacherRetrieveView(generics.RetrieveAPIView):

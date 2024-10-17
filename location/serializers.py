@@ -17,7 +17,7 @@ class LocationListSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = Location
-        fields = ['id', 'name', 'number', 'system']
+        fields = ['id', 'name', 'number', 'system', 'old_id']
 
 
 class LocationListSerializersWithBranch(serializers.ModelSerializer):

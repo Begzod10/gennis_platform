@@ -1,3 +1,5 @@
+import json
+
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -7,7 +9,7 @@ from permissions.response import CustomResponseMixin
 from students.models import DeletedStudent, StudentPayment, StudentCharity, StudentHistoryGroups, DeletedNewStudent, \
     Student
 from students.serializers import DeletedStudentSerializer, StudentPaymentSerializer, StudentCharitySerializer, \
-    StudentHistoryGroupsSerializer, StudentSerializer
+    StudentHistoryGroupsSerializer, StudentSerializer, StudentListSerializer
 
 
 class StudentCreateView(CustomResponseMixin, generics.CreateAPIView):
@@ -19,12 +21,22 @@ class StudentCreateView(CustomResponseMixin, generics.CreateAPIView):
 
 class StudentUpdateView(CustomResponseMixin, generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
-
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+        other_serializer = StudentListSerializer(instance)
+        return Response(other_serializer.data, status=status.HTTP_200_OK)
 
-class StudentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
+
+class StudentDestroyView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     queryset = Student.objects.all()
@@ -32,8 +44,13 @@ class StudentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         student = self.get_object()
-        DeletedNewStudent.objects.create(student=student)  # new studentni ochirish
-        return Response({"detail": "Student was deleted successfully"}, status=status.HTTP_200_OK)
+        new_student, created = DeletedNewStudent.objects.get_or_create(student=student)  # new studentni ochirish
+        if not created:
+            new_student.delete()
+            return Response({"msg": "O'quvchi muvofaqqiyatlik qaytarildi !"}, status=status.HTTP_200_OK)
+
+        else:
+            return Response({"msg": "O'quvchi muvofaqqiyatlik o'chirildi !"}, status=status.HTTP_200_OK)
 
 
 class StudentHistoryGroupsCreateView(CustomResponseMixin, generics.CreateAPIView):
@@ -107,13 +124,9 @@ class StudentPaymentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
         instance = self.get_object()
         if instance.branch.location.system.name == 'school':
             from django.shortcuts import get_object_or_404
-            from classes.models import AttendancePerMonth
-            student_payment = get_object_or_404(StudentPayment, instance)
-            attendance_per_month = get_object_or_404(AttendancePerMonth,
-                                                     month_date__year=student_payment.added_data.year,
-                                                     month_date__month=student_payment.added_data.month,
-                                                     student=student_payment.student)
-
+            from attendances.models import AttendancePerMonth
+            student_payment = get_object_or_404(StudentPayment, id=instance.id)
+            attendance_per_month = get_object_or_404(AttendancePerMonth, id=student_payment.attendance.id)
             attendance_per_month.remaining_debt += student_payment.payment_sum
             attendance_per_month.payment -= student_payment.payment_sum
             student_payment.deleted = True
@@ -143,5 +156,31 @@ class StudentPaymentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
 class DeletedStudentDestroy(CustomResponseMixin, generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
-    queryset = DeletedStudent.objects.all()
+    queryset = DeletedStudent.objects.filter(deleted=True).all()
     serializer_class = DeletedStudentSerializer
+
+
+class CreateDiscountForSchool(generics.GenericAPIView):
+    def post(self, request, *args, **kwargs):
+        from attendances.models import AttendancePerMonth
+        data = json.loads(request.body)
+        discount = data['discount']
+        student = data['student']
+        attendances = AttendancePerMonth.objects.filter(student_id=student)
+        for attendance in attendances:
+            attendance.discount = discount
+            attendance.save()
+        student = Student.objects.get(pk=student)
+        StudentCharity.objects.update_or_create(
+            student=student,
+            defaults={
+                'charity_sum': discount,
+                'name': data['reason'],
+                "group": student.groups_student.first(),
+                "branch": student.user.branch
+
+            }
+
+        )
+
+        return Response({"msg": "Chegirma muvaffaqiyatli yaratildi !"}, status=status.HTTP_200_OK)

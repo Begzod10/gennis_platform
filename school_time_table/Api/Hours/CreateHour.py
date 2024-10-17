@@ -4,5 +4,5 @@ from ...serializers import HoursSerializers
 
 
 class HourListCreateView(generics.ListCreateAPIView):
-    queryset = Hours.objects.all()
+    queryset = Hours.objects.all().order_by('order')
     serializer_class = HoursSerializers

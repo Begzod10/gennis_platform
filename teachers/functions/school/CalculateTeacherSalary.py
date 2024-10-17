@@ -1,7 +1,5 @@
 from datetime import datetime
 
-
-
 from Calendar.models import Day
 from teachers.models import TeacherSalary
 
@@ -9,8 +7,6 @@ from teachers.models import TeacherSalary
 def calculate_teacher_salary(teacher):
     today = datetime.now()
     month = str(today.month).lstrip('0')
-
-
 
     working_days = Day.objects.filter(year__year=today.year, month__month_number=int(month),
                                       type_id__color='green').count()
@@ -29,6 +25,10 @@ def calculate_teacher_salary(teacher):
                 'percentage': 50,
             }
         )
+        if salary.total_salary != salary.teacher.teacher_salary_type.salary:
+            salary.total_salary = salary.teacher.teacher_salary_type.salary
+            salary.remaining_salary = salary.teacher.teacher_salary_type.salary - salary.taken_salary
+            salary.save()
 
         summ_for_percentage = (teacher.teacher_salary_type.salary * salary.percentage) / 100
         if salary.worked_days:

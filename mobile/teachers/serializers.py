@@ -31,26 +31,13 @@ class TeachersSalariesSerializer(serializers.ModelSerializer):
     remaining_salary = serializers.IntegerField()
     taken_salary = serializers.IntegerField()
     total_black_salary = serializers.IntegerField()
-    datas = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = TeacherSalary
-        fields = ['id', 'month_date', 'total_salary', 'remaining_salary', 'taken_salary', 'total_black_salary','datas']
+        fields = ['id', 'month_date', 'total_salary', 'remaining_salary', 'taken_salary', 'total_black_salary']
 
-    def get_datas(self):
-        unique_dates = TeacherSalary.objects.annotate(
-            year=ExtractYear('month_date'),
-            month=ExtractMonth('month_date')
-        ).values('year', 'month').distinct().order_by('year', 'month')
-        year_months = {}
-        for date in unique_dates:
-            year = date['year']
-            month = date['month']
-            if year not in year_months:
-                year_months[year] = []
-            year_months[year].append(month)
-        year_month_list = [{'year': year, 'months': months} for year, months in year_months.items()]
-        return YearMonthSerializer(year_month_list, many=True).data
+
+
 
 
 class TeachersDebtedStudents(serializers.ModelSerializer):
@@ -171,7 +158,11 @@ class AttendancesTodayStudentsSerializer(serializers.ModelSerializer):
         return datas
 
 
-# class GetLessonPlanSerializer(serializers.ModelSerializer):
+
+# class GetLessonPlanSerializer(serializers_list.ModelSerializer):
+
+# class GetLessonPlanSerializer(serializer.ModelSerializer):
+
 #
 #     class Meta:
 #         model = Teacher

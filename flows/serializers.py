@@ -1,23 +1,22 @@
 from rest_framework import serializers
 
-from teachers.models import Teacher
-from .models import Flow
-from subjects.models import Subject, SubjectLevel
-from students.models import Student
 from branch.models import Branch
-
-from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
-from teachers.serializers import TeacherSerializer
-from students.serializers import StudentSerializer
 from branch.serializers import BranchSerializer
-
+from students.models import Student
+from students.serializers import StudentSerializer
+from subjects.models import Subject, SubjectLevel
+from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
+from teachers.models import Teacher
+from teachers.serializers import TeacherSerializer
 from .functions.flowClasses import flow_classes
+from .models import Flow
 
 
 class FlowCreateUpdateSerializer(serializers.ModelSerializer):
     update_type = serializers.CharField(default=None, allow_blank=True)
-    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())
-    teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
+    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), allow_null=True, allow_empty=True,
+                                                 required=False)
+    teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all(), required=False, allow_null=True)
     students = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), many=True)
     level = serializers.PrimaryKeyRelatedField(queryset=SubjectLevel.objects.all(), allow_null=True, required=False)
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())

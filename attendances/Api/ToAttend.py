@@ -2,7 +2,7 @@ from rest_framework import generics
 from rest_framework import generics
 
 from ..models import AttendancePerDay
-from ..serializers import AttendancePerDayCreateUpdateSerializer
+from ..serializers import AttendancePerDayCreateUpdateSerializer,AttendancePerDayCreateUpdateSerializerSchool
 
 
 # class ToAttend(APIView):
@@ -18,6 +18,15 @@ from ..serializers import AttendancePerDayCreateUpdateSerializer
 
 class ToAttend(generics.ListCreateAPIView):
     serializer_class = AttendancePerDayCreateUpdateSerializer
+    queryset = AttendancePerDay.objects.all()
+
+    def get_queryset(self):
+        id = self.request.query_params.get('id')
+        if id is not None:
+            return AttendancePerDay.objects.filter(group_id=id)
+        return AttendancePerDay.objects.all()
+class ToAttendSchool(generics.ListCreateAPIView):
+    serializer_class = AttendancePerDayCreateUpdateSerializerSchool
     queryset = AttendancePerDay.objects.all()
 
     def get_queryset(self):

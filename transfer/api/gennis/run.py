@@ -110,55 +110,55 @@ def run2(self):
 
 
 def run4(self):
-
-    list = get_groups()
-    for info in list:
-        serializer = TransferGroupCreateUpdateSerializer(data=info)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-
-
-    list = get_AttendancePerMonths()
-    for info in list:
-        serializer = TransferAttendancePerMonthSerializer(data=info)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-
-    list = get_attendancedays()
-    for info in list:
-        serializer = TransferAttendancePerDaySerializer(data=info)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-
-    list = get_studentpayments()
-    for info in list:
-        serializer = StudentPaymentSerializerTransfer(data=info)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-
-
-    list = get_studentcharity()
-    for info in list:
-        serializer = StudentCharitySerializerTransfer(data=info)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
-    list = get_studenthistorygroups()
-    for info in list:
-        serializer = StudentHistoryGroupCreateSerializerTransfer(data=info)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    #
+    # list = get_groups()
+    # for info in list:
+    #     serializer = TransferGroupCreateUpdateSerializer(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    #
+    #
+    # list = get_AttendancePerMonths()
+    # for info in list:
+    #     serializer = TransferAttendancePerMonthSerializer(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    #
+    # list = get_attendancedays()
+    # for info in list:
+    #     serializer = TransferAttendancePerDaySerializer(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    #
+    # list = get_studentpayments()
+    # for info in list:
+    #     serializer = StudentPaymentSerializerTransfer(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    #
+    #
+    # list = get_studentcharity()
+    # for info in list:
+    #     serializer = StudentCharitySerializerTransfer(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
+    # list = get_studenthistorygroups()
+    # for info in list:
+    #     serializer = StudentHistoryGroupCreateSerializerTransfer(data=info)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #     else:
+    #         self.stdout.write(self.style.ERROR(f"Invalid data: {serializer.errors}"))
 
     try:
         teachers(self)

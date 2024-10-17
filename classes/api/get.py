@@ -158,7 +158,7 @@ class ClassNumberListView(QueryParamFilterMixin, generics.ListAPIView):
         'branch': 'branch_id',
     }
 
-    queryset = ClassNumber.objects.all()
+    queryset = ClassNumber.objects.all().order_by('number')
     serializer_class = ClassNumberListSerializers
 
     def get(self, request, *args, **kwargs):

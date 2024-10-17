@@ -10,6 +10,7 @@ from students.models import StudentHistoryGroups
 from teachers.models import TeacherHistoryGroups
 from rest_framework.permissions import IsAuthenticated
 
+
 class DeleteGroups(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -64,6 +65,7 @@ class DeleteGroups(APIView):
                 time_table.delete()
         group.students.clear()
         group.teacher.clear()
+        group.save()
         serializer = GroupSerializer(group)
         return Response({'data': serializer.data})
 

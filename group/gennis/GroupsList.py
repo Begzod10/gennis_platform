@@ -2,7 +2,7 @@ from rest_framework import generics
 from rest_framework.response import Response
 
 from group.models import Group, GroupReason, CourseTypes
-from group.serializers import GroupSerializer, GroupReasonSerializers, CourseTypesSerializers, \
+from group.serializers_list import GroupSerializer, GroupReasonSerializers, CourseTypesSerializers, \
     GroupCreateUpdateSerializer
 
 

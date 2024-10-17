@@ -40,7 +40,7 @@ class UserSalaryListCreateView(generics.CreateAPIView):
 class UserSalaryListUpdateView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
 
-    queryset = CustomUser.objects.all()
+    queryset = UserSalaryList.objects.all()
     serializer_class = UserSalaryListSerializers
 
 
