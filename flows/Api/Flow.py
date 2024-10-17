@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from permissions.response import QueryParamFilterMixin
 from ..models import Flow
 from ..serializers import FlowCreateUpdateSerializer, FlowsSerializer
-from ..serializers_list import FlowsSerializerTest
+from ..serializers_list import FlowsSerializerTest, FlowsSerializerProfile
 
 
 class FlowListCreateView(QueryParamFilterMixin, generics.ListCreateAPIView):
@@ -68,7 +68,7 @@ class FlowProfile(generics.RetrieveUpdateAPIView):
     def get_serializer_class(self):
         if self.request.method in ['PUT', 'PATCH']:
             return FlowCreateUpdateSerializer
-        return FlowsSerializer
+        return FlowsSerializerProfile
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -76,5 +76,5 @@ class FlowProfile(generics.RetrieveUpdateAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         instance.refresh_from_db()
-        read_serializer = FlowsSerializer(instance)
+        read_serializer = FlowsSerializerProfile(instance)
         return Response(read_serializer.data)
