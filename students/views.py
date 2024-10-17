@@ -118,7 +118,6 @@ class ActiveStudents(QueryParamFilterMixin, ListAPIView):
         'age': 'user__birth_date',
         'language': 'user__language_id',
     }
-    fields = ['id', 'user__name', 'user__phone', 'user__surname', 'user__age', "group__name", "debt", "color"]
 
     def get_queryset(self, *args, **kwargs):
         deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True,
@@ -129,11 +128,6 @@ class ActiveStudents(QueryParamFilterMixin, ListAPIView):
             .exclude(id__in=deleted_new_student_ids) \
             .filter(groups_student__isnull=False).distinct().order_by('class_number__number')
         return active_students
-
-    # def get_serializer(self, *args, **kwargs):
-    #     kwargs['context'] = self.get_serializer_context()
-    #     kwargs['context']['fields'] = self.fields
-    #     return super().get_serializer(*args, **kwargs)
 
 
 class CreateContractView(APIView):
