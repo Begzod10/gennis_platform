@@ -67,11 +67,10 @@ class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
 
         return queryset
 
-    # def get_serializer_class(self):
-    #     if self.request.method == 'GET':
-    #
-    #         return GroupSerializer
-    #     return GroupCreateUpdateSerializer
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return GroupSerializer
+        return GroupCreateUpdateSerializer
 
     def get_serializer(self, *args, **kwargs):
         serializer_class = self.get_serializer_class()
