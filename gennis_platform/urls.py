@@ -25,7 +25,6 @@ from group.gennis.AddToGroupApi import UpdateGroupDataAPIView, GetGroupDataAPIVi
 from user.Api.read import GetUserAPIView, SetObserverView
 from user.Api.write import CustomTokenObtainPairView
 from user.views import CustomTokenRefreshView
-from .swagger import urlpatterns as doc_urls
 
 urlpatterns = [
     path('api/admin/', admin.site.urls),
@@ -70,7 +69,6 @@ urlpatterns = [
 ]
 urlpatterns += [path('api/silk/', include('silk.urls', namespace='silk'))]
 
-urlpatterns += doc_urls
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

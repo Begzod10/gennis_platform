@@ -58,7 +58,7 @@ class ActiveListSerializer(serializers.ModelSerializer):
     def get_group(self, obj):
         groups = obj.groups_student.first()
         group = {
-            "id": groups.id,
-            "name": groups.name
+            "id": groups.id if groups else None,
+            "name": groups.name if groups else None
         }
         return group

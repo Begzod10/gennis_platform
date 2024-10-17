@@ -79,34 +79,57 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
 
 
 # @method_decorator(cache_page(60 * 2), name='dispatch')
-class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
+# class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
+#     permission_classes = [IsAuthenticated]
+#     serializer_class = StudentListSerializer
+#
+#     filter_mappings = {
+#         'branch': 'user__branch_id',
+#         'subject': 'subject__id',
+#         'age': 'user__birth_date',
+#         'language': 'user__language_id',
+#         'number': 'class_number_id',
+#     }
+#     filter_backends = [filters.SearchFilter]
+#     search_fields = ['user__name', 'user__surname', 'user__username']
+#     fields = ['id', 'user__name', 'user__surname', 'user__username', 'class_number__number', 'user__birth_date',
+#               'user__language__name', 'user__branch__name', 'subject__name', 'user__registered_date', 'user__age']
+#
+#     def get_queryset(self):
+#         excluded_ids = list(DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
+#                        list(DeletedNewStudent.objects.values_list('student_id', flat=True))
+#
+#         return Student.objects.filter(
+#             ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
+#         ).distinct()
+#
+#     def get_serializer(self, *args, **kwargs):
+#         kwargs['context'] = self.get_serializer_context()
+#         kwargs['context']['fields'] = self.fields
+#         return super().get_serializer(*args, **kwargs)
+class NewRegisteredStudents(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = StudentListSerializer
+    # filter_mappings = {
+    #     'branch': 'user__branch_id',
+    #     'subject': 'subject__id',
+    #     'age': 'user__birth_date',
+    #     'language': 'user__language_id',
+    #     'number': 'class_number_id',
+    # }
+    # search_fields = ['user__name', 'user__surname', 'user__username']
 
-    filter_mappings = {
-        'branch': 'user__branch_id',
-        'subject': 'subject__id',
-        'age': 'user__birth_date',
-        'language': 'user__language_id',
-        'number': 'class_number_id',
-    }
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['user__name', 'user__surname', 'user__username']
-    fields = ['id', 'user__name', 'user__surname', 'user__username', 'class_number__number', 'user__birth_date',
-              'user__language__name', 'user__branch__name', 'subject__name', 'user__registered_date', 'user__age']
 
     def get_queryset(self):
-        excluded_ids = list(DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
-                       list(DeletedNewStudent.objects.values_list('student_id', flat=True))
+        # excluded_ids = list(DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
+        #                list(DeletedNewStudent.objects.values_list('student_id', flat=True))
 
-        return Student.objects.filter(
-            ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
-        ).distinct()
+        return Student.objects.all()
 
-    def get_serializer(self, *args, **kwargs):
-        kwargs['context'] = self.get_serializer_context()
-        kwargs['context']['fields'] = self.fields
-        return super().get_serializer(*args, **kwargs)
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = ActiveListSerializer(queryset, many=True, context={'fields': self.fields})
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ActiveStudents(APIView):
@@ -114,10 +137,10 @@ class ActiveStudents(APIView):
     serializer_class = ActiveListSerializer
 
     def get(self, request, *args, **kwargs):
-        branch = request.query_params.get('branch',None)
-        subject = request.query_params.get('subject',None)
-        age = request.query_params.get('age',None)
-        language = request.query_params.get('language',None)
+        branch = request.query_params.get('branch', None)
+        subject = request.query_params.get('subject', None)
+        age = request.query_params.get('age', None)
+        language = request.query_params.get('language', None)
         deleted_student_ids = DeletedStudent.objects.filter(
             student__groups_student__isnull=True, deleted=False
         ).values_list('student_id', flat=True)

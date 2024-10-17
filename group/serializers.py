@@ -330,7 +330,7 @@ class GroupClassSerializer(serializers.ModelSerializer):
                   'course_types', 'type']
 
     def get_students(self, obj):
-        from students.serializer import StudentListSerializer
+        from students.serializers import StudentListSerializer
         return StudentListSerializer(obj.students.all(), many=True).data
 
     def get_class_number(self, obj):
