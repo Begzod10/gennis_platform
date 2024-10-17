@@ -8,7 +8,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from user.seriliazer.employer import EmployerSerializer
 from gennis_platform import settings
 from gennis_platform.settings import classroom_server
 from permissions.response import IsAdminOrIsSelf
@@ -127,13 +127,7 @@ class EmployeersListView(QueryParamFilterMixin, generics.ListAPIView):
     }
 
     queryset = CustomAutoGroup.objects.all()
-    serializer_class = Employeers
-
-    def get_queryset(self):
-        queryset = CustomAutoGroup.objects.all()
-        queryset = self.filter_queryset(queryset)
-
-        return queryset
+    serializer_class = EmployerSerializer
 
 
 class EmployerRetrieveView(generics.RetrieveAPIView):
