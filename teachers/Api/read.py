@@ -10,6 +10,7 @@ from teachers.serializers import (
     TeacherSerializerRead, TeacherSalaryListReadSerializers, TeacherGroupStatisticsReadSerializers,
     TeacherSalaryReadSerializers
 )
+from teachers.serializer.lists import ActiveListTeacherSerializer
 
 
 class TeacherGroupStatisticsListView(generics.ListAPIView):
@@ -39,15 +40,12 @@ class TeacherListView(QueryParamFilterMixin, generics.ListAPIView):
 
     }
     queryset = Teacher.objects.all()
-    serializer_class = TeacherSerializerRead
+    serializer_class = ActiveListTeacherSerializer
 
     def get_queryset(self):
         queryset = Teacher.objects.all()
         queryset = self.filter_queryset(queryset)
         return queryset
-
-
-
 
 
 class TeacherRetrieveView(generics.RetrieveAPIView):

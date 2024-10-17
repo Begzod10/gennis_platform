@@ -84,19 +84,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'gennis_platform.wsgi.application'
 
-# DATABASES = {'default': {'ENGINE': 'django.db.backends.postgresql', 'NAME': 'gennis_platform', 'USER': 'postgres',
-#                          'PASSWORD': '123', 'HOST': '192.168.1.20', 'PORT': '5432'}}
+DATABASES = {'default': {'ENGINE': 'django.db.backends.postgresql', 'NAME': 'gennis_platform', 'USER': 'postgres',
+                         'PASSWORD': '123', 'HOST': '192.168.1.20', 'PORT': '5432'}}
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'gennis_platform'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', '123'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': '5432',
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv('DB_NAME', 'gennis_platform'),
+#         'USER': os.getenv('DB_USER', 'postgres'),
+#         'PASSWORD': os.getenv('DB_PASSWORD', '123'),
+#         'HOST': os.getenv('DB_HOST', 'localhost'),
+#         'PORT': '5432',
+#     }
+# }
+
 
 
 AUTH_USER_MODEL = 'user.CustomUser'

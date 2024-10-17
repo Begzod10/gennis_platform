@@ -15,6 +15,7 @@ from subjects.models import Subject
 from teachers.models import Teacher
 from teachers.serializers import TeacherSerializerRead
 from time_table.models import GroupTimeTable
+from ..serializers_list import StudentPaymentListSerializerTest
 
 
 class StudentRetrieveAPIView(generics.RetrieveAPIView):
@@ -106,7 +107,7 @@ class StudentPaymentListAPIView(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         queryset = StudentPayment.objects.filter(deleted=False,status=False).all().order_by("-date")
 
-        serializer = StudentPaymentListSerializer(queryset, many=True)
+        serializer = StudentPaymentListSerializerTest(queryset, many=True)
         return Response(serializer.data)
 
 
