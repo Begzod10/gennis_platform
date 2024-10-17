@@ -27,6 +27,7 @@ from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent,
 from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
                           DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
+from students.serializer.lists import ActiveListSerializer
 
 
 class StudentListView(ListAPIView):
@@ -110,7 +111,7 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
 
 class ActiveStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = StudentListSerializer
+    serializer_class = ActiveListSerializer
     filter_mappings = {
         'branch': 'user__branch_id',
         'subject': 'subject__id',
@@ -129,10 +130,10 @@ class ActiveStudents(QueryParamFilterMixin, ListAPIView):
             .filter(groups_student__isnull=False).distinct().order_by('class_number__number')
         return active_students
 
-    def get_serializer(self, *args, **kwargs):
-        kwargs['context'] = self.get_serializer_context()
-        kwargs['context']['fields'] = self.fields
-        return super().get_serializer(*args, **kwargs)
+    # def get_serializer(self, *args, **kwargs):
+    #     kwargs['context'] = self.get_serializer_context()
+    #     kwargs['context']['fields'] = self.fields
+    #     return super().get_serializer(*args, **kwargs)
 
 
 class CreateContractView(APIView):
