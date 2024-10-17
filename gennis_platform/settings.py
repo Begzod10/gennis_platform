@@ -104,7 +104,7 @@ WSGI_APPLICATION = 'gennis_platform.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {'default': {'ENGINE': 'django.db.backends.postgresql', 'NAME': 'gennis', 'USER': 'postgres',
+DATABASES = {'default': {'ENGINE': 'django.db.backends.postgresql', 'NAME': 'gennis_platform', 'USER': 'postgres',
                          'PASSWORD': '123', 'HOST': 'localhost', 'PORT': '5432'}}
 # DATABASES = {'default': {'ENGINE': 'django.db.backends.postgresql', 'NAME': 'gennis_platform', 'USER': 'postgres',
 #                          'PASSWORD': '123', 'HOST': '192.168.1.20', 'PORT': '5432'}}
