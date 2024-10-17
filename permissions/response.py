@@ -39,35 +39,32 @@ class QueryParamFilterMixin:
     filter_conditions = Q()
 
     def filter_queryset(self, queryset):
+        query_params = self.request.query_params
 
         for param, field in self.filter_mappings.items():
-            value = self.request.query_params.get(param)
-            if value is not None and value != 'null':
-                if '-' in value:
-                    try:
-                        age_from, age_to = map(int, value.split('-'))
-                        if param == 'age':
-                            today = date.today()
-                            birth_date_from = date(today.year - age_to, today.month, today.day)
-                            birth_date_to = date(today.year - age_from, today.month, today.day)
-                            self.filter_conditions &= Q(**{f'{field}__range': (birth_date_from, birth_date_to)})
-                        else:
-                            self.filter_conditions &= Q(**{f'{field}__range': (age_from, age_to)})
-                    except ValueError:
-                        continue
-                elif value.startswith('[') and value.endswith(']'):
-                    value_list = [v.strip() for v in value.strip('[]').split(',')]
-                    self.filter_conditions &= Q(**{f'{field}__in': value_list})
-                elif value.isdigit():
-                    self.filter_conditions &= Q(**{field: value})
-                elif value == 'True' or value == 'False':
-                    self.filter_conditions &= Q(**{field: value})
-                else:
-                    continue
-            else:
+            value = query_params.get(param)
+            if not value or value == 'null':
                 if param == 'branch':
-                    user = CustomUser.objects.get(pk=get_user(self.request))
+                    user = get_user(self.request)
                     self.filter_conditions &= Q(**{field: user.branch_id})
+                continue
+
+            if param == 'age' and '-' in value:
+                try:
+                    age_from, age_to = map(int, value.split('-'))
+                    today = date.today()
+                    birth_date_from = date(today.year - age_to, today.month, today.day)
+                    birth_date_to = date(today.year - age_from, today.month, today.day)
+                    self.filter_conditions &= Q(**{f'{field}__range': (birth_date_from, birth_date_to)})
+                except ValueError:
+                    continue
+            elif value.startswith('[') and value.endswith(']'):
+                value_list = value.strip('[]').split(',')
+                self.filter_conditions &= Q(**{f'{field}__in': [v.strip() for v in value_list]})
+            elif value.isdigit():
+                self.filter_conditions &= Q(**{field: value})
+            elif value in ['True', 'False']:
+                self.filter_conditions &= Q(**{field: value == 'True'})
 
         if self.filter_conditions:
             queryset = queryset.filter(self.filter_conditions)
