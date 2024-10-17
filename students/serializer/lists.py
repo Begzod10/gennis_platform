@@ -56,4 +56,9 @@ class ActiveListSerializer(serializers.ModelSerializer):
         return debt
 
     def get_group(self, obj):
-        return [GroupSerializer(group).data for group in obj.groups_student.all()]
+        groups = obj.groups_student.first()
+        group = {
+            "id": groups.id,
+            "name": groups.name
+        }
+        return group
