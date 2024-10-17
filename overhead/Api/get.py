@@ -9,9 +9,10 @@ from rest_framework.views import APIView
 from overhead.models import Overhead, OverheadType
 from overhead.serializers import OverheadSerializerGet, OverheadSerializerGetTYpe, MonthDaysSerializer
 from permissions.response import QueryParamFilterMixin
+from overhead.serializer.lists import ActiveListTeacherSerializer
 
 
-class OverheadListView(QueryParamFilterMixin,generics.ListAPIView):
+class OverheadListView(QueryParamFilterMixin, generics.ListAPIView):
     filter_mappings = {
         'status': 'deleted',
         'branch': 'branch_id'
@@ -20,9 +21,7 @@ class OverheadListView(QueryParamFilterMixin,generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     queryset = Overhead.objects.all().order_by('-created')
-    serializer_class = OverheadSerializerGet
-
-
+    serializer_class = ActiveListTeacherSerializer
 
 
 class OverheadTYpeListView(generics.ListAPIView):
