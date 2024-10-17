@@ -21,11 +21,11 @@ class PermissionsSerializer(serializers.ModelSerializer):
 
 
 class GroupSerializer(serializers.ModelSerializer):
-    permissions = PermissionsSerializer(read_only=True, many=True)
+    # permissions = PermissionsSerializer(read_only=True, many=True)
 
     class Meta:
         model = Group
-        fields = ['id', 'name', 'permissions']
+        fields = ['id', 'name']
 
 
 class AuthGroupSystemSerializer(serializers.ModelSerializer):
@@ -35,7 +35,7 @@ class AuthGroupSystemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AuthGroupSystem
-        fields = ['id', 'group', 'system_id','status']
+        fields = ['id', 'group', 'system_id', 'status']
 
     def get_status(self, obj):
         status = False if Access.objects.filter(auth_group_system=obj).exists() else True

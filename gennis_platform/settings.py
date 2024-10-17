@@ -99,6 +99,7 @@ DATABASES = {'default': {'ENGINE': 'django.db.backends.postgresql', 'NAME': 'gen
 # }
 
 
+
 AUTH_USER_MODEL = 'user.CustomUser'
 
 REST_FRAMEWORK = {

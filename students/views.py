@@ -90,6 +90,7 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
         'language': 'user__language_id',
         'number': 'class_number_id',
     }
+
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__name', 'user__surname', 'user__username']
 
