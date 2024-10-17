@@ -29,7 +29,7 @@ urlpatterns = [
          GetCheckedStudentsTeachers.as_view(), name='filtered_teachers_students'),
     path('groups_for_teacher/<int:teacher_id>/<int:group_id>/',
          GetGroupsForTeacher.as_view(), name='groups_for_teacher'),
-    path('classes/<int:pk>', ClassesView.as_view(), name='classes'),
+    path('classes/', ClassesView.as_view(), name='classes'),
     path('filtered_students_for_class_time_table/', GetCheckedStudentsForClassTimeTable.as_view(),
          name='filtered_students_for_class_time_table'),
     path('filtered_students_move_to_class/', CheckedStudentsMoveToGroup.as_view(),

@@ -30,6 +30,7 @@ class TeacherCreateGroupSerializerRead(serializers.ModelSerializer):
 class GroupListSerializer(serializers.ModelSerializer):
     teacher = serializers.SerializerMethodField(required=False)
     count = serializers.SerializerMethodField(required=False)
+    name = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Group
@@ -44,3 +45,6 @@ class GroupListSerializer(serializers.ModelSerializer):
 
     def get_count(self, obj):
         return obj.students.count()
+
+    def get_name(self, obj):
+        return f"{obj.class_number.number}-{obj.color.name}"

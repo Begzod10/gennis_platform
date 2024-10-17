@@ -7,13 +7,17 @@ from students.serializers import get_remaining_debt_for_student
 
 class UserSerializer(serializers.ModelSerializer):
     age = serializers.SerializerMethodField(required=False)
+    language = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = CustomUser
-        fields = ('name', 'surname', 'phone', 'age')
+        fields = ('name', 'surname', 'phone', 'age', 'registered_date', 'language')
 
     def get_age(self, obj):
         return obj.calculate_age()
+
+    def get_language(self, obj):
+        return obj.language.name
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -111,4 +115,3 @@ class ActiveListDeletedStudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeletedStudent
         fields = ['id', 'student', 'group', 'group_reason', 'deleted_date', 'comment']
-
