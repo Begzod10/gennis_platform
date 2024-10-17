@@ -1,7 +1,8 @@
 from rest_framework import generics
 
 from group.models import Group
-from group.serializers_list.serializers_self import AddClassesSerializers, TeacherCreateGroupSerializerRead
+from group.serializers_list.serializers_self import AddClassesSerializers, TeacherCreateGroupSerializerRead, \
+    GroupListSerializer
 
 from rest_framework.permissions import IsAuthenticated
 from permissions.response import QueryParamFilterMixin
@@ -12,16 +13,9 @@ class ClassesView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     queryset = Group.objects.filter(class_number__isnull=False)
-    serializer_class = AddClassesSerializers
+    serializer_class = GroupListSerializer
 
 
-# class AddClassesList(QueryParamFilterMixin, generics.ListAPIView):
-#     permission_classes = [IsAuthenticated]
-#     filter_mappings = {
-#         'branch': 'branch_id'
-#     }
-#     queryset = Group.objects.filter(class_number__isnull=True)
-#     serializer_class = AddClassesSerializers
 class AddClassesList(QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     filter_mappings = {
@@ -31,8 +25,6 @@ class AddClassesList(QueryParamFilterMixin, generics.ListAPIView):
     serializer_class = AddClassesSerializers
 
 
-
-
 class CreateGroupTeacherListView(QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     filter_mappings = {
@@ -40,4 +32,3 @@ class CreateGroupTeacherListView(QueryParamFilterMixin, generics.ListAPIView):
     }
     queryset = Teacher.objects.all()
     serializer_class = TeacherCreateGroupSerializerRead
-

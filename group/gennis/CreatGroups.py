@@ -76,7 +76,7 @@ class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
         serializer_class = self.get_serializer_class()
         kwargs['context'] = self.get_serializer_context()
         if self.request.method == 'GET':
-            kwargs['context']['fields'] = ['id', 'name']
+            kwargs['context']['fields'] = ['id', 'name', 'teacher']
             # print(kwargs['context']['fields'])
             return serializer_class(*args, **kwargs)
         return GroupCreateUpdateSerializer
