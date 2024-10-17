@@ -114,10 +114,10 @@ class ActiveStudents(APIView):
     serializer_class = ActiveListSerializer
 
     def get(self, request, *args, **kwargs):
-        branch = request.query_params.get('branch')
-        subject = request.query_params.get('subject')
-        age = request.query_params.get('age')
-        language = request.query_params.get('language')
+        branch = request.query_params.get('branch',None)
+        subject = request.query_params.get('subject',None)
+        age = request.query_params.get('age',None)
+        language = request.query_params.get('language',None)
         deleted_student_ids = DeletedStudent.objects.filter(
             student__groups_student__isnull=True, deleted=False
         ).values_list('student_id', flat=True)
@@ -129,13 +129,13 @@ class ActiveStudents(APIView):
             .select_related('class_number') \
             .prefetch_related('groups_student') \
             .order_by('class_number__number')
-        if branch:
+        if branch is not None and branch != 'undefined':
             active_students = active_students.filter(user__branch_id=branch)
-        if subject:
+        if subject is not None and subject != 'undefined':
             active_students = active_students.filter(subject__id=subject)
-        if age:
+        if age is not None and age != 'undefined':
             active_students = active_students.filter(user__birth_date=age)
-        if language:
+        if language is not None and language != 'undefined':
             active_students = active_students.filter(user__language_id=language)
         serializer = self.serializer_class(active_students, many=True)
         return Response(serializer.data)
