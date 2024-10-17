@@ -14,12 +14,12 @@ class RoomCreateSerializer(serializers.ModelSerializer):
 
 
 class RoomGetSerializer(serializers.ModelSerializer):
-    branch = BranchSerializer(required=False)
+    # branch = BranchSerializer(required=False)
     can_delete = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Room
-        fields = ['id', 'name', 'seats_number', 'electronic_board', 'deleted', 'branch','can_delete']
+        fields = ['id', 'name', 'seats_number', 'electronic_board', 'deleted', 'can_delete']
 
     def get_can_delete(self, obj):
         status = None
