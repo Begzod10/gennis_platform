@@ -38,6 +38,7 @@ class FlowsSerializerTest(serializers.ModelSerializer):
 class FlowsSerializerProfile(serializers.ModelSerializer):
     teacher = serializers.SerializerMethodField()
     subject_name = serializers.CharField(source='subject.name', read_only=True)
+    subject_id = serializers.CharField(source='subject.id', read_only=True)
     students = serializers.SerializerMethodField()
     level_name = serializers.CharField(source='level.name', read_only=True)
     type = serializers.CharField(default='flow', read_only=True)
@@ -45,7 +46,7 @@ class FlowsSerializerProfile(serializers.ModelSerializer):
     class Meta:
         model = Flow
         fields = ['id', 'name', 'level_name', 'activity', 'subject_name', 'teacher', 'students', 'type',
-                  'classes']
+                  'classes', 'subject_id']
 
     def get_teacher(self, obj):
         print(obj.teacher.subject.name)
@@ -64,7 +65,8 @@ class FlowsSerializerProfile(serializers.ModelSerializer):
                 'surname': student.user.surname,
                 'phone': student.user.phone,
                 'parents_phone': student.parents_number,
-                'balance': self.get_debt(student)
+                'balance': self.get_debt(student),
+                'img': student.user.profile_img if student.user.profile_img else None
             }
             for student in obj.students.all()
         ]
