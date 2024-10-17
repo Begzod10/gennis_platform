@@ -79,89 +79,48 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
 
 
 # @method_decorator(cache_page(60 * 2), name='dispatch')
-# class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
-#     permission_classes = [IsAuthenticated]
-#     serializer_class = StudentListSerializer
-#
-#     filter_mappings = {
-#         'branch': 'user__branch_id',
-#         'subject': 'subject__id',
-#         'age': 'user__birth_date',
-#         'language': 'user__language_id',
-#         'number': 'class_number_id',
-#     }
-#     filter_backends = [filters.SearchFilter]
-#     search_fields = ['user__name', 'user__surname', 'user__username']
-#     fields = ['id', 'user__name', 'user__surname', 'user__username', 'class_number__number', 'user__birth_date',
-#               'user__language__name', 'user__branch__name', 'subject__name', 'user__registered_date', 'user__age']
-#
-#     def get_queryset(self):
-#         excluded_ids = list(DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
-#                        list(DeletedNewStudent.objects.values_list('student_id', flat=True))
-#
-#         return Student.objects.filter(
-#             ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
-#         ).distinct()
-#
-#     def get_serializer(self, *args, **kwargs):
-#         kwargs['context'] = self.get_serializer_context()
-#         kwargs['context']['fields'] = self.fields
-#         return super().get_serializer(*args, **kwargs)
-class NewRegisteredStudents(APIView):
+class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
-    # filter_mappings = {
-    #     'branch': 'user__branch_id',
-    #     'subject': 'subject__id',
-    #     'age': 'user__birth_date',
-    #     'language': 'user__language_id',
-    #     'number': 'class_number_id',
-    # }
-    # search_fields = ['user__name', 'user__surname', 'user__username']
+    serializer_class = StudentListSerializer
 
+    filter_mappings = {
+        'branch': 'user__branch_id',
+        'subject': 'subject__id',
+        'age': 'user__birth_date',
+        'language': 'user__language_id',
+        'number': 'class_number_id',
+    }
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['user__name', 'user__surname', 'user__username']
 
     def get_queryset(self):
-        # excluded_ids = list(DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
-        #                list(DeletedNewStudent.objects.values_list('student_id', flat=True))
+        excluded_ids = list(DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
+                       list(DeletedNewStudent.objects.values_list('student_id', flat=True))
 
-        return Student.objects.all()
-
-    def get(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = ActiveListSerializer(queryset, many=True)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Student.objects.filter(
+            ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
+        ).distinct()
 
 
-class ActiveStudents(APIView):
+class ActiveStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = ActiveListSerializer
+    serializer_class = StudentListSerializer
+    filter_mappings = {
+        'branch': 'user__branch_id',
+        'subject': 'subject__id',
+        'age': 'user__birth_date',
+        'language': 'user__language_id',
+    }
 
-    def get(self, request, *args, **kwargs):
-        branch = request.query_params.get('branch', None)
-        subject = request.query_params.get('subject', None)
-        age = request.query_params.get('age', None)
-        language = request.query_params.get('language', None)
-        deleted_student_ids = DeletedStudent.objects.filter(
-            student__groups_student__isnull=True, deleted=False
-        ).values_list('student_id', flat=True)
+    def get_queryset(self, *args, **kwargs):
+        deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True,
+                                                            deleted=False).values_list(
+            'student_id', flat=True)
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
         active_students = Student.objects.exclude(id__in=deleted_student_ids) \
             .exclude(id__in=deleted_new_student_ids) \
-            .filter(groups_student__isnull=False) \
-            .distinct() \
-            .select_related('class_number') \
-            .prefetch_related('groups_student') \
-            .order_by('class_number__number')
-        if branch is not None and branch != 'undefined':
-            active_students = active_students.filter(user__branch_id=branch)
-        if subject is not None and subject != 'undefined':
-            active_students = active_students.filter(subject__id=subject)
-        # if age is not None and age != 'undefined':
-        #     active_students = active_students.filter(user__birth_date=age)
-        if language is not None and language != 'undefined':
-            active_students = active_students.filter(user__language_id=language)
-        serializer = self.serializer_class(active_students, many=True)
-        return Response(serializer.data)
+            .filter(groups_student__isnull=False).distinct().order_by('class_number__number')
+        return active_students
 
 
 class CreateContractView(APIView):
