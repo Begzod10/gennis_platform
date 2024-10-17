@@ -109,7 +109,7 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
         return super().get_serializer(*args, **kwargs)
 
 
-class ActiveStudents(QueryParamFilterMixin, ListAPIView):
+class ActiveStudents(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ActiveListSerializer
     filter_mappings = {
