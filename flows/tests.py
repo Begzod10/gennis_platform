@@ -1,3 +1,21 @@
-from django.test import TestCase
+from django.urls import get_resolver, URLPattern, URLResolver
 
-# Create your tests here.
+def count_urls(urlpatterns=None, depth=0):
+    if urlpatterns is None:
+        urlpatterns = get_resolver().url_patterns
+
+    total_count = 0
+
+    for pattern in urlpatterns:
+        if isinstance(pattern, URLPattern):  # It's a simple URL pattern
+            total_count += 1
+            print(f"{' ' * depth}- {pattern.pattern}")
+        elif isinstance(pattern, URLResolver):  # It's an include
+            print(f"{' ' * depth}+ {pattern.pattern}")
+            total_count += count_urls(pattern.url_patterns, depth + 2)
+
+    return total_count
+
+# URLlarni hisoblash uchun funktsiyani chaqirish
+total_urls = count_urls()
+print(f"Total URL count: {total_urls}")

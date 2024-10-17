@@ -29,7 +29,7 @@ from .serializers import (StudentListSerializer,
                           DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
 
 
-class StudentListView( ListAPIView):
+class StudentListView(ListAPIView):
     filter_mappings = {
         'branch': 'user__branch_id',
     }
@@ -77,11 +77,10 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
         return Response(student_serializer.data)
 
 
-@method_decorator(cache_page(60 * 2), name='dispatch')
+# @method_decorator(cache_page(60 * 2), name='dispatch')
 class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = StudentListSerializer
-    queryset = Student.objects.filter(groups_student__isnull=True).distinct()
 
     filter_mappings = {
         'branch': 'user__branch_id',
@@ -92,14 +91,22 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     }
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__name', 'user__surname', 'user__username']
+    fields = ['id', 'user__name', 'user__surname', 'user__username', 'class_number__number', 'user__birth_date',
+              'user__language__name', 'user__branch__name', 'subject__name', 'user__registered_date', 'user__age']
 
     def get_queryset(self):
         excluded_ids = list(DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
                        list(DeletedNewStudent.objects.values_list('student_id', flat=True))
+        print(excluded_ids)
 
         return Student.objects.filter(
             ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
         ).distinct()
+
+    def get_serializer(self, *args, **kwargs):
+        kwargs['context'] = self.get_serializer_context()
+        kwargs['context']['fields'] = self.fields
+        return super().get_serializer(*args, **kwargs)
 
 
 class ActiveStudents(QueryParamFilterMixin, APIView):
