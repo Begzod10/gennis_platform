@@ -24,7 +24,7 @@ class GroupSerializer(serializers.ModelSerializer):
 
 class ActiveListSerializer(serializers.ModelSerializer):
     user = UserSerializer(required=False)
-    group = GroupSerializer(required=False)
+    group = serializers.SerializerMethodField(required=False)
     color = serializers.SerializerMethodField(required=False)
     debt = serializers.SerializerMethodField(required=False)
 
@@ -54,3 +54,6 @@ class ActiveListSerializer(serializers.ModelSerializer):
                         debt += salary.black_salary if salary.black_salary else 0
 
         return debt
+
+    def get_group(self, obj):
+        return [GroupSerializer(group).data for group in obj.groups_student.all()]
