@@ -81,7 +81,7 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
 # @method_decorator(cache_page(60 * 2), name='dispatch')
 class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = StudentListSerializer
+    serializer_class = ActiveListSerializer
 
     filter_mappings = {
         'branch': 'user__branch_id',
@@ -104,7 +104,7 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
 
 class ActiveStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = StudentListSerializer
+    serializer_class = ActiveListSerializer
     filter_mappings = {
         'branch': 'user__branch_id',
         'subject': 'subject__id',
