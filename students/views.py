@@ -117,7 +117,7 @@ class ActiveStudents(QueryParamFilterMixin, ListAPIView):
         'age': 'user__birth_date',
         'language': 'user__language_id',
     }
-    fields = ['id', 'user__name', 'user__phone', 'user__surname', 'user__age', "group__name", "debt"]
+    fields = ['id', 'user__name', 'user__phone', 'user__surname', 'user__age', "group__name", "debt", "color"]
 
     def get_queryset(self, *args, **kwargs):
         deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True,

@@ -147,12 +147,25 @@ class StudentListSerializer(serializers.ModelSerializer):
                 def set_nested_value(source_dict, target_dict, field_parts):
                     current_field = field_parts[0]
                     if current_field in source_dict:
-                        if len(field_parts) == 1:
-                            target_dict[current_field] = source_dict[current_field]
+                        if type(source_dict[current_field]) == list:
+                            for item in source_dict[current_field]:
+                                if len(field_parts) == 1:
+                                    target_dict[current_field] = item
+                                else:
+                                    if current_field not in target_dict:
+                                        target_dict[current_field] = {}
+                                    set_nested_value(item, target_dict[current_field], field_parts[1:])
+
+
                         else:
-                            if current_field not in target_dict:
-                                target_dict[current_field] = {}
-                            set_nested_value(source_dict[current_field], target_dict[current_field], field_parts[1:])
+
+                            if len(field_parts) == 1:
+                                target_dict[current_field] = source_dict[current_field]
+                            else:
+                                if current_field not in target_dict:
+                                    target_dict[current_field] = {}
+                                set_nested_value(source_dict[current_field], target_dict[current_field],
+                                                 field_parts[1:])
 
                 set_nested_value(representation, filtered_representation, field_parts)
 
