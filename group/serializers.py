@@ -17,8 +17,8 @@ from system.serializers import SystemSerializers
 from teachers.models import Teacher, TeacherHistoryGroups
 from teachers.serializers import TeacherSerializer
 from time_table.models import GroupTimeTable
-from .functions.CreateSchoolStudentDebts import create_school_student_debts
-from .models import Group, GroupReason, CourseTypes
+from group.functions.CreateSchoolStudentDebts import create_school_student_debts
+from group.models import Group, GroupReason, CourseTypes
 
 
 class CourseTypesSerializers(serializers.ModelSerializer):

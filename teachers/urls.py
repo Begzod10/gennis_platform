@@ -54,5 +54,4 @@ urlpatterns = [
          name='salary-types'),
     path('group-student/<int:pk>/', GetGroupStudents.as_view(),
          name='group-student'),
-
 ]

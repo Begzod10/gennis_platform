@@ -137,7 +137,7 @@ class GroupSerializerTeachers(serializers.ModelSerializer):
 
     @property
     def course_types(self):
-        from group.serializers import CourseTypesSerializers
+        from group.serializers_list import CourseTypesSerializers
         return CourseTypesSerializers()
 
     def get_class_number(self, obj):
@@ -228,7 +228,7 @@ class TeacherGroupStatisticsReadSerializers(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_reason(self, obj):
-        from group.serializers import GroupReasonSerializers
+        from group.serializers_list import GroupReasonSerializers
         return GroupReasonSerializers(obj.reason).data
 
 

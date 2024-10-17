@@ -158,7 +158,11 @@ class AttendancesTodayStudentsSerializer(serializers.ModelSerializer):
         return datas
 
 
+
+# class GetLessonPlanSerializer(serializers_list.ModelSerializer):
+
 # class GetLessonPlanSerializer(serializer.ModelSerializer):
+
 #
 #     class Meta:
 #         model = Teacher
