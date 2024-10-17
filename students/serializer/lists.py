@@ -7,10 +7,11 @@ from students.serializers import get_remaining_debt_for_student
 
 class UserSerializer(serializers.ModelSerializer):
     age = serializers.SerializerMethodField(required=False)
+    language = serializers.CharField(source='language.name', required=False)
 
     class Meta:
         model = CustomUser
-        fields = ('name', 'surname', 'phone', 'age')
+        fields = ('name', 'surname', 'phone', 'age', 'registered_date', 'language')
 
     def get_age(self, obj):
         return obj.calculate_age()
