@@ -97,7 +97,6 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     def get_queryset(self):
         excluded_ids = list(DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
                        list(DeletedNewStudent.objects.values_list('student_id', flat=True))
-        print(excluded_ids)
 
         return Student.objects.filter(
             ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
@@ -109,15 +108,19 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
         return super().get_serializer(*args, **kwargs)
 
 
-class ActiveStudents(QueryParamFilterMixin, APIView):
+class ActiveStudents(QueryParamFilterMixin, ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = StudentListSerializer
     filter_mappings = {
         'branch': 'user__branch_id',
         'subject': 'subject__id',
         'age': 'user__birth_date',
         'language': 'user__language_id',
     }
+    fields = ['id', 'user__name', 'user__phone', 'user__surname'
+        , 'user__age', "group__name", "debt"]
 
-    def get(self, request, *args, **kwargs):
+    def get_queryset(self, *args, **kwargs):
         deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True,
                                                             deleted=False).values_list(
             'student_id', flat=True)
@@ -125,12 +128,12 @@ class ActiveStudents(QueryParamFilterMixin, APIView):
         active_students = Student.objects.exclude(id__in=deleted_student_ids) \
             .exclude(id__in=deleted_new_student_ids) \
             .filter(groups_student__isnull=False).distinct().order_by('class_number__number')
+        return active_students
 
-        active_students = self.filter_queryset(active_students)
-
-        student_serializer = StudentListSerializer(active_students, many=True)
-
-        return Response(student_serializer.data)
+    def get_serializer(self, *args, **kwargs):
+        kwargs['context'] = self.get_serializer_context()
+        kwargs['context']['fields'] = self.fields
+        return super().get_serializer(*args, **kwargs)
 
 
 class CreateContractView(APIView):
