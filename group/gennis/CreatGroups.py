@@ -64,23 +64,37 @@ class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
             except ObjectDoesNotExist:
                 queryset = Group.objects.none()
         queryset = self.filter_queryset(queryset)
+
         return queryset
 
-    # def get_serializer_class(self):
-    #     if self.request.method == 'GET':
-    #
-    #         return GroupSerializer
-    #     return GroupCreateUpdateSerializer
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return GroupSerializer
+        return GroupCreateUpdateSerializer
 
     def get_serializer(self, *args, **kwargs):
         serializer_class = self.get_serializer_class()
         kwargs['context'] = self.get_serializer_context()
         if self.request.method == 'GET':
             kwargs['context']['fields'] = ['id', 'name']
-
-        return serializer_class(*args, **kwargs)
+            print(kwargs['context']['fields'])
+            return serializer_class(*args, **kwargs)
+        return GroupCreateUpdateSerializer
 
     def create(self, request, *args, **kwargs):
+
+        """
+        Create a new Group instance.
+
+        Args:
+            request: Request object.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Response object with the newly created Group instance data.
+        """
+
         write_serializer = self.get_serializer(data=request.data, partial=True)
         write_serializer.is_valid(raise_exception=True)
         self.perform_create(write_serializer)

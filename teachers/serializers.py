@@ -29,7 +29,7 @@ class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher
         fields = ['user', 'subject', 'color', 'total_students', 'id', 'teacher_salary_type', 'salary_percentage',
-                  'class_type','working_hours']
+                  'class_type', 'working_hours']
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -39,6 +39,7 @@ class TeacherSerializer(serializers.ModelSerializer):
         } for subject in instance.subject.all()]
 
         return representation
+
     def create(self, validated_data):
         user_data = validated_data.pop('user')
         subject_data = validated_data.pop('subject')
@@ -83,8 +84,6 @@ class TeacherSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
-
-
 
 
 class TeacherAttendanceSerializers(serializers.ModelSerializer):

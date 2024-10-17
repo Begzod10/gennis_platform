@@ -1,3 +1,4 @@
+import pprint
 from datetime import datetime
 
 from rest_framework import serializers
@@ -264,6 +265,7 @@ class GroupSerializer(serializers.ModelSerializer):
 
         # 'fields' from context (passed from the view)
         fields = self.context.get('fields', None)
+
         if fields:
             filtered_representation = {}
 
