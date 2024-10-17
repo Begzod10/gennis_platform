@@ -28,7 +28,7 @@ class TeacherCreateGroupSerializerRead(serializers.ModelSerializer):
 
 
 class GroupListSerializer(serializers.ModelSerializer):
-    teacher = TeacherSerializer(read_only=True)
+    teacher = TeacherSerializer(read_only=True, many=True)
 
     class Meta:
         model = Group
