@@ -60,9 +60,10 @@ def create_user_salary(user_id):
                 date__month=current_month_old
             )
             user.total_salary = permission.salary
-            user.remaining_salary = permission.salary - int(user.taken_salary)
-            user.taken_salary = user.taken_salary
-            user.save()
+            if permission.salary:
+                user.remaining_salary = permission.salary - int(user.taken_salary)
+                user.taken_salary = user.taken_salary
+                user.save()
         current_year = now().year
         current_month = now().month
         user_salary = UserSalary.objects.filter(date__year=current_year, date__month=current_month, user=user_1)
@@ -82,7 +83,7 @@ def create_user_salary(user_id):
                 date__year=current_year,
                 date__month=current_month
             )
-            user.total_salary = permission.salary
-            user.remaining_salary = permission.salary - int(user.taken_salary)
-            user.taken_salary = user.taken_salary
-            user.save()
+            if permission.salary:
+                user.remaining_salary = permission.salary - int(user.taken_salary)
+                user.taken_salary = user.taken_salary
+                user.save()
