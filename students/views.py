@@ -109,15 +109,15 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
         return super().get_serializer(*args, **kwargs)
 
 
-class ActiveStudents(ListAPIView):
+class ActiveStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ActiveListSerializer
-    # filter_mappings = {
-    #     'branch': 'user__branch_id',
-    #     'subject': 'subject__id',
-    #     'age': 'user__birth_date',
-    #     'language': 'user__language_id',
-    # }
+    filter_mappings = {
+        'branch': 'user__branch_id',
+        'subject': 'subject__id',
+        'age': 'user__birth_date',
+        'language': 'user__language_id',
+    }
 
     def get_queryset(self, *args, **kwargs):
         deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True,
@@ -129,9 +129,12 @@ class ActiveStudents(ListAPIView):
             .exclude(id__in=deleted_new_student_ids)
             .filter(groups_student__isnull=False)
             .distinct()
+            .select_related('class_number')
+            .prefetch_related('groups_student')
             .order_by('class_number__number')
         )
         return active_students
+
 
 class CreateContractView(APIView):
     permission_classes = [IsAuthenticated]
