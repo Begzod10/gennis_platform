@@ -42,7 +42,7 @@ class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     filter_mappings = {
-        'teacher': 'teacher__id',
+        'teacher': 'tfilter_mappingseacher__id',
         'subject': 'subject__id',
         'course_types': 'course_types__id',
         'deleted': 'deleted',
@@ -77,7 +77,7 @@ class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
         kwargs['context'] = self.get_serializer_context()
         if self.request.method == 'GET':
             kwargs['context']['fields'] = ['id', 'name']
-            print(kwargs['context']['fields'])
+            # print(kwargs['context']['fields'])
             return serializer_class(*args, **kwargs)
         return GroupCreateUpdateSerializer
 
