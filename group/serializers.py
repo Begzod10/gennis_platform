@@ -265,7 +265,8 @@ class GroupSerializer(serializers.ModelSerializer):
 
         # 'fields' from context (passed from the view)
         fields = self.context.get('fields', None)
-
+        print(fields)
+        # Filter fields based on 'fields' from context
         if fields:
             filtered_representation = {}
 
