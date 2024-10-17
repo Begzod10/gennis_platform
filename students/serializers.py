@@ -136,6 +136,39 @@ class StudentListSerializer(serializers.ModelSerializer):
         model = Student
         fields = '__all__'
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # 'fields' from context (passed from the view)
+        fields = self.context.get('fields', None)
+        if fields:
+            filtered_representation = {}
+
+            # Function to handle any number of nested fields
+            def set_nested_value(source_dict, target_dict, field_parts):
+                """
+                Recursively sets nested fields based on field_parts.
+                This handles fields with arbitrary depth of nesting.
+                """
+                current_field = field_parts[0]
+                if current_field in source_dict:
+                    if len(field_parts) == 1:
+                        # Base case: If we're at the last field part, set the value
+                        target_dict[current_field] = source_dict[current_field]
+                    else:
+                        # Recursive case: Go deeper into the nested field
+                        if current_field not in target_dict:
+                            target_dict[current_field] = {}
+                        set_nested_value(source_dict[current_field], target_dict[current_field], field_parts[1:])
+
+            # Iterate over the fields and process each one
+            for field in fields:
+                field_parts = field.split('__')
+                set_nested_value(representation, filtered_representation, field_parts)
+
+            return filtered_representation
+
+        return representation
     def get_group(self, obj):
         return [GroupSerializerStudents(group).data for group in obj.groups_student.all()]
 
