@@ -9,10 +9,12 @@ from permissions.response import QueryParamFilterMixin
 from teachers.models import Teacher
 
 
-class ClassesView(generics.ListCreateAPIView):
+class ClassesView(QueryParamFilterMixin, generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
-
-    queryset = Group.objects.filter(class_number__isnull=False)
+    filter_mappings = {
+        'branch': 'branch'
+    }
+    queryset = Group.objects.filter(class_number__isnull=False, deleted=False).order_by('class_number__number')
     serializer_class = GroupListSerializer
 
 
