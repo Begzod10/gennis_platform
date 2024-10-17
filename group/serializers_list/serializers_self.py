@@ -35,4 +35,4 @@ class GroupListSerializer(serializers.ModelSerializer):
         fields = ['id', 'teacher', "status", "name"]
 
     def get_name(self, obj):
-        return f"{obj.teacher.user.name} {obj.teacher.user.surname}"
+        return f"{obj.user.name} {obj.user.surname}"
