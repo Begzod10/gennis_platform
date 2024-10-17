@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from permissions.response import QueryParamFilterMixin
 from ..models import Flow
 from ..serializers import FlowCreateUpdateSerializer, FlowsSerializer
+from ..serializers_list import FlowsSerializerTest
 
 
 class FlowListCreateView(QueryParamFilterMixin, generics.ListCreateAPIView):
@@ -43,7 +44,7 @@ class FlowListView(QueryParamFilterMixin, generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     queryset = Flow.objects.all()
-    serializer_class = FlowsSerializer
+    serializer_class = FlowsSerializerTest
 
     def get_queryset(self):
         queryset = Flow.objects.all()
