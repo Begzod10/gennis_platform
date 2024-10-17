@@ -147,6 +147,8 @@ class StudentListSerializer(serializers.ModelSerializer):
                 def set_nested_value(source_dict, target_dict, field_parts):
                     current_field = field_parts[0]
                     if current_field in source_dict:
+                        print(current_field)
+
                         if len(field_parts) == 1:
                             target_dict[current_field] = source_dict[current_field]
                         else:
