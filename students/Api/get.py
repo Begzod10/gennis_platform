@@ -104,7 +104,7 @@ class StudentPaymentListAPIView(generics.ListAPIView):
     serializer_class = StudentPaymentListSerializer
 
     def get(self, request, *args, **kwargs):
-        queryset = StudentPayment.objects.filter(deleted=False).all()
+        queryset = StudentPayment.objects.filter(deleted=False,status=False).all().order_by("-date")
 
         serializer = StudentPaymentListSerializer(queryset, many=True)
         return Response(serializer.data)
@@ -206,7 +206,7 @@ class FilteredStudentsListView(APIView):
 
         students = Student.objects.filter(
             user__branch_id=location_id,
-            deleted_student_student__isnull=True,
+            deleted_student_student__deleted=True,
             subject__student__isnull=False
         ).select_related('user').prefetch_related('subject', 'group_time_table').distinct()
         room_ids = [t['room'] for t in time_tables]
@@ -298,7 +298,7 @@ class SchoolStudents(generics.ListAPIView):
 
     def get_queryset(self):
         branch_id = self.request.query_params.get('branch')
-        return Student.objects.filter(user__branch_id=branch_id, deleted_student_student__isnull=True,
+        return Student.objects.filter(user__branch_id=branch_id, deleted_student_student__deleted=True,
                                       groups_student__isnull=True)
 
 

@@ -123,11 +123,8 @@ class OldCapitalListSerializers(serializers.ModelSerializer):
     by_who = UserSerializerRead(read_only=True)
     branch = BranchSerializer(required=False)
     payment_type = PaymentTypesSerializers(required=False)
-    added_date = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = OldCapital
         fields = ['id', 'by_who', 'branch', 'payment_type', 'added_date', 'price', 'name']
 
-    def get_added_date(self, obj):
-        return obj.added_date.strftime('%Y-%m-%d')

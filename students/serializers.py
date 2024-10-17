@@ -99,7 +99,7 @@ def get_remaining_debt_for_student(student_id):
         if month.payment < 0:
             month.payment = 0
             month.save()
-        month.remaining_debt = month.total_debt - month.payment-month.discount
+        month.remaining_debt = month.total_debt - (month.payment+month.discount)
         month.save()
 
 
@@ -389,4 +389,4 @@ class DeletedStudentListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DeletedStudent
-        fields = ['id', 'student', 'group', 'teacher', 'group_reason', 'deleted_date']
+        fields = ['id', 'student', 'group', 'teacher', 'group_reason', 'deleted_date','comment']

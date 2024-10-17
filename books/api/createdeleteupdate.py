@@ -18,7 +18,7 @@ class UserBookDestroyView(generics.DestroyAPIView):
 
 
 class BookImageCreateView(generics.CreateAPIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     queryset = BookImage.objects.all()
     serializer_class = BookImageSerializer
@@ -65,7 +65,7 @@ class BookOverheadDestroyView(APIView):
 
 
 class BalanceOverheadCreateView(generics.CreateAPIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     queryset = BalanceOverhead.objects.all()
     serializer_class = BalanceOverheadSerializers

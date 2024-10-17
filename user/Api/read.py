@@ -43,19 +43,20 @@ class UserDetailView(generics.RetrieveAPIView):
         return Response(user_data)
 
 
-class UserSalaryListListView(generics.ListAPIView):
+class UserSalaryListListView(QueryParamFilterMixin, generics.ListAPIView):
+    filter_mappings = {
+        'branch': 'branch_id',
+    }
     permission_classes = [IsAuthenticated]
 
     queryset = UserSalaryList.objects.filter(deleted=False).all()
     serializer_class = UserSalaryListSerializersRead
 
-    def get(self, request, *args, **kwargs):
-        queryset = UserSalaryList.objects.filter(deleted=False).all()
-        serializer = UserSalaryListSerializersRead(queryset, many=True)
-        return Response(serializer.data)
 
-
-class DeletedUserSalaryListListView(generics.ListAPIView):
+class DeletedUserSalaryListListView(QueryParamFilterMixin, generics.ListAPIView):
+    filter_mappings = {
+        'branch': 'branch_id',
+    }
     permission_classes = [IsAuthenticated]
 
     queryset = UserSalaryList.objects.filter(deleted=True).all()
@@ -147,7 +148,6 @@ class EmployerRetrieveView(generics.RetrieveAPIView):
         create_user_salary(employer.user_id)
 
         return employer
-
 
 
 class UserSalaryMonthView(generics.RetrieveAPIView):

@@ -63,6 +63,7 @@ class StudentPayment(models.Model):
     extra_payment = models.IntegerField(null=True, default=0)
     deleted = models.BooleanField(default=False)
     old_id = models.IntegerField(unique=True, null=True)
+    reason = models.CharField(max_length=255, null=True)
     attendance = models.ForeignKey('attendances.AttendancePerMonth', on_delete=models.SET_NULL, null=True)
 
 

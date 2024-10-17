@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth.models import Group
 from rest_framework import serializers
@@ -38,7 +36,7 @@ class UserSerializerWrite(serializers.ModelSerializer):
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all())
     profession = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), required=False, allow_null=True)
-    money = serializers.CharField(required=False)
+    money = serializers.CharField(required=False,allow_null=True)
 
     class Meta:
         model = CustomUser
@@ -55,7 +53,9 @@ class UserSerializerWrite(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
+        #test
         profession = validated_data.pop('profession', None)
+
         user = super().create(validated_data)
         user.set_password(validated_data['password'])
         user.save()
@@ -88,9 +88,15 @@ class UserSerializerWrite(serializers.ModelSerializer):
     #         raise serializers.ValidationError({"error": str(e)})
 
     def update(self, instance, validated_data):
+        profession = validated_data.pop('profession', None)
+        if profession is not None:
+            instance.groups.clear()
+            instance.groups.add(profession)
+            CustomAutoGroup.objects.filter(user=instance).update(group=profession)
 
-        salary = validated_data.pop('money')
-        CustomAutoGroup.objects.filter(user=instance).update(salary=salary)
+        salary = validated_data.pop('money', None)
+        if salary is not None:
+            CustomAutoGroup.objects.filter(user=instance).update(salary=salary)
         user = super().update(instance, validated_data)
         if 'password' in validated_data:
             user.set_password(validated_data['password'])
@@ -108,7 +114,6 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
     payment_types = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all(), required=False)
     name = serializers.SerializerMethodField(required=False, read_only=True)
     surname = serializers.SerializerMethodField(required=False, read_only=True)
-    date = serializers.SerializerMethodField(required=False, read_only=True)
     payment_type_name = serializers.SerializerMethodField(required=False, read_only=True)
 
     class Meta:
@@ -120,9 +125,6 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
 
     def get_surname(self, obj):
         return obj.user.surname
-
-    def get_date(self, obj):
-        return obj.date.strftime('%Y-%m-%d')
 
     def get_payment_type_name(self, obj):
         return obj.payment_types.name
@@ -239,6 +241,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # StudentPayment.objects.all().delete()
         # from attendances.models import AttendancePerMonth
         # AttendancePerMonth.objects.all().update(status=False, remaining_debt=0, payment=0)
+        # from classes.models import ClassNumber
+        # from branch.models import Branch
+        # for branch in Branch.objects.filter(location__system__name='school').all():
+        #     ClassNumber.objects.get_or_create(number=0, branch=branch)
+        # from overhead.models import Overhead
+        # from capital.models import OldCapital
+        # Overhead.objects.all().update(branch_id=8)
+        # OldCapital.objects.all().update(branch_id=8)
         username = attrs.get('username')
         password = attrs.get('password')
         user = CustomUser.objects.get(username=username)

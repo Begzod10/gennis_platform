@@ -1,3 +1,4 @@
+import calendar
 import datetime
 import json
 import os
@@ -7,7 +8,10 @@ from datetime import datetime
 import docx
 from django.db.models import Q
 from django.db.models import Sum
+from django.db.models.functions import ExtractMonth
 from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import status
@@ -25,26 +29,14 @@ from .serializers import (StudentListSerializer,
                           DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
 
 
-class StudentListView(APIView):
-    def get(self, request, *args, **kwargs):
-        deleted_student_ids = DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
-        deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
-        active_students = Student.objects.exclude(id__in=deleted_student_ids).exclude(id__in=deleted_new_student_ids)[
-                          :100]
-        student_serializer = StudentListSerializer(active_students, many=True)
-
-        deleted_students = DeletedStudent.objects.filter(deleted=False).all()
-        deleted_student_serializer = DeletedStudentListSerializer(deleted_students, many=True)
-        delete_new_students = DeletedNewStudent.objects.exclude(id__in=deleted_student_ids)
-        delete_new_student_serializer = DeletedNewStudentListSerializer(delete_new_students, many=True)
-
-        data = {
-            'new_students': student_serializer.data,
-            'deleted_students': deleted_student_serializer.data,
-            'active': delete_new_student_serializer.data,
-        }
-
-        return Response(data)
+class StudentListView( ListAPIView):
+    filter_mappings = {
+        'branch': 'user__branch_id',
+    }
+    queryset = Student.objects.all()
+    serializer_class = StudentListSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['user__name', 'user__surname', 'user__username']
 
 
 class DeletedFromRegistered(QueryParamFilterMixin, APIView):
@@ -85,6 +77,7 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
         return Response(student_serializer.data)
 
 
+@method_decorator(cache_page(60 * 2), name='dispatch')
 class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = StudentListSerializer
@@ -289,8 +282,8 @@ class PaymentDatas(APIView):
         data = json.loads(request.body)
         year = data['year']
         month = data['month']
-        payments = StudentPayment.objects.filter(deleted=False, student_id=student_id, added_data__year=year,
-                                                 added_data__month=month).all()
+        payments = StudentPayment.objects.filter(deleted=False, student_id=student_id, date__year=year,
+                                                 date__month=month).all()
         data = StudentPaymentListSerializer(payments, many=True).data
 
         return Response(data)
@@ -302,8 +295,8 @@ class PaymentDatas(APIView):
         payments_by_year = {}
 
         for payment in student_payments:
-            year = payment.added_data.year
-            month = payment.added_data.month
+            year = payment.date.year
+            month = payment.date.month
 
             if year not in payments_by_year:
                 payments_by_year[year] = set()
@@ -354,7 +347,7 @@ class GetMonth(APIView):
             attendance_per_month.remaining_debt = attendance_per_month.total_debt
             attendance_per_month.save()
 
-        payment_sum = request.data['payment_sum']
+        payment_sum = int(request.data['payment_sum'])
         branch = request.data['branch']
 
         if attendance_per_month.remaining_debt >= payment_sum:
@@ -423,10 +416,6 @@ class DeleteFromDeleted(APIView):
         return Response({'msg': "Student muvoffaqiyatlik orqaga qaytarildi"}, status=status.HTTP_200_OK)
 
 
-import calendar
-from django.db.models.functions import ExtractMonth
-
-
 class MissingAttendanceListView(generics.RetrieveAPIView):
 
     def get_queryset(self):
@@ -448,7 +437,12 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
         attendances = AttendancePerMonth.objects.filter(
             student_id=student_id, group_id=group.id
         ).all().order_by('month_date__year', 'month_date__month')
+
         for attendance in attendances:
+            student_payemnt = StudentPayment.objects.filter(
+                attendance=attendance, status=True
+
+            ).first()
             data.append({
                 'id': attendance.id,
                 'month': attendance.month_date,
@@ -456,21 +450,29 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 'remaining_debt': attendance.remaining_debt,
                 'payment': attendance.payment,
                 "discount": attendance.discount,
-                "reason": StudentCharity.objects.filter(student_id=student_id).first().name if StudentCharity.objects.filter(student_id=student_id).first() else None,
+                "discount_sum": student_payemnt.payment_sum if student_payemnt else 0,
+                "discount_reason": student_payemnt.reason if student_payemnt else 0,
+                "discount_id": student_payemnt.id if student_payemnt else 0,
+                "reason": StudentCharity.objects.filter(
+                    student_id=student_id).first().name if StudentCharity.objects.filter(
+                    student_id=student_id).first() else None,
                 'cash': attendance.studentpayment_set.filter(
                     payment_type__name='cash',
                     deleted=False,
+                    status=False,
+
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
                 'bank': attendance.studentpayment_set.filter(
                     payment_type__name='bank',
                     deleted=False,
+                    status=False,
+
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
                 'click': attendance.studentpayment_set.filter(
-                    date__month=attendance.month_date.month,
-                    student_id=student_id,
                     payment_type__name='click',
                     deleted=False,
-                    date__year=attendance.month_date.year
+                    status=False,
+
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
 
             })
@@ -512,6 +514,10 @@ class MissingAttendanceView(APIView):
         all_months = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
         missing_months = set(all_months) - set(months_with_attendance)
         month_names = [calendar.month_name[month] for month in sorted(missing_months)]
+        student_payemnt = StudentPayment.objects.filter(
+            attendance=attendance, status=True
+
+        ).first()
         data = []
         for attendance in attendances:
             data.append({
@@ -520,21 +526,28 @@ class MissingAttendanceView(APIView):
                 'total_debt': attendance.total_debt,
                 'remaining_debt': attendance.remaining_debt,
                 "discount": attendance.discount,
-                "reason": StudentCharity.objects.filter(student_id=student_id).first().name if StudentCharity.objects.filter(student_id=student_id).first() else None,
+                "discount_sum": student_payemnt.payment_sum if student_payemnt else 0,
+                "discount_reason": student_payemnt.reason if student_payemnt else 0,
+                "discount_id": student_payemnt.id if student_payemnt else 0,
+                "reason": StudentCharity.objects.filter(
+                    student_id=student_id).first().name if StudentCharity.objects.filter(
+                    student_id=student_id).first() else None,
                 'cash': attendance.studentpayment_set.filter(
                     payment_type__name='cash',
                     deleted=False,
+                    status=False,
+
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
                 'bank': attendance.studentpayment_set.filter(
                     payment_type__name='bank',
                     deleted=False,
+                    status=False,
+
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
                 'click': attendance.studentpayment_set.filter(
-                    date__month=attendance.month_date.month,
-                    student_id=student_id,
                     payment_type__name='click',
                     deleted=False,
-                    date__year=attendance.month_date.year
+                    status=False,
                 ).aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
 
             })
@@ -543,3 +556,74 @@ class MissingAttendanceView(APIView):
             "data": data,
             "msg": "Qarz muvaffaqiyatli yaratildi"
         })
+
+
+class StudentCharityModelView(APIView):
+    def get(self, request, student_id):
+        queryset = StudentPayment.objects.filter(
+            student_id=student_id,
+            date__month__in=[9, 10, 11, 12, 1, 2, 3, 4, 5, 6],
+            deleted=False,
+            status=True
+        ).annotate(month_number=ExtractMonth('date'))
+        months_with_attendance = queryset.values_list('month_number', flat=True).distinct()
+        all_months = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
+        missing_months = set(all_months) - set(months_with_attendance)
+        month_names = [calendar.month_name[month] for month in sorted(missing_months)]
+
+        return Response(month_names)
+
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        month = data.pop('date')
+        month_number = list(calendar.month_name).index(month.capitalize())
+        current_year = datetime.now().year
+        date = datetime(year=current_year, month=int(month_number), day=int(datetime.now().day)).date()
+        student_id = self.kwargs['student_id']
+        attendance_per_month = AttendancePerMonth.objects.get(student_id=student_id,
+                                                              month_date__month=month_number,
+                                                              month_date__year=current_year)
+
+        if attendance_per_month.total_debt != attendance_per_month.payment and attendance_per_month.remaining_debt == 0:
+            attendance_per_month.remaining_debt = attendance_per_month.total_debt
+            attendance_per_month.save()
+
+        payment_sum = int(request.data['payment_sum'])
+        branch = request.data['branch']
+
+        if attendance_per_month.remaining_debt >= payment_sum:
+            attendance_per_month.remaining_debt -= payment_sum
+            attendance_per_month.payment += payment_sum
+            student_payment = StudentPayment.objects.create(student_id=student_id,
+                                                            payment_sum=payment_sum,
+                                                            branch_id=branch,
+                                                            status=request.data['status'],
+                                                            payment_type_id=request.data['payment_type'],
+                                                            date=date,
+                                                            attendance=attendance_per_month,
+                                                            reason=request.data['reason']
+
+                                                            )
+            student_payment.save()
+
+            if attendance_per_month.remaining_debt == 0:
+                attendance_per_month.status = True
+
+        attendance_per_month.save()
+
+        return Response({"msg": "Chegirma muvaffaqiyatli yaratildi"})
+
+    def put(self, request, *args, **kwargs):
+        id = self.kwargs['student_id']
+        sum = int(request.data.get('payment_sum'))
+        payment = StudentPayment.objects.get(pk=id)
+        attendance = AttendancePerMonth.objects.get(pk=payment.attendance.id)
+        attendance.remaining_debt = attendance.total_debt - (
+                attendance.payment - payment.payment_sum) + attendance.discount + sum
+        attendance.payment = attendance.payment - payment.payment_sum + sum
+        attendance.save()
+        payment.payment_sum = sum
+        payment.reason = request.data.get('reason', None)
+        payment.save()
+
+        return Response({"msg": "Chegirma muvaffaqiyatli o'zgartirildi"})
