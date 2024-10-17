@@ -12,8 +12,7 @@ class ClassesView(generics.ListCreateAPIView):
 
     queryset = Group.objects.filter(class_number__isnull=False)
     serializer_class = GroupSerializer
-    fields = ['id', 'user__name', 'user__surname', 'user__username', 'class_number__number', 'user__birth_date',
-              'user__language__name', 'user__branch__name', 'subject__name', 'user__registered_date', 'user__age']
+    fields = ['id','name']
 
     def get_serializer(self, *args, **kwargs):
         kwargs['context'] = self.get_serializer_context()

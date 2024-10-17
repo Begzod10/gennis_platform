@@ -126,7 +126,7 @@ class StudentListSerializer(serializers.ModelSerializer):
     subject = SubjectSerializer(many=True, required=False)
     parents_number = serializers.CharField()
     shift = serializers.CharField()
-    group = serializers.SerializerMethodField(required=False)
+    group = GroupSerializer(required=False)
     contract = serializers.SerializerMethodField(required=False)
     color = serializers.SerializerMethodField(required=False)
     debt = serializers.SerializerMethodField(required=False)
@@ -169,8 +169,7 @@ class StudentListSerializer(serializers.ModelSerializer):
             return filtered_representation
 
         return representation
-    def get_group(self, obj):
-        return [GroupSerializerStudents(group).data for group in obj.groups_student.all()]
+
 
     def get_color(self, obj):
         color = ''

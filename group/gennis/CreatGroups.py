@@ -66,11 +66,19 @@ class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
         queryset = self.filter_queryset(queryset)
         return queryset
 
-    def get_serializer_class(self):
-        if self.request.method == 'GET':
-            return GroupSerializer
-        return GroupCreateUpdateSerializer
+    # def get_serializer_class(self):
+    #     if self.request.method == 'GET':
+    #
+    #         return GroupSerializer
+    #     return GroupCreateUpdateSerializer
 
+    def get_serializer(self, *args, **kwargs):
+        serializer_class = self.get_serializer_class()
+        kwargs['context'] = self.get_serializer_context()
+        if self.request.method == 'GET':
+            kwargs['context']['fields'] = ['id', 'name']
+
+        return serializer_class(*args, **kwargs)
     def create(self, request, *args, **kwargs):
         write_serializer = self.get_serializer(data=request.data, partial=True)
         write_serializer.is_valid(raise_exception=True)
