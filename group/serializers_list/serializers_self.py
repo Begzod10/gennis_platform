@@ -5,6 +5,7 @@ from rest_framework import serializers
 from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
 from teachers.models import Teacher, TeacherHistoryGroups
 from group.models import Group, GroupReason, CourseTypes
+from students.serializer.lists import UserSerializer
 
 
 class AddClassesSerializers(serializers.ModelSerializer):
@@ -14,6 +15,12 @@ class AddClassesSerializers(serializers.ModelSerializer):
 
 
 class TeacherCreateGroupSerializerRead(serializers.ModelSerializer):
+    # user = UserSerializer(read_only=True)
+    name = serializers.SerializerMethodField(required=False)
+
     class Meta:
         model = Teacher
-        fields = ["id", "name", "subject", "color", "total_students"]
+        fields = ["id", "name", ]
+
+    def get_name(self, obj):
+        return f"{obj.user.name} {obj.user.surname}"

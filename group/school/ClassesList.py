@@ -30,21 +30,14 @@ class AddClassesList(QueryParamFilterMixin, generics.ListAPIView):
     queryset = Group.objects.filter(class_number__isnull=True)
     serializer_class = AddClassesSerializers
 
-    # def get_queryset(self):
-    #     branch_id = self.request.query_params.get('branch_id', None)
-    #     return Group.objects.filter(branch_id=branch_id, class_number__isnull=True)
+
 
 
 class CreateGroupTeacherListView(QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     filter_mappings = {
-        'branch': 'branch_id'
+        'branch': 'user__branch_id',
     }
     queryset = Teacher.objects.all()
     serializer_class = TeacherCreateGroupSerializerRead
 
-    # def get_queryset(self):
-    #     branch_id = self.request.query_params.get('branch_id', None)
-    #     queryset = Teacher.objects.filter(user__branch_id=branch_id).all()
-    #
-    #     return queryset

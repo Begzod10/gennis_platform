@@ -1,39 +1,39 @@
 from django.utils.timezone import now
-from django_cron import CronJobBase, Schedule
+# from django_cron import CronJobBase, Schedule
 from datetime import date
 from attendances.models import AttendancePerMonth
 from teachers.models import Teacher, TeacherSalary
 from .models import CustomUser, UserSalary
 
 
-class CreateMonthly(CronJobBase):
-    RUN_EVERY_MINS = 60 * 24
-    schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
-    code = 'user.create_monthly'
-
-    def do(self):
-        teachers = Teacher.objects.all()
-        for teacher in teachers:
-            current_year = now().year
-            current_month = now().month
-
-            teacher_salary = TeacherSalary.objects.filter(month_date__year=current_year,
-                                                          month_date__month=current_month,
-                                                          teacher=teacher)
-            if not teacher_salary:
-                attendance = AttendancePerMonth.objects.filter(teacher=teacher,
-                                                               month_date__year=current_year,
-                                                               month_date__month=current_month).first()
-
-                if attendance:
-                    TeacherSalary.objects.create(
-                        teacher=teacher,
-                        total_salary=attendance.total_salary,
-                        remaining_salary=attendance.remaining_salary,
-                        taken_salary=attendance.taken_salary,
-                        total_black_salary=0,
-                        branch=teacher.user.branch
-                    )
+# class CreateMonthly(CronJobBase):
+#     RUN_EVERY_MINS = 60 * 24
+#     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+#     code = 'user.create_monthly'
+#
+#     def do(self):
+#         teachers = Teacher.objects.all()
+#         for teacher in teachers:
+#             current_year = now().year
+#             current_month = now().month
+#
+#             teacher_salary = TeacherSalary.objects.filter(month_date__year=current_year,
+#                                                           month_date__month=current_month,
+#                                                           teacher=teacher)
+#             if not teacher_salary:
+#                 attendance = AttendancePerMonth.objects.filter(teacher=teacher,
+#                                                                month_date__year=current_year,
+#                                                                month_date__month=current_month).first()
+#
+#                 if attendance:
+#                     TeacherSalary.objects.create(
+#                         teacher=teacher,
+#                         total_salary=attendance.total_salary,
+#                         remaining_salary=attendance.remaining_salary,
+#                         taken_salary=attendance.taken_salary,
+#                         total_black_salary=0,
+#                         branch=teacher.user.branch
+#                     )
 
 
 def create_user_salary(user_id):

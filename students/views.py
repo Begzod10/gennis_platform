@@ -27,6 +27,7 @@ from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent,
 from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
                           DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
+from students.serializer.lists import ActiveListSerializer
 
 
 class StudentListView(ListAPIView):
@@ -80,7 +81,7 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
 # @method_decorator(cache_page(60 * 2), name='dispatch')
 class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = StudentListSerializer
+    serializer_class = ActiveListSerializer
 
     filter_mappings = {
         'branch': 'user__branch_id',
@@ -91,8 +92,6 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     }
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__name', 'user__surname', 'user__username']
-    fields = ['id', 'user__name', 'user__surname', 'user__username', 'class_number__number', 'user__birth_date',
-              'user__language__name', 'user__branch__name', 'subject__name', 'user__registered_date', 'user__age']
 
     def get_queryset(self):
         excluded_ids = list(DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
@@ -102,22 +101,16 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
             ~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)
         ).distinct()
 
-    def get_serializer(self, *args, **kwargs):
-        kwargs['context'] = self.get_serializer_context()
-        kwargs['context']['fields'] = self.fields
-        return super().get_serializer(*args, **kwargs)
-
 
 class ActiveStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = StudentListSerializer
+    serializer_class = ActiveListSerializer
     filter_mappings = {
         'branch': 'user__branch_id',
         'subject': 'subject__id',
         'age': 'user__birth_date',
         'language': 'user__language_id',
     }
-    fields = ['id', 'user__name', 'user__phone', 'user__surname', 'user__age', "group__name", "debt", "color"]
 
     def get_queryset(self, *args, **kwargs):
         deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True,
@@ -128,11 +121,6 @@ class ActiveStudents(QueryParamFilterMixin, ListAPIView):
             .exclude(id__in=deleted_new_student_ids) \
             .filter(groups_student__isnull=False).distinct().order_by('class_number__number')
         return active_students
-
-    def get_serializer(self, *args, **kwargs):
-        kwargs['context'] = self.get_serializer_context()
-        kwargs['context']['fields'] = self.fields
-        return super().get_serializer(*args, **kwargs)
 
 
 class CreateContractView(APIView):
