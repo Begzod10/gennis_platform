@@ -133,8 +133,8 @@ class ActiveStudents(APIView):
             active_students = active_students.filter(user__branch_id=branch)
         if subject is not None and subject != 'undefined':
             active_students = active_students.filter(subject__id=subject)
-        if age is not None and age != 'undefined':
-            active_students = active_students.filter(user__birth_date=age)
+        # if age is not None and age != 'undefined':
+        #     active_students = active_students.filter(user__birth_date=age)
         if language is not None and language != 'undefined':
             active_students = active_students.filter(user__language_id=language)
         serializer = self.serializer_class(active_students, many=True)
