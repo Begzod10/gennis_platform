@@ -127,7 +127,7 @@ class NewRegisteredStudents(APIView):
 
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        serializer = ActiveListSerializer(queryset, many=True, context={'fields': self.fields})
+        serializer = ActiveListSerializer(queryset, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
