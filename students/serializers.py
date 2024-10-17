@@ -99,9 +99,8 @@ def get_remaining_debt_for_student(student_id):
         if month.payment < 0:
             month.payment = 0
             month.save()
-        month.remaining_debt = month.total_debt - (month.payment+month.discount)
+        month.remaining_debt = month.total_debt - (month.payment + month.discount)
         month.save()
-
 
     remaining_debt_sum = AttendancePerMonth.objects.filter(
         student_id=student_id,
@@ -126,7 +125,7 @@ class StudentListSerializer(serializers.ModelSerializer):
     subject = SubjectSerializer(many=True, required=False)
     parents_number = serializers.CharField()
     shift = serializers.CharField()
-    group = GroupSerializer(required=False)
+    group = serializers.SerializerMethodField(required=False)
     contract = serializers.SerializerMethodField(required=False)
     color = serializers.SerializerMethodField(required=False)
     debt = serializers.SerializerMethodField(required=False)
@@ -138,38 +137,31 @@ class StudentListSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-
-        # 'fields' from context (passed from the view)
         fields = self.context.get('fields', None)
+
         if fields:
             filtered_representation = {}
-
-            # Function to handle any number of nested fields
-            def set_nested_value(source_dict, target_dict, field_parts):
-                """
-                Recursively sets nested fields based on field_parts.
-                This handles fields with arbitrary depth of nesting.
-                """
-                current_field = field_parts[0]
-                if current_field in source_dict:
-                    if len(field_parts) == 1:
-                        # Base case: If we're at the last field part, set the value
-                        target_dict[current_field] = source_dict[current_field]
-                    else:
-                        # Recursive case: Go deeper into the nested field
-                        if current_field not in target_dict:
-                            target_dict[current_field] = {}
-                        set_nested_value(source_dict[current_field], target_dict[current_field], field_parts[1:])
-
-            # Iterate over the fields and process each one
             for field in fields:
                 field_parts = field.split('__')
+
+                def set_nested_value(source_dict, target_dict, field_parts):
+                    current_field = field_parts[0]
+                    if current_field in source_dict:
+                        if len(field_parts) == 1:
+                            target_dict[current_field] = source_dict[current_field]
+                        else:
+                            if current_field not in target_dict:
+                                target_dict[current_field] = {}
+                            set_nested_value(source_dict[current_field], target_dict[current_field], field_parts[1:])
+
                 set_nested_value(representation, filtered_representation, field_parts)
 
             return filtered_representation
 
         return representation
 
+    def get_group(self, obj):
+        return [GroupSerializerStudents(group).data for group in obj.groups_student.all()]
 
     def get_color(self, obj):
         color = ''
@@ -421,4 +413,4 @@ class DeletedStudentListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DeletedStudent
-        fields = ['id', 'student', 'group', 'teacher', 'group_reason', 'deleted_date','comment']
+        fields = ['id', 'student', 'group', 'teacher', 'group_reason', 'deleted_date', 'comment']
