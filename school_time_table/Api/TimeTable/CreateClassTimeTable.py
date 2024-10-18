@@ -7,6 +7,7 @@ from group.models import Group
 from ...models import ClassTimeTable
 from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTableReadSerializers, \
     ClassTimeTableTest2Serializer, ClassTimeTableForClassSerializer2
+from ...serializers_list import GroupClassSerializerList, FlowsSerializerList
 
 from group.serializers import GroupClassSerializer
 from time_table.functions.creatWeekDays import creat_week_days
@@ -40,15 +41,16 @@ class ClassesFlows(generics.ListAPIView):
             queryset = Flow.objects.filter(branch_id=branch_id)
 
         if type == 'group':
-            queryset = Group.objects.filter(class_number__isnull=False, branch_id=branch_id, deleted=False).order_by('class_number__number')
+            queryset = Group.objects.filter(class_number__isnull=False, branch_id=branch_id, deleted=False).order_by(
+                'class_number__number')
         return queryset
 
     def get_serializer_class(self):
         type = self.request.query_params.get('type')
         if type == 'group':
-            return GroupClassSerializer
+            return GroupClassSerializerList
         else:
-            return FlowsSerializer
+            return FlowsSerializerList
 
 
 # class Classes(generics.ListAPIView):
