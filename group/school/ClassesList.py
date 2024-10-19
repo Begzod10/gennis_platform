@@ -12,7 +12,7 @@ from teachers.models import Teacher
 class ClassesView(QueryParamFilterMixin, generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     filter_mappings = {
-        'branch': 'branch'
+        'branch': 'branch_id'
     }
     queryset = Group.objects.filter(class_number__isnull=False, deleted=False).order_by('class_number__number')
     serializer_class = GroupListSerializer
