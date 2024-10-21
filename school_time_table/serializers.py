@@ -32,7 +32,6 @@ class HoursSerializers(serializers.ModelSerializer):
 
 
 class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
-
     # type = serializers_list.CharField(default=None, allow_blank=True)
 
     # type = serializer.CharField(default=None, allow_blank=True)
@@ -133,6 +132,10 @@ class ClassTimeTableSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'week', 'hours', 'flow', 'room', 'teacher', 'subject']
 
 
+from school_time_table.serializers_list import GroupClassSerializerList
+from teachers.serializer.lists import ActiveListTeacherSerializerTime
+
+
 class ClassTimeTableTest2Serializer(serializers.Serializer):
     time_tables = serializers.SerializerMethodField()
     hours_list = serializers.SerializerMethodField()
@@ -154,10 +157,10 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                 lesson = room.classtimetable_set.filter(week=week, hours=hour, branch=branch).order_by(
                     'hours__order').first()
                 if lesson:
-                    group_info = GroupClassSerializer(lesson.group).data if lesson.group else None
+                    group_info = GroupClassSerializerList(lesson.group).data if lesson.group else None
                     flow_info = {'id': lesson.flow.id, 'name': lesson.flow.name,
                                  'classes': lesson.flow.classes} if lesson.flow else None
-                    teacher_info = TeacherSerializer(lesson.teacher).data if lesson.teacher else None
+                    teacher_info = ActiveListTeacherSerializerTime(lesson.teacher).data if lesson.teacher else None
                     subject_info = {'id': lesson.subject.id, 'name': lesson.subject.name} if lesson.subject else None
 
                     lesson_info = {
@@ -179,7 +182,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                         'hours': hour.id,
                         'teacher': {},
                         'subject': {},
-                        'room': room.id,
+                        'room':  room.id,
                         'is_flow': False,
                     })
             time_tables.append(info)
