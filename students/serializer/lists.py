@@ -31,10 +31,11 @@ class ActiveListSerializer(serializers.ModelSerializer):
     group = serializers.SerializerMethodField(required=False)
     color = serializers.SerializerMethodField(required=False)
     debt = serializers.SerializerMethodField(required=False)
+    class_number = serializers.CharField(required=False, source='class_number.number')
 
     class Meta:
         model = Student
-        fields = ('id', 'user', "group", "color", "debt")
+        fields = ('id', 'user', "group", "color", "debt",'class_number')
 
     def get_color(self, obj):
         color = ''
