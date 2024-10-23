@@ -206,6 +206,7 @@ class FilteredStudentsListView(APIView):
 
         time_tables = json.loads(request.body)
 
+
         students = Student.objects.filter(
             user__branch_id=location_id,
             deleted_student_student__deleted=False,
