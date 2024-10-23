@@ -46,3 +46,13 @@ class ActiveListTeacherSerializer(serializers.ModelSerializer):
             return False
         else:
             return True
+
+
+class ActiveListTeacherSerializerTime(serializers.ModelSerializer):
+    name = serializers.CharField(required=False, source='user.name')
+    surname = serializers.CharField(required=False, source='user.surname')
+    username = serializers.CharField(required=False, source='user.username')
+
+    class Meta:
+        model = Teacher
+        fields = ('id', 'name', 'surname', 'username','color')
