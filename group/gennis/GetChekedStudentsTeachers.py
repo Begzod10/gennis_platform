@@ -25,7 +25,7 @@ class GetCheckedStudentsTeachers(APIView):
             user__branch_id=location_id,
             deleted_student_student__deleted__isnull=True,
             subject__student__in=[subject_id]
-        ).exclude(id__in=ignore_students,id__in=deleted).distinct()
+        ).exclude(id__in=ignore_students).exclude(id__in=deleted).distinct()
         for student in students:
             should_add_student = False
             student_data = StudentListSerializer(student).data
