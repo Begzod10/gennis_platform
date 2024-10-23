@@ -22,7 +22,7 @@ class GetCheckedStudentsTeachers(APIView):
         ignore_teacher = data['ignore_teacher']
         students = Student.objects.filter(
             user__branch_id=location_id,
-            deleted_student_student__deleted=True,
+            deleted_student_student__deleted=False,
             subject__student__in=[subject_id]
         ).exclude(id__in=ignore_students).distinct()
         for student in students:
