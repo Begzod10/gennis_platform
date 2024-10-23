@@ -23,13 +23,13 @@ class ExcelData(APIView):
         # Fetch all students from the database
         branch = request.query_params.get('branch')
         excluded_ids = list(
-            DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + \
+            DeletedStudent.objects.filter(deleted=False, student__groups_student__isnull=True).values_list('student_id',
+                                                                                                           flat=True)) + \
                        list(DeletedNewStudent.objects.values_list('student_id',
                                                                   flat=True))
 
-        students = Student.objects.select_related('user').filter(
-            ~Q(id__in=excluded_ids) & Q(user__branch__id=branch)
-        ).distinct()
+        students = Student.objects.select_related('user').filter(~Q(id__in=excluded_ids) & Q(user__branch__id=branch),
+                                                                 groups_student__isnull=False).distinct()
 
         # Helper function to copy cell styles
         def copy_cell_style(source_cell, target_cell):
