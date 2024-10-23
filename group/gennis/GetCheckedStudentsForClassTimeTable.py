@@ -18,14 +18,15 @@ class GetCheckedStudentsForClassTimeTable(APIView):
         students_list = []
         branch_id = self.request.query_params.get('branch')
         group_id = self.request.query_params.get('group')
+        group = Group.objects.get(id=group_id)
+
         data = json.loads(request.body)
         ignore_students = data['ignore_students']
         deleted = DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
         students = Student.objects.filter(groups_student__isnull=True, user__branch_id=branch_id,
                                           deleted_student_student__deleted__isnull=True,
-                                          deleted_student_student_new__isnull=True).exclude(id__in=deleted).exclude(
+                                          deleted_student_student_new__isnull=True,class_number=group.class_number).exclude(id__in=deleted).exclude(
             id__in=ignore_students).distinct()
-        group = Group.objects.get(id=group_id)
         for student in students:
             should_add_student = False
             student_data = StudentListSerializer(student).data
