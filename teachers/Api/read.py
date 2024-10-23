@@ -47,6 +47,7 @@ class TeacherListView(QueryParamFilterMixin, generics.ListAPIView):
         return queryset
 
 
+# test
 class TeacherRetrieveView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Teacher.objects.all()
