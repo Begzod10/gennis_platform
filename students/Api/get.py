@@ -105,7 +105,8 @@ class StudentPaymentListAPIView(generics.ListAPIView):
     serializer_class = StudentPaymentListSerializer
 
     def get(self, request, *args, **kwargs):
-        queryset = StudentPayment.objects.filter(deleted=False,status=False).all().order_by("-date")
+        queryset = StudentPayment.objects.filter(deleted=False, status=False,
+                                                 branch=request.user.branch).all().order_by("-date")
 
         serializer = StudentPaymentListSerializerTest(queryset, many=True)
         return Response(serializer.data)
