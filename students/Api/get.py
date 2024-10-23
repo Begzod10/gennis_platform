@@ -209,7 +209,7 @@ class FilteredStudentsListView(APIView):
 
         students = Student.objects.filter(
             user__branch_id=location_id,
-            deleted_student_student__deleted=False,
+            deleted_student_student__deleted=True,
             subject__student__isnull=False
         ).select_related('user').prefetch_related('subject', 'group_time_table').distinct()
         room_ids = [t['room'] for t in time_tables]
