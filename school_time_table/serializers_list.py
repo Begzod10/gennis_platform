@@ -30,7 +30,8 @@ class GroupClassSerializerList(serializers.ModelSerializer):
         ]
 
     def get_class_number(self, obj):
-        return obj.class_number
+        from classes.serializers import ClassNumberListSerializers
+        return ClassNumberListSerializers(obj.class_number).data
 
     def get_color(self, obj):
         return obj.color

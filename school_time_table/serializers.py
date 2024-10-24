@@ -32,7 +32,6 @@ class HoursSerializers(serializers.ModelSerializer):
 
 
 class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
-
     # type = serializers_list.CharField(default=None, allow_blank=True)
 
     # type = serializer.CharField(default=None, allow_blank=True)
@@ -49,7 +48,7 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = ClassTimeTable
-        fields = ['id', 'group', 'week', 'room', 'hours', 'branch', 'teacher', 'subject', 'flow', 'name']
+        fields = ['id', 'group', 'week', 'room', 'hours', 'branch', 'teacher', 'subject', 'flow', 'name', 'date']
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -61,6 +60,8 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
     def create(self, validated_data):
         group = validated_data.get('group')
         flow = validated_data.get('flow')
+        print(validated_data)
+        print(validated_data.get('date'))
         students = group.students.all() if group else flow.students.all() if flow else None
         class_time_table = ClassTimeTable.objects.create(**validated_data)
         class_time_table.students.add(*students)
