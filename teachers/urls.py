@@ -15,7 +15,7 @@ from teachers.Api.write import (
 )
 from .Api.createdeleteupdate import TeacherAttendanceCreateView, TeacherAttendanceDestroyView
 from .Api.get import TeacherAttendanceListView, TeacherAttendanceRetrieveView, TeachersForBranches, TeachersForSubject, \
-    SalaryType
+    SalaryType, TeachersForSubjectForTimeTable
 from .views import GetGroupStudents
 
 app_name = 'Teachers'
@@ -47,6 +47,8 @@ urlpatterns = [
     path('teachers-for-branches/<int:pk>/', TeachersForBranches.as_view(), name='teachers-for-branches'),
     path('upload-file/', UploadFile.as_view(), name='upload-file'),
     path('teachers-for-subject/', TeachersForSubject.as_view(),
+         name='teachers-for-subject'),
+    path('teachers-for-subject-time/', TeachersForSubjectForTimeTable.as_view(),
          name='teachers-for-subject'),
     path('salary-types/', SalaryType.as_view(),
          name='salary-types'),

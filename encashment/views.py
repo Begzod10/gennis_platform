@@ -10,7 +10,8 @@ from attendances.models import AttendancePerMonth
 from books.models import BranchPayment
 from books.serializers import BranchPaymentListSerializers
 from capital.models import Capital
-from capital.serializers import OldCapital, OldCapitalListSerializers
+from capital.serializers import OldCapital
+from capital.serializer.old_capital import OldCapitalsListSerializers
 from classes.models import ClassNumber
 from overhead.models import Overhead
 from overhead.serializers import OverheadSerializerGet
@@ -120,7 +121,7 @@ class Encashments(APIView):
                 deleted=False
 
             ).distinct()
-            capital_serializer = OldCapitalListSerializers(capitals, many=True)
+            capital_serializer = OldCapitalsListSerializers(capitals, many=True)
             Encashment.objects.get_or_create(
                 ot=ot,
                 do=do,

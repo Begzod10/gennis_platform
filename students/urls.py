@@ -16,6 +16,7 @@ from .views import (CreateContractView, UploadPDFContractView, StudentListView, 
                     StudentCharityModelView
                     )
 
+
 app_name = 'Students'
 
 urlpatterns = [

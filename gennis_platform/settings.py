@@ -99,6 +99,7 @@ DATABASES = {
 }
 
 
+
 AUTH_USER_MODEL = 'user.CustomUser'
 
 REST_FRAMEWORK = {

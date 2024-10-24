@@ -1,15 +1,15 @@
 import json
 from datetime import datetime
+
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from students.models import Student, StudentHistoryGroups
-from students.serializers import StudentListSerializer
-from teachers.models import Teacher
-from teachers.serializers import TeacherSerializerRead
 from group.models import Group
 from group.serializers import GroupClassSerializer
-from rest_framework.permissions import IsAuthenticated
+from students.models import Student, StudentHistoryGroups, DeletedStudent
+from students.serializers import StudentListSerializer
+
 
 class GetCheckedStudentsForClassTimeTable(APIView):
     permission_classes = [IsAuthenticated]
@@ -18,12 +18,15 @@ class GetCheckedStudentsForClassTimeTable(APIView):
         students_list = []
         branch_id = self.request.query_params.get('branch')
         group_id = self.request.query_params.get('group')
+        group = Group.objects.get(id=group_id)
+
         data = json.loads(request.body)
         ignore_students = data['ignore_students']
+        deleted = DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
         students = Student.objects.filter(groups_student__isnull=True, user__branch_id=branch_id,
-                                          deleted_student_student__deleted=True,deleted_student_student_new__isnull=True).exclude(
+                                          deleted_student_student__deleted__isnull=True,
+                                          deleted_student_student_new__isnull=True,class_number=group.class_number).exclude(id__in=deleted).exclude(
             id__in=ignore_students).distinct()
-        group = Group.objects.get(id=group_id)
         for student in students:
             should_add_student = False
             student_data = StudentListSerializer(student).data
@@ -96,6 +99,3 @@ class CheckedStudentsMoveToGroup(APIView):
                                                     joined_day=today)
         serializer = GroupClassSerializer(group)
         return Response({'data': serializer.data, 'errors': errors})
-
-
-

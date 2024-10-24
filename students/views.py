@@ -27,7 +27,7 @@ from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent,
 from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
                           DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
-from students.serializer.lists import ActiveListSerializer
+from students.serializer.lists import ActiveListSerializer, ActiveListDeletedStudentSerializer
 
 
 class StudentListView(ListAPIView):
@@ -74,7 +74,7 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
         active_students = Student.objects.exclude(id__in=deleted_new_student_ids).filter(id__in=deleted)
         active_students = self.filter_queryset(active_students)
         deleted_students = DeletedStudent.objects.filter(student__in=active_students, deleted=False)
-        student_serializer = DeletedStudentListSerializer(deleted_students, many=True)
+        student_serializer = ActiveListDeletedStudentSerializer(deleted_students, many=True)
         return Response(student_serializer.data)
 
 

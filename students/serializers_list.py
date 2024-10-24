@@ -32,4 +32,5 @@ class StudentPaymentListSerializerTest(serializers.ModelSerializer):
 
     class Meta:
         model = StudentPayment
-        fields = ['id', 'student_name', 'payment_type_name', 'payment_sum', 'status', 'added_data', 'date']
+        fields = ['id', 'student_name', 'student_surname', 'payment_type_name', 'payment_sum', 'status', 'added_data',
+                  'date']

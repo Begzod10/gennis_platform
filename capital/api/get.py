@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from capital.functions.creat_capital_term import creat_capital_term
 from capital.models import Capital, OldCapital
 from capital.serializers import (CapitalListSerializers, OldCapitalListSerializers)
+from permissions.response import QueryParamFilterMixin
+from capital.serializer.old_capital import OldCapitalsListSerializers
 
 
 class OldCapitalRetrieveAPIView(generics.RetrieveAPIView):
@@ -19,27 +21,15 @@ class OldCapitalRetrieveAPIView(generics.RetrieveAPIView):
         return Response(old_capital_data)
 
 
-class OldCapitalListView(generics.ListAPIView):
+class OldCapitalListView(QueryParamFilterMixin, generics.ListAPIView):
+    filter_mappings = {
+        'branch': 'branch_id',
+        'status': 'deleted',
+    }
     permission_classes = [IsAuthenticated]
 
     queryset = OldCapital.objects.all()
-    serializer_class = OldCapitalListSerializers
-
-    def get(self, request, *args, **kwargs):
-
-        queryset = OldCapital.objects.all()
-        location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch_id', None)
-        status = self.request.query_params.get('status', None)
-
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        if location_id is not None:
-            queryset = queryset.filter(location_id=location_id)
-        if status is not None:
-            queryset = queryset.filter(deleted=status)
-        serializer = OldCapitalListSerializers(queryset, many=True)
-        return Response(serializer.data)
+    serializer_class = OldCapitalsListSerializers
 
 
 class CapitalRetrieveAPIView(generics.RetrieveAPIView):

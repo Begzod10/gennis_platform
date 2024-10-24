@@ -3,7 +3,7 @@ import json
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from students.models import Student
+from students.models import Student,DeletedStudent
 from students.serializers import StudentListSerializer
 from teachers.models import Teacher
 from teachers.serializers import TeacherSerializerRead
@@ -20,11 +20,12 @@ class GetCheckedStudentsTeachers(APIView):
         time_tables = data['time_tables']
         ignore_students = data['ignore_students']
         ignore_teacher = data['ignore_teacher']
+        deleted = DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
         students = Student.objects.filter(
             user__branch_id=location_id,
-            deleted_student_student__deleted=True,
+            deleted_student_student__deleted__isnull=True,
             subject__student__in=[subject_id]
-        ).exclude(id__in=ignore_students).distinct()
+        ).exclude(id__in=ignore_students).exclude(id__in=deleted).distinct()
         for student in students:
             should_add_student = False
             student_data = StudentListSerializer(student).data

@@ -21,23 +21,26 @@ class GroupClassSerializerList(serializers.ModelSerializer):
     class_number = serializers.SerializerMethodField()
     color = serializers.SerializerMethodField()
     name = serializers.SerializerMethodField()
+    type = serializers.CharField(default='group', read_only=True)
 
     class Meta:
         model = Group
         fields = [
             'id', 'name',
-            'class_number', 'color'
+            'class_number', 'color', 'type'
         ]
 
     def get_class_number(self, obj):
-        from classes.serializers import ClassNumberListSerializers
-        return ClassNumberListSerializers(obj.class_number).data
+        # from classes.serializers import ClassNumberListSerializers
+        # return ClassNumberListSerializers(obj.class_number).data
+        return obj.class_number.number
 
     def get_color(self, obj):
-        return obj.color
+        return {
+            'id': obj.color.id, 'value': obj.color.value}
 
     def get_name(self, obj):
-        return f"{obj.class_number} {obj.color}"
+        return f"{obj.class_number.number} {obj.color.name}"
 
 
 class FlowsSerializerList(serializers.ModelSerializer):

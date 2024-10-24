@@ -95,9 +95,12 @@ class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
         """
 
         write_serializer = self.get_serializer(data=request.data, partial=True)  # use self.get_serializer()
+
+    def create(self, request, *args, **kwargs):
+        write_serializer = self.get_serializer(data=request.data, partial=True)
+
         write_serializer.is_valid(raise_exception=True)
         self.perform_create(write_serializer)
-
         instance = Group.objects.get(pk=write_serializer.data['id'])
         read_serializer = GroupSerializer(instance)
         return Response(read_serializer.data)

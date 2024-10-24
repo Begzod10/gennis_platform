@@ -10,7 +10,7 @@ class Hours(models.Model):
 
 class ClassTimeTable(models.Model):
     group = models.ForeignKey('group.Group', on_delete=models.CASCADE, null=True)
-    week = models.ForeignKey('time_table.WeekDays', on_delete=models.CASCADE)
+    week = models.ForeignKey('time_table.WeekDays', on_delete=models.CASCADE, null=True)
     room = models.ForeignKey('rooms.Room', on_delete=models.CASCADE, null=True)
     hours = models.ForeignKey(Hours, on_delete=models.CASCADE)
     branch = models.ForeignKey('branch.Branch', on_delete=models.CASCADE)
