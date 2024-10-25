@@ -84,9 +84,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'gennis_platform.wsgi.application'
 
-# DATABASES = {'default': {'ENGINE': 'django.db.backends.postgresql', 'NAME': 'gennis_platform', 'USER': 'postgres',
-#                          'PASSWORD': '123', 'HOST': '192.168.1.20', 'PORT': '5432'}}
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -98,7 +95,13 @@ DATABASES = {
     }
 }
 
-
+#                          'PASSWORD': '123', 'HOST': 'localhost', 'PORT': '5432'}}
+# DATABASES = {'default': {'ENGINE': 'django.db.backends.postgresql', 'NAME': 'gennis', 'USER': 'postgres',
+#                          'PASSWORD': '123', 'HOST': 'localhost', 'PORT': '5432'}}
+# Password validation
+# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
+>> >> >> > 8e2951
+c881e53e7e14aac5b2c2b66e3253acf446
 
 AUTH_USER_MODEL = 'user.CustomUser'
 
