@@ -8,13 +8,14 @@ from ...models import ClassTimeTable
 from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTableReadSerializers, \
     ClassTimeTableTest2Serializer, ClassTimeTableForClassSerializer2
 from ...serializers_list import GroupClassSerializerList, FlowsSerializerList
-
+from teachers.functions.school.CalculateTeacherSalary import teacher_salary_school
 from group.serializers import GroupClassSerializer
 from time_table.functions.creatWeekDays import creat_week_days
 from time_table.models import WeekDays
 from flows.models import Flow
 from branch.models import Branch
 from flows.serializers import FlowsSerializer
+from teachers.models import Teacher, TeacherSalary
 
 
 class CreateClassTimeTable(generics.ListCreateAPIView):
@@ -28,7 +29,7 @@ class CreateClassTimeTable(generics.ListCreateAPIView):
 
         instance = ClassTimeTable.objects.get(pk=write_serializer.data['id'])
         read_serializer = ClassTimeTableReadSerializers(instance)
-        print(request.data)
+        teacher_salary_school(request)
         return Response({'lesson': read_serializer.data, 'msg': 'Dars muvaffaqqiyatli kiritildi'})
 
 

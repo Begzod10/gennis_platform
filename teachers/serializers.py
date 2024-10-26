@@ -17,6 +17,7 @@ from teachers.models import TeacherGroupStatistics, Teacher
 from user.serializers import UserSerializerWrite, UserSerializerRead
 from .models import (TeacherAttendance)
 from .models import (TeacherSalaryList, TeacherSalary, TeacherSalaryType)
+from teachers.functions.school.CalculateTeacherSalary import teacher_salary_school
 
 
 class TeacherSerializer(serializers.ModelSerializer):
@@ -137,7 +138,7 @@ class GroupSerializerTeachers(serializers.ModelSerializer):
 
     @property
     def course_types(self):
-        from group.serializers_list import CourseTypesSerializers
+        from group.serializers import CourseTypesSerializers
         return CourseTypesSerializers()
 
     def get_class_number(self, obj):
@@ -201,6 +202,7 @@ class TeacherSalaryCreateSerializersUpdate(serializers.ModelSerializer):
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     teacher_salary_type = serializers.PrimaryKeyRelatedField(queryset=TeacherSalaryType.objects.all(), required=False,
                                                              allow_null=True)
+    worked_hours = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
         model = TeacherSalary
@@ -208,12 +210,14 @@ class TeacherSalaryCreateSerializersUpdate(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         salary = super().update(instance, validated_data)
-        worked = validated_data.get('worked_days', None)
-        if worked is not None:
-
-            from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
+        print(validated_data)
+        worked_hours = validated_data.get('worked_hours', None)
+        print(worked_hours)
+        if worked_hours is not None:
+            print(instance.teacher.user.branch.location.system.name)
+            from .functions.school.CalculateTeacherSalary import teacher_salary_school
             if instance.teacher.user.branch.location.system.name == 'school':
-                calculate_teacher_salary(instance.teacher)
+                teacher_salary_school(instance.teacher, update=True, salary_id=instance.id, worked_hours=worked_hours)
 
         return salary
 
@@ -228,7 +232,7 @@ class TeacherGroupStatisticsReadSerializers(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_reason(self, obj):
-        from group.serializers_list import GroupReasonSerializers
+        from group.serializers import GroupReasonSerializers
         return GroupReasonSerializers(obj.reason).data
 
 

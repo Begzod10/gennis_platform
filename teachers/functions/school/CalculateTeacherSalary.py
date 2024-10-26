@@ -1,7 +1,8 @@
 from datetime import datetime
 
 from Calendar.models import Day
-from teachers.models import TeacherSalary
+from teachers.models import TeacherSalary, Teacher
+from school_time_table.models import ClassTimeTable
 
 
 def calculate_teacher_salary(teacher):
@@ -48,3 +49,36 @@ def calculate_teacher_salary(teacher):
         salary.remaining_salary = remaining_salary
         salary.total_salary = overall
         salary.save()
+
+
+def teacher_salary_school(request, update=False, salary_id=None, worked_hours=0):
+    if not update:
+        teacher = Teacher.objects.get(id=request.data['teacher'])
+        time_table_hours = ClassTimeTable.objects.filter(teacher=teacher,
+                                                         date=request.data['date']).order_by('-id').count()
+        stavka = teacher.teacher_salary_type.salary
+        default_hours = 80
+        salary = (time_table_hours / default_hours) * stavka
+        ustama = (salary / 100) * teacher.salary_percentage
+        salary = salary + ustama
+        TeacherSalary.objects.get_or_create(teacher=teacher, month_date=request.data['date'],
+                                            percentage=teacher.salary_percentage)
+        salary_month = TeacherSalary.objects.get(teacher=teacher, month_date=request.data['date'])
+        salary_month.total_salary = salary
+        salary_month.remaining_salary = salary - salary_month.taken_salary
+        salary_month.save()
+    else:
+        print(salary_id)
+        teacher = Teacher.objects.get(id=request.id)
+        # time_table_hours = ClassTimeTable.objects.filter(teacher=teacher,
+        #                                                  date=request.data['date']).order_by('-id').count()
+        stavka = teacher.teacher_salary_type.salary
+        default_hours = 80
+        salary = (worked_hours / default_hours) * stavka
+        ustama = (salary / 100) * teacher.salary_percentage
+        salary = salary + ustama
+
+        salary_month = TeacherSalary.objects.get(id=salary_id)
+        salary_month.total_salary = salary
+        salary_month.remaining_salary = salary - salary_month.taken_salary
+        salary_month.save()

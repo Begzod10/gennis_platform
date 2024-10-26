@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from flows.models import Flow
 from ...models import ClassTimeTable
 from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTableReadSerializers
+from teachers.functions.school.CalculateTeacherSalary import teacher_salary_school
 
 
 class UpdateClassTimeTable(generics.RetrieveUpdateDestroyAPIView):
@@ -20,7 +21,7 @@ class UpdateClassTimeTable(generics.RetrieveUpdateDestroyAPIView):
         self.perform_update(write_serializer)
 
         read_serializer = ClassTimeTableReadSerializers(instance)
-
+        teacher_salary_school(request)
         return Response({'lesson': read_serializer.data, 'msg': "Dars muvaffaqqiyatli o'zgartirildi"})
 
 
