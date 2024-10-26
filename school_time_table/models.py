@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import post_migrate
+from django.dispatch import receiver
 
 
 class Hours(models.Model):
@@ -11,6 +13,14 @@ class Hours(models.Model):
 
 class HoursType(models.Model):
     name = models.CharField()
+
+
+@receiver(post_migrate)
+def create_default_overhead_types(sender, **kwargs):
+    default_values = [{'name': 'Initial'},
+                      {'name': 'High'}]
+    for value in default_values:
+        HoursType.objects.get_or_create(name=value['name'])
 
 
 class ClassTimeTable(models.Model):

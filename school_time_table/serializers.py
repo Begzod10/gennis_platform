@@ -8,13 +8,19 @@ from group.models import Group
 from group.serializers import GroupSerializer, GroupClassSerializer
 from rooms.models import Room
 from rooms.serializers import RoomCreateSerializer
-from school_time_table.models import Hours, ClassTimeTable
+from school_time_table.models import Hours, ClassTimeTable, HoursType
 from subjects.models import Subject
 from subjects.serializers import SubjectSerializer
 from teachers.models import Teacher
 from teachers.serializers import TeacherSerializer
 from time_table.models import WeekDays
 from time_table.serializers import WeekDaysSerializer
+
+
+class HoursTypeSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = HoursType
+        fields = ['id', 'name']
 
 
 class HoursSerializers(serializers.ModelSerializer):
@@ -384,7 +390,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                             'hours': hour.id
                         })
                 else:
-                    if group.class_number.number in [1, 2, 3, 4, 5, 6] and  'initial' in types:
+                    if group.class_number.number in [1, 2, 3, 4, 5, 6] and 'initial' in types:
                         info['lessons'].append({
                             'group': {},
                             'status': False,
