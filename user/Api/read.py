@@ -18,7 +18,7 @@ from user.models import CustomUser, UserSalaryList
 from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalary, CustomAutoGroup, \
     UserSalarySerializersRead
 from ..serialziers_list import UsersWithJobSerializers
-
+from user.seriliazer.employer import UserForOneMonthListSerializer,EmployerSalaryMonths
 class UserListCreateView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -75,7 +75,7 @@ class UserSalaryListDetailView(QueryParamFilterMixin, generics.RetrieveAPIView):
         'status': 'deleted',
     }
     queryset = UserSalaryList.objects.all()
-    serializer_class = UserSalaryListSerializersRead
+    serializer_class = UserForOneMonthListSerializer
 
     def retrieve(self, request, *args, **kwargs):
         user_salary_list = self.filter_queryset(self.get_object())
@@ -146,7 +146,7 @@ class EmployerRetrieveView(generics.RetrieveAPIView):
 
 class UserSalaryMonthView(generics.RetrieveAPIView):
     queryset = UserSalary.objects.all()
-    serializer_class = UserSalarySerializersRead
+    serializer_class = EmployerSalaryMonths
     permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):

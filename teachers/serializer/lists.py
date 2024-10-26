@@ -1,8 +1,10 @@
 from rest_framework import serializers
-from teachers.models import Teacher
-from subjects.models import Subject
+
 from flows.models import Flow
 from group.models import Group
+from payments.serializers import PaymentTypesSerializers
+from subjects.models import Subject
+from teachers.models import Teacher, TeacherSalary, TeacherSalaryList
 
 
 class ActiveSubjectSerializerSerializer(serializers.ModelSerializer):
@@ -55,4 +57,20 @@ class ActiveListTeacherSerializerTime(serializers.ModelSerializer):
 
     class Meta:
         model = Teacher
-        fields = ('id', 'name', 'surname', 'username','color')
+        fields = ('id', 'name', 'surname', 'username', 'color')
+
+
+class TeacherSalaryMonthlyListSerializer(serializers.ModelSerializer):
+    worked_hours = serializers.CharField(source='teacher.working_hours')
+
+    class Meta:
+        model = TeacherSalary
+        fields = ['id', 'total_salary', 'taken_salary', 'remaining_salary', 'worked_hours', 'month_date']
+
+
+class TeacherSalaryForOneMonthListSerializer(serializers.ModelSerializer):
+    payment = PaymentTypesSerializers()
+
+    class Meta:
+        model = TeacherSalaryList
+        fields = ['id', 'payment', 'comment', 'deleted', 'salary', 'date']
