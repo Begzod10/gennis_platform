@@ -1,5 +1,6 @@
 from datetime import datetime
 
+
 from Calendar.models import Day
 from teachers.models import TeacherSalary, Teacher
 from school_time_table.models import ClassTimeTable
