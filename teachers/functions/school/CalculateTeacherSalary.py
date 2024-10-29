@@ -32,8 +32,8 @@ def calculate_teacher_salary(teacher):
             salary.save()
 
         summ_for_percentage = (teacher.teacher_salary_type.salary * salary.percentage) / 100
-        if salary.worked_days:
-            overall = (teacher.teacher_salary_type.salary + summ_for_percentage) * (salary.worked_days / working_days)
+        if salary.worked_hours:
+            overall = (teacher.teacher_salary_type.salary + summ_for_percentage) * (salary.worked_hours / working_days)
         else:
             overall = teacher.teacher_salary_type.salary + summ_for_percentage
 
