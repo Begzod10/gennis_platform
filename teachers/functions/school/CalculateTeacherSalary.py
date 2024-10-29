@@ -1,6 +1,5 @@
 from datetime import datetime
 
-
 from Calendar.models import Day
 from teachers.models import TeacherSalary, Teacher
 from school_time_table.models import ClassTimeTable
@@ -62,7 +61,8 @@ def teacher_salary_school(request, update=False, salary_id=None, worked_hours=0)
         salary = (time_table_hours / default_hours) * stavka
         ustama = (salary / 100) * teacher.salary_percentage
         salary = salary + ustama
-        TeacherSalary.objects.get_or_create(teacher=teacher, month_date=request.data['date'],
+        month_date = datetime(request.data['date'].year, request.data['date'].month, 1)
+        TeacherSalary.objects.get_or_create(teacher=teacher, month_date=month_date,
                                             percentage=teacher.salary_percentage)
         salary_month = TeacherSalary.objects.get(teacher=teacher, month_date=request.data['date'])
         salary_month.total_salary = salary
