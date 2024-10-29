@@ -185,16 +185,16 @@ class UserSalaryListSerializersRead(serializers.ModelSerializer):
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    def user_send(self, user):
-        from students.models import Student, Teacher
-        if isinstance(user, Student):
-            object = {
-                'id': user.id,
-                'name': user.name,
-                'surname': user.surname,
-            }
-            return StudentSerializerRead(user).data
-        elif isinstance(user, Teacher):
+    # def user_send(self, user):
+    #     from students.models import Student, Teacher
+    #     if isinstance(user, Student):
+    #         object = {
+    #             'id': user.id,
+    #             'name': user.name,
+    #             'surname': user.surname,
+    #         }
+    #         return StudentSerializerRead(user).data
+    #     elif isinstance(user, Teacher):
 
     def validate(self, attrs):
 

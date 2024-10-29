@@ -90,14 +90,12 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME', 'gennis_platform'),
         'USER': os.getenv('DB_USER', 'postgres'),
         'PASSWORD': os.getenv('DB_PASSWORD', '123'),
-        'HOST': os.getenv('DB_HOST', '192.168.1.20'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': '5432',
     }
 }
 
-#                          'PASSWORD': '123', 'HOST': 'localhost', 'PORT': '5432'}}
-# DATABASES = {'default': {'ENGINE': 'django.db.backends.postgresql', 'NAME': 'gennis', 'USER': 'postgres',
-#                          'PASSWORD': '123', 'HOST': 'localhost', 'PORT': '5432'}}
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
