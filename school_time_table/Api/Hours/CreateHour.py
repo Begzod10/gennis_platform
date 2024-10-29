@@ -1,8 +1,34 @@
 from rest_framework import generics
-from ...models import Hours
-from ...serializers import HoursSerializers
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from ...models import Hours, HoursType
+from ...serializers import HoursSerializers, HoursTypeSerializers
 
 
 class HourListCreateView(generics.ListCreateAPIView):
     queryset = Hours.objects.all().order_by('order')
     serializer_class = HoursSerializers
+
+
+class HourTypeListCreate(generics.ListCreateAPIView):
+    queryset = HoursType.objects.all()
+    serializer_class = HoursTypeSerializers
+
+
+class HoursView(APIView):
+    def get(self, request):
+        hours_queryset = Hours.objects.all()
+
+        high_hours = hours_queryset.filter(types__name='high')
+        initial_hours = hours_queryset.filter(types__name='initial')
+
+        high_data = HoursSerializers(high_hours, many=True).data
+        initial_data = HoursSerializers(initial_hours, many=True).data
+
+        result = {
+            'high': high_data,
+            'initial': initial_data
+        }
+
+        return Response(result)

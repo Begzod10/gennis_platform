@@ -17,7 +17,6 @@ from teachers.models import TeacherGroupStatistics, Teacher
 from user.serializers import UserSerializerWrite, UserSerializerRead
 from .models import (TeacherAttendance)
 from .models import (TeacherSalaryList, TeacherSalary, TeacherSalaryType)
-from teachers.functions.school.CalculateTeacherSalary import teacher_salary_school
 
 
 class TeacherSerializer(serializers.ModelSerializer):
@@ -213,6 +212,8 @@ class TeacherSalaryCreateSerializersUpdate(serializers.ModelSerializer):
         print(validated_data)
         worked_hours = validated_data.get('worked_hours', None)
         print(worked_hours)
+        instance.teacher.working_hours = worked_hours
+        instance.teacher.save()
         if worked_hours is not None:
             print(instance.teacher.user.branch.location.system.name)
             from .functions.school.CalculateTeacherSalary import teacher_salary_school

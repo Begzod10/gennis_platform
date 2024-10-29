@@ -6,11 +6,12 @@ from rest_framework.response import Response
 
 from permissions.response import QueryParamFilterMixin
 from teachers.models import TeacherGroupStatistics, Teacher, TeacherSalaryList, TeacherSalary
+from teachers.serializer.lists import ActiveListTeacherSerializer, TeacherSalaryMonthlyListSerializer, \
+    TeacherSalaryForOneMonthListSerializer
 from teachers.serializers import (
     TeacherSerializerRead, TeacherSalaryListReadSerializers, TeacherGroupStatisticsReadSerializers,
     TeacherSalaryReadSerializers
 )
-from teachers.serializer.lists import ActiveListTeacherSerializer
 
 
 class TeacherGroupStatisticsListView(generics.ListAPIView):
@@ -85,7 +86,7 @@ class TeacherSalaryDetailAPIView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     queryset = TeacherSalary.objects.all()
-    serializer_class = TeacherSalaryReadSerializers
+    serializer_class = TeacherSalaryMonthlyListSerializer
 
     def retrieve(self, request, *args, **kwargs):
 
@@ -126,7 +127,7 @@ class TeacherSalaryListDetailView(QueryParamFilterMixin, generics.RetrieveAPIVie
         'status': 'deleted'
     }
     queryset = TeacherSalaryList.objects.all()
-    serializer_class = TeacherSalaryListReadSerializers
+    serializer_class = TeacherSalaryForOneMonthListSerializer
 
     def retrieve(self, request, *args, **kwargs):
 
