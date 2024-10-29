@@ -26,29 +26,29 @@ def calculate_teacher_salary(teacher):
                 'percentage': 50,
             }
         )
-        if salary.total_salary != salary.teacher.teacher_salary_type.salary:
-            salary.total_salary = salary.teacher.teacher_salary_type.salary
-            salary.remaining_salary = salary.teacher.teacher_salary_type.salary - salary.taken_salary
-            salary.save()
-
-        summ_for_percentage = (teacher.teacher_salary_type.salary * salary.percentage) / 100
-        if salary.worked_hours:
-            overall = (teacher.teacher_salary_type.salary + summ_for_percentage) * (salary.worked_hours / working_days)
-        else:
-            overall = teacher.teacher_salary_type.salary + summ_for_percentage
-
-        if salary.salary_id_salary_list:
-            summ = 0
-            salaries = salary.salary_id_salary_list.filter(deleted=False).all()
-            for salary2 in salaries:
-                summ += salary2.salary
-            remaining_salary = overall - summ
-
-        else:
-            remaining_salary = overall
-        salary.remaining_salary = remaining_salary
-        salary.total_salary = overall
-        salary.save()
+        # if salary.total_salary != salary.teacher.teacher_salary_type.salary:
+        #     salary.total_salary = salary.teacher.teacher_salary_type.salary
+        #     salary.remaining_salary = salary.teacher.teacher_salary_type.salary - salary.taken_salary
+        #     salary.save()
+        #
+        # summ_for_percentage = (teacher.teacher_salary_type.salary * salary.percentage) / 100
+        # if salary.worked_hours:
+        #     overall = (teacher.teacher_salary_type.salary + summ_for_percentage) * (salary.worked_hours / working_days)
+        # else:
+        #     overall = teacher.teacher_salary_type.salary + summ_for_percentage
+        #
+        # if salary.salary_id_salary_list:
+        #     summ = 0
+        #     salaries = salary.salary_id_salary_list.filter(deleted=False).all()
+        #     for salary2 in salaries:
+        #         summ += salary2.salary
+        #     remaining_salary = overall - summ
+        #
+        # else:
+        #     remaining_salary = overall
+        # salary.remaining_salary = remaining_salary
+        # salary.total_salary = overall
+        # salary.save()
 
 
 def teacher_salary_school(request, update=False, salary_id=None, worked_hours=0):
@@ -56,6 +56,7 @@ def teacher_salary_school(request, update=False, salary_id=None, worked_hours=0)
         teacher = Teacher.objects.get(id=request.data['teacher'])
         time_table_hours = ClassTimeTable.objects.filter(teacher=teacher,
                                                          date=request.data['date']).order_by('-id').count()
+        print("hours", time_table_hours)
         stavka = teacher.teacher_salary_type.salary
         default_hours = 80
         salary = (time_table_hours / default_hours) * stavka
