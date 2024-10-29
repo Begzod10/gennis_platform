@@ -54,7 +54,7 @@ class TeacherSalary(models.Model):
     percentage = models.IntegerField(default=50)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='branch_id_salary')
     teacher_salary_type = models.ForeignKey(TeacherSalaryType, on_delete=models.SET_NULL, null=True)
-    worked_days = models.IntegerField(null=True)
+    worked_hours = models.IntegerField(null=True)
     old_id = models.IntegerField(blank=True, null=True, unique=True)
 
     class Meta:
