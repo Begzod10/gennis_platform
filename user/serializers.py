@@ -36,7 +36,7 @@ class UserSerializerWrite(serializers.ModelSerializer):
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all())
     profession = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), required=False, allow_null=True)
-    money = serializers.CharField(required=False,allow_null=True)
+    money = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
         model = CustomUser
@@ -53,7 +53,7 @@ class UserSerializerWrite(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        #test
+        # test
         profession = validated_data.pop('profession', None)
 
         user = super().create(validated_data)
@@ -89,7 +89,6 @@ class UserSerializerWrite(serializers.ModelSerializer):
     #         raise serializers_list.ValidationError({"error": str(e)})
 
     #         raise serializer.ValidationError({"error": str(e)})
-
 
     def update(self, instance, validated_data):
         profession = validated_data.pop('profession', None)
@@ -186,73 +185,19 @@ class UserSalaryListSerializersRead(serializers.ModelSerializer):
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def user_send(self, user):
+        from students.models import Student, Teacher
+        if isinstance(user, Student):
+            object = {
+                'id': user.id,
+                'name': user.name,
+                'surname': user.surname,
+            }
+            return StudentSerializerRead(user).data
+        elif isinstance(user, Teacher):
+
     def validate(self, attrs):
-        # from students.models import Student
-        # stude =Student.objects.all()[:1000]
-        # for i  in stude:
-        #      i.delete()
 
-        # from rooms.models import Room
-        # Room.objects.filter(branch_id=None).all().delete()
-        # from students.models import Student
-        # from teachers.models import Teacher
-
-        # CustomUser.objects.exclude(username='dr_max').all().delete()
-        # Student.objects.all().delete()
-        # Teacher.objects.all().delete()
-        # numbers = ClassNumber.objects.filter(id__gte=56).all()
-        # for number in numbers:
-        #     number.delete()
-        # classes = ClassNumber.objects.all()
-        # for cl in classes:
-
-        #     print(cl.branch_id)
-        # Group.objects.exclude(name='director')
-        # groups = Group.objects.get(name="director")
-        # user = CustomUser.objects.get(pk=1)
-        # user.groups.add(groups)
-        # user.save()
-
-        # from branch.models import Branch
-        # branches = Branch.objects.filter(location__system__name='school')
-        # for branch in branches:
-        #     for i in range(1, 12):
-        #         ClassNumber.objects.get_or_create(number=i, branch=branch)
-        # from subjects.models import Subject
-        # subject_english = Subject.objects.get(name='Ingliz tili')
-        # subject_english.classroom_id = 1
-        # subject_english.save()
-        #
-        # subject_native_language = Subject.objects.get(name='Ona tili va Adabiyot')
-        # subject_native_language.classroom_id = 3
-        # subject_native_language.save()
-        # from group.models import GroupReason
-        # GroupReason.objects.get_or_create(name="O'qituvchi yoqmadi")
-        # GroupReason.objects.get_or_create(name="Pul oilaviy sharoit")
-        # GroupReason.objects.get_or_create(name="O'quvchi o'qishni eplolmadi")
-        # GroupReason.objects.get_or_create(name="Boshqa")
-        # GroupReason.objects.get_or_create(name="Kursni tamomladi")
-        # from rooms.models import Room
-        # Room.objects.filter(classtimetable__isnull=False, deleted=True).update(deleted=False)
-
-        # from group.models import Group
-        # Group.objects.filter(pk=20).update(deleted=False)
-        # from subjects.models import SubjectLevel
-        # from attendances.models import AttendancePerMonth
-        # AttendancePerMonth.objects.filter(student_id=11).exclude(
-        #     group_id=12).delete()
-        # from students.models import StudentPayment
-        # StudentPayment.objects.all().delete()
-        # from attendances.models import AttendancePerMonth
-        # AttendancePerMonth.objects.all().update(status=False, remaining_debt=0, payment=0)
-        # from classes.models import ClassNumber
-        # from branch.models import Branch
-        # for branch in Branch.objects.filter(location__system__name='school').all():
-        #     ClassNumber.objects.get_or_create(number=0, branch=branch)
-        # from overhead.models import Overhead
-        # from capital.models import OldCapital
-        # Overhead.objects.all().update(branch_id=8)
-        # OldCapital.objects.all().update(branch_id=8)
         username = attrs.get('username')
         password = attrs.get('password')
         user = CustomUser.objects.get(username=username)
