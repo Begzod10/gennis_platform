@@ -1,3 +1,4 @@
+import requests
 from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth.models import Group
 from rest_framework import serializers
@@ -77,18 +78,6 @@ class UserSerializerWrite(serializers.ModelSerializer):
                 user.is_superuser = True
                 user.save()
         return user
-
-    # def send_data(self, user_data):
-    #     url = 'https://example.com/api/update_user_info'
-    #     try:
-    #         response = requests.post(url, json={"user": user_data})
-    #         response.raise_for_status()
-    #         return response.json()
-    #     except requests.RequestException as e:
-
-    #         raise serializers_list.ValidationError({"error": str(e)})
-
-    #         raise serializer.ValidationError({"error": str(e)})
 
     def update(self, instance, validated_data):
         profession = validated_data.pop('profession', None)
@@ -185,35 +174,72 @@ class UserSalaryListSerializersRead(serializers.ModelSerializer):
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def send_data(self, user_data, url):
+        try:
+            response = requests.post(url, json={"user": user_data})
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            raise serializers.ValidationError({"error": str(e)})
+
     def user_send(self, user, password):
         user = CustomUser.objects.get(id=user)
-        from students.models import Student, Teacher
-        # if isinstance(user, Student):
-        #     object = {
-        #         'id': user.id,
-        #         'name': user.name,
-        #         'surname': user.surname,
-        #         'username': user.username,
-        #         'password': password,
-        #         'balance': user.student.id,
-        #         'role': 'student',
-        #         'birth_date': user.birth_date,
-        #         'phone_number': user.phone_number,
-        #         'groups': [{
-        #             'name': group.name,
-        #             'id': group.id,
-        #             'subject': group.subject.name,
-        #             'teacher_salary': group.teacher.salary
-        #         } for group in user.student.groups.all()]
-        #     }
-        #     return StudentSerializerRead(user).data
-        # elif isinstance(user, Teacher):
+        from students.models import Student,Teacher
+        student = Student.objects.filter(user=user).first()
+        teacher = Teacher.objects.filter(user=user).first()
+
+
+        if student:
+            object = {
+                'id': user.id,
+                'name': user.name,
+                'surname': user.surname,
+                'username': user.username,
+                'father_name': user.father_name,
+                'password': password,
+                'balance': student.id,
+                'role': 'student',
+                'birth_date': user.birth_date.isoformat() if user.birth_date else None,
+                'phone_number': user.phone,
+                'groups': [{
+                    'name': group.name,
+                    'id': group.id,
+                    'subject': group.subject,
+                    'teacher_salary': group.teacher_salary,
+                    'price': group.price
+                } for group in student.groups_student.all()]
+            }
+            self.send_data(object, 'http://192.168.1.17:5001/api/turon_user')
+            return object
+        if teacher:
+            object = {
+                'id': user.id,
+                'name': user.name,
+                'surname': user.surname,
+                'username': user.username,
+                'father_name': user.father_name,
+                'password': password,
+                'balance': teacher.id,
+                'role': 'teacher',
+                'birth_date': user.birth_date.isoformat() if user.birth_date else None,
+                'phone_number': user.phone,
+                'groups': [{
+                    'name': group.name,
+                    'id': group.id,
+                    'subject': group.subject,
+                    'teacher_salary': group.teacher_salary,
+                    'price': group.price
+                } for group in teacher.group_set.all()]
+            }
+            self.send_data(object, 'http://192.168.1.17:5001/api/turon_user')
+            return object
 
     def validate(self, attrs):
 
         username = attrs.get('username')
         password = attrs.get('password')
         user = CustomUser.objects.get(username=username)
+        self.user_send(user.id, password)
         if user.password.startswith('sha256$'):
             if check_password_hash(user.password, password):
                 new_password = make_password(password)

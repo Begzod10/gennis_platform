@@ -68,15 +68,42 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 
 class UsernameCheck(APIView):
-    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        import requests
+        def check_username(username):
+            external_api_url = "http://192.168.1.17:5002/api/check_username_turon"
+            response = requests.post(external_api_url, json={"username": username})
+            return response.json()
+
         username = request.data.get('username', None)
+
         if username:
             try:
                 user = CustomUser.objects.get(username=username)
-                return Response({'exists': True}, status=status.HTTP_200_OK)
+                if user == request.user:
+                    statuss = check_username(username)
+                    if statuss['found'] == True:
+                        return Response({'exists': True}, status=status.HTTP_200_OK)
+                    else:
+                        return Response({'exists': False}, status=status.HTTP_200_OK)
+                else:
+                    return Response({'exists': True}, status=status.HTTP_200_OK)
             except CustomUser.DoesNotExist:
-                return Response({'exists': False}, status=status.HTTP_200_OK)
+                statuss = check_username(username)
+                if statuss['found'] == True:
+                    return Response({'exists': True}, status=status.HTTP_200_OK)
+                else:
+                    return Response({'exists': False}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Username not provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, *args, **kwargs):
+        username = request.data.get('username', None)
+        uuid = request.data.get('user_id', None)
+        id = request.data.get('turon_id', None)
+        user = CustomUser.objects.get(id=id)
+        user.username = username
+        user.uuid = uuid
+        user.save()
+        return Response({'msg': 'username updated successfully'}, status=status.HTTP_200_OK)
