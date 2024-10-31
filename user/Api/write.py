@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
-
+from gennis_platform.settings import gennis_server
 from user.models import CustomUser, UserSalaryList
 from user.serializers import UserSerializerWrite, UserSalaryListSerializers, CustomTokenObtainPairSerializer
 
@@ -72,7 +72,7 @@ class UsernameCheck(APIView):
     def post(self, request, *args, **kwargs):
         import requests
         def check_username(username):
-            external_api_url = "http://192.168.1.17:5002/api/check_username_turon"
+            external_api_url = f"{gennis_server}/api/check_username_turon"
             response = requests.post(external_api_url, json={"username": username})
             return response.json()
 

@@ -5,7 +5,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from werkzeug.security import check_password_hash
-
+from gennis_platform.settings import classroom_server
 from branch.serializers import BranchSerializer
 from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
@@ -209,7 +209,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     'price': group.price
                 } for group in student.groups_student.all()]
             }
-            self.send_data(object, 'http://192.168.1.17:5001/api/turon_user')
+            self.send_data(object, f'{classroom_server}/api/turon_user')
             return object
         if teacher:
             object = {
@@ -231,7 +231,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     'price': group.price
                 } for group in teacher.group_set.all()]
             }
-            self.send_data(object, 'http://192.168.1.17:5001/api/turon_user')
+            self.send_data(object, f'{classroom_server}/api/turon_user')
             return object
 
     def validate(self, attrs):
