@@ -369,43 +369,6 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                         'subject': subject_info,
                         'hours': hour.id
                     })
-#                 else:
-# <<<<<<< HEAD
-#                     if group.class_number.number in [1, 2, 3, 4, 5, 6] and 'initial' in types:
-#                         info['lessons'].append({
-#                             'group': {},
-#                             'status': False,
-#                             'hours': hour.id,
-#                             'teacher': {},
-#                             'subject': {},
-#                             'room': {},
-#                             'is_flow': False,
-#                         })
-#                     elif group.class_number.number in [7, 8, 9, 10, 11] and 'high' in types:
-#                         info['lessons'].append({
-#                             'group': {},
-#                             'status': False,
-#                             'hours': hour.id,
-#                             'teacher': {},
-#                             'subject': {},
-#                             'room': {},
-#                             'is_flow': False,
-#                         })
-#
-#             if group.class_number.number in [1, 2, 3, 4, 5, 6]:
-#                 time_tables['initial'].append(info)
-#             else:
-#                 time_tables['high'].append(info)
-# =======
-#                     info['lessons'].append({
-#                         'group': {},
-#                         'status': False,
-#                         'hours': hour.id,
-#                         'teacher': {},
-#                         'subject': {},
-#                         'room': {},
-#                         'is_flow': False,
-#                     })
             time_tables.append(info)
         return time_tables
 
