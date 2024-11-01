@@ -12,9 +12,7 @@ class DeleteItemClassTimeTable(generics.RetrieveDestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
-        print(instance.id)
-        teacher_salary_school(request=None, update=True, salary_id=instance.id, worked_hours=0, deleted=True)
         self.perform_destroy(instance)
-        print(instance)
-
+        teacher_salary_school(request=None, update=True, salary_id=instance.id, worked_hours=0, deleted=True,
+                              teacher_id=instance.teacher.id, month_date=instance.date)
         return Response({"msg": "Dars muvvaffaqqiyatli o'chirildi"})
