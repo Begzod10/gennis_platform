@@ -189,7 +189,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                         'hours': hour.id,
                         'teacher': {},
                         'subject': {},
-                        'room':  room.id,
+                        'room': room.id,
                         'is_flow': False,
                     })
             time_tables.append(info)
@@ -369,6 +369,17 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                         'subject': subject_info,
                         'hours': hour.id
                     })
+                else:
+                    info['lessons'].append({
+                        'group': {},
+                        'status': False,
+                        'hours': hour.id,
+                        'teacher': {},
+                        'subject': {},
+                        'room': {},
+                        'is_flow': False,
+                    })
+
             time_tables.append(info)
         return time_tables
 

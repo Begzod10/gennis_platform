@@ -61,8 +61,6 @@ class ActiveListTeacherSerializerTime(serializers.ModelSerializer):
 
 
 class TeacherSalaryMonthlyListSerializer(serializers.ModelSerializer):
-    worked_hours = serializers.CharField(source='teacher.working_hours')
-
     class Meta:
         model = TeacherSalary
         fields = ['id', 'total_salary', 'taken_salary', 'remaining_salary', 'worked_hours', 'month_date']
