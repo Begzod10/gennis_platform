@@ -6,12 +6,12 @@ class Hours(models.Model):
     end_time = models.TimeField()
     name = models.CharField()
     order = models.IntegerField()
-    types = models.ManyToManyField('HoursType', related_name='hours')
+    # types = models.ManyToManyField('HoursType', related_name='hours')
 
 
-class HoursType(models.Model):
-    name = models.CharField()
-
+# class HoursType(models.Model):
+#     name = models.CharField()
+#
 
 class ClassTimeTable(models.Model):
     group = models.ForeignKey('group.Group', on_delete=models.CASCADE, null=True)
@@ -25,3 +25,6 @@ class ClassTimeTable(models.Model):
     name = models.CharField()
     students = models.ManyToManyField('students.Student', related_name='class_time_table')
     date = models.DateField(null=True)
+
+
+
