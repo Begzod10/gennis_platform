@@ -8,7 +8,7 @@ from group.models import Group
 from group.serializers import GroupSerializer, GroupClassSerializer
 from rooms.models import Room
 from rooms.serializers import RoomCreateSerializer
-from school_time_table.models import Hours, ClassTimeTable, HoursType
+from school_time_table.models import Hours, ClassTimeTable
 from subjects.models import Subject
 from subjects.serializers import SubjectSerializer
 from teachers.models import Teacher
@@ -17,10 +17,10 @@ from time_table.models import WeekDays
 from time_table.serializers import WeekDaysSerializer
 
 
-class HoursTypeSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = HoursType
-        fields = ['id', 'name']
+# class HoursTypeSerializers(serializers.ModelSerializer):
+#     class Meta:
+#         model = HoursType
+#         fields = ['id', 'name']
 
 
 class HoursSerializers(serializers.ModelSerializer):
@@ -28,7 +28,7 @@ class HoursSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = Hours
-        fields = ['id', 'start_time', 'end_time', 'name', 'order', 'can_delete', 'types']
+        fields = ['id', 'start_time', 'end_time', 'name', 'order', 'can_delete']
 
     def get_can_delete(self, obj):
         if obj.classtimetable_set.exists():
@@ -130,7 +130,7 @@ class WeekDaysSerializer(serializers.ModelSerializer):
 class HoursSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hours
-        fields = ['id', 'name', 'start_time', 'end_time', 'types']
+        fields = ['id', 'name', 'start_time', 'end_time']
 
 
 class ClassTimeTableSerializer(serializers.ModelSerializer):
@@ -189,7 +189,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                         'hours': hour.id,
                         'teacher': {},
                         'subject': {},
-                        'room': room.id,
+                        'room':  room.id,
                         'is_flow': False,
                     })
             time_tables.append(info)
@@ -307,10 +307,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
         date = self.context['date']
         branch = self.context['branch']
         hours = Hours.objects.all().order_by('order')
-        time_tables = {
-            'high': [],
-            'initial': []
-        }
+        time_tables = []
         groups = Group.objects.filter(branch=branch, deleted=False).all().order_by('class_number__number')
         for group in groups:
             info = {
@@ -319,6 +316,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                 'color': group.color.value,
                 'lessons': []
             }
+
             for hour in hours:
                 lesson = group.classtimetable_set.filter(date=date, hours=hour, branch=branch).order_by(
                     'hours__order').first()
@@ -329,7 +327,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                         'hours__order').first()
                     if flow_class_time_table:
                         break
-                types = [type.name for type in hour.types.all()]
+
                 if lesson:
                     group_info = {'id': group.id,
                                   'name': f'{group.class_number.number}-{group.color.name}'} if lesson.group else None
@@ -339,7 +337,6 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                                     'surname': lesson.teacher.user.surname} if lesson.teacher else None
                     subject_info = {'id': lesson.subject.id, 'name': lesson.subject.name} if lesson.subject else None
                     room_info = {'id': lesson.room.id, 'name': lesson.room.name} if lesson.room else None
-
                     lesson_info = {
                         'id': lesson.id,
                         'status': lesson.hours == hour,
@@ -351,13 +348,8 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                         'hours': hour.id
                     }
 
-                    if group.class_number.number in [1, 2, 3, 4, 5, 6] and 'initial' in types:
-                        info['lessons'].append(lesson_info)
-                    elif group.class_number.number in [7, 8, 9, 10, 11] and 'high' in types:
-                        info['lessons'].append(lesson_info)
-
+                    info['lessons'].append(lesson_info)
                 elif flow_class_time_table:
-
                     flow_info = {'id': flow_class_time_table.flow.id, 'name': flow_class_time_table.flow.name,
                                  'classes': flow_class_time_table.flow.classes} if flow_class_time_table.flow else None
                     teacher_info = {'id': flow_class_time_table.teacher.id,
@@ -367,54 +359,17 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                                     'name': flow_class_time_table.subject.name} if flow_class_time_table.subject else None
                     room_info = {'id': flow_class_time_table.room.id,
                                  'name': flow_class_time_table.room.name} if flow_class_time_table.room else None
-                    if group.class_number.number in [1, 2, 3, 4, 5, 6] and 'initial' in types:
-                        info['lessons'].append({
-                            'id': flow_class_time_table.id,
-                            'status': flow_class_time_table.hours == hour,
-                            'is_flow': True,
-                            'group': flow_info,
-                            'room': room_info,
-                            'teacher': teacher_info,
-                            'subject': subject_info,
-                            'hours': hour.id
-                        })
-                    elif group.class_number.number in [7, 8, 9, 10, 11] and 'high' in types:
-                        info['lessons'].append({
-                            'id': flow_class_time_table.id,
-                            'status': flow_class_time_table.hours == hour,
-                            'is_flow': True,
-                            'group': flow_info,
-                            'room': room_info,
-                            'teacher': teacher_info,
-                            'subject': subject_info,
-                            'hours': hour.id
-                        })
-                else:
-                    if group.class_number.number in [1, 2, 3, 4, 5, 6] and 'initial' in types:
-                        info['lessons'].append({
-                            'group': {},
-                            'status': False,
-                            'hours': hour.id,
-                            'teacher': {},
-                            'subject': {},
-                            'room': {},
-                            'is_flow': False,
-                        })
-                    elif group.class_number.number in [7, 8, 9, 10, 11] and 'high' in types:
-                        info['lessons'].append({
-                            'group': {},
-                            'status': False,
-                            'hours': hour.id,
-                            'teacher': {},
-                            'subject': {},
-                            'room': {},
-                            'is_flow': False,
-                        })
-
-            if group.class_number.number in [1, 2, 3, 4, 5, 6]:
-                time_tables['initial'].append(info)
-            else:
-                time_tables['high'].append(info)
+                    info['lessons'].append({
+                        'id': flow_class_time_table.id,
+                        'status': flow_class_time_table.hours == hour,
+                        'is_flow': True,
+                        'group': flow_info,
+                        'room': room_info,
+                        'teacher': teacher_info,
+                        'subject': subject_info,
+                        'hours': hour.id
+                    })
+            time_tables.append(info)
         return time_tables
 
     def get_hours_list(self, obj):

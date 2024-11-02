@@ -51,26 +51,43 @@ def calculate_teacher_salary(teacher):
         # salary.save()
 
 
-def teacher_salary_school(request, update=False, salary_id=None, worked_hours=0):
+def teacher_salary_school(request=None, update=False, salary_id=None, worked_hours=0, deleted=False):
     if not update:
         teacher = Teacher.objects.get(id=request.data['teacher'])
         time_table_hours = ClassTimeTable.objects.filter(teacher=teacher,
                                                          date=request.data['date']).order_by('-id').count()
-        print("hours", time_table_hours)
         stavka = teacher.teacher_salary_type.salary
         default_hours = 80
         salary = (time_table_hours / default_hours) * stavka
         ustama = (salary / 100) * teacher.salary_percentage
         salary = salary + ustama
-        month_date = datetime(request.data['date'].year, request.data['date'].month, 1)
+        month_date = datetime.strptime(request.data['date'][:-3], "%Y-%m")
         TeacherSalary.objects.get_or_create(teacher=teacher, month_date=month_date,
                                             percentage=teacher.salary_percentage)
         salary_month = TeacherSalary.objects.get(teacher=teacher, month_date=request.data['date'])
         salary_month.total_salary = salary
         salary_month.remaining_salary = salary - salary_month.taken_salary
+        salary_month.worked_hours = time_table_hours
         salary_month.save()
-    else:
-        print(salary_id)
+        return salary
+    if deleted:
+        get_time_table_hours = ClassTimeTable.objects.get(id=salary_id)
+        time_table_hours = ClassTimeTable.objects.filter(teacher=get_time_table_hours.teacher,
+                                                         date=get_time_table_hours.date).order_by('-id').count()
+        teacher = get_time_table_hours.teacher
+        stavka = teacher.teacher_salary_type.salary
+        default_hours = 80
+        salary = (time_table_hours / default_hours) * stavka
+        ustama = (salary / 100) * teacher.salary_percentage
+        salary = salary + ustama
+        salary_month = TeacherSalary.objects.get(teacher=teacher, month_date=get_time_table_hours.date)
+        salary_month.total_salary = salary
+        salary_month.remaining_salary = salary - salary_month.taken_salary
+        salary_month.worked_hours = time_table_hours
+        salary_month.save()
+        return salary
+    elif not deleted and update:
+
         teacher = Teacher.objects.get(id=request.id)
         # time_table_hours = ClassTimeTable.objects.filter(teacher=teacher,
         #                                                  date=request.data['date']).order_by('-id').count()
@@ -83,4 +100,6 @@ def teacher_salary_school(request, update=False, salary_id=None, worked_hours=0)
         salary_month = TeacherSalary.objects.get(id=salary_id)
         salary_month.total_salary = salary
         salary_month.remaining_salary = salary - salary_month.taken_salary
+        salary_month.worked_hours = worked_hours
         salary_month.save()
+        return salary

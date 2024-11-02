@@ -1,9 +1,13 @@
 from rest_framework import generics
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ...models import Hours, HoursType
-from ...serializers import HoursSerializers, HoursTypeSerializers
+
+
+from ...models import Hours
+from ...serializers import HoursSerializers
+
 
 
 class HourListCreateView(generics.ListCreateAPIView):
@@ -11,9 +15,8 @@ class HourListCreateView(generics.ListCreateAPIView):
     serializer_class = HoursSerializers
 
 
-class HourTypeListCreate(generics.ListCreateAPIView):
-    queryset = HoursType.objects.all()
-    serializer_class = HoursTypeSerializers
+
+
 
 
 class HoursView(APIView):
@@ -32,3 +35,4 @@ class HoursView(APIView):
         }
 
         return Response(result)
+

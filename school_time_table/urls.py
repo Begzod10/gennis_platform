@@ -1,6 +1,7 @@
 from django.urls import path
 
-from .Api.Hours.CreateHour import HourListCreateView, HoursView,HourTypeListCreate
+from .Api.Hours.CreateHour import HourListCreateView, HoursView
+
 from .Api.Hours.UpdateHour import HourUpdateDeleteView
 from .Api.TimeTable.CreateClassTimeTable import CreateClassTimeTable, ClassesFlows, ClassTimeTableLessonsView, \
     CheckClassTimeTable, ClassTimeTableForClassView
@@ -10,7 +11,6 @@ from .Api.TimeTable.checks.checkNextLesson import CheckNextLesson
 
 urlpatterns = [
     path('hours-list-create/', HourListCreateView.as_view(), name='hours-list-create'),
-    path('hours-list-type/', HourTypeListCreate.as_view(), name='hours-list-type'),
     path('hours-list-for-type/', HoursView.as_view(), name='hours-list-for-type'),
     path('hours-list-update/<int:pk>', HourUpdateDeleteView.as_view(), name='hours-list-update'),
     path('timetable-list-create/', CreateClassTimeTable.as_view(), name='timetable-list-create'),
