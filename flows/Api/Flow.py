@@ -38,7 +38,8 @@ class FlowListCreateView(QueryParamFilterMixin, generics.ListCreateAPIView):
 class FlowListView(QueryParamFilterMixin, generics.ListCreateAPIView):
     filter_mappings = {
         'teacher': 'teacher__id',
-        'subject': 'subject__id'
+        'subject': 'subject__id',
+        'branch': 'branch__id'
 
     }
     permission_classes = [IsAuthenticated]
