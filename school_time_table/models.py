@@ -11,9 +11,6 @@ class Hours(models.Model):
     # types = models.ManyToManyField('HoursType', related_name='hours')
 
 
-
-
-
 class ClassTimeTable(models.Model):
     group = models.ForeignKey('group.Group', on_delete=models.CASCADE, null=True)
     week = models.ForeignKey('time_table.WeekDays', on_delete=models.CASCADE, null=True)
