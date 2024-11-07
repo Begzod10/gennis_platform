@@ -6,4 +6,5 @@ media
 !**/migrations/__init__.py
 frontend/build
 transfer
+auto_git_pull.log
 transfer/
