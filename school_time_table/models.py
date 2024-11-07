@@ -15,12 +15,12 @@ class Hours(models.Model):
 #     name = models.CharField()
 #
 
-@receiver(post_migrate)
-def create_default_overhead_types(sender, **kwargs):
-    default_values = [{'name': 'Initial'},
-                      {'name': 'High'}]
-    for value in default_values:
-        HoursType.objects.get_or_create(name=value['name'])
+# @receiver(post_migrate)
+# def create_default_overhead_types(sender, **kwargs):
+#     default_values = [{'name': 'Initial'},
+#                       {'name': 'High'}]
+#     for value in default_values:
+#         HoursType.objects.get_or_create(name=value['name'])
 
 
 class ClassTimeTable(models.Model):
