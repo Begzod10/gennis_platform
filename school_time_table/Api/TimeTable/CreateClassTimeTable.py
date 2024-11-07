@@ -8,6 +8,7 @@ from ...models import ClassTimeTable
 from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTableReadSerializers, \
     ClassTimeTableTest2Serializer, ClassTimeTableForClassSerializer2
 from ...serializers_list import GroupClassSerializerList, FlowsSerializerList
+from teachers.functions.school.CalculateTeacherSalary import teacher_salary_school
 from group.serializers import GroupClassSerializer
 from time_table.functions.creatWeekDays import creat_week_days
 from time_table.models import WeekDays

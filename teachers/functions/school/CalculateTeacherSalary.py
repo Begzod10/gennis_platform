@@ -49,9 +49,6 @@ def calculate_teacher_salary(teacher):
         # salary.total_salary = overall
         # salary.save()
 
-<<<<<<< HEAD
-=======
-
 def teacher_salary_school(request=None, update=False, salary_id=None, worked_hours=0, deleted=False, teacher_id=None,
                           month_date=None):
     if not update:
@@ -106,4 +103,3 @@ def teacher_salary_school(request=None, update=False, salary_id=None, worked_hou
         salary_month.worked_hours = worked_hours
         salary_month.save()
         return salary
->>>>>>> 33908544698b1f1933948a297a5c52c56dde23f1
