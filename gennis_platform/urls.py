@@ -15,14 +15,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-#from django.conf import settings
-#from django.conf.urls.static import static
-#from django.contrib import admin
-#from django.urls import path, include, re_path
-#from rest_framework_simplejwt.views import TokenVerifyView
-#from schema_graph.views import Schema
-#from group.gennis.AddToGroupApi import UpdateGroupDataAPIView, GetGroupDataAPIView
-#from user.Api.read import GetUserAPIView, SetObserverView
+from django.conf import settings
+from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import path, include, re_path
+from rest_framework_simplejwt.views import TokenVerifyView
+from schema_graph.views import Schema
+from group.gennis.AddToGroupApi import UpdateGroupDataAPIView, GetGroupDataAPIView
+from user.Api.read import GetUserAPIView, SetObserverView
 from user.Api.write import CustomTokenObtainPairView
 from user.views import CustomTokenRefreshView
 from .swagger import urlpatterns as doc_urls
