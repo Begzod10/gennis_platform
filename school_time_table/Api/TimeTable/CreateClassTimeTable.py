@@ -29,6 +29,7 @@ class CreateClassTimeTable(generics.ListCreateAPIView):
 
         instance = ClassTimeTable.objects.get(pk=write_serializer.data['id'])
         read_serializer = ClassTimeTableReadSerializers(instance)
+
         teacher_salary_school(request)
         return Response({'lesson': read_serializer.data, 'msg': 'Dars muvaffaqqiyatli kiritildi'})
 
