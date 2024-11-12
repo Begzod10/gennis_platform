@@ -1,11 +1,18 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
-from classes.models import ClassNumber, ClassCoin, CoinInfo, StudentCoin
+from classes.models import ClassNumber, ClassCoin, CoinInfo, StudentCoin, ClassNumberSubjects
 from classes.serializers import (ClassNumberSerializers,
                                  ClassCoinSerializers,
-                                 StudentCoinSerializers, CoinInfoSerializers)
+                                 StudentCoinSerializers, CoinInfoSerializers, ClassNumberSubjectsSerializers)
 from permissions.response import CustomResponseMixin
+
+
+class ClassNumberCreateView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+
+    queryset = ClassNumberSubjects.objects.all()
+    serializer_class = ClassNumberSubjectsSerializers
 
 
 class CoinInfoCreateView(generics.CreateAPIView):

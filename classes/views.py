@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from permissions.response import CustomResponseMixin
 from .models import ClassTypes, ClassColors, ClassNumber
 from .serializers import (ClassTypesSerializers, ClassColorsSerializers)
+from permissions.response import QueryParamFilterMixin
 
 
 class CreateClassColorsList(generics.ListCreateAPIView):
@@ -36,9 +37,6 @@ class ClassColorsRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIV
         class_colors = self.get_object()
         class_colors_data = self.get_serializer(class_colors).data
         return Response(class_colors_data)
-
-
-from permissions.response import QueryParamFilterMixin
 
 
 class CreateClassTypesList(QueryParamFilterMixin, generics.ListCreateAPIView):
