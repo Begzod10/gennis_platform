@@ -1,11 +1,12 @@
-from datetime import timedelta
 import os
+from datetime import timedelta
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-8!t!6$g#(34ro((m-7t$#(zek1=b=y2ltslop@w71$^6)wb_rc'
-classroom_server = ''
+classroom_server = 'https://classroom.gennis.uz'
+gennis_server = 'https://gennis.uz'
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
