@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from permissions.response import CustomResponseMixin
-from .models import ClassTypes, ClassColors, ClassNumber
+from .models import ClassTypes, ClassColors, ClassNumber, ClassNumberSubjects
 from .serializers import (ClassTypesSerializers, ClassColorsSerializers)
 from permissions.response import QueryParamFilterMixin
 

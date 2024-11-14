@@ -5,10 +5,11 @@ from .views import (CreateClassTypesList, CreateClassColorsList,
                     ClassTypesRetrieveUpdateDestroyAPIView, )
 from .api.get import ClassNumberRetrieveAPIView, ClassCoinRetrieveAPIView, CoinInfoRetrieveAPIView, \
     StudentCoinRetrieveAPIView, StudentCoinListView, ClassCoinListView, ClassNumberListView, CoinInfoListView, \
-    ClassColorsView, ClassSubjects, ClassColorsDeleteView
+    ClassColorsView, ClassSubjects, ClassColorsDeleteView, ClassNumberForSubjects
 from .api.createdeleteupdate import CoinInfoCreateView, CoinInfoDestroyView, CoinInfoUpdateView, StudentCoinDestroyView, \
     ClassCoinCreateView, ClassCoinDestroyView, ClassNumberDestroyView, ClassCoinUpdateView, StudentCoinCreateView, \
-    StudentCoinUpdateView, ClassNumberCreateView, ClassNumberUpdateView
+    StudentCoinUpdateView, ClassNumberCreateView, ClassNumberUpdateView, ClassNumberSubjectList, \
+    ClassNumberStatusView
 
 urlpatterns = [
     path('coin_info_create/', CoinInfoCreateView.as_view(), name='coin-info-create'),
@@ -28,9 +29,15 @@ urlpatterns = [
     path('student_coin_list/', StudentCoinListView.as_view(), name='student-coin-list'),
     path('class_number_create/', ClassNumberCreateView.as_view(), name='class-number-create'),
     path('class_number_update/<int:pk>/', ClassNumberUpdateView.as_view(), name='class-number-update'),
+
+    path('class_number_update_status/', ClassNumberStatusView.as_view(),
+         name='class_number_update_status'),
     path('class_number_delete/<int:pk>/', ClassNumberDestroyView.as_view(), name='class-number-delete'),
     path('class_number/<int:pk>/', ClassNumberRetrieveAPIView.as_view(), name='class-number'),
     path('class_number_list/', ClassNumberListView.as_view(), name='class-number-list'),
+    path('class_number_subject_list/', ClassNumberForSubjects.as_view(), name='class-number-subject-list'),
+    path('class_subjects/', ClassNumberSubjectList.as_view(), name='class_subjects'),
+
     path('class_colors/', CreateClassColorsList.as_view(), name='class-colors-list-create'),
     path('class_colors/<int:pk>/', ClassColorsRetrieveUpdateDestroyAPIView.as_view(), name='class-colors-detail'),
     path('class_types/', CreateClassTypesList.as_view(), name='class-types-list-create'),

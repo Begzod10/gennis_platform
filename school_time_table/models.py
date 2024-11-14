@@ -8,7 +8,6 @@ class Hours(models.Model):
     end_time = models.TimeField()
     name = models.CharField()
     order = models.IntegerField()
-    # types = models.ManyToManyField('HoursType', related_name='hours')
 
 
 class ClassTimeTable(models.Model):
