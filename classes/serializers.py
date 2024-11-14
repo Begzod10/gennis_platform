@@ -16,7 +16,16 @@ class ClassNumberSubjectsSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = ClassNumberSubjects
-        fields = ['id', 'class_number', 'subject']
+        fields = ['id', 'class_number', 'subject', 'hours']
+
+
+class ClassNumberSubjectsListSerializers(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    subject = SubjectSerializer(read_only=True)
+
+    class Meta:
+        model = ClassNumberSubjects
+        fields = ['id', 'class_number', 'subject', 'hours']
 
 
 class ClassTypesSerializers(serializers.ModelSerializer):
@@ -30,12 +39,21 @@ class ClassTypesSerializers(serializers.ModelSerializer):
 
 class ClassNumberListSerializers(serializers.ModelSerializer):
     class_types = ClassTypesSerializers()
+
     subjects = SubjectSerializer(required=False, many=True, read_only=True)
     number = serializers.CharField(required=False)
 
     class Meta:
         model = ClassNumber
         fields = '__all__'
+
+
+class ClassNumberForSubjectsSerializer(serializers.ModelSerializer):
+    subjects = ClassNumberSubjectsListSerializers(many=True)
+
+    class Meta:
+        model = ClassNumber
+        fields = ['id', 'number', 'price', 'subjects']
 
 
 class ClassNumberSerializers(serializers.ModelSerializer):

@@ -70,9 +70,12 @@ def teacher_salary_school(request=None, update=False, salary_id=None, worked_hou
         salary_month.save()
         return salary
     if deleted:
+        print(teacher_id)
         teacher = Teacher.objects.get(id=teacher_id)
         time_table_hours = ClassTimeTable.objects.filter(teacher=teacher,
                                                          date=month_date).order_by('-id').count()
+        print(teacher)
+        print(teacher.teacher_salary_type, 'qwdq')
 
         stavka = teacher.teacher_salary_type.salary
         default_hours = 80
