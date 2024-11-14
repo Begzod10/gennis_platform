@@ -6,7 +6,26 @@ from students.models import Student
 from students.serializers import StudentSerializer
 from subjects.models import Subject
 from subjects.serializers import SubjectSerializer
-from .models import ClassNumber, ClassTypes, ClassColors, ClassCoin, StudentCoin, CoinInfo
+from .models import ClassNumber, ClassTypes, ClassColors, ClassCoin, StudentCoin, CoinInfo, ClassNumberSubjects
+
+
+class ClassNumberSubjectsSerializers(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    class_number = serializers.PrimaryKeyRelatedField(queryset=ClassNumber.objects.all())
+    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())
+
+    class Meta:
+        model = ClassNumberSubjects
+        fields = ['id', 'class_number', 'subject', 'hours']
+
+
+class ClassNumberSubjectsListSerializers(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    subject = SubjectSerializer(read_only=True)
+
+    class Meta:
+        model = ClassNumberSubjects
+        fields = ['id', 'class_number', 'subject', 'hours']
 
 
 class ClassTypesSerializers(serializers.ModelSerializer):
@@ -20,12 +39,21 @@ class ClassTypesSerializers(serializers.ModelSerializer):
 
 class ClassNumberListSerializers(serializers.ModelSerializer):
     class_types = ClassTypesSerializers()
+
     subjects = SubjectSerializer(required=False, many=True, read_only=True)
     number = serializers.CharField(required=False)
 
     class Meta:
         model = ClassNumber
         fields = '__all__'
+
+
+class ClassNumberForSubjectsSerializer(serializers.ModelSerializer):
+    subjects = ClassNumberSubjectsListSerializers(many=True)
+
+    class Meta:
+        model = ClassNumber
+        fields = ['id', 'number', 'price', 'subjects']
 
 
 class ClassNumberSerializers(serializers.ModelSerializer):

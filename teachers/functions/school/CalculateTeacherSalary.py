@@ -65,7 +65,7 @@ def teacher_salary_school(request=None, update=False, salary_id=None, worked_hou
         month_date = datetime.strptime(request.data['date'][:-3], "%Y-%m")
         TeacherSalary.objects.get_or_create(teacher=teacher, month_date=month_date,
                                             percentage=teacher.salary_percentage)
-        salary_month = TeacherSalary.objects.get(teacher=teacher, month_date=request.data['date'])
+        salary_month = TeacherSalary.objects.get(teacher=teacher, month_date=month_date)
         salary_month.total_salary = salary
         salary_month.remaining_salary = salary - salary_month.taken_salary
         salary_month.worked_hours = time_table_hours
@@ -84,12 +84,15 @@ def teacher_salary_school(request=None, update=False, salary_id=None, worked_hou
         salary = (time_table_hours / default_hours) * stavka
         ustama = (salary / 100) * teacher.salary_percentage
         salary = salary + ustama
+        print(type(month_date))
+        month_date = datetime.strftime(month_date, "%Y-%m-%d")
+        month_date = datetime.strptime(month_date[:-3], "%Y-%m")
+
         salary_month = TeacherSalary.objects.get(teacher=teacher, month_date=month_date)
         salary_month.total_salary = salary
         salary_month.remaining_salary = salary - salary_month.taken_salary
         salary_month.worked_hours = time_table_hours
         salary_month.save()
-        print(time_table_hours)
         return salary
     elif not deleted and update:
 

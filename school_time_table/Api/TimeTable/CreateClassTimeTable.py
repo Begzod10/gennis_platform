@@ -2,6 +2,7 @@ import json
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from datetime import datetime, timedelta
 
 from group.models import Group
 from ...models import ClassTimeTable
@@ -10,12 +11,14 @@ from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTable
 from ...serializers_list import GroupClassSerializerList, FlowsSerializerList
 from teachers.functions.school.CalculateTeacherSalary import teacher_salary_school
 from group.serializers import GroupClassSerializer
+
 from time_table.functions.creatWeekDays import creat_week_days
 from time_table.models import WeekDays
 from flows.models import Flow
 from branch.models import Branch
 from flows.serializers import FlowsSerializer
 from teachers.models import Teacher, TeacherSalary
+from classes.models import ClassNumberSubjects
 
 
 class CreateClassTimeTable(generics.ListCreateAPIView):
@@ -29,7 +32,11 @@ class CreateClassTimeTable(generics.ListCreateAPIView):
 
         instance = ClassTimeTable.objects.get(pk=write_serializer.data['id'])
         read_serializer = ClassTimeTableReadSerializers(instance)
+
         # teacher_salary_school(request)
+
+        teacher_salary_school(request)
+
         return Response({'lesson': read_serializer.data, 'msg': 'Dars muvaffaqqiyatli kiritildi'})
 
 
@@ -110,6 +117,7 @@ class CheckClassTimeTable(APIView):
         hour = data.get('hour')
         date = data.get('date')
         checked_id = data.get('checked_id')
+        print(data)
         if type == 'group':
             room = data.get('room')
             group = Group.objects.get(pk=checked_id)
@@ -130,7 +138,19 @@ class CheckClassTimeTable(APIView):
             if lesson_room:
                 msg.append(f'Bu vaqtda {lesson_room.room.name} bosh emas')
                 status = False
-
+        elif type == "subject":
+            group_id = data.get('group_id')
+            group = Group.objects.get(pk=group_id)
+            today = datetime.today()
+            start_week = today - timedelta(days=today.weekday())
+            week_dates = [(start_week + timedelta(days=i)).date() for i in range(7)]
+            class_subject = ClassNumberSubjects.objects.get(subject_id=checked_id, class_number=group.class_number)
+            lessons = group.classtimetable_set.filter(date__in=week_dates, subject_id=checked_id).count()
+            if int(lessons) >= int(class_subject.hours):
+                print('true')
+                status = False
+                msg.append(
+                    f"{group.class_number.number}-{group.color.name} sinifining {class_subject.subject.name} fanining haftalik dars soati to'lgan")
         elif type == 'teacher':
             lesson = ClassTimeTable.objects.filter(date=date, teacher_id=checked_id, hours_id=hour).first()
             if lesson:
