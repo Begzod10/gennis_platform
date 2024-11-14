@@ -6,7 +6,17 @@ from students.models import Student
 from students.serializers import StudentSerializer
 from subjects.models import Subject
 from subjects.serializers import SubjectSerializer
-from .models import ClassNumber, ClassTypes, ClassColors, ClassCoin, StudentCoin, CoinInfo
+from .models import ClassNumber, ClassTypes, ClassColors, ClassCoin, StudentCoin, CoinInfo, ClassNumberSubjects
+
+
+class ClassNumberSubjectsSerializers(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    class_number = serializers.PrimaryKeyRelatedField(queryset=ClassNumber.objects.all())
+    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())
+
+    class Meta:
+        model = ClassNumberSubjects
+        fields = ['id', 'class_number', 'subject']
 
 
 class ClassTypesSerializers(serializers.ModelSerializer):
