@@ -10,9 +10,14 @@ from teachers.serializers import TeacherSerializer
 
 
 class AddClassesSerializers(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField(required=False)
+
     class Meta:
         model = Group
         fields = ['id', 'name', 'branch']
+
+    def get_name(self, obj):
+        return f"{obj.class_number.number}-{obj.color.name}"
 
 
 class TeacherCreateGroupSerializerRead(serializers.ModelSerializer):
