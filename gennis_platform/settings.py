@@ -6,7 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-8!t!6$g#(34ro((m-7t$#(zek1=b=y2ltslop@w71$^6)wb_rc'
 classroom_server = 'https://classroom.gennis.uz'
-gennis_server = ''
+gennis_server = 'https://gennis.uz'
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
@@ -91,6 +91,7 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME', 'gennis_platform'),
         'USER': os.getenv('DB_USER', 'postgres'),
         'PASSWORD': os.getenv('DB_PASSWORD', '123'),
+        # 'HOST': os.getenv('DB_HOST', '192.168.1.40'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': '5432',
     }
