@@ -12,7 +12,6 @@ class FlowListCreateView(QueryParamFilterMixin, generics.ListCreateAPIView):
     filter_mappings = {
         'teacher': 'teacher__id',
         'subject': 'subject__id',
-        'branch_id': 'branch__id'
 
     }
 
