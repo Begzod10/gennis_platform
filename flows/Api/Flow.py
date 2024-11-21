@@ -47,19 +47,19 @@ class FlowListView(QueryParamFilterMixin, generics.ListCreateAPIView):
     queryset = Flow.objects.all()
     serializer_class = FlowsSerializerTest
 
-    def get_queryset(self):
-        queryset = Flow.objects.all()
-        location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch_id', None)
-        if not branch_id:
-            branch_id = self.request.user.branch_id
-
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        if location_id is not None:
-            queryset = queryset.filter(location_id=location_id)
-
-        return queryset
+    # def get_queryset(self):
+    #     queryset = Flow.objects.all()
+    #     location_id = self.request.query_params.get('location_id', None)
+    #     branch_id = self.request.query_params.get('branch_id', None)
+    #     if not branch_id:
+    #         branch_id = self.request.user.branch_id
+    #
+    #     if branch_id is not None:
+    #         queryset = queryset.filter(branch_id=branch_id)
+    #     if location_id is not None:
+    #         queryset = queryset.filter(location_id=location_id)
+    #
+    #     return queryset
 
 
 class FlowProfile(generics.RetrieveUpdateAPIView):

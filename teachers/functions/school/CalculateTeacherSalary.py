@@ -2,6 +2,7 @@ from datetime import datetime
 from Calendar.models import Day
 from teachers.models import TeacherSalary, Teacher
 from school_time_table.models import ClassTimeTable
+from flows.models import Flow
 
 
 def calculate_teacher_salary(teacher):
@@ -52,7 +53,13 @@ def calculate_teacher_salary(teacher):
 def teacher_salary_school(request=None, update=False, salary_id=None, worked_hours=0, deleted=False, teacher_id=None,
                           month_date=None):
     if not update:
-        teacher = Teacher.objects.get(id=request.data['teacher'])
+        print(request.data)
+        if 'flow' in request.data:
+            flow = Flow.objects.get(id=request.data['flow'])
+            teacher = flow.teacher.id
+        else:
+            teacher = request.data['teacher']
+        teacher = Teacher.objects.get(id=teacher)
         time_table_hours = ClassTimeTable.objects.filter(teacher=teacher,
                                                          date=request.data['date']).order_by('-id').count()
         stavka = teacher.teacher_salary_type.salary
@@ -64,6 +71,7 @@ def teacher_salary_school(request=None, update=False, salary_id=None, worked_hou
         TeacherSalary.objects.get_or_create(teacher=teacher, month_date=month_date,
                                             percentage=teacher.salary_percentage)
         salary_month = TeacherSalary.objects.get(teacher=teacher, month_date=month_date)
+        print("salary", salary)
         salary_month.total_salary = salary
         salary_month.remaining_salary = salary - salary_month.taken_salary
         salary_month.worked_hours = time_table_hours
