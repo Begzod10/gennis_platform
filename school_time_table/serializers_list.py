@@ -57,7 +57,8 @@ class FlowsSerializerList(serializers.ModelSerializer):
         return {
             'name': obj.teacher.user.name if obj.teacher else None,
             'surname': obj.teacher.user.surname if obj.teacher else None,
-            'photo': obj.teacher.user.profile_img.url if obj.teacher else None
+            # 'photo': obj.teacher.user.profile_img.url if obj.teacher else None
+            'photo': ""
         }
 
     def get_subject_info(self, obj):
