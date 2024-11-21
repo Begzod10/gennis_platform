@@ -62,6 +62,6 @@ class FlowsSerializerList(serializers.ModelSerializer):
 
     def get_subject_info(self, obj):
         return {
-            'id': obj.subject.id,
-            'name': obj.subject.name
+            'id': obj.subject.id if obj.subject else None,
+            'name': obj.subject.name if obj.subject else None
         }
