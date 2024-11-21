@@ -8,6 +8,7 @@ from teachers.serializers import TeacherAttendanceListSerializers, TeacherSerial
     TeacherSalaryTypeSerializerRead
 from teachers.serializer.lists import ActiveListTeacherSerializerTime
 
+
 class TeacherAttendanceListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     queryset = TeacherAttendance.objects.all()
@@ -51,6 +52,7 @@ class TeachersForSubject(generics.ListAPIView):
 
         return Teacher.objects.filter(branches__in=[branch_id], subject__in=[subject_id])
 
+
 class TeachersForSubjectForTimeTable(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ActiveListTeacherSerializerTime
@@ -59,7 +61,8 @@ class TeachersForSubjectForTimeTable(generics.ListAPIView):
         branch_id = self.request.query_params.get('branch')
         subject_id = self.request.query_params.get('subject')
 
-        return Teacher.objects.filter(branches__in=[branch_id], subject__in=[subject_id])
+        return Teacher.objects.filter(branches__in=[branch_id], subject__in=[subject_id]).all()
+
 
 class SalaryType(QueryParamFilterMixin, generics.ListCreateAPIView):
     filter_mappings = {

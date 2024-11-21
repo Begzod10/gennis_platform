@@ -56,13 +56,13 @@ class FlowsSerializerList(serializers.ModelSerializer):
     def get_teacher_info(self, obj):
         return {
             'id': obj.teacher.id,
-            'name': obj.teacher.user.name,
-            'surname': obj.teacher.user.surname,
-            'photo': obj.teacher.user.profile_img.url if obj.teacher.user.profile_img else None
+            'photo': obj.teacher.user.profile_img.url if obj.teacher.user.profile_img else None,
+            'name': obj.teacher.user.name if obj.teacher else None,
+            'surname': obj.teacher.user.surname if obj.teacher else None,
         }
 
     def get_subject_info(self, obj):
         return {
-            'id': obj.subject.id,
-            'name': obj.subject.name
+            'id': obj.subject.id if obj.subject else None,
+            'name': obj.subject.name if obj.subject else None
         }

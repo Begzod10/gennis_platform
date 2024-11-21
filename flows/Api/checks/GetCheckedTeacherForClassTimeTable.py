@@ -14,7 +14,7 @@ class GetCheckedTeacherForClassTimeTable(APIView):
         branch_id = self.request.query_params.get('branch')
         data = json.loads(request.body)
         print()
-        ignore_teacher = data['ignore_teacher']
+        ignore_teacher = data['ignore_teacher'] if 'ignore_teacher' in data else None
         teachers = Teacher.objects.filter(user__branch_id=branch_id).exclude(pk=ignore_teacher)
 
         flow = Flow.objects.get(pk=flow_id)

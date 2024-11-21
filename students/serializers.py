@@ -90,6 +90,7 @@ class GroupSerializerStudents(serializers.ModelSerializer):
 
 
 def get_remaining_debt_for_student(student_id):
+    student = Student.objects.get(pk=student_id)
     attendances = AttendancePerMonth.objects.filter(student_id=student_id).all()
     current_date = date.today()
     for month in attendances:
@@ -113,9 +114,12 @@ def get_remaining_debt_for_student(student_id):
             student_id=student_id,
             month_date__gte=current_date
         ).aggregate(total_remaining_debt=Sum('payment'))
+        student.user.balance = remaining_debt_sum['total_remaining_debt']
 
         return remaining_debt_sum['total_remaining_debt'] or 0
     else:
+        student.user.balance = f"-{total_remaining_debt}"
+
         return f"-{total_remaining_debt}"
 
 
