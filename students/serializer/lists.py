@@ -8,11 +8,11 @@ from students.serializers import get_remaining_debt_for_student
 class UserSerializer(serializers.ModelSerializer):
     age = serializers.SerializerMethodField(required=False)
     language = serializers.SerializerMethodField(required=False)
-    student_id = serializers.SerializerMethodField(required=False)
+    id = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = CustomUser
-        fields = ('id', 'student_id', 'name', 'surname', 'phone', 'age', 'registered_date', 'language')
+        fields = ('id', 'name', 'surname', 'phone', 'age', 'registered_date', 'language')
 
     def get_age(self, obj):
         return obj.calculate_age()
@@ -20,7 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
     def get_language(self, obj):
         return obj.language.name
 
-    def get_student_id(self, obj):
+    def get_id(self, obj):
         # Access related Student objects
         students = obj.student_user.all()  # `student_user` is the related name in the `ForeignKey`
         print(students)

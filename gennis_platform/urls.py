@@ -8,6 +8,7 @@ from user.Api.read import GetUserAPIView, SetObserverView
 from user.Api.write import CustomTokenObtainPairView
 from user.views import CustomTokenRefreshView
 
+
 urlpatterns = [
     path('api/admin/', admin.site.urls),
     path('api/Users/', include('user.urls')),
