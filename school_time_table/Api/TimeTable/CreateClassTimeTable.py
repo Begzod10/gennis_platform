@@ -26,6 +26,7 @@ class CreateClassTimeTable(generics.ListCreateAPIView):
     serializer_class = ClassTimeTableCreateUpdateSerializers
 
     def create(self, request, *args, **kwargs):
+        print(request)
         write_serializer = self.get_serializer(data=request.data, partial=True)
         write_serializer.is_valid(raise_exception=True)
         self.perform_create(write_serializer)
