@@ -128,15 +128,21 @@ class ClassNumberUpdateView(generics.UpdateAPIView):
         class_number = ClassNumber.objects.get(pk=kwargs.get('pk'))
         class_number.price = data.get('price')
         class_number.save()
-        for subject in subjects:
-            subject_added = ClassNumberSubjects.objects.filter(subject_id=subject['value'],
-                                                               class_number_id=kwargs.get('pk')).first()
-            if subject_added:
-                subject_added.hours = subject['hours']
-                subject_added.save()
-            else:
-                ClassNumberSubjects.objects.create(subject_id=subject['value'], class_number_id=kwargs.get('pk'),
-                                                   hours=subject['hours'])
+        print(subjects)
+        if subjects:
+            for subject in subjects:
+                subject_added = ClassNumberSubjects.objects.filter(subject_id=subject['value'],
+                                                                   class_number_id=kwargs.get('pk')).first()
+                if subject_added:
+                    subject_added.hours = subject['hours']
+                    subject_added.save()
+                else:
+                    ClassNumberSubjects.objects.create(subject_id=subject['value'], class_number_id=kwargs.get('pk'),
+                                                       hours=subject['hours'])
+        else:
+            dt_subjects = ClassNumberSubjects.objects.filter(class_number_id=class_number.id).all()
+            for dt_subject in dt_subjects:
+                dt_subject.delete()
 
         subjects_query = ClassNumberSubjects.objects.filter(class_number_id=class_number.id).all()
         info = {
