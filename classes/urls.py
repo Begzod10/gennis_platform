@@ -29,7 +29,6 @@ urlpatterns = [
     path('student_coin_list/', StudentCoinListView.as_view(), name='student-coin-list'),
     path('class_number_create/', ClassNumberCreateView.as_view(), name='class-number-create'),
     path('class_number_update/<int:pk>/', ClassNumberUpdateView.as_view(), name='class-number-update'),
-
     path('class_number_update_status/', ClassNumberStatusView.as_view(),
          name='class_number_update_status'),
     path('class_number_delete/<int:pk>/', ClassNumberDestroyView.as_view(), name='class-number-delete'),
@@ -37,7 +36,6 @@ urlpatterns = [
     path('class_number_list/', ClassNumberListView.as_view(), name='class-number-list'),
     path('class_number_subject_list/', ClassNumberForSubjects.as_view(), name='class-number-subject-list'),
     path('class_subjects/', ClassNumberSubjectList.as_view(), name='class_subjects'),
-
     path('class_colors/', CreateClassColorsList.as_view(), name='class-colors-list-create'),
     path('class_colors/<int:pk>/', ClassColorsRetrieveUpdateDestroyAPIView.as_view(), name='class-colors-detail'),
     path('class_types/', CreateClassTypesList.as_view(), name='class-types-list-create'),

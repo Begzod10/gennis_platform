@@ -184,5 +184,6 @@ class ClassNumberStatusView(APIView):
             class_number.class_types_id = None
         class_number.save()
         return Response({
-            'id': class_number.id
+            'id': class_number.id,
+            'msg': "Muvaffaqqiyatli o'zgartirildi"
         })
