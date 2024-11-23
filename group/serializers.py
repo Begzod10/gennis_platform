@@ -298,6 +298,7 @@ class GroupSerializer(serializers.ModelSerializer):
 
     def get_students(self, obj):
         from students.serializers import StudentListSerializer
+        print("obj", obj)
         return StudentListSerializer(obj.students.all(), many=True).data
 
     def get_class_number(self, obj):
