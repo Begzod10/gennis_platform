@@ -12,21 +12,21 @@ class OverheadType(models.Model):
 
 @receiver(post_migrate)
 def create_default_overhead_types(sender, **kwargs):
-    default_values = [
-        ("Gaz", 1),
-        ("Svet", 2),
-        ("Suv", 3),
-        ("Arenda", 4),
-        ("Oshxona uchun", 5),
-        ("Reklama uchun", 6),
-        ("Boshqa", 7)
-    ]
-    for value, order in default_values:
-        exists = OverheadType.objects.filter(name=value).exists()
-        if not exists:
-            OverheadType.objects.create(name=value, order=order)
-        else:
-            OverheadType.objects.filter(name=value).update(order=order)
+    # default_values = [
+    #     ("Gaz", 1),
+    #     ("Svet", 2),
+    #     ("Suv", 3),
+    #     ("Arenda", 4),
+    #     ("Oshxona uchun", 5),
+    #     ("Reklama uchun", 6),
+    #     ("Boshqa", 7)
+    # ]
+    # for value, order in default_values:
+    #     exists = OverheadType.objects.filter(name=value).exists()
+    #     if not exists:
+    #         OverheadType.objects.create(name=value, order=order)
+    #     else:
+    #         OverheadType.objects.filter(name=value).update(order=order)
     # default_values = ["Gaz", "Svet", "Suv", "Arenda", "Oshxona uchun", "Reklama uchun", "Boshqa"]
     # for value in default_values:
     #     OverheadType.objects.get_or_create(name=value)
