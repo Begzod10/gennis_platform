@@ -27,6 +27,7 @@ class AttendancePerMonthSerializer(serializers.ModelSerializer):
                   'taken_salary', 'group']
 
 
+
 class AttendancePerDaySerializer(serializers.ModelSerializer):
     student = StudentSerializer()
     teacher = TeacherSerializer()

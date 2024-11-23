@@ -28,6 +28,7 @@ from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
                           DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
 from students.serializer.lists import ActiveListSerializer, ActiveListDeletedStudentSerializer
+from attendances.serializers import AttendancePerMonthSerializer
 
 
 class StudentListView(ListAPIView):
@@ -625,3 +626,5 @@ class StudentCharityModelView(APIView):
         payment.save()
 
         return Response({"msg": "Chegirma muvaffaqiyatli o'zgartirildi"})
+
+
