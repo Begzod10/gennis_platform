@@ -22,12 +22,13 @@ class GroupClassSerializerList(serializers.ModelSerializer):
     color = serializers.SerializerMethodField()
     name = serializers.SerializerMethodField()
     type = serializers.CharField(default='group', read_only=True)
+    class_name = serializers.CharField(source='name')
 
     class Meta:
         model = Group
         fields = [
             'id', 'name',
-            'class_number', 'color', 'type'
+            'class_number', 'color', 'type', 'class_name'
         ]
 
     def get_class_number(self, obj):
