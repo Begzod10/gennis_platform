@@ -109,6 +109,7 @@ def teacher_salary_school(request=None, update=False, salary_id=None, worked_hou
         #                                                  date=request.data['date']).order_by('-id').count()
         stavka = teacher.teacher_salary_type.salary
         print("stavka", stavka)
+        print("type salary", teacher.teacher_salary_type)
         default_hours = 20
         salary = (worked_hours / default_hours) * stavka
         # print("salary", salary)
