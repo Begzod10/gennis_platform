@@ -109,13 +109,13 @@ def teacher_salary_school(request=None, update=False, salary_id=None, worked_hou
         print("stavka", stavka)
         default_hours = 20
         salary = (worked_hours / default_hours) * stavka
-        print("salary", salary)
+        # print("salary", salary)
         ustama = (salary / 100) * teacher.salary_percentage
-        print("ustama", ustama)
+        # print("ustama", ustama)
         salary = salary + ustama
 
-        print("salary", salary)
-        print("month_id", salary_id)
+        # print("salary", salary)
+        # print("month_id", salary_id)
         salary_month = TeacherSalary.objects.get(id=salary_id)
         salary_month.total_salary = salary
         salary_month.remaining_salary = salary - salary_month.taken_salary
