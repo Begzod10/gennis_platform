@@ -1,7 +1,5 @@
-<<<<<<< HEAD
+
 from datetime import datetime
-=======
->>>>>>> 247027c9bd2a5034111cde2f388a7cd7f614ad92
 from Calendar.models import Day
 from teachers.models import TeacherSalary, Teacher
 from school_time_table.models import ClassTimeTable
