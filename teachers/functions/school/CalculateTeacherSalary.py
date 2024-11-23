@@ -108,6 +108,7 @@ def teacher_salary_school(request=None, update=False, salary_id=None, worked_hou
         # time_table_hours = ClassTimeTable.objects.filter(teacher=teacher,
         #                                                  date=request.data['date']).order_by('-id').count()
         stavka = teacher.teacher_salary_type.salary
+        print("stavka", stavka)
         default_hours = 20
         salary = (worked_hours / default_hours) * stavka
         print("salary", salary)
