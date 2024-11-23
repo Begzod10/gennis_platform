@@ -14,20 +14,21 @@ def calculate_teacher_salary(teacher):
                                       type_id__color='green').count()
 
     month_date = datetime(today.year, today.month, 1)
-
-    if teacher.teacher_salary_type is not None:
-        salary, _ = TeacherSalary.objects.get_or_create(
-            teacher=teacher,
-            month_date=month_date,
-            defaults={
-                'total_salary': teacher.teacher_salary_type.salary,
-                'remaining_salary': teacher.teacher_salary_type.salary,
-                'taken_salary': 0,
-                'total_black_salary': 0,
-                'percentage': 50,
-            }
-        )
-        # if salary.total_salary != salary.teacher.teacher_salary_type.salary:
+    exist_salary = TeacherSalary.objects.filter(teacher=teacher, month_date=month_date).exists()
+    if not exist_salary:
+        if teacher.teacher_salary_type is not None:
+            salary, _ = TeacherSalary.objects.get_or_create(
+                teacher=teacher,
+                month_date=month_date,
+                defaults={
+                    'total_salary': teacher.teacher_salary_type.salary,
+                    'remaining_salary': teacher.teacher_salary_type.salary,
+                    'taken_salary': 0,
+                    'total_black_salary': 0,
+                    'percentage': 50,
+                }
+            )
+            # if salary.total_salary != salary.teacher.teacher_salary_type.salary:
         #     salary.total_salary = salary.teacher.teacher_salary_type.salary
         #     salary.remaining_salary = salary.teacher.teacher_salary_type.salary - salary.taken_salary
         #     salary.save()
