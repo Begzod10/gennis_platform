@@ -91,7 +91,13 @@ class GroupSerializerStudents(serializers.ModelSerializer):
 
 def get_remaining_debt_for_student(student_id):
     student = Student.objects.get(pk=student_id)
-    attendances = AttendancePerMonth.objects.filter(student_id=student_id).all()
+    branch_name = student.user.branch.name
+    if branch_name == "Sergeli":
+        attendances = AttendancePerMonth.objects.filter(
+            student_id=student_id
+        ).exclude(month__in=["September", "October"])
+    else:
+        attendances = AttendancePerMonth.objects.filter(student_id=student_id).all()
     current_date = date.today()
     for month in attendances:
         if month.payment == 0 and month.remaining_debt == 0:
