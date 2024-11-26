@@ -103,6 +103,7 @@ class ClassNumberUpdateStatusView(CustomResponseMixin, generics.UpdateAPIView):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         class_types_data = validated_data.get('class_types', None)
+        print(class_types_data)
         # subjects_data = validated_data.get('subjects', None)
         instance = serializer.update(instance, validated_data)
 
@@ -127,6 +128,7 @@ class ClassNumberUpdateView(generics.UpdateAPIView):
         class_number = ClassNumber.objects.get(pk=kwargs.get('pk'))
         class_number.price = data.get('price')
         class_number.save()
+        print(subjects)
         if subjects:
             for subject in subjects:
                 subject_added = ClassNumberSubjects.objects.filter(subject_id=subject['value'],

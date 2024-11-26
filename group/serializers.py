@@ -265,7 +265,6 @@ class GroupSerializer(serializers.ModelSerializer):
 
         # 'fields' from context (passed from the view)
         fields = self.context.get('fields', None)
-        print(fields)
         # Filter fields based on 'fields' from context
         if fields:
             filtered_representation = {}
@@ -298,7 +297,6 @@ class GroupSerializer(serializers.ModelSerializer):
 
     def get_students(self, obj):
         from students.serializers import StudentListSerializer
-        print("obj", obj)
         return StudentListSerializer(obj.students.all(), many=True).data
 
     def get_class_number(self, obj):
