@@ -201,7 +201,6 @@ class ClassColorsDeleteView(generics.RetrieveDestroyAPIView):
 
 class ClassSubjects(APIView):
     def get(self, request):
-        print(request.query_params.get('group'))
         group = Group.objects.filter(pk=request.query_params.get('group')).first()
         today = datetime.today()
         start_week = today - timedelta(days=today.weekday())

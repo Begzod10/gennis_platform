@@ -449,6 +449,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 'remaining_debt': attendance.remaining_debt,
                 'payment': attendance.payment,
                 "discount": attendance.discount,
+                "old_money": attendance.old_money,
                 "discount_sum": student_payemnt.payment_sum if student_payemnt else 0,
                 "discount_reason": student_payemnt.reason if student_payemnt else 0,
                 "discount_id": student_payemnt.id if student_payemnt else 0,

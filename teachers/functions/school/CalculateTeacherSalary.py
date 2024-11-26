@@ -71,7 +71,6 @@ def teacher_salary_school(request=None, update=False, salary_id=None, worked_hou
                                                         date__month=request.data['date'][5:7],
                                                         date__year=request.data['date'][:4]).distinct('date').count()
 
-        print("days", time_table_days)
         stavka = teacher.teacher_salary_type.salary
         default_hours = 20
         salary = (time_table_days / default_hours) * stavka
@@ -81,26 +80,21 @@ def teacher_salary_school(request=None, update=False, salary_id=None, worked_hou
         TeacherSalary.objects.get_or_create(teacher=teacher, month_date=month_date,
                                             percentage=teacher.salary_percentage)
         salary_month = TeacherSalary.objects.get(teacher=teacher, month_date=month_date)
-        print("salary", salary)
         salary_month.total_salary = salary
         salary_month.remaining_salary = salary - salary_month.taken_salary
         salary_month.worked_hours = time_table_days
         salary_month.save()
         return salary
     if deleted:
-        print(teacher_id)
         teacher = Teacher.objects.get(id=teacher_id)
         time_table_days = ClassTimeTable.objects.filter(teacher=teacher,
                                                         date=month_date).order_by('-id').count()
-        print(teacher)
-        print(teacher.teacher_salary_type, 'qwdq')
 
         stavka = teacher.teacher_salary_type.salary
         default_hours = 20
         salary = (time_table_days / default_hours) * stavka
         ustama = (salary / 100) * teacher.salary_percentage
         salary = salary + ustama
-        print(type(month_date))
         month_date = datetime.strftime(month_date, "%Y-%m-%d")
         month_date = datetime.strptime(month_date[:-3], "%Y-%m")
 
@@ -115,17 +109,11 @@ def teacher_salary_school(request=None, update=False, salary_id=None, worked_hou
         # time_table_hours = ClassTimeTable.objects.filter(teacher=teacher,
         #                                                  date=request.data['date']).order_by('-id').count()
         stavka = teacher.teacher_salary_type.salary
-        print("stavka", stavka)
-        print("type salary", teacher.teacher_salary_type)
         default_hours = 20
         salary = (worked_hours / default_hours) * stavka
-        # print("salary", salary)
         ustama = (salary / 100) * teacher.salary_percentage
-        # print("ustama", ustama)
         salary = salary + ustama
 
-        # print("salary", salary)
-        # print("month_id", salary_id)
         salary_month = TeacherSalary.objects.get(id=salary_id)
         salary_month.total_salary = salary
         salary_month.remaining_salary = salary - salary_month.taken_salary

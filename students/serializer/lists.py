@@ -23,13 +23,11 @@ class UserSerializer(serializers.ModelSerializer):
     def get_id(self, obj):
         # Access related Student objects
         students = obj.student_user.all()  # `student_user` is the related name in the `ForeignKey`
-        print(students)
         if not students.exists():
             return "No student ID"
 
         # If there are multiple students, return their IDs as a list
         student_id = [student.id for student in students if student.id is not None]
-        print(student_id[0])
         return [student.id for student in students if student.id is not None][0]
 
 
