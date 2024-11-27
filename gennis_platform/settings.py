@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'encashment.apps.EncashmentConfig',
     "mobile.apps.MobileConfig",
     'django_filters',
+    'ui',
 ]
 
 MIDDLEWARE = [
