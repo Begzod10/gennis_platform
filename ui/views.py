@@ -9,11 +9,14 @@ from .serializers import FrontedPageTypeSerializer, FrontedPageSerializer, Front
 class FrontedPageTypeViewSet(viewsets.ModelViewSet):
     queryset = FrontedPageType.objects.all()
     serializer_class = FrontedPageTypeSerializer
+    # permission_classes = (IsSmm,)
 
 
 class FrontedPageViewSet(viewsets.ModelViewSet):
     queryset = FrontedPage.objects.all()
     serializer_class = FrontedPageSerializer
+
+    # permission_classes = (IsSmm,)
 
     def retrieve(self, request, *args, **kwargs):
         if kwargs['pk'] != "undefined":
@@ -31,3 +34,4 @@ class FrontedPageViewSet(viewsets.ModelViewSet):
 class FrontedPageImageViewSet(viewsets.ModelViewSet):
     queryset = FrontedPageImage.objects.all()
     serializer_class = FrontedPageImageSerializer
+    # permission_classes = (IsSmm,)

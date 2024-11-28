@@ -24,7 +24,7 @@ class FrontedPage(models.Model):
     name = models.CharField(max_length=100,null=True)
     type = models.ForeignKey(FrontedPageType, on_delete=models.SET_NULL, null=True)
     description = models.TextField(null=True)
-    date = models.DateField(null=True, default=timezone.now)
+    date = models.DateField(null=True)
 
     def __str__(self):
         return self.name
