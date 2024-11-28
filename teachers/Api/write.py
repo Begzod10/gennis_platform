@@ -44,12 +44,16 @@ class TeacherDestroyView(generics.DestroyAPIView):
     serializer_class = TeacherSerializer
 
     def delete(self, request, *args, **kwargs):
+
         from datetime import date
         instance = self.get_object()
-        instance.deleted = True
-        instance.deleted_date = date.today()
-        instance.save()
-        return Response({"msg": "Teacher deleted successfully"}, status=status.HTTP_200_OK)
+        if instance.group_set.exists():
+            return Response({"msg": "Bu o'qituvchining sinfi bor!!!", 'status': False}, status=status.HTTP_200_OK)
+        else:
+            instance.deleted = True
+            instance.deleted_date = date.today()
+            instance.save()
+            return Response({"msg": "Teacher deleted successfully", 'status': True}, status=status.HTTP_200_OK)
 
 
 class TeacherSalaryCreateAPIView(generics.CreateAPIView):
