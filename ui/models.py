@@ -14,7 +14,7 @@ class FrontedPageType(models.Model):
 def create_fronted_types(sender, **kwargs):
     default_values = [{"name": "gallery"}, {"name": "programs"}, {"name": "student_profile"}, {"name": "news"},
                       {"name": "vission_missoin"}, {"name": "extra_curricular"}, {"name": "curricular"},
-                      {"name": "intro"}, {"name": "certificates"}, {'name': 'intro_2'}]
+                      {"name": "intro"}, {"name": "certificates"}, {'name': 'intro_2'},{'name':'contact'}]
     for value in default_values:
         FrontedPageType.objects.get_or_create(**value)
 
