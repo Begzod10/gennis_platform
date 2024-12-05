@@ -206,14 +206,20 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'role': 'student',
                 'birth_date': user.birth_date.isoformat() if user.birth_date else None,
                 'phone_number': user.phone,
-                'groups': [{
-                    'name': group.name,
-                    'id': group.id,
-                    'subject': group.subject,
-                    'teacher_salary': group.teacher_salary,
-                    'price': group.price
-                } for group in student.groups_student.all()]
+                'groups': [
+                    {
+                        'name': group.name,
+                        'id': group.id,
+                        'subject': [
+                            {'id': subject.id, 'name': subject.name} for subject in group.class_number.subject.all()
+                        ],
+                        'teacher_salary': group.teacher_salary,
+                        'price': group.price
+                    }
+                    for group in student.groups_student.all()
+                ]
             }
+
             res = self.send_data(object, f'{classroom_server}/api/turon_user')
             self.usern = res['data']['username']
 
