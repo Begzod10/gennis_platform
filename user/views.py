@@ -43,7 +43,6 @@ class CustomTokenRefreshView(TokenRefreshView):
         if auth_error:
             return Response(auth_error, status=status.HTTP_401_UNAUTHORIZED)
 
-        permissions = check_user_permissions(user, ['teacherattendance', 'teacher', 'system'])
         serializer = self.get_serializer(data=request.data)
 
         try:
@@ -54,11 +53,8 @@ class CustomTokenRefreshView(TokenRefreshView):
         user_serializer = CustomUserSerializer(user)
         response_data = user_serializer.data
         response_data.update({
-            # "access_token": str(serializer.validated_data.get('access')),
             "access": str(serializer.validated_data.get('access')),
             "refresh_token": str(RefreshToken.for_user(user)),
-            # 'permissions': permissions
         })
-        # time.sleep(3)
         return Response(response_data, status=status.HTTP_200_OK)
 
