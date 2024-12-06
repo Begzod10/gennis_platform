@@ -96,7 +96,11 @@ def get_remaining_debt_for_student(student_id):
     if branch_name == "Sergeli":
         attendances = AttendancePerMonth.objects.filter(
             student_id=student_id
-        ).exclude(Q(month_date__month=9) | Q(month_date__month=10))
+        ).exclude(
+            month_date__month=9, month_date__year=2024
+        ).exclude(
+            month_date__month=10, month_date__year=2024
+        )
         print('sergeli')
     else:
         attendances = AttendancePerMonth.objects.filter(student_id=student_id).all()
