@@ -190,6 +190,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def user_send(self, user, password):
         user = CustomUser.objects.get(id=user)
         from students.models import Student, Teacher
+        from classes.models import ClassNumberSubjects
         student = Student.objects.filter(user=user).first()
         teacher = Teacher.objects.filter(user=user).first()
 
@@ -206,14 +207,33 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'role': 'student',
                 'birth_date': user.birth_date.isoformat() if user.birth_date else None,
                 'phone_number': user.phone,
-                'groups': [{
-                    'name': group.name,
-                    'id': group.id,
-                    'subject': group.subject,
-                    'teacher_salary': group.teacher_salary,
-                    'price': group.price
-                } for group in student.groups_student.all()]
+
+                'groups': [
+                    {
+                        'name': group.name if group.name else f'{group.class_number.number}-{group.color.name}',
+                        'id': group.id,
+                        'subject': [
+                            {'id': subject.subject.id, 'name': subject.subject.name} for subject in
+                            ClassNumberSubjects.objects.filter(class_number_id=group.class_number.id).all()
+                        ],
+                        'teacher_salary': group.teacher_salary,
+                        'price': group.price,
+                        'teacher': [{
+                            'id': teacher.id,
+                            'name': teacher.user.name,
+                            'surname': teacher.user.surname,
+                            'username': teacher.user.username,
+                            'birth_date': teacher.user.birth_date.isoformat() if teacher.user.birth_date else None,
+                            'phone_number': teacher.user.phone
+                        } for teacher in group.teacher.all()
+                        ],
+
+                    }
+                    for group in student.groups_student.all()
+
+                ]
             }
+
             res = self.send_data(object, f'{classroom_server}/api/turon_user')
             self.usern = res['data']['username']
 
@@ -232,8 +252,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'role': 'teacher',
                 'birth_date': user.birth_date.isoformat() if user.birth_date else None,
                 'phone_number': user.phone,
+
                 'groups': [{
-                    'name': group.name,
+                    'name': group.name if group.name else f'{group.class_number.number}-{group.color.name}',
                     'id': group.id,
                     'subject': group.subject,
                     'teacher_salary': group.teacher_salary,

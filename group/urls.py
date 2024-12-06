@@ -12,7 +12,7 @@ from .school.ClassesList import ClassesView, AddClassesList, CreateGroupTeacherL
 from .gennis.GetChekedStudentsTeachers import GetCheckedStudentsTeachers
 from .gennis.GetGroupsForTeacher import GetGroupsForTeacher
 from .gennis.GetCheckedStudentsForClassTimeTable import GetCheckedStudentsForClassTimeTable, CheckedStudentsMoveToGroup
-
+from .views import GroupStudentsClassRoom
 urlpatterns = [
     path('groups/create/', CreatGroups.as_view(), name='create'),
     path('groups/profile/<int:pk>/', GroupProfile.as_view(), name='profile'),
@@ -36,4 +36,5 @@ urlpatterns = [
          name='filtered_students_move_to_class'),
     path('add/class/filtered/', AddClassesList.as_view(), name='add_class_filtered'),
     path('create/class/teachers/', CreateGroupTeacherListView.as_view(), name='create_class_teachers'),
+    path('group-students/<int:pk>/', GroupStudentsClassRoom.as_view(), name='group-students'),
 ]
