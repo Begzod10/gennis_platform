@@ -109,6 +109,7 @@ def get_remaining_debt_for_student(student_id):
                 print(month.month_date)
         print('sergeli')
     else:
+        print('chichvar')
         attendances = AttendancePerMonth.objects.filter(student_id=student_id).all()
     current_date = date.today()
     for month in attendances:
