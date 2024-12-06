@@ -97,6 +97,7 @@ def get_remaining_debt_for_student(student_id):
         attendances = AttendancePerMonth.objects.filter(
             student_id=student_id
         ).exclude(Q(month_date__month=9) | Q(month_date__month=10))
+        print('sergeli')
     else:
         attendances = AttendancePerMonth.objects.filter(student_id=student_id).all()
     current_date = date.today()
