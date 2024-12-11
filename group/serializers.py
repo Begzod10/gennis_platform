@@ -1,6 +1,6 @@
 import pprint
 from datetime import datetime
-
+from django.db.models import Q
 from rest_framework import serializers
 
 from branch.models import Branch
@@ -70,8 +70,13 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         today = datetime.now()
 
         if create_type == 'school':
+            active_groups = Group.objects.filter(Q(deleted=False),
+                                                 system_id=validated_data.get('branch').location.system_id)
             group = Group.objects.create(**validated_data, system_id=validated_data.get('branch').location.system_id)
-            group.students.set(students_data)
+
+            for student in students_data:
+                if not active_groups.filter(students__id=student.id).exists():
+                    group.students.set(students_data)
             group.teacher.set(teacher_data)
             for student in students_data:
                 StudentHistoryGroups.objects.create(group=group, student=student, teacher=teacher_data[0],

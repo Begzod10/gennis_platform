@@ -28,9 +28,10 @@ class FrontedPageSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         image_data = validated_data.pop('image', None)
         fronted_page = FrontedPage.objects.create(**validated_data)
-
+        print(image_data)
         if image_data:
             FrontedPageImage.objects.create(page=fronted_page, image=image_data)
+            print(True)
 
         return fronted_page
 

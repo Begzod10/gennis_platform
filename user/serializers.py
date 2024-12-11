@@ -194,6 +194,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         student = Student.objects.filter(user=user).first()
         teacher = Teacher.objects.filter(user=user).first()
 
+
         if student:
             self.class_room = True
             object = {
