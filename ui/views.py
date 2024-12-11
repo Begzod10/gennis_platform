@@ -13,7 +13,7 @@ class FrontedPageTypeViewSet(viewsets.ModelViewSet):
 
 
 class FrontedPageViewSet(viewsets.ModelViewSet):
-    queryset = FrontedPage.objects.all()
+    queryset = FrontedPage.objects.all().order_by('id')
     serializer_class = FrontedPageSerializer
 
     # permission_classes = (IsSmm,)

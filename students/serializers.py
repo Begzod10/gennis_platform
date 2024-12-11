@@ -2,7 +2,6 @@ from datetime import date
 
 from django.db.models import Sum
 from rest_framework import serializers
-from django.db.models import Q
 
 from attendances.models import AttendancePerMonth
 from branch.models import Branch
@@ -96,7 +95,11 @@ def get_remaining_debt_for_student(student_id):
     if branch_name == "Sergeli":
         attendances = AttendancePerMonth.objects.filter(
             student_id=student_id
-        ).exclude(Q(month_date__month=9) | Q(month_date__month=10))
+        ).exclude(
+            month_date__month=9, month_date__year=2024
+        ).exclude(
+            month_date__month=10, month_date__year=2024
+        )
     else:
         attendances = AttendancePerMonth.objects.filter(student_id=student_id).all()
     current_date = date.today()
@@ -109,11 +112,20 @@ def get_remaining_debt_for_student(student_id):
             month.save()
         month.remaining_debt = month.total_debt - (month.payment + month.discount)
         month.save()
-
-    remaining_debt_sum = AttendancePerMonth.objects.filter(
-        student_id=student_id,
-        month_date__lte=current_date
-    ).aggregate(total_remaining_debt=Sum('remaining_debt'))
+    if branch_name == "Sergeli":
+        remaining_debt_sum = AttendancePerMonth.objects.filter(
+            student_id=student_id,
+            month_date__lte=current_date
+        ).exclude(
+            month_date__month=9, month_date__year=2024
+        ).exclude(
+            month_date__month=10, month_date__year=2024
+        ).aggregate(total_remaining_debt=Sum('remaining_debt'))
+    else:
+        remaining_debt_sum = AttendancePerMonth.objects.filter(
+            student_id=student_id,
+            month_date__lte=current_date
+        ).aggregate(total_remaining_debt=Sum('remaining_debt'))
     total_remaining_debt = remaining_debt_sum['total_remaining_debt'] or 0
 
     if total_remaining_debt == 0:
