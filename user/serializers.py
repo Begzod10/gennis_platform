@@ -208,6 +208,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'role': 'student',
                 'birth_date': user.birth_date.isoformat() if user.birth_date else None,
                 'phone_number': user.phone,
+                'parent_number':student.parents_number,
 
                 'groups': [
                     {
@@ -253,6 +254,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'role': 'teacher',
                 'birth_date': user.birth_date.isoformat() if user.birth_date else None,
                 'phone_number': user.phone,
+                'subject':[ {
+                    'id': subject.id,
+                    'name': subject.name
+                } for subject in teacher.subject.all()],
 
                 'groups': [{
                     'name': group.name if group.name else f'{group.class_number.number}-{group.color.name}',
