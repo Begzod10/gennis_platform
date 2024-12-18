@@ -56,11 +56,14 @@ class MonthDaysView(APIView):
         try:
             today = timezone.localtime().date()
 
+            # Hozirgi oyni hisoblash
             current_month_name = today.strftime('%b')
             current_month_value = today.strftime('%m')
             start_of_current_month = today.replace(day=1)
             days_in_current_month = [start_of_current_month + timedelta(days=i) for i in
                                      range((today - start_of_current_month).days + 1)]
+
+            # Oldingi oyni hisoblash
             first_of_this_month = today.replace(day=1)
             last_day_of_last_month = first_of_this_month - timedelta(days=1)
             last_month_name = last_day_of_last_month.strftime('%b')
@@ -69,6 +72,15 @@ class MonthDaysView(APIView):
             days_in_last_month = [start_of_last_month + timedelta(days=i) for i in
                                   range((last_day_of_last_month - start_of_last_month).days + 1)]
 
+            # Undan oldingi oyni hisoblash
+            last_day_of_previous_month = start_of_last_month - timedelta(days=1)
+            previous_month_name = last_day_of_previous_month.strftime('%b')
+            previous_month_value = last_day_of_previous_month.strftime('%m')
+            start_of_previous_month = last_day_of_previous_month.replace(day=1)
+            days_in_previous_month = [start_of_previous_month + timedelta(days=i) for i in
+                                       range((last_day_of_previous_month - start_of_previous_month).days + 1)]
+
+            # Ma'lumotni yig'ish
             response_data = [
                 {
                     "days": [day.day for day in days_in_current_month],
@@ -79,10 +91,17 @@ class MonthDaysView(APIView):
                     "days": [day.day for day in days_in_last_month],
                     "name": last_month_name,
                     "value": last_month_value
+                },
+                {
+                    "days": [day.day for day in days_in_previous_month],
+                    "name": previous_month_name,
+                    "value": previous_month_value
                 }
             ]
 
+            # Serializatsiya qilish va qaytarish
             serializer = MonthDaysSerializer(response_data, many=True)
             return Response(serializer.data)
         except Exception as e:
             return Response({"error": str(e)}, status=400)
+
