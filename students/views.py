@@ -501,7 +501,7 @@ class MissingAttendanceView(APIView):
         month = data['month']
         year = datetime.now().year
         month_date = datetime.strptime(f"01 {month} {year}", "%d %B %Y")
-        attendance = AttendancePerMonth.objects.get_or_create(
+        attendance = AttendancePerMonth.objects.create(
             student_id=student_id,
             month_date=month_date,
             group_id=group.id,
