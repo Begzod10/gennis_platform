@@ -422,8 +422,11 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')
+        student = Student.objects.get(pk=student_id).first()
+        group = student.groups_student.first()
         return AttendancePerMonth.objects.filter(
             student_id=student_id,
+            group_id=group.id,
             month_date__month__in=[9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
         ).annotate(month_number=ExtractMonth('month_date'))
 
