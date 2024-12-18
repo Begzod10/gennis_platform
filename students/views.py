@@ -314,7 +314,10 @@ class PaymentDatas(APIView):
 class GetMonth(APIView):
 
     def get(self, request, student_id, attendance_id):
-        month = AttendancePerMonth.objects.filter(student_id=student_id, status=False).all().order_by(
+        student = Student.objects.get(pk=student_id)
+        group = student.groups_student.first()
+        month = AttendancePerMonth.objects.filter(student_id=student_id, status=False,
+                                                  group_id=group.id).all().order_by(
             'month_date__year', 'month_date__month')
         data = []
         for mont in month:
@@ -627,5 +630,3 @@ class StudentCharityModelView(APIView):
         payment.save()
 
         return Response({"msg": "Chegirma muvaffaqiyatli o'zgartirildi"})
-
-
