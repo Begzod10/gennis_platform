@@ -422,7 +422,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')
-        student = Student.objects.get(pk=student_id).first()
+        student = Student.objects.get(pk=student_id)
         group = student.groups_student.first()
         return AttendancePerMonth.objects.filter(
             student_id=student_id,
