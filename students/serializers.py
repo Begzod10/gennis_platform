@@ -73,12 +73,18 @@ class GroupSerializerStudents(serializers.ModelSerializer):
     teacher = TeacherSerializerRead(many=True)
     system = SystemSerializers()
     course_types = CourseTypesSerializers()
+    name = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
                   'branch', 'language', 'level', 'subject', 'teacher', 'system', 'class_number', 'color',
                   'course_types']
+    def get_name(self, obj):
+        if obj.name:
+            return obj.name
+        else:
+            return f"{obj.class_number.number}-{obj.color.name}"
 
     def get_class_number(self, obj):
         from classes.serializers import ClassNumberSerializers
