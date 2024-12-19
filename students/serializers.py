@@ -92,58 +92,59 @@ class GroupSerializerStudents(serializers.ModelSerializer):
 def get_remaining_debt_for_student(student_id):
     student = Student.objects.get(pk=student_id)
     group = student.groups_student.first()
-    branch_name = student.user.branch.name
-    if branch_name == "Sergeli":
-        attendances = AttendancePerMonth.objects.filter(
-            student_id=student_id
-        ).exclude(
-            month_date__month=9, month_date__year=2024
-        ).exclude(
-            month_date__month=10, month_date__year=2024
-        )
-    else:
-        attendances = AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id).all()
-    current_date = date.today()
-    for month in attendances:
-        if month.payment == 0 and month.remaining_debt == 0:
-            month.remaining_debt = month.total_debt
+    if group:
+        branch_name = student.user.branch.name
+        if branch_name == "Sergeli":
+            attendances = AttendancePerMonth.objects.filter(
+                student_id=student_id
+            ).exclude(
+                month_date__month=9, month_date__year=2024
+            ).exclude(
+                month_date__month=10, month_date__year=2024
+            )
+        else:
+            attendances = AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id).all()
+        current_date = date.today()
+        for month in attendances:
+            if month.payment == 0 and month.remaining_debt == 0:
+                month.remaining_debt = month.total_debt
+                month.save()
+            if month.payment < 0:
+                month.payment = 0
+                month.save()
+            month.remaining_debt = month.total_debt - (month.payment + month.discount)
             month.save()
-        if month.payment < 0:
-            month.payment = 0
-            month.save()
-        month.remaining_debt = month.total_debt - (month.payment + month.discount)
-        month.save()
-    if branch_name == "Sergeli":
-        remaining_debt_sum = AttendancePerMonth.objects.filter(
-            student_id=student_id,
-            group_id=group.id,
-            month_date__lte=current_date
-        ).exclude(
-            month_date__month=9, month_date__year=2024
-        ).exclude(
-            month_date__month=10, month_date__year=2024
-        ).aggregate(total_remaining_debt=Sum('remaining_debt'))
-    else:
-        remaining_debt_sum = AttendancePerMonth.objects.filter(
-            student_id=student_id,
-            group_id=group.id,
-            month_date__lte=current_date
-        ).aggregate(total_remaining_debt=Sum('remaining_debt'))
-    total_remaining_debt = remaining_debt_sum['total_remaining_debt'] or 0
+        if branch_name == "Sergeli":
+            remaining_debt_sum = AttendancePerMonth.objects.filter(
+                student_id=student_id,
+                group_id=group.id,
+                month_date__lte=current_date
+            ).exclude(
+                month_date__month=9, month_date__year=2024
+            ).exclude(
+                month_date__month=10, month_date__year=2024
+            ).aggregate(total_remaining_debt=Sum('remaining_debt'))
+        else:
+            remaining_debt_sum = AttendancePerMonth.objects.filter(
+                student_id=student_id,
+                group_id=group.id,
+                month_date__lte=current_date
+            ).aggregate(total_remaining_debt=Sum('remaining_debt'))
+        total_remaining_debt = remaining_debt_sum['total_remaining_debt'] or 0
 
-    if total_remaining_debt == 0:
-        remaining_debt_sum = AttendancePerMonth.objects.filter(
-            student_id=student_id,
-            group_id=group.id,
-            month_date__gte=current_date
-        ).aggregate(total_remaining_debt=Sum('payment'))
-        student.user.balance = remaining_debt_sum['total_remaining_debt']
+        if total_remaining_debt == 0:
+            remaining_debt_sum = AttendancePerMonth.objects.filter(
+                student_id=student_id,
+                group_id=group.id,
+                month_date__gte=current_date
+            ).aggregate(total_remaining_debt=Sum('payment'))
+            student.user.balance = remaining_debt_sum['total_remaining_debt']
 
-        return remaining_debt_sum['total_remaining_debt'] or 0
-    else:
-        student.user.balance = f"-{total_remaining_debt}"
+            return remaining_debt_sum['total_remaining_debt'] or 0
+        else:
+            student.user.balance = f"-{total_remaining_debt}"
 
-        return f"-{total_remaining_debt}"
+            return f"-{total_remaining_debt}"
 
 
 class StudentListSerializer(serializers.ModelSerializer):
