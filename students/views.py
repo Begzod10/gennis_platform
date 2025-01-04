@@ -590,7 +590,8 @@ class StudentCharityModelView(APIView):
         student = get_object_or_404(Student, id=student_id)
         group = student.groups_student.first()
         print(student_id)
-        print(group)
+        print(group.id)
+        print(group.class_number.price)
         attendance_per_month = AttendancePerMonth.objects.get(student_id=student.id,
                                                               month_date__month=month_number,
                                                               month_date__year=current_year, group=group)
