@@ -586,6 +586,7 @@ class StudentCharityModelView(APIView):
         current_year = datetime.now().year
         date = datetime(year=current_year, month=int(month_number), day=int(datetime.now().day)).date()
         student_id = self.kwargs['student_id']
+
         attendance_per_month = AttendancePerMonth.objects.get(student_id=student_id,
                                                               month_date__month=month_number,
                                                               month_date__year=current_year)
