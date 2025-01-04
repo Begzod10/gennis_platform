@@ -584,6 +584,7 @@ class StudentCharityModelView(APIView):
         month = data.pop('date')
         month_number = list(calendar.month_name).index(month.capitalize())
         current_year = datetime.now().year
+        print("month", month_number)
         date = datetime(year=current_year, month=int(month_number), day=int(datetime.now().day)).date()
         student_id = self.kwargs['student_id']
 
