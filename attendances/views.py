@@ -1,9 +1,14 @@
+import calendar
+
+from django.db.models.functions import ExtractYear, ExtractMonth
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from attendances.models import AttendancePerMonth
 from attendances.serializers import AttendancePerMonthSerializer
+from students.models import StudentPayment, StudentCharity
 
 
 # Create your views here.
@@ -27,3 +32,62 @@ class DeleteAttendanceMonthApiView(generics.RetrieveUpdateDestroyAPIView):
         attendance.save()
 
         return Response({'msg': 'Muvaffaqiyatli o\'zgartirildi'}, status=status.HTTP_200_OK)
+
+
+class AttendanceYearListView(APIView):
+
+    def get(self, request, group_id):
+        attendances = AttendancePerMonth.objects.filter(group_id=group_id)
+
+        unique_dates = attendances.annotate(
+            year=ExtractYear('month_date'),
+        ).values('year').distinct().order_by('year')
+
+        return Response({'dates': list(unique_dates)})
+
+    def post(self, request, group_id):
+        data = request.data
+        year = data['year']
+
+        attendances = AttendancePerMonth.objects.filter(group_id=group_id, month_date__year=year)
+
+        unique_months = attendances.annotate(
+            month=ExtractMonth('month_date')
+        ).values('month').distinct().order_by('month')
+
+        month_names = [{'month': month['month'], 'name': calendar.month_name[month['month']]} for month in
+                       unique_months]
+
+        return Response({'dates': month_names})
+
+
+class GroupStudentsForChangeDebtView(APIView):
+    def post(self, request, group_id):
+        data = request.data
+        year = data['year']
+        month = data['month']
+
+        attendances = AttendancePerMonth.objects.filter(group_id=group_id, month_date__year=year,
+                                                        month_date__month=month)
+
+        data = []
+        for attendance in attendances:
+            student_payemnt = StudentPayment.objects.filter(
+                attendance=attendance, status=True
+
+            ).first()
+            data.append({'id': attendance.student_id,
+                         'name': attendance.student.user.name,
+                         'surname': attendance.student.user.surname,
+                         'attendance_id': attendance.id,
+                         'total_debt': attendance.total_debt,
+                         'remaining_debt': attendance.remaining_debt,
+                         'payment': attendance.payment,
+                         'discount': student_payemnt.payment_sum if student_payemnt else 0,
+                         "reason": StudentCharity.objects.filter(
+                             student_id=attendance.student_id).first().name if StudentCharity.objects.filter(
+                             student_id=attendance.student_id).first() else None,
+                         'charity': attendance.discount
+                         })
+
+        return Response({'students': data})
