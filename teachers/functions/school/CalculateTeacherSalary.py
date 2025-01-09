@@ -54,7 +54,7 @@ def calculate_teacher_salary(teacher):
 
 
 def teacher_salary_school(request=None, update=False, salary_id=None, worked_hours=0, deleted=False, teacher_id=None,
-                          month_date=None):
+                          month_date=None, class_salary=None):
     if not update:
         if 'flow' in request.data:
             flow = Flow.objects.get(id=request.data['flow'])
@@ -114,8 +114,12 @@ def teacher_salary_school(request=None, update=False, salary_id=None, worked_hou
         salary = salary + ustama
 
         salary_month = TeacherSalary.objects.get(id=salary_id)
-        salary_month.total_salary = salary
+        salary_month.class_salary = class_salary
+        salary_month.total_salary = salary + class_salary
         salary_month.remaining_salary = salary - salary_month.taken_salary
         salary_month.worked_hours = worked_hours
         salary_month.save()
         return salary
+
+
+

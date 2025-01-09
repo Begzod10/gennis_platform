@@ -56,6 +56,7 @@ class TeacherSalary(models.Model):
     teacher_salary_type = models.ForeignKey(TeacherSalaryType, on_delete=models.SET_NULL, null=True)
     worked_hours = models.IntegerField(null=True)
     old_id = models.IntegerField(blank=True, null=True, unique=True)
+    class_salary = models.IntegerField(default=0)
 
     class Meta:
         ordering = ['-month_date']

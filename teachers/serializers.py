@@ -210,11 +210,13 @@ class TeacherSalaryCreateSerializersUpdate(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         salary = super().update(instance, validated_data)
         worked_hours = validated_data.get('worked_hours', None)
+        class_salary = validated_data.get('class_salary', None)
 
         if worked_hours is not None:
             from .functions.school.CalculateTeacherSalary import teacher_salary_school
             if instance.teacher.user.branch.location.system.name == 'school':
-                teacher_salary_school(instance.teacher, update=True, salary_id=instance.id, worked_hours=worked_hours)
+                teacher_salary_school(instance.teacher, update=True, salary_id=instance.id, worked_hours=worked_hours,
+                                      class_salary=class_salary)
 
         return salary
 
