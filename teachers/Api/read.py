@@ -144,7 +144,7 @@ class TeacherSalaryListDetailView(QueryParamFilterMixin, generics.RetrieveAPIVie
             sum = 0
             for i in queryset:
                 sum += i.salary
-            salary = TeacherSalary.objects.filter(id=user_id)
+            salary = TeacherSalary.objects.filter(id=user_id).first()
             salary.remaining_salary = salary.total_salary - sum
             salary.taken_salary = sum
             salary.save()
