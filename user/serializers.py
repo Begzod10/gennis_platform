@@ -186,6 +186,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     class_room = False
     type = "Turon"
     usern = ''
+    object = {}
 
     def user_send(self, user, password):
         user = CustomUser.objects.get(id=user)
@@ -197,7 +198,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         if student:
             self.class_room = True
-            object = {
+            self.object = {
                 'id': user.id,
                 'name': user.name,
                 'surname': user.surname,
@@ -236,14 +237,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 ]
             }
 
-            res = self.send_data(object, f'{classroom_server}/api/turon_user')
-            self.usern = res['data']['username']
+            # res = self.send_data(object, f'{classroom_server}/api/turon_user')
+            # self.usern = res['data']['username']
 
-            return object
+            return self.object
         if teacher:
             self.class_room = True
 
-            object = {
+            self.object = {
                 'id': user.id,
                 'name': user.name,
                 'surname': user.surname,
@@ -267,9 +268,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     'price': group.price
                 } for group in teacher.group_set.all()]
             }
-            res = self.send_data(object, f'{classroom_server}/api/turon_user')
-            self.usern = res['data']['username']
-            return object
+            # res = self.send_data(object, f'{classroom_server}/api/turon_user')
+            # self.usern = res['data']['username']
+            return self.object
 
     def validate(self, attrs):
 
@@ -289,6 +290,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 data['class'] = self.class_room
                 data['type'] = self.type
                 data['username'] = self.usern
+                data['user'] = self.object
 
                 return data
             else:
@@ -305,6 +307,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 data['class'] = self.class_room
                 data['type'] = self.type
                 data['username'] = self.usern
+                data['user'] = self.object
+
 
                 return data
             else:
@@ -317,6 +321,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             data['class'] = self.class_room
             data['type'] = self.type
             data['username'] = self.usern
+            data['user'] = self.object
 
             return data
 

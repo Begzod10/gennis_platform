@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from attendances.models import AttendancePerMonth
 from attendances.serializers import AttendancePerMonthSerializer
 from students.models import StudentPayment, StudentCharity
+from students.serializers import get_remaining_debt_for_student
 
 
 # Create your views here.
@@ -30,8 +31,13 @@ class DeleteAttendanceMonthApiView(generics.RetrieveUpdateDestroyAPIView):
         attendance.old_money = attendance.total_debt
         attendance.total_debt = data['total_debt']
         attendance.save()
+        sum = get_remaining_debt_for_student(attendance.student_id)
+        attendances = AttendancePerMonth.objects.filter(id=instance.id).first()
 
-        return Response({'msg': 'Muvaffaqiyatli o\'zgartirildi'}, status=status.HTTP_200_OK)
+        return Response(
+            {'msg': 'Muvaffaqiyatli o\'zgartirildi', 'total_debt': data['total_debt'],
+             'remaining_debt': attendances.payment},
+            status=status.HTTP_200_OK)
 
 
 class AttendanceYearListView(APIView):
