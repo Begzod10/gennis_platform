@@ -228,7 +228,7 @@ class TeacherGroupStatisticsReadSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = TeacherGroupStatistics
-        fields = '__all__'+5
+        fields = '__all__'
 
     def get_reason(self, obj):
         from group.serializers import GroupReasonSerializers
