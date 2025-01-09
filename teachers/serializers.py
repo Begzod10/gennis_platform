@@ -211,7 +211,7 @@ class TeacherSalaryCreateSerializersUpdate(serializers.ModelSerializer):
         salary = super().update(instance, validated_data)
         worked_hours = validated_data.get('worked_hours', None)
         class_salary = validated_data.get('class_salary', None)
-
+        print('salary', class_salary)
         if worked_hours is not None:
             from .functions.school.CalculateTeacherSalary import teacher_salary_school
             if instance.teacher.user.branch.location.system.name == 'school':
@@ -228,7 +228,7 @@ class TeacherGroupStatisticsReadSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = TeacherGroupStatistics
-        fields = '__all__'
+        fields = '__all__'+5
 
     def get_reason(self, obj):
         from group.serializers import GroupReasonSerializers

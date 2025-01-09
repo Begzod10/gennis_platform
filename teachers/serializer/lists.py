@@ -63,7 +63,8 @@ class ActiveListTeacherSerializerTime(serializers.ModelSerializer):
 class TeacherSalaryMonthlyListSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherSalary
-        fields = ['id', 'total_salary', 'taken_salary', 'remaining_salary', 'worked_hours', 'month_date']
+        fields = ['id', 'total_salary', 'taken_salary', 'remaining_salary', 'worked_hours', 'month_date',
+                  'class_salary']
 
 
 class TeacherSalaryForOneMonthListSerializer(serializers.ModelSerializer):
