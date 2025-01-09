@@ -116,10 +116,7 @@ def teacher_salary_school(request=None, update=False, salary_id=None, worked_hou
         salary_month = TeacherSalary.objects.get(id=salary_id)
         salary_month.class_salary = class_salary
         salary_month.total_salary = salary + class_salary
-        salary_month.remaining_salary = salary - salary_month.taken_salary
+        salary_month.remaining_salary = salary_month.total_salary - salary_month.taken_salary
         salary_month.worked_hours = worked_hours
         salary_month.save()
         return salary
-
-
-
