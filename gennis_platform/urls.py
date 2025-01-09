@@ -10,7 +10,7 @@ from user.views import CustomTokenRefreshView
 
 
 urlpatterns = [
-    path('api/admin/', admin.site.urls),
+    # path('api/admin/', admin.site.urls),
     path('api/Users/', include('user.urls')),
     path('api/System/', include('system.urls')),
     path('api/Location/', include('location.urls')),
