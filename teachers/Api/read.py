@@ -133,12 +133,24 @@ class TeacherSalaryListDetailView(QueryParamFilterMixin, generics.RetrieveAPIVie
 
         user_salary_list = self.get_object()
         user_salary_list = self.filter_queryset(user_salary_list)
+
         user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
         return Response(user_salary_list_data)
 
     def get_object(self):
         user_id = self.kwargs.get('pk')
         try:
-            return TeacherSalaryList.objects.filter(salary_id_id=user_id).all()
+            queryset = TeacherSalaryList.objects.filter(salary_id_id=user_id, deleted=False).all()
+            sum = 0
+            for i in queryset:
+                sum += i.salary
+            salary = TeacherSalary.objects.filter(id=user_id)
+            salary.remaining_salary = salary.total_salary - sum
+            salary.taken_salary = sum
+            salary.save()
+
+            queryset2 = TeacherSalaryList.objects.filter(salary_id_id=user_id).all()
+
+            return queryset2
         except TeacherSalaryList.DoesNotExist:
             raise NotFound('UserSalary not found for the given user_id')
