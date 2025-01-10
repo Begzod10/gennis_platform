@@ -27,6 +27,7 @@ class AttendancePerMonthSerializer(serializers.ModelSerializer):
                   'taken_salary', 'group']
 
 
+
 class AttendancePerDaySerializer(serializers.ModelSerializer):
     student = StudentSerializer()
     teacher = TeacherSerializer()
@@ -240,7 +241,6 @@ class AttendancePerDayCreateUpdateSerializerSchool(serializers.ModelSerializer):
                     status=student['status'],
                     reason=student.get('reason', None)
                 )
-                print(student)
                 created_instances.append(attendance)
 
         if errors:

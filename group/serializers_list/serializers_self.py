@@ -55,7 +55,10 @@ class GroupListSerializer(serializers.ModelSerializer):
         return obj.students.count()
 
     def get_name(self, obj):
-        return f"{obj.class_number.number}-{obj.color.name}"
+        if obj.name:
+            return obj.name
+        else:
+            return f"{obj.class_number.number}-{obj.color.name}"
 
     def get_students(self, obj):
         students = obj.students.all()

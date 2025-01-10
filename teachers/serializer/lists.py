@@ -1,6 +1,11 @@
+from datetime import date
+
+from django.db.models import Sum
 from rest_framework import serializers
 
 from flows.models import Flow
+from gennis_platform.settings import classroom_server
+from gennis_platform.uitils import request
 from group.models import Group
 from payments.serializers import PaymentTypesSerializers
 from subjects.models import Subject
@@ -11,6 +16,19 @@ class ActiveSubjectSerializerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
         fields = ('id', 'name')
+
+
+def calc_teacher_salary(obj):
+    current_date = date.today()
+    remaining_debt_sum = TeacherSalary.objects.filter(
+
+        teacher_id=obj,
+        month_date__lte=current_date
+    ).aggregate(total_remaining_debt=Sum('remaining_salary'))
+    summa = remaining_debt_sum['total_remaining_debt'] or 0
+    # request(url=f"{classroom_server}/update_teacher_balance/{teacher.user_id}/turon", method="POST",
+    #         data={"balance": summa})
+    return summa
 
 
 class ActiveListTeacherSerializer(serializers.ModelSerializer):
@@ -63,7 +81,8 @@ class ActiveListTeacherSerializerTime(serializers.ModelSerializer):
 class TeacherSalaryMonthlyListSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherSalary
-        fields = ['id', 'total_salary', 'taken_salary', 'remaining_salary', 'worked_hours', 'month_date']
+        fields = ['id', 'total_salary', 'taken_salary', 'remaining_salary', 'worked_hours', 'month_date',
+                  'class_salary']
 
 
 class TeacherSalaryForOneMonthListSerializer(serializers.ModelSerializer):

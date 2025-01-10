@@ -5,8 +5,12 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-8!t!6$g#(34ro((m-7t$#(zek1=b=y2ltslop@w71$^6)wb_rc'
-classroom_server = 'https://classroom.gennis.uz'
+
+# classroom_server = 'https://classroom.gennis.uz'
 gennis_server = 'https://gennis.uz'
+classroom_server = 'http://192.168.1.61:5001/api'
+# gennis_server = 'http://192.168.1.61:5002'
+
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
@@ -49,6 +53,7 @@ INSTALLED_APPS = [
     'encashment.apps.EncashmentConfig',
     "mobile.apps.MobileConfig",
     'django_filters',
+    'ui',
 ]
 
 MIDDLEWARE = [
@@ -85,13 +90,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'gennis_platform.wsgi.application'
 
+
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('DB_NAME', 'gennis_platform'),
         'USER': os.getenv('DB_USER', 'postgres'),
         'PASSWORD': os.getenv('DB_PASSWORD', '123'),
-        # 'HOST': os.getenv('DB_HOST', '192.168.1.40'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': '5432',
     }
@@ -128,6 +134,7 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
+STATIC_ROOT = '/home/ubuntu/gennis_website/gennis_platform/static/'
 MEDIA_URL = '/media/'
 
 MEDIA_ROOT = BASE_DIR / 'media/'

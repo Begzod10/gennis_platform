@@ -49,7 +49,6 @@ class FlowsSerializerProfile(serializers.ModelSerializer):
                   'classes', 'subject_id']
 
     def get_teacher(self, obj):
-        print(obj.teacher.subject.name)
         return {
             'name': obj.teacher.user.name,
             'surname': obj.teacher.user.surname,

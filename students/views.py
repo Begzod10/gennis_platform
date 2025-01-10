@@ -10,8 +10,6 @@ from django.db.models import Q
 from django.db.models import Sum
 from django.db.models.functions import ExtractMonth
 from django.shortcuts import get_object_or_404
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import status
@@ -24,11 +22,12 @@ from django.db.models.functions import ExtractYear
 from attendances.models import AttendancePerMonth
 from branch.models import Branch
 from permissions.response import QueryParamFilterMixin
+from students.serializer.lists import ActiveListSerializer, ActiveListDeletedStudentSerializer, \
+    get_remaining_debt_for_student
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
 from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
-                          DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
-from students.serializer.lists import ActiveListSerializer, ActiveListDeletedStudentSerializer
+                          DeletedNewStudentListSerializer, StudentPaymentListSerializer)
 
 
 class StudentListView(ListAPIView):
@@ -314,7 +313,10 @@ class PaymentDatas(APIView):
 class GetMonth(APIView):
 
     def get(self, request, student_id, attendance_id):
-        month = AttendancePerMonth.objects.filter(student_id=student_id, status=False).all().order_by(
+        student = Student.objects.get(pk=student_id)
+        group = student.groups_student.first()
+        month = AttendancePerMonth.objects.filter(student_id=student_id, status=False,
+                                                  group_id=group.id).all().order_by(
             'month_date__year', 'month_date__month')
         data = []
         for mont in month:
@@ -419,8 +421,11 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')
+        student = Student.objects.get(pk=student_id)
+        group = student.groups_student.first()
         return AttendancePerMonth.objects.filter(
             student_id=student_id,
+            group_id=group.id,
             month_date__month__in=[9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
         ).annotate(month_number=ExtractMonth('month_date'))
 
@@ -449,6 +454,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 'remaining_debt': attendance.remaining_debt,
                 'payment': attendance.payment,
                 "discount": attendance.discount,
+                "old_money": attendance.old_money,
                 "discount_sum": student_payemnt.payment_sum if student_payemnt else 0,
                 "discount_reason": student_payemnt.reason if student_payemnt else 0,
                 "discount_id": student_payemnt.id if student_payemnt else 0,
@@ -492,7 +498,12 @@ class MissingAttendanceView(APIView):
         group = student.groups_student.first()
         data = json.loads(request.body)
         month = data['month']
-        year = datetime.now().year
+        old_months = ["September", "October", "November", "December"]
+        if month in old_months:
+            year = datetime.now().year - 1
+        else:
+            year = datetime.now().year
+
         month_date = datetime.strptime(f"01 {month} {year}", "%d %B %Y")
         attendance = AttendancePerMonth.objects.create(
             student_id=student_id,
@@ -575,12 +586,20 @@ class StudentCharityModelView(APIView):
         data = json.loads(request.body)
         month = data.pop('date')
         month_number = list(calendar.month_name).index(month.capitalize())
+        old_months = [9, 10, 11, 12]
         current_year = datetime.now().year
+        if month_number in old_months:
+            current_year -= 1
         date = datetime(year=current_year, month=int(month_number), day=int(datetime.now().day)).date()
         student_id = self.kwargs['student_id']
-        attendance_per_month = AttendancePerMonth.objects.get(student_id=student_id,
+
+        student = get_object_or_404(Student, id=student_id)
+        group = student.groups_student.first()
+        attendance_per_month = AttendancePerMonth.objects.get(student_id=student.id,
                                                               month_date__month=month_number,
-                                                              month_date__year=current_year)
+
+                                                              month_date__year=current_year, group=group)
+
         if attendance_per_month.total_debt != attendance_per_month.payment and attendance_per_month.remaining_debt == 0:
             attendance_per_month.remaining_debt = attendance_per_month.total_debt
             attendance_per_month.save()
@@ -598,9 +617,7 @@ class StudentCharityModelView(APIView):
                                                             payment_type_id=request.data['payment_type'],
                                                             date=date,
                                                             attendance=attendance_per_month,
-                                                            reason=request.data['reason']
-
-                                                            )
+                                                            reason=request.data['reason'])
             student_payment.save()
 
             if attendance_per_month.remaining_debt == 0:
@@ -656,3 +673,10 @@ class GetMonthView(APIView):
         missing_months = set(all_months) - set(months_with_attendance)
         month_names = [calendar.month_name[month] for month in sorted(missing_months)]
         return Response(month_names)
+
+
+class GetStudentBalance(APIView):
+    def get(self, request, user_id):
+        student = Student.objects.get(user_id=user_id)
+        balance = get_remaining_debt_for_student(student.id)
+        return Response({"balance": balance}, status=status.HTTP_200_OK)

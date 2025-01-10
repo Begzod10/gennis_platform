@@ -11,7 +11,6 @@ from group.models import Group
 
 class CheckGroupNextLesson(APIView):
     def get(self, request):
-        print(self.request.query_params.get('id'))
 
         group = Group.objects.get(pk=self.request.query_params.get('id'))
         weekday_name = datetime.today().strftime('%A')

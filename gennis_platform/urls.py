@@ -37,6 +37,7 @@ urlpatterns = [
     path('api/SchoolTimeTable/', include('school_time_table.urls')),
     path('api/Calendar/', include('Calendar.urls')),
     path('api/Bot/', include('bot.urls')),
+    path('api/Ui/', include('ui.urls')),
     # path('api/Transfer/', include('transfer.urls')),
     path('api/Encashment/', include('encashment.urls')),
     path('api/Mobile/', include('mobile.urls')),

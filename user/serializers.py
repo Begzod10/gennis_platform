@@ -5,8 +5,9 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from werkzeug.security import check_password_hash
-from gennis_platform.settings import classroom_server
+
 from branch.serializers import BranchSerializer
+from gennis_platform.settings import classroom_server
 from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from permissions.models import ManySystem, ManyBranch, ManyLocation
@@ -182,15 +183,22 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         except requests.RequestException as e:
             raise serializers.ValidationError({"error": str(e)})
 
+    class_room = False
+    type = "Turon"
+    usern = ''
+    object = {}
+
     def user_send(self, user, password):
         user = CustomUser.objects.get(id=user)
-        from students.models import Student,Teacher
+        from students.models import Student, Teacher
+        from classes.models import ClassNumberSubjects
         student = Student.objects.filter(user=user).first()
         teacher = Teacher.objects.filter(user=user).first()
 
 
         if student:
-            object = {
+            self.class_room = True
+            self.object = {
                 'id': user.id,
                 'name': user.name,
                 'surname': user.surname,
@@ -201,18 +209,42 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'role': 'student',
                 'birth_date': user.birth_date.isoformat() if user.birth_date else None,
                 'phone_number': user.phone,
-                'groups': [{
-                    'name': group.name,
-                    'id': group.id,
-                    'subject': group.subject,
-                    'teacher_salary': group.teacher_salary,
-                    'price': group.price
-                } for group in student.groups_student.all()]
+                'parent_number':student.parents_number,
+
+                'groups': [
+                    {
+                        'name': group.name if group.name else f'{group.class_number.number}-{group.color.name}',
+                        'id': group.id,
+                        'subject': [
+                            {'id': subject.subject.id, 'name': subject.subject.name} for subject in
+                            ClassNumberSubjects.objects.filter(class_number_id=group.class_number.id).all()
+                        ],
+                        'teacher_salary': group.teacher_salary,
+                        'price': group.price,
+                        'teacher': [{
+                            'id': teacher.id,
+                            'name': teacher.user.name,
+                            'surname': teacher.user.surname,
+                            'username': teacher.user.username,
+                            'birth_date': teacher.user.birth_date.isoformat() if teacher.user.birth_date else None,
+                            'phone_number': teacher.user.phone
+                        } for teacher in group.teacher.all()
+                        ],
+
+                    }
+                    for group in student.groups_student.all()
+
+                ]
             }
-            self.send_data(object, f'{classroom_server}/api/turon_user')
-            return object
+
+            # res = self.send_data(object, f'{classroom_server}/api/turon_user')
+            # self.usern = res['data']['username']
+
+            return self.object
         if teacher:
-            object = {
+            self.class_room = True
+
+            self.object = {
                 'id': user.id,
                 'name': user.name,
                 'surname': user.surname,
@@ -223,16 +255,22 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'role': 'teacher',
                 'birth_date': user.birth_date.isoformat() if user.birth_date else None,
                 'phone_number': user.phone,
+                'subject':[ {
+                    'id': subject.id,
+                    'name': subject.name
+                } for subject in teacher.subject.all()],
+
                 'groups': [{
-                    'name': group.name,
+                    'name': group.name if group.name else f'{group.class_number.number}-{group.color.name}',
                     'id': group.id,
                     'subject': group.subject,
                     'teacher_salary': group.teacher_salary,
                     'price': group.price
                 } for group in teacher.group_set.all()]
             }
-            self.send_data(object, f'{classroom_server}/api/turon_user')
-            return object
+            # res = self.send_data(object, f'{classroom_server}/api/turon_user')
+            # self.usern = res['data']['username']
+            return self.object
 
     def validate(self, attrs):
 
@@ -249,6 +287,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 refresh = self.get_token(self.user)
                 data['refresh'] = str(refresh)
                 data['access'] = str(refresh.access_token)
+                data['class'] = self.class_room
+                data['type'] = self.type
+                data['username'] = self.usern
+                data['user'] = self.object
 
                 return data
             else:
@@ -262,6 +304,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 refresh = self.get_token(self.user)
                 data['refresh'] = str(refresh)
                 data['access'] = str(refresh.access_token)
+                data['class'] = self.class_room
+                data['type'] = self.type
+                data['username'] = self.usern
+                data['user'] = self.object
+
 
                 return data
             else:
@@ -271,6 +318,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             refresh = self.get_token(self.user)
             data['refresh'] = str(refresh)
             data['access'] = str(refresh.access_token)
+            data['class'] = self.class_room
+            data['type'] = self.type
+            data['username'] = self.usern
+            data['user'] = self.object
 
             return data
 

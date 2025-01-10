@@ -26,7 +26,6 @@ class CreateClassTimeTable(generics.ListCreateAPIView):
     serializer_class = ClassTimeTableCreateUpdateSerializers
 
     def create(self, request, *args, **kwargs):
-        print(request)
         write_serializer = self.get_serializer(data=request.data, partial=True)
         write_serializer.is_valid(raise_exception=True)
         self.perform_create(write_serializer)
@@ -118,7 +117,6 @@ class CheckClassTimeTable(APIView):
         hour = data.get('hour')
         date = data.get('date')
         checked_id = data.get('checked_id')
-        print(data)
         if type == 'group':
             room = data.get('room')
             group = Group.objects.get(pk=checked_id)
@@ -148,7 +146,6 @@ class CheckClassTimeTable(APIView):
             class_subject = ClassNumberSubjects.objects.get(subject_id=checked_id, class_number=group.class_number)
             lessons = group.classtimetable_set.filter(date__in=week_dates, subject_id=checked_id).count()
             if int(lessons) >= int(class_subject.hours):
-                print('true')
                 status = False
                 msg.append(
                     f"{group.class_number.number}-{group.color.name} sinifining {class_subject.subject.name} fanining haftalik dars soati to'lgan")
