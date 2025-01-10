@@ -19,6 +19,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models.functions import ExtractYear
 
 from attendances.models import AttendancePerMonth
 from branch.models import Branch
@@ -568,7 +569,6 @@ class StudentCharityModelView(APIView):
         all_months = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
         missing_months = set(all_months) - set(months_with_attendance)
         month_names = [calendar.month_name[month] for month in sorted(missing_months)]
-
         return Response(month_names)
 
     def post(self, request, *args, **kwargs):
@@ -581,7 +581,6 @@ class StudentCharityModelView(APIView):
         attendance_per_month = AttendancePerMonth.objects.get(student_id=student_id,
                                                               month_date__month=month_number,
                                                               month_date__year=current_year)
-
         if attendance_per_month.total_debt != attendance_per_month.payment and attendance_per_month.remaining_debt == 0:
             attendance_per_month.remaining_debt = attendance_per_month.total_debt
             attendance_per_month.save()
@@ -625,3 +624,35 @@ class StudentCharityModelView(APIView):
         payment.save()
 
         return Response({"msg": "Chegirma muvaffaqiyatli o'zgartirildi"})
+
+
+class GetYearView(APIView):
+    def get(self, request):
+        id = self.kwargs.get('student_id')
+        years = AttendancePerMonth.objects.filter(student_id=id) \
+            .annotate(year=ExtractYear('month_date')) \
+            .values_list('year', flat=True) \
+            .distinct()
+
+        current_year = datetime.today().year
+
+        years = list(years)
+        if current_year not in years:
+            years.append(current_year)
+        return Response({"years": sorted(years)})
+
+
+class GetMonthView(APIView):
+    def get(self, request):
+        student_id = self.kwargs.get('student_id')
+        year = self.kwargs.get('year')
+        queryset = AttendancePerMonth.objects.filter(
+            student_id=student_id,
+            month_date__month__in=[9, 10, 11, 12, 1, 2, 3, 4, 5, 6],
+            month_date__year=year
+        ).annotate(month_number=ExtractMonth('month_date'))
+        months_with_attendance = queryset.values_list('month_number', flat=True).distinct()
+        all_months = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
+        missing_months = set(all_months) - set(months_with_attendance)
+        month_names = [calendar.month_name[month] for month in sorted(missing_months)]
+        return Response(month_names)
