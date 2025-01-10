@@ -27,7 +27,7 @@ class ClassNumber(models.Model):
     number = models.IntegerField(null=True)
     price = models.IntegerField(null=True)
     curriculum_hours = models.IntegerField(null=True)
-    class_types = models.ForeignKey(ClassTypes, on_delete=models.SET_NULL, null=True)
+
     subjects = models.ManyToManyField(Subject)
     branch = models.ForeignKey('branch.Branch', on_delete=models.SET_NULL, null=True)
     old_id = models.IntegerField(unique=True, null=True)
