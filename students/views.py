@@ -587,7 +587,7 @@ class StudentCharityModelView(APIView):
         month = data.pop('date')
         month_number = list(calendar.month_name).index(month.capitalize())
         old_months = [9, 10, 11, 12]
-        current_year = datetime.now().year
+        current_year = data['year']
         if month_number in old_months:
             current_year -= 1
         date = datetime(year=current_year, month=int(month_number), day=int(datetime.now().day)).date()

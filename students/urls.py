@@ -13,11 +13,8 @@ from .excel import ExcelData, ExcelDataList
 from .views import (CreateContractView, UploadPDFContractView, StudentListView, DeletedFromRegistered,
                     DeletedGroupStudents, NewRegisteredStudents, ActiveStudents, PaymentDatas, GetMonth, shahakota,
                     DeleteStudentPayment, DeleteFromDeleted, MissingAttendanceListView, MissingAttendanceView,
-<<<<<<< HEAD
-                    StudentCharityModelView, GetYearView, GetMonthView
-=======
+                    StudentCharityModelView, GetYearView, GetMonthView,
                     StudentCharityModelView, GetStudentBalance
->>>>>>> d9daa017c7e56a7f02609e5c11f6742071f8d659
                     )
 
 app_name = 'Students'
