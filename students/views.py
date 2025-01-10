@@ -599,6 +599,8 @@ class StudentCharityModelView(APIView):
                                                               month_date__month=month_number,
 
                                                               month_date__year=current_year, group=group)
+        if not attendance_per_month:
+            return Response({"msg": "Shu yil shu oyga qarzdorlik yaratilmagan!"})
 
         if attendance_per_month.total_debt != attendance_per_month.payment and attendance_per_month.remaining_debt == 0:
             attendance_per_month.remaining_debt = attendance_per_month.total_debt
