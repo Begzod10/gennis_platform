@@ -663,15 +663,19 @@ class GetMonthView(APIView):
     def get(self, request):
         student_id = self.kwargs.get('student_id')
         year = self.kwargs.get('year')
+        all_months = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
+
         queryset = AttendancePerMonth.objects.filter(
             student_id=student_id,
-            month_date__month__in=[9, 10, 11, 12, 1, 2, 3, 4, 5, 6],
+            month_date__month__in=all_months,
             month_date__year=year
         ).annotate(month_number=ExtractMonth('month_date'))
+
         months_with_attendance = queryset.values_list('month_number', flat=True).distinct()
-        all_months = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
-        missing_months = set(all_months) - set(months_with_attendance)
-        month_names = [calendar.month_name[month] for month in sorted(missing_months)]
+
+        missing_months = [month for month in all_months if month not in months_with_attendance]
+
+        month_names = [calendar.month_name[month] for month in missing_months]
         return Response(month_names)
 
 
