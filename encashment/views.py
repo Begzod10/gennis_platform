@@ -396,7 +396,8 @@ class GetTeacherSalary(APIView):
                                                 month_date__year=datetime.now().year, branch_id=branch).all()
         data = {
             'salary': [],
-            'dates': []
+            'dates': [],
+            'branch':branch
         }
         for salary in salaries:
             datas = {
