@@ -595,10 +595,12 @@ class StudentCharityModelView(APIView):
 
         student = get_object_or_404(Student, id=student_id)
         group = student.groups_student.first()
-        attendance_per_month = AttendancePerMonth.objects.get(student_id=student.id,
-                                                              month_date__month=month_number,
-
-                                                              month_date__year=current_year, group=group)
+        attendance_per_month = AttendancePerMonth.objects.filter(
+            student_id=student.id,
+            month_date__month=month_number,
+            month_date__year=current_year,
+            group=group
+        ).first()
         if not attendance_per_month:
             return Response({"msg": "Shu yil shu oyga qarzdorlik yaratilmagan!"})
 
