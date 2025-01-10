@@ -421,7 +421,7 @@ class GetTeacherSalary(APIView):
         unique_dates = TeacherSalary.objects.annotate(
             year=ExtractYear('month_date'),
             month=ExtractMonth('month_date')
-        ).filter(branch_id=branch).values('year', 'month').distinct().order_by('year', 'month')
+        ).filter(teacher__user__branch=branch).values('year', 'month').distinct().order_by('year', 'month')
 
 
         year_month_dict = {}
