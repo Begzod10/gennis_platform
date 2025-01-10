@@ -323,4 +323,3 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
         instance.comment = validated_data.get('comment', instance.comment)
         instance.save()
         return instance
-

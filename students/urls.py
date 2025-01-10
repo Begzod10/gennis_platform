@@ -13,9 +13,8 @@ from .excel import ExcelData, ExcelDataList
 from .views import (CreateContractView, UploadPDFContractView, StudentListView, DeletedFromRegistered,
                     DeletedGroupStudents, NewRegisteredStudents, ActiveStudents, PaymentDatas, GetMonth, shahakota,
                     DeleteStudentPayment, DeleteFromDeleted, MissingAttendanceListView, MissingAttendanceView,
-                    StudentCharityModelView
+                    StudentCharityModelView, GetStudentBalance
                     )
-
 
 app_name = 'Students'
 
@@ -71,4 +70,5 @@ urlpatterns = [
     path('missing_month_post/<int:student_id>/', MissingAttendanceView.as_view(), name='missing_month'),
     path('discount/', CreateDiscountForSchool.as_view(), name='discount'),
     path('charity_month/<int:student_id>/', StudentCharityModelView.as_view(), name='charity_month'),
+    path('get_balance/<int:user_id>/', GetStudentBalance.as_view())
 ]

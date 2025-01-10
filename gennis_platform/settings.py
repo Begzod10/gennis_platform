@@ -6,11 +6,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-8!t!6$g#(34ro((m-7t$#(zek1=b=y2ltslop@w71$^6)wb_rc'
 
-classroom_server = 'https://classroom.gennis.uz'
-# classroom_server = 'http://192.168.1.61:5001'
+# classroom_server = 'https://classroom.gennis.uz'
 gennis_server = 'https://gennis.uz'
-#
-# classroom_server = 'http://192.168.1.61:5001'
+classroom_server = 'http://192.168.1.61:5001/api'
 # gennis_server = 'http://192.168.1.61:5002'
 
 DEBUG = True

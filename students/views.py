@@ -10,8 +10,6 @@ from django.db.models import Q
 from django.db.models import Sum
 from django.db.models.functions import ExtractMonth
 from django.shortcuts import get_object_or_404
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import status
@@ -23,12 +21,12 @@ from rest_framework.views import APIView
 from attendances.models import AttendancePerMonth
 from branch.models import Branch
 from permissions.response import QueryParamFilterMixin
+from students.serializer.lists import ActiveListSerializer, ActiveListDeletedStudentSerializer, \
+    get_remaining_debt_for_student
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
 from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
-                          DeletedStudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
-from students.serializer.lists import ActiveListSerializer, ActiveListDeletedStudentSerializer
-from attendances.serializers import AttendancePerMonthSerializer
+                          DeletedNewStudentListSerializer, StudentPaymentListSerializer)
 
 
 class StudentListView(ListAPIView):
@@ -642,3 +640,10 @@ class StudentCharityModelView(APIView):
         payment.save()
 
         return Response({"msg": "Chegirma muvaffaqiyatli o'zgartirildi"})
+
+
+class GetStudentBalance(APIView):
+    def get(self, request, user_id):
+        student = Student.objects.get(user_id=user_id)
+        balance = get_remaining_debt_for_student(student.id)
+        return Response({"balance": balance}, status=status.HTTP_200_OK)

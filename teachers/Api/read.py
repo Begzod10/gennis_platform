@@ -1,13 +1,15 @@
 from django.db.models.query import QuerySet
 from rest_framework import generics
+from rest_framework import status
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from permissions.response import QueryParamFilterMixin
 from teachers.models import TeacherGroupStatistics, Teacher, TeacherSalaryList, TeacherSalary
 from teachers.serializer.lists import ActiveListTeacherSerializer, TeacherSalaryMonthlyListSerializer, \
-    TeacherSalaryForOneMonthListSerializer
+    TeacherSalaryForOneMonthListSerializer, calc_teacher_salary
 from teachers.serializers import (
     TeacherSerializerRead, TeacherSalaryListReadSerializers, TeacherGroupStatisticsReadSerializers,
     TeacherSalaryReadSerializers
@@ -154,3 +156,10 @@ class TeacherSalaryListDetailView(QueryParamFilterMixin, generics.RetrieveAPIVie
             return queryset2
         except TeacherSalaryList.DoesNotExist:
             raise NotFound('UserSalary not found for the given user_id')
+
+
+class GetTeacherBalance(APIView):
+    def get(self, request, user_id):
+        teacher = Teacher.objects.get(user_id=user_id)
+        balance = calc_teacher_salary(teacher.id)
+        return Response({'balance': balance}, status=status.HTTP_200_OK)
