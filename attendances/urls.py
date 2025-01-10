@@ -2,9 +2,10 @@ from django.urls import path
 
 from .Api.AttendanceDatas import AttendanceDatas, AttendanceDatasForGroup, AttendanceDatasForAllGroup
 from .Api.AttendanceDelete import AttendanceDelete
-from .Api.AttendanceList import AttendanceList, AttendanceListForAllGroups,AttendanceListSchool
+from .Api.AttendanceList import AttendanceList, AttendanceListForAllGroups, AttendanceListSchool
 from .Api.ToAttend import ToAttend, ToAttendSchool
 from .Api.attend_dates import WeekdaysInMonthAPIView
+from .views import DeleteAttendanceMonthApiView,AttendanceYearListView,GroupStudentsForChangeDebtView
 
 urlpatterns = [
     path('to_attend/<int:group_id>/', ToAttend.as_view(), name='to-attend'),
@@ -18,4 +19,8 @@ urlpatterns = [
     path('attendance_datas_group_all/<int:student_id>/', AttendanceDatasForAllGroup.as_view(), name='attendance_datas'),
     path('attendance_delete/<int:group_id>/', AttendanceDelete.as_view(), name='attendance_delete'),
     path('school-to-attend-days/<int:group_id>/', WeekdaysInMonthAPIView.as_view(), name='school-to-attend-days'),
+    path('attendance_per_month_delete/<int:pk>/', DeleteAttendanceMonthApiView.as_view(),
+         name='attendance_delete<str>'),
+    path('attendance_year_list/<int:group_id>/', AttendanceYearListView.as_view(), name='attendance_year_list'),
+    path('attendance_year_list_all/<int:group_id>/', GroupStudentsForChangeDebtView.as_view(), name='attendance_year_list_s'),
 ]

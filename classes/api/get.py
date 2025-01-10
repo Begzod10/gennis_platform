@@ -2,16 +2,20 @@ from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Q
+from datetime import datetime, timedelta
 
 from classes.models import ClassNumber, ClassCoin, CoinInfo, StudentCoin, ClassColors
+from classes.models import ClassNumber, ClassCoin, CoinInfo, StudentCoin, ClassNumberSubjects
+
 from classes.serializers import (ClassCoinListSerializers, CoinInfoListSerializers, StudentCoinListSerializers,
-                                 ClassNumberListSerializers, ClassColorsSerializers)
+                                 ClassNumberListSerializers, ClassColorsSerializers, ClassNumberForSubjectsSerializer)
 from group.models import Group
 from permissions.response import QueryParamFilterMixin
 from subjects.serializers import SubjectSerializer
 
 
-class ClassNumberRetrieveAPIView(QueryParamFilterMixin,generics.RetrieveAPIView):
+class ClassNumberRetrieveAPIView(QueryParamFilterMixin, generics.RetrieveAPIView):
     filter_mappings = {
         'branch': 'branch_id',
     }
@@ -24,10 +28,11 @@ class ClassNumberRetrieveAPIView(QueryParamFilterMixin,generics.RetrieveAPIView)
 
         pk = int(self.kwargs.get('pk'))
         class_number = ClassNumber.objects.all()
-        class_number =self.filter_queryset(class_number)
+        class_number = self.filter_queryset(class_number)
         datas = []
 
         for class_num in class_number:
+            class_subjects = ClassNumberSubjects.objects.filter(class_number_id=class_num).all()
             if class_num.class_types is not None:
                 class_type_id = class_num.class_types.id
                 status = class_num.class_types.id == pk
@@ -44,11 +49,9 @@ class ClassNumberRetrieveAPIView(QueryParamFilterMixin,generics.RetrieveAPIView)
                     'class_types': class_type_id,
                     'status': status,
                     'subjects': [
-                        {
-                            'id': i.id,
-                            'name': i.name
-                        }
-                        for i in class_num.subjects.all()
+                        [{'id': subject.subject_id, 'name': subject.subject.name, 'hours': subject.hours} for subject
+                         in
+                         class_subjects]
                     ]
                 }
                 datas.append(data)
@@ -199,7 +202,44 @@ class ClassColorsDeleteView(generics.RetrieveDestroyAPIView):
 class ClassSubjects(APIView):
     def get(self, request):
         group = Group.objects.filter(pk=request.query_params.get('group')).first()
+        today = datetime.today()
+        start_week = today - timedelta(days=today.weekday())
+        week_dates = [(start_week + timedelta(days=i)).date() for i in range(7)]
+        class_subjects = ClassNumberSubjects.objects.filter(class_number=group.class_number).all()
+        list = []
+        for subject in class_subjects:
+            lessons = group.classtimetable_set.filter(date__in=week_dates, subject_id=subject.subject.id).count()
+            info = {
+                'id': subject.subject.id,
+                'name': subject.subject.name,
+                'hours': f'{lessons}/{subject.hours}'
+            }
+            list.append(info)
+        return Response(list)
 
-        subjects = group.class_number.subjects.all()
-        serializer = SubjectSerializer(subjects, many=True)
-        return Response(serializer.data)
+
+class ClassNumberForSubjects(APIView):
+    def get(self, request):
+        list = []
+        branch_id = self.request.query_params.get('branch')
+        class_type_id = self.request.query_params.get('id')
+        class_numbers = ClassNumber.objects.filter(
+            branch_id=branch_id
+        ).filter(
+            Q(class_types_id=class_type_id) | Q(class_types_id__isnull=True)
+        )
+        for class_number in class_numbers:
+            subjects = ClassNumberSubjects.objects.filter(class_number_id=class_number.id).all()
+            status = True
+            if not class_number.class_types:
+                status = False
+            info = {
+                'id': class_number.id,
+                'price': class_number.price,
+                'number': class_number.number,
+                'status': status,
+                'subjects': [{'id': subject.subject.id, 'name': subject.subject.name, 'hours': subject.hours} for
+                             subject in subjects]
+            }
+            list.append(info)
+        return Response(list)

@@ -9,6 +9,7 @@ from ...models import ClassTimeTable
 from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTableReadSerializers
 
 
+
 class UpdateClassTimeTable(generics.RetrieveUpdateDestroyAPIView):
     queryset = ClassTimeTable.objects.all()
     serializer_class = ClassTimeTableCreateUpdateSerializers
@@ -20,7 +21,7 @@ class UpdateClassTimeTable(generics.RetrieveUpdateDestroyAPIView):
         self.perform_update(write_serializer)
 
         read_serializer = ClassTimeTableReadSerializers(instance)
-
+        teacher_salary_school(request)
         return Response({'lesson': read_serializer.data, 'msg': "Dars muvaffaqqiyatli o'zgartirildi"})
 
 
@@ -34,13 +35,13 @@ class UpdateClassTimeTableHours(APIView):
         for ls in data:
             if len(data) > 1:
                 lesson = ClassTimeTable.objects.get(pk=ls['id'])
-                lesson_room = ClassTimeTable.objects.filter(week_id=ls['day'], room_id=ls['room'],
+                lesson_room = ClassTimeTable.objects.filter(date=ls['date'], room_id=ls['room'],
                                                             hours_id=ls['hour'], branch_id=branch).first()
                 if lesson_room:
                     if not lesson_room.id in lesson_ids:
                         status = False
                         msg.append(f"Bu vaqtda '{lesson_room.room.name}' bosh emas")
-                lesson_teacher = ClassTimeTable.objects.filter(week_id=ls['day'], teacher_id=lesson.teacher_id,
+                lesson_teacher = ClassTimeTable.objects.filter(date=ls['date'], teacher_id=lesson.teacher_id,
                                                                hours_id=ls['hour'], branch_id=branch).first()
                 if lesson_teacher:
 
@@ -55,13 +56,13 @@ class UpdateClassTimeTableHours(APIView):
 
                 students = lesson.group.students.all() if lesson.flow_id == None else lesson.flow.students.all()
                 lesson_students = students.filter(class_time_table__hours_id=ls['hour'],
-                                                  class_time_table__week_id=lesson.week_id,
+                                                  class_time_table__date=lesson.date,
                                                   class_time_table__branch_id=branch).all()
 
                 if lesson_students:
                     if students:
                         for student in students:
-                            tm = student.class_time_table.filter(hours_id=ls['hour'], week_id=lesson.week_id,
+                            tm = student.class_time_table.filter(hours_id=ls['hour'], date=lesson.date,
                                                                  branch_id=branch).first()
                             if not tm.id in lesson_ids:
                                 status = False
@@ -73,12 +74,12 @@ class UpdateClassTimeTableHours(APIView):
                                         f"Bu vaqtda '{student.user.name} {student.user.surname}' o'quvchisining  '{tm.room.name}' xonasida  '{tm.flow.name}' patokida darsi bor")
             else:
                 lesson = ClassTimeTable.objects.get(pk=ls['id'])
-                lesson_room = ClassTimeTable.objects.filter(week_id=ls['day'], room_id=ls['room'],
+                lesson_room = ClassTimeTable.objects.filter(date=ls['date'], room_id=ls['room'],
                                                             hours_id=ls['hour'], branch_id=branch).first()
                 if lesson_room:
                     status = False
                     msg.append(f"Bu vaqtda '{lesson_room.room.name}' bosh emas")
-                    lesson_teacher = ClassTimeTable.objects.filter(week_id=ls['day'], teacher_id=lesson.teacher_id,
+                    lesson_teacher = ClassTimeTable.objects.filter(date=ls['date'], teacher_id=lesson.teacher_id,
                                                                    hours_id=ls['hour'], branch_id=branch).first()
                     if lesson_teacher:
                         status = False
@@ -91,14 +92,14 @@ class UpdateClassTimeTableHours(APIView):
 
                     students = lesson.group.students.all() if lesson.flow_id == None else lesson.flow.students.all()
                     lesson_students = students.filter(class_time_table__hours_id=ls['hour'],
-                                                      class_time_table__week_id=lesson.week_id,
+                                                      class_time_table__date=lesson.date,
                                                       class_time_table__branch_id=branch).all()
 
                     if lesson_students:
                         status = False
                         if students:
                             for student in students:
-                                tm = student.class_time_table.filter(hours_id=ls['hour'], week_id=lesson.week_id,
+                                tm = student.class_time_table.filter(hours_id=ls['hour'], date=lesson.date,
                                                                      branch_id=branch).first()
                                 if tm.flow_id == None:
                                     msg.append(
@@ -109,7 +110,7 @@ class UpdateClassTimeTableHours(APIView):
                 else:
                     if lesson.hours.pk == ls['hour']:
 
-                        lesson_teacher = ClassTimeTable.objects.filter(week_id=ls['day'], teacher_id=lesson.teacher_id,
+                        lesson_teacher = ClassTimeTable.objects.filter(date=ls['date'], teacher_id=lesson.teacher_id,
                                                                        hours_id=ls['hour'], branch_id=branch,
                                                                        room_id=ls['room']).first()
 
@@ -124,14 +125,14 @@ class UpdateClassTimeTableHours(APIView):
 
                         students = lesson.group.students.all() if lesson.flow_id == None else lesson.flow.students.all()
                         lesson_students = students.filter(class_time_table__hours_id=ls['hour'],
-                                                          class_time_table__week_id=lesson.week_id,
+                                                          class_time_table__date=lesson.date,
                                                           class_time_table__branch_id=branch,
                                                           class_time_table__room_id=ls['room']).all()
                         if lesson_students:
                             status = False
                             if students:
                                 for student in students:
-                                    tm = student.class_time_table.filter(hours_id=ls['hour'], week_id=lesson.week_id,
+                                    tm = student.class_time_table.filter(hours_id=ls['hour'], date=lesson.date,
                                                                          branch_id=branch, room_id=ls['room']).first()
                                     if tm.flow_id == None:
                                         msg.append(
@@ -140,7 +141,7 @@ class UpdateClassTimeTableHours(APIView):
                                         msg.append(
                                             f"Bu vaqtda '{student.user.name} {student.user.surname}' o'quvchisining  '{tm.room.name}' xonasida  '{tm.flow.name}' patokida darsi bor")
                     else:
-                        lesson_teacher = ClassTimeTable.objects.filter(week_id=ls['day'], teacher_id=lesson.teacher_id,
+                        lesson_teacher = ClassTimeTable.objects.filter(date=ls['date'], teacher_id=lesson.teacher_id,
                                                                        hours_id=ls['hour'], branch_id=branch).first()
 
                         if lesson_teacher:
@@ -154,13 +155,13 @@ class UpdateClassTimeTableHours(APIView):
 
                         students = lesson.group.students.all() if lesson.flow_id == None else lesson.flow.students.all()
                         lesson_students = students.filter(class_time_table__hours_id=ls['hour'],
-                                                          class_time_table__week_id=lesson.week_id,
+                                                          class_time_table__date=lesson.date,
                                                           class_time_table__branch_id=branch).all()
                         if lesson_students:
                             status = False
                             if students:
                                 for student in students:
-                                    tm = student.class_time_table.filter(hours_id=ls['hour'], week_id=lesson.week_id,
+                                    tm = student.class_time_table.filter(hours_id=ls['hour'], date=lesson.date,
                                                                          branch_id=branch).first()
                                     if tm.flow_id == None:
                                         msg.append(
@@ -185,18 +186,18 @@ class UpdateFlowTimeTable(APIView):
         data = json.loads(request.body)
         room = data.get('room')
         hour = data.get('hour')
-        day = data.get('day')
+        date = data.get('date')
         checked_id = data.get('checked_id')
         flow = Flow.objects.get(pk=checked_id)
-        time_table = ClassTimeTable.objects.filter(room_id=room, week_id=day, hours_id=hour).first()
+        time_table = ClassTimeTable.objects.filter(room_id=room, date=date, hours_id=hour).first()
         if time_table:
-            lesson_room = ClassTimeTable.objects.filter(week_id=day, room_id=room, hours_id=hour).first()
+            lesson_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
 
             if lesson_room:
                 if not lesson_room.id == time_table.id:
                     status = False
                     msg.append(f'Bu vaqtda {lesson_room.room.name} bosh emas')
-            lesson_teacher = ClassTimeTable.objects.filter(week_id=day, teacher_id=flow.teacher.pk,
+            lesson_teacher = ClassTimeTable.objects.filter(date=date, teacher_id=flow.teacher.pk,
                                                            hours_id=hour).first()
             if lesson_teacher:
                 if not lesson_teacher.id == time_table.id:
@@ -209,12 +210,12 @@ class UpdateFlowTimeTable(APIView):
                         msg.append(
                             f"Bu vaqtda '{lesson_teacher.teacher.user.name} {lesson_teacher.teacher.user.surname}' ustozining  '{lesson_teacher.room.name}' xonada  '{lesson_teacher.flow.name}' patokiga darsi bor")
 
-            lesson_students = flow.students.filter(class_time_table__hours_id=hour, class_time_table__week_id=day).all()
+            lesson_students = flow.students.filter(class_time_table__hours_id=hour, class_time_table__date=date).all()
 
             if lesson_students:
                 if flow.students.all():
                     for student in flow.students.all():
-                        tm = student.class_time_table.filter(hours_id=hour, week_id=day).first()
+                        tm = student.class_time_table.filter(hours_id=hour, date=date).first()
                         if tm:
                             if not tm.id == time_table.id:
                                 status = False
@@ -227,15 +228,15 @@ class UpdateFlowTimeTable(APIView):
             if status == True:
                 time_table.delete()
         else:
-            lesson_room = ClassTimeTable.objects.filter(week_id=day, room_id=room, hours_id=hour).first()
+            lesson_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
             if lesson_room:
                 status = False
                 msg.append(f'Bu vaqtda {lesson_room.room.name} bosh emas')
             if flow.teacher:
-                lesson_teacher = ClassTimeTable.objects.filter(week_id=day, teacher_id=flow.teacher.pk,
+                lesson_teacher = ClassTimeTable.objects.filter(date=date, teacher_id=flow.teacher.pk,
                                                                hours_id=hour).first()
             else:
-                lesson_teacher = ClassTimeTable.objects.filter(week_id=day,
+                lesson_teacher = ClassTimeTable.objects.filter(date=date,
                                                                hours_id=hour).first()
             if lesson_teacher:
                 status = False
@@ -246,13 +247,13 @@ class UpdateFlowTimeTable(APIView):
                     msg.append(
                         f"Bu vaqtda '{lesson_teacher.teacher.user.name} {lesson_teacher.teacher.user.surname}' ustozining  '{lesson_teacher.room.name}' xonada  '{lesson_teacher.flow.name}' patokiga darsi bor")
 
-            lesson_students = flow.students.filter(class_time_table__hours_id=hour, class_time_table__week_id=day).all()
+            lesson_students = flow.students.filter(class_time_table__hours_id=hour, class_time_table__date=date).all()
 
             if lesson_students:
                 status = False
                 if flow.students.all():
                     for student in flow.students.all():
-                        tm = student.class_time_table.filter(hours_id=hour, week_id=day).first()
+                        tm = student.class_time_table.filter(hours_id=hour, date=date).first()
                         if tm:
 
                             if tm.flow_id == None:

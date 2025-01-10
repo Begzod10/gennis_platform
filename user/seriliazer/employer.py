@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from user.models import CustomAutoGroup
-
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from payments.serializers import PaymentTypesSerializers
+from user.models import CustomAutoGroup, UserSalary, UserSalaryList
 
 
 class EmployerSerializer(serializers.ModelSerializer):
@@ -40,3 +41,17 @@ class EmployerSerializer(serializers.ModelSerializer):
                 return False
             else:
                 return True
+
+
+class EmployerSalaryMonths(serializers.ModelSerializer):
+    class Meta:
+        model = UserSalary
+        fields = ['id', 'total_salary', 'taken_salary', 'remaining_salary', 'date', 'permission']
+
+
+class UserForOneMonthListSerializer(serializers.ModelSerializer):
+    payment_types = PaymentTypesSerializers()
+
+    class Meta:
+        model = UserSalaryList
+        fields = ['id', 'payment_types', 'comment', 'deleted', 'salary', 'date']

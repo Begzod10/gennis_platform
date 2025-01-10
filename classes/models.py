@@ -36,6 +36,15 @@ class ClassNumber(models.Model):
         ordering = ['id']
 
 
+class ClassNumberSubjects(models.Model):
+    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True)
+    class_number = models.ForeignKey(ClassNumber, on_delete=models.SET_NULL, null=True)
+    hours = models.IntegerField(null=True)
+
+    class Meta:
+        ordering = ['id']
+
+
 @receiver(post_migrate)
 def create_default_overhead_types(sender, **kwargs):
     from branch.models import Branch

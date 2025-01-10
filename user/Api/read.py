@@ -17,8 +17,8 @@ from subjects.serializers import SubjectSerializer, Subject
 from user.models import CustomUser, UserSalaryList
 from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalary, CustomAutoGroup, \
     UserSalarySerializersRead
-
-
+from ..serialziers_list import UsersWithJobSerializers
+from user.seriliazer.employer import UserForOneMonthListSerializer,EmployerSalaryMonths
 class UserListCreateView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -75,7 +75,7 @@ class UserSalaryListDetailView(QueryParamFilterMixin, generics.RetrieveAPIView):
         'status': 'deleted',
     }
     queryset = UserSalaryList.objects.all()
-    serializer_class = UserSalaryListSerializersRead
+    serializer_class = UserForOneMonthListSerializer
 
     def retrieve(self, request, *args, **kwargs):
         user_salary_list = self.filter_queryset(self.get_object())
@@ -146,7 +146,7 @@ class EmployerRetrieveView(generics.RetrieveAPIView):
 
 class UserSalaryMonthView(generics.RetrieveAPIView):
     queryset = UserSalary.objects.all()
-    serializer_class = UserSalarySerializersRead
+    serializer_class = EmployerSalaryMonths
     permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):
@@ -171,7 +171,7 @@ class UsersWithJob(APIView):
 
     def get(self, request, *args, **kwargs):
         queryset = CustomUser.objects.all()
-        serializer = UserSerializerRead(queryset, many=True)
+        serializer = UsersWithJobSerializers(queryset, many=True)
         return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
@@ -182,9 +182,9 @@ class UsersWithJob(APIView):
         jobs = CustomUser.objects.filter(groups__id=job)
         if jobs.exists():
             if jobs.count() == 1:
-                serializer = UserSerializerRead(jobs.first())
+                serializer = UsersWithJobSerializers(jobs.first())
             else:
-                serializer = UserSerializerRead(jobs, many=True)
+                serializer = UsersWithJobSerializers(jobs, many=True)
             return Response(serializer.data)
         else:
             return Response({"error": "No users found with the specified job."}, status=404)

@@ -42,7 +42,7 @@ class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     filter_mappings = {
-        'teacher': 'tfilter_mappingseacher__id',
+        'teacher': 'teacher__id',
         'subject': 'subject__id',
         'course_types': 'course_types__id',
         'deleted': 'deleted',
@@ -76,10 +76,9 @@ class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
         serializer_class = self.get_serializer_class()
         kwargs['context'] = self.get_serializer_context()
         if self.request.method == 'GET':
-            kwargs['context']['fields'] = ['id', 'name', 'teacher']
-            # print(kwargs['context']['fields'])
+            kwargs['context']['fields'] = ['id', 'name']
             return serializer_class(*args, **kwargs)
-        return GroupCreateUpdateSerializer
+        return serializer_class(*args, **kwargs)  # corrected to use the right serializer
 
     def create(self, request, *args, **kwargs):
 
@@ -95,10 +94,13 @@ class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
             Response object with the newly created Group instance data.
         """
 
+        write_serializer = self.get_serializer(data=request.data, partial=True)  # use self.get_serializer()
+
+    def create(self, request, *args, **kwargs):
         write_serializer = self.get_serializer(data=request.data, partial=True)
+
         write_serializer.is_valid(raise_exception=True)
         self.perform_create(write_serializer)
-
         instance = Group.objects.get(pk=write_serializer.data['id'])
         read_serializer = GroupSerializer(instance)
         return Response(read_serializer.data)

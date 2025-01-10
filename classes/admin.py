@@ -25,9 +25,8 @@ class ClassTypesAdmin(admin.ModelAdmin):
 # Register the ClassNumber model
 @admin.register(ClassNumber)
 class ClassNumberAdmin(admin.ModelAdmin):
-    list_display = ('number', 'curriculum_hours', 'class_types')
+    list_display = ('number', 'curriculum_hours')
     search_fields = ('number', 'class_types__name')
-    list_filter = ('class_types',)
     filter_horizontal = ('subjects',)
     ordering = ('id',)
 

@@ -3,7 +3,6 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include, re_path
 from rest_framework_simplejwt.views import TokenVerifyView
-from schema_graph.views import Schema
 from group.gennis.AddToGroupApi import UpdateGroupDataAPIView, GetGroupDataAPIView
 from user.Api.read import GetUserAPIView, SetObserverView
 from user.Api.write import CustomTokenObtainPairView
@@ -38,10 +37,10 @@ urlpatterns = [
     path('api/SchoolTimeTable/', include('school_time_table.urls')),
     path('api/Calendar/', include('Calendar.urls')),
     path('api/Bot/', include('bot.urls')),
+    path('api/Ui/', include('ui.urls')),
     # path('api/Transfer/', include('transfer.urls')),
     path('api/Encashment/', include('encashment.urls')),
     path('api/Mobile/', include('mobile.urls')),
-    path("api/schema/", Schema.as_view()),
     path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),

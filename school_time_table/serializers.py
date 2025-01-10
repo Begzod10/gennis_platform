@@ -17,6 +17,12 @@ from time_table.models import WeekDays
 from time_table.serializers import WeekDaysSerializer
 
 
+# class HoursTypeSerializers(serializers.ModelSerializer):
+#     class Meta:
+#         model = HoursType
+#         fields = ['id', 'name']
+
+
 class HoursSerializers(serializers.ModelSerializer):
     can_delete = serializers.SerializerMethodField()
 
@@ -32,7 +38,6 @@ class HoursSerializers(serializers.ModelSerializer):
 
 
 class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
-
     # type = serializers_list.CharField(default=None, allow_blank=True)
 
     # type = serializer.CharField(default=None, allow_blank=True)
@@ -49,7 +54,7 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = ClassTimeTable
-        fields = ['id', 'group', 'week', 'room', 'hours', 'branch', 'teacher', 'subject', 'flow', 'name']
+        fields = ['id', 'group', 'week', 'room', 'hours', 'branch', 'teacher', 'subject', 'flow', 'name', 'date']
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -70,7 +75,8 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
         group = validated_data.get('group')
         flow = validated_data.get('flow')
         instance.group = validated_data.get('group', instance.group)
-        instance.week = validated_data.get('week', instance.week)
+        # instance.week = validated_data.get('week', instance.week)
+        instance.week = validated_data.get('date', instance.date)
         instance.room = validated_data.get('room', instance.room)
         instance.hours = validated_data.get('hours', instance.hours)
         instance.branch = validated_data.get('branch', instance.branch)
@@ -133,12 +139,16 @@ class ClassTimeTableSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'week', 'hours', 'flow', 'room', 'teacher', 'subject']
 
 
+from school_time_table.serializers_list import GroupClassSerializerList
+from teachers.serializer.lists import ActiveListTeacherSerializerTime
+
+
 class ClassTimeTableTest2Serializer(serializers.Serializer):
     time_tables = serializers.SerializerMethodField()
     hours_list = serializers.SerializerMethodField()
 
     def get_time_tables(self, obj):
-        week = self.context['week']
+        date = self.context['date']
         branch = self.context['branch']
         rooms = Room.objects.filter(branch=branch, deleted=False).all()
         hours = Hours.objects.all().order_by('order')
@@ -151,13 +161,13 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                 'lessons': []
             }
             for hour in hours:
-                lesson = room.classtimetable_set.filter(week=week, hours=hour, branch=branch).order_by(
+                lesson = room.classtimetable_set.filter(date=date, hours=hour, branch=branch).order_by(
                     'hours__order').first()
                 if lesson:
-                    group_info = GroupClassSerializer(lesson.group).data if lesson.group else None
+                    group_info = GroupClassSerializerList(lesson.group).data if lesson.group else None
                     flow_info = {'id': lesson.flow.id, 'name': lesson.flow.name,
                                  'classes': lesson.flow.classes} if lesson.flow else None
-                    teacher_info = TeacherSerializer(lesson.teacher).data if lesson.teacher else None
+                    teacher_info = ActiveListTeacherSerializerTime(lesson.teacher).data if lesson.teacher else None
                     subject_info = {'id': lesson.subject.id, 'name': lesson.subject.name} if lesson.subject else None
 
                     lesson_info = {
@@ -293,7 +303,8 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
     hours_list = serializers.SerializerMethodField()
 
     def get_time_tables(self, obj):
-        week = self.context['week']
+        # week = self.context['week']
+        date = self.context['date']
         branch = self.context['branch']
         hours = Hours.objects.all().order_by('order')
         time_tables = []
@@ -307,11 +318,11 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
             }
 
             for hour in hours:
-                lesson = group.classtimetable_set.filter(week=week, hours=hour, branch=branch).order_by(
+                lesson = group.classtimetable_set.filter(date=date, hours=hour, branch=branch).order_by(
                     'hours__order').first()
                 flow_class_time_table = None
                 for student in group.students.all():
-                    flow_class_time_table = student.class_time_table.filter(week=week, hours=hour, branch=branch,
+                    flow_class_time_table = student.class_time_table.filter(date=date, hours=hour, branch=branch,
                                                                             flow__isnull=False).order_by(
                         'hours__order').first()
                     if flow_class_time_table:
@@ -368,6 +379,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                         'room': {},
                         'is_flow': False,
                     })
+
             time_tables.append(info)
         return time_tables
 
@@ -382,3 +394,4 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
             }
             for hour in hours
         ]
+

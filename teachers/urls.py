@@ -6,7 +6,8 @@ from teachers.Api.read import (
     TeacherRetrieveView,
     TeacherSalaryListAPIView,
     TeacherSalaryDetailAPIView,
-    TeacherSalaryListView, TeacherSalaryListDetailView
+    TeacherSalaryDetail2APIView,
+    TeacherSalaryListView, TeacherSalaryListDetailView,TeacherSalaryList2DetailView
 )
 from teachers.Api.write import (
     TeacherCreateView, TeacherUpdateView, TeacherDestroyView,
@@ -15,7 +16,7 @@ from teachers.Api.write import (
 )
 from .Api.createdeleteupdate import TeacherAttendanceCreateView, TeacherAttendanceDestroyView
 from .Api.get import TeacherAttendanceListView, TeacherAttendanceRetrieveView, TeachersForBranches, TeachersForSubject, \
-    SalaryType
+    SalaryType, TeachersForSubjectForTimeTable
 from .views import GetGroupStudents
 
 app_name = 'Teachers'
@@ -33,8 +34,11 @@ urlpatterns = [
     path('teachers/<int:pk>/', TeacherRetrieveView.as_view(), name='teacher-retrieve'),
     path('teacher-salary-list/', TeacherSalaryListAPIView.as_view(), name='teacher-salary-list-Api'),
     path('teacher-salary-list/<int:pk>/', TeacherSalaryDetailAPIView.as_view(), name='teacher-salary-detail-Api'),
+    path('teacher-salary-list2/<int:pk>/', TeacherSalaryDetail2APIView.as_view(), name='teacher-salary-detail2-Api'),
     path('teacher-salary-list-month/<int:pk>/', TeacherSalaryListDetailView.as_view(),
          name='teacher-salary-detail-Api'),
+    path('teacher-salary-list-month2/<int:pk>/', TeacherSalaryList2DetailView.as_view(),
+         name='teacher-salary-detail2-Api'),
     path('teacher-salaries/', TeacherSalaryListView.as_view(), name='teacher-salary-list'),
     path('teachers/create/', TeacherCreateView.as_view(), name='teacher-create'),
     path('teachers/update/<int:pk>/', TeacherUpdateView.as_view(), name='teacher-update'),
@@ -47,6 +51,8 @@ urlpatterns = [
     path('teachers-for-branches/<int:pk>/', TeachersForBranches.as_view(), name='teachers-for-branches'),
     path('upload-file/', UploadFile.as_view(), name='upload-file'),
     path('teachers-for-subject/', TeachersForSubject.as_view(),
+         name='teachers-for-subject'),
+    path('teachers-for-subject-time/', TeachersForSubjectForTimeTable.as_view(),
          name='teachers-for-subject'),
     path('salary-types/', SalaryType.as_view(),
          name='salary-types'),

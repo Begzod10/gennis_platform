@@ -8,16 +8,27 @@ from students.serializers import get_remaining_debt_for_student
 class UserSerializer(serializers.ModelSerializer):
     age = serializers.SerializerMethodField(required=False)
     language = serializers.SerializerMethodField(required=False)
+    id = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = CustomUser
-        fields = ('name', 'surname', 'phone', 'age', 'registered_date', 'language')
+        fields = ('id', 'name', 'surname', 'phone', 'age', 'registered_date', 'language')
 
     def get_age(self, obj):
         return obj.calculate_age()
 
     def get_language(self, obj):
         return obj.language.name
+
+    def get_id(self, obj):
+        # Access related Student objects
+        students = obj.student_user.all()  # `student_user` is the related name in the `ForeignKey`
+        if not students.exists():
+            return "No student ID"
+
+        # If there are multiple students, return their IDs as a list
+        student_id = [student.id for student in students if student.id is not None]
+        return [student.id for student in students if student.id is not None][0]
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -31,10 +42,11 @@ class ActiveListSerializer(serializers.ModelSerializer):
     group = serializers.SerializerMethodField(required=False)
     color = serializers.SerializerMethodField(required=False)
     debt = serializers.SerializerMethodField(required=False)
+    class_number = serializers.CharField(required=False, source='class_number.number')
 
     class Meta:
         model = Student
-        fields = ('id', 'user', "group", "color", "debt")
+        fields = ('id', 'user', "group", "color", "debt", 'class_number')
 
     def get_color(self, obj):
         color = ''
@@ -63,7 +75,9 @@ class ActiveListSerializer(serializers.ModelSerializer):
         groups = obj.groups_student.first()
         group = {
             "id": groups.id if groups else None,
-            "name": groups.name if groups else None
+            "name": groups.name if groups else None,
+            "class_number": groups.class_number.number if groups else None,
+            "color": groups.color.name if groups else None
         }
         return group
 

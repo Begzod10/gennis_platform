@@ -2,18 +2,23 @@ import json
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from datetime import datetime, timedelta
 
 from group.models import Group
 from ...models import ClassTimeTable
 from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTableReadSerializers, \
     ClassTimeTableTest2Serializer, ClassTimeTableForClassSerializer2
-
+from ...serializers_list import GroupClassSerializerList, FlowsSerializerList
+from teachers.functions.school.CalculateTeacherSalary import teacher_salary_school
 from group.serializers import GroupClassSerializer
+
 from time_table.functions.creatWeekDays import creat_week_days
 from time_table.models import WeekDays
 from flows.models import Flow
 from branch.models import Branch
 from flows.serializers import FlowsSerializer
+from teachers.models import Teacher, TeacherSalary
+from classes.models import ClassNumberSubjects
 
 
 class CreateClassTimeTable(generics.ListCreateAPIView):
@@ -28,6 +33,10 @@ class CreateClassTimeTable(generics.ListCreateAPIView):
         instance = ClassTimeTable.objects.get(pk=write_serializer.data['id'])
         read_serializer = ClassTimeTableReadSerializers(instance)
 
+        # teacher_salary_school(request)
+
+        teacher_salary_school(request)
+
         return Response({'lesson': read_serializer.data, 'msg': 'Dars muvaffaqqiyatli kiritildi'})
 
 
@@ -40,15 +49,16 @@ class ClassesFlows(generics.ListAPIView):
             queryset = Flow.objects.filter(branch_id=branch_id)
 
         if type == 'group':
-            queryset = Group.objects.filter(class_number__isnull=False, branch_id=branch_id, deleted=False).order_by('class_number__number')
+            queryset = Group.objects.filter(class_number__isnull=False, branch_id=branch_id, deleted=False).order_by(
+                'class_number__number')
         return queryset
 
     def get_serializer_class(self):
         type = self.request.query_params.get('type')
         if type == 'group':
-            return GroupClassSerializer
+            return GroupClassSerializerList
         else:
-            return FlowsSerializer
+            return FlowsSerializerList
 
 
 # class Classes(generics.ListAPIView):
@@ -70,11 +80,12 @@ class ClassesFlows(generics.ListAPIView):
 class ClassTimeTableLessonsView(APIView):
     def get(self, request):
         creat_week_days()
-        week_id = self.request.query_params.get('week')
+        # week_id = self.request.query_params.get('week')
+        date = self.request.query_params.get('date')
         branch_id = self.request.query_params.get('branch')
         branch = Branch.objects.get(id=branch_id)
-        week = WeekDays.objects.get(id=week_id)
-        serializer = ClassTimeTableTest2Serializer(context={'week': week, 'branch': branch})
+        # week = WeekDays.objects.get(id=week_id)
+        serializer = ClassTimeTableTest2Serializer(context={'date': date, 'branch': branch})
         data = {
             'time_tables': serializer.get_time_tables(None),
             'hours_list': serializer.get_hours_list(None)
@@ -84,11 +95,12 @@ class ClassTimeTableLessonsView(APIView):
 
 class ClassTimeTableForClassView(APIView):
     def get(self, request):
-        week_id = self.request.query_params.get('week')
+        # week_id = self.request.query_params.get('week')
+        date = self.request.query_params.get('date')
         branch_id = self.request.query_params.get('branch')
         branch = Branch.objects.get(id=branch_id)
-        week = WeekDays.objects.get(id=week_id)
-        serializer = ClassTimeTableForClassSerializer2(context={'week': week, 'branch': branch})
+        # week = WeekDays.objects.get(id=week_id)
+        serializer = ClassTimeTableForClassSerializer2(context={'date': date, 'branch': branch})
         data = {
             'time_tables': serializer.get_time_tables(None),
             'hours_list': serializer.get_hours_list(None)
@@ -103,19 +115,19 @@ class CheckClassTimeTable(APIView):
         data = json.loads(request.body)
         type = data.get('type')
         hour = data.get('hour')
-        day = data.get('day')
+        date = data.get('date')
         checked_id = data.get('checked_id')
         if type == 'group':
             room = data.get('room')
             group = Group.objects.get(pk=checked_id)
-            lesson_room = ClassTimeTable.objects.filter(week_id=day, room_id=room, hours_id=hour).first()
+            lesson_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
             lesson_students = group.students.filter(class_time_table__hours_id=hour,
-                                                    class_time_table__week_id=day).all()
+                                                    class_time_table__date=date).all()
             if lesson_students:
                 status = False
                 if group.students.all():
                     for student in group.students.all():
-                        tm = student.class_time_table.filter(hours_id=hour, week_id=day).first()
+                        tm = student.class_time_table.filter(hours_id=hour, date=date).first()
                         if tm.flow_id == None:
                             msg.append(
                                 f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.group.class_number.number}-{tm.group.color.name}" sinifida darsi bor')
@@ -125,9 +137,20 @@ class CheckClassTimeTable(APIView):
             if lesson_room:
                 msg.append(f'Bu vaqtda {lesson_room.room.name} bosh emas')
                 status = False
-
+        elif type == "subject":
+            group_id = data.get('group_id')
+            group = Group.objects.get(pk=group_id)
+            today = datetime.today()
+            start_week = today - timedelta(days=today.weekday())
+            week_dates = [(start_week + timedelta(days=i)).date() for i in range(7)]
+            class_subject = ClassNumberSubjects.objects.get(subject_id=checked_id, class_number=group.class_number)
+            lessons = group.classtimetable_set.filter(date__in=week_dates, subject_id=checked_id).count()
+            if int(lessons) >= int(class_subject.hours):
+                status = False
+                msg.append(
+                    f"{group.class_number.number}-{group.color.name} sinifining {class_subject.subject.name} fanining haftalik dars soati to'lgan")
         elif type == 'teacher':
-            lesson = ClassTimeTable.objects.filter(week_id=day, teacher_id=checked_id, hours_id=hour).first()
+            lesson = ClassTimeTable.objects.filter(date=date, teacher_id=checked_id, hours_id=hour).first()
             if lesson:
                 status = False
                 if lesson.flow_id == None:
@@ -140,11 +163,11 @@ class CheckClassTimeTable(APIView):
         elif type == 'flow':
             room = data.get('room')
             flow = Flow.objects.get(pk=checked_id)
-            lesson_room = ClassTimeTable.objects.filter(week_id=day, room_id=room, hours_id=hour).first()
+            lesson_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
             if lesson_room:
                 status = False
                 msg.append(f'Bu vaqtda {lesson_room.room.name} bosh emas')
-            lesson_teacher = ClassTimeTable.objects.filter(week_id=day, teacher_id=flow.teacher.pk,
+            lesson_teacher = ClassTimeTable.objects.filter(date=date, teacher_id=flow.teacher.pk,
                                                            hours_id=hour).first()
             if lesson_teacher:
                 status = False
@@ -155,13 +178,13 @@ class CheckClassTimeTable(APIView):
                     msg.append(
                         f"Bu vaqtda '{lesson_teacher.teacher.user.name} {lesson_teacher.teacher.user.surname}' ustozining  '{lesson_teacher.room.name}' xonada  '{lesson_teacher.flow.name}' patokiga darsi bor")
 
-            lesson_students = flow.students.filter(class_time_table__hours_id=hour, class_time_table__week_id=day).all()
+            lesson_students = flow.students.filter(class_time_table__hours_id=hour, class_time_table__date=date).all()
 
             if lesson_students:
                 status = False
                 if flow.students.all():
                     for student in flow.students.all():
-                        tm = student.class_time_table.filter(hours_id=hour, week_id=day).first()
+                        tm = student.class_time_table.filter(hours_id=hour, date=date).first()
                         if tm.flow_id == None:
                             msg.append(
                                 f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.group.class_number.number}-{tm.group.color.name}" sinifida darsi bor')

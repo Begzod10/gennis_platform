@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from rooms.models import Room
-from students.models import StudentPayment, StudentHistoryGroups, StudentCharity, Student
+from students.models import StudentPayment, StudentHistoryGroups, StudentCharity, Student,DeletedStudent
 from students.serializers import StudentPaymentListSerializer, StudentHistoryGroupsListSerializer, \
     StudentCharityListSerializer, StudentListSerializer
 from subjects.models import Subject
@@ -105,7 +105,8 @@ class StudentPaymentListAPIView(generics.ListAPIView):
     serializer_class = StudentPaymentListSerializer
 
     def get(self, request, *args, **kwargs):
-        queryset = StudentPayment.objects.filter(deleted=False,status=False).all().order_by("-date")
+        queryset = StudentPayment.objects.filter(deleted=False, status=False,
+                                                 branch=request.user.branch).all().order_by("-date")
 
         serializer = StudentPaymentListSerializerTest(queryset, many=True)
         return Response(serializer.data)
@@ -204,12 +205,14 @@ class FilteredStudentsListView(APIView):
         }
 
         time_tables = json.loads(request.body)
+        deleted = DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
+
 
         students = Student.objects.filter(
             user__branch_id=location_id,
-            deleted_student_student__deleted=True,
+            deleted_student_student__deleted__isnull=True,
             subject__student__isnull=False
-        ).select_related('user').prefetch_related('subject', 'group_time_table').distinct()
+        ).exclude(id__in=deleted).select_related('user').prefetch_related('subject', 'group_time_table').distinct()
         room_ids = [t['room'] for t in time_tables]
         rooms = Room.objects.filter(id__in=room_ids)
 
@@ -299,8 +302,9 @@ class SchoolStudents(generics.ListAPIView):
 
     def get_queryset(self):
         branch_id = self.request.query_params.get('branch')
-        return Student.objects.filter(user__branch_id=branch_id, deleted_student_student__deleted=True,
-                                      groups_student__isnull=True)
+        deleted = DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
+        return Student.objects.filter(user__branch_id=branch_id,        deleted_student_student__deleted__isnull=True,
+                                      groups_student__isnull=True).exclude(id__in=deleted).distinct()
 
 
 class StudentsForSubject(generics.ListAPIView):

@@ -6,7 +6,6 @@ from rest_framework import permissions
 from mobile.get_user import get_user
 from permissions.models import ManyBranch, ManyLocation
 from user.functions.functions import check_auth
-from user.models import CustomUser
 
 
 class CustomResponseMixin:
@@ -227,6 +226,21 @@ class IsAdminOrIsSelf(permissions.BasePermission):
 
         if obj == request.user:
             return True
+        if request.user.has_perm(f'{obj._meta.app_label}.view_{obj._meta.model_name}'):
+            return True
+
+        return False
+
+
+class IsSmm(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_superuser:
+            return True
+
+        if request.user.groups.filter(name='Smm').exists():
+            return True
+
         if request.user.has_perm(f'{obj._meta.app_label}.view_{obj._meta.model_name}'):
             return True
 
