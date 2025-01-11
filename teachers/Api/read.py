@@ -109,6 +109,31 @@ class TeacherSalaryDetailAPIView(generics.RetrieveAPIView):
             raise NotFound('TeacherSalary not found for the given teacher_id')
 
 
+class TeacherSalaryDetailAPIView2(generics.RetrieveAPIView):
+    # permission_classes = [IsAuthenticated]
+
+    queryset = TeacherSalary.objects.all()
+    serializer_class = TeacherSalaryMonthlyListSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+
+        user_salary_list = self.get_object()
+
+        if isinstance(user_salary_list, QuerySet):
+            user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
+        else:
+            user_salary_list_data = self.get_serializer(user_salary_list).data
+
+        return Response(user_salary_list_data)
+
+    def get_object(self):
+        user_id = self.kwargs.get('pk')
+        try:
+            return TeacherSalary.objects.filter(teacher__user__id=user_id).all()
+        except TeacherSalary.DoesNotExist:
+            raise NotFound('TeacherSalary not found for the given teacher_id')
+
+
 class TeacherSalaryListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -163,3 +188,39 @@ class GetTeacherBalance(APIView):
         teacher = Teacher.objects.get(user_id=user_id)
         balance = calc_teacher_salary(teacher.id)
         return Response({'balance': balance}, status=status.HTTP_200_OK)
+
+
+class TeacherSalaryListDetailView2(QueryParamFilterMixin, generics.RetrieveAPIView):
+    # permission_classes = [IsAuthenticated]
+
+    filter_mappings = {
+        'status': 'deleted'
+    }
+    queryset = TeacherSalaryList.objects.all()
+    serializer_class = TeacherSalaryForOneMonthListSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+
+        user_salary_list = self.get_object()
+        user_salary_list = self.filter_queryset(user_salary_list)
+
+        user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
+        return Response(user_salary_list_data)
+
+    def get_object(self):
+        user_id = self.kwargs.get('pk')
+        try:
+            queryset = TeacherSalaryList.objects.filter(salary_id_id=user_id, deleted=False).all()
+            sum = 0
+            for i in queryset:
+                sum += i.salary
+            salary = TeacherSalary.objects.filter(id=user_id).first()
+            salary.remaining_salary = salary.total_salary - sum
+            salary.taken_salary = sum
+            salary.save()
+
+            queryset2 = TeacherSalaryList.objects.filter(salary_id_id=user_id).all()
+
+            return queryset2
+        except TeacherSalaryList.DoesNotExist:
+            raise NotFound('UserSalary not found for the given user_id')
