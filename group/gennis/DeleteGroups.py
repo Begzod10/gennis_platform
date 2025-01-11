@@ -1,14 +1,16 @@
 import json
 from datetime import datetime
 
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from gennis_platform.settings import classroom_server
+from gennis_platform.uitils import request as send
 from group.models import Group
 from group.serializers import GroupSerializer
 from students.models import StudentHistoryGroups
 from teachers.models import TeacherHistoryGroups
-from rest_framework.permissions import IsAuthenticated
 
 
 class DeleteGroups(APIView):
@@ -19,6 +21,8 @@ class DeleteGroups(APIView):
 
         today = datetime.now()
         group = Group.objects.get(pk=pk)
+        send(url=f"{classroom_server}/delete_group/{group.id}/turon", method='DELETE')
+
         group.deleted = True
         group.save()
         if data['type'] == "center":

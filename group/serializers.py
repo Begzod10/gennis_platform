@@ -1,11 +1,15 @@
-import pprint
 from datetime import datetime
+
 from django.db.models import Q
 from rest_framework import serializers
 
 from branch.models import Branch
 from branch.serializers import BranchSerializer
 from classes.models import ClassNumber, ClassColors
+from gennis_platform.settings import classroom_server
+from gennis_platform.uitils import request
+from group.functions.CreateSchoolStudentDebts import create_school_student_debts
+from group.models import Group, GroupReason, CourseTypes
 from language.models import Language
 from language.serializers import LanguageSerializers
 from students.models import DeletedNewStudent
@@ -17,8 +21,6 @@ from system.serializers import SystemSerializers
 from teachers.models import Teacher, TeacherHistoryGroups
 from teachers.serializers import TeacherSerializer
 from time_table.models import GroupTimeTable
-from group.functions.CreateSchoolStudentDebts import create_school_student_debts
-from group.models import Group, GroupReason, CourseTypes
 
 
 class CourseTypesSerializers(serializers.ModelSerializer):
@@ -126,6 +128,9 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                                                          teacher=instance.teacher.all()[0])
                 teacher_history_group.left_day = datetime.now()
                 teacher_history_group.save()
+                teach =instance.teacher.all()[0]
+                request(url=f"{classroom_server}/delete_teacher_from_group/{teach.user_id}/{instance.id}/turon",method='DELETE')
+
 
                 for time_table in instance.classtimetable_set.all():
                     instance.teacher.all()[0].class_time_table.remove(time_table)
@@ -147,6 +152,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                 student.class_time_table.add(time_table)
                     create_school_student_debts(instance, students)
                 elif update_method == "remove_students":
+
                     if delete_type == 'new_students':
                         for student in students:
                             today = datetime.now()
@@ -225,6 +231,9 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                 elif update_method == "remove_students":
                     if delete_type == 'new_students':
                         for student in students:
+                            request(
+                                url=f"{classroom_server}/delete_student_from_group/{student.user_id}/{instance.id}/turon",
+                                method='DELETE')
                             instance.students.remove(student)
                             DeletedNewStudent.objects.create(student=student, comment=comment)
                             if instance.group_time_table.all():
