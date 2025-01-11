@@ -17,24 +17,6 @@ def create_school_student_debts(group, students):
                                                                  system=group.system)
 
 
-# def generate_months(start_year, start_month, end_year, end_month):
-#     if start_month == 7 or start_month == 8:
-#         start_month = 9
-#     current_year = start_year
-#     current_month = start_month
-#     dates = []
-#
-#     while current_year < end_year or (current_year == end_year and current_month <= end_month):
-#         dates.append((current_year, current_month))
-#         if current_month == 12:
-#             current_month = 1
-#             current_year += 1
-#         else:
-#             current_month += 1
-#     datetime_dates = [timezone.localize(datetime(year, month, 1)) for year, month in dates]
-#     sorted_datetime_dates = sorted(datetime_dates)
-#
-#     return sorted_datetime_dates
 def generate_months(start_year, start_month, end_year, end_month):
     dates = []
 
