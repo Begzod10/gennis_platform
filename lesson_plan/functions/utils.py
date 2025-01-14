@@ -33,12 +33,13 @@ def update_lesson_plan(group_id):
 
     group = get_object_or_404(Group, id=group_id)
     current_date = datetime.now()
-    future_date_limit = current_date + timedelta(days=5)
+    start_next_week = current_date + timedelta(days=(7 - current_date.weekday()))
+    end_next_week = start_next_week + timedelta(days=6)
 
     valid_days = []
     for day in plan_days:
         date_get = date(current_year, current_month, day)
-        if current_date.date() < date_get <= future_date_limit.date():
+        if start_next_week.date() <= date_get <= end_next_week.date():
             weekday = date_get.strftime('%A')
             if weekday in week_list:
                 valid_days.append(day)
