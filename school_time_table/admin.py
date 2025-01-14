@@ -3,7 +3,6 @@ from django.contrib import admin
 from .models import Hours, ClassTimeTable
 
 
-# Register the Hours model
 @admin.register(Hours)
 class HoursAdmin(admin.ModelAdmin):
     list_display = ('name', 'start_time', 'end_time', 'order')
