@@ -17,6 +17,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models.functions import ExtractYear
 
 from attendances.models import AttendancePerMonth
 from branch.models import Branch
@@ -579,7 +580,6 @@ class StudentCharityModelView(APIView):
         all_months = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
         missing_months = set(all_months) - set(months_with_attendance)
         month_names = [calendar.month_name[month] for month in sorted(missing_months)]
-
         return Response(month_names)
 
     def post(self, request, *args, **kwargs):
@@ -587,17 +587,21 @@ class StudentCharityModelView(APIView):
         month = data.pop('date')
         month_number = list(calendar.month_name).index(month.capitalize())
         old_months = [9, 10, 11, 12]
-        current_year = datetime.now().year
+        current_year = int(data['year'])
         if month_number in old_months:
             current_year -= 1
         date = datetime(year=current_year, month=int(month_number), day=int(datetime.now().day)).date()
         student_id = self.kwargs['student_id']
-
         student = get_object_or_404(Student, id=student_id)
         group = student.groups_student.first()
-        attendance_per_month = AttendancePerMonth.objects.get(student_id=student.id,
-                                                              month_date__month=month_number,
-                                                              month_date__year=current_year, group=group)
+        attendance_per_month = AttendancePerMonth.objects.filter(
+            student_id=student.id,
+            month_date__month=month_number,
+            month_date__year=current_year,
+            group=group
+        ).first()
+        if not attendance_per_month:
+            return Response({"msg": "Shu yil shu oyga qarzdorlik yaratilmagan!"})
 
         if attendance_per_month.total_debt != attendance_per_month.payment and attendance_per_month.remaining_debt == 0:
             attendance_per_month.remaining_debt = attendance_per_month.total_debt
@@ -640,6 +644,42 @@ class StudentCharityModelView(APIView):
         payment.save()
 
         return Response({"msg": "Chegirma muvaffaqiyatli o'zgartirildi"})
+
+
+class GetYearView(APIView):
+    def get(self, request):
+        id = self.kwargs.get('student_id')
+        years = AttendancePerMonth.objects.filter(student_id=id) \
+            .annotate(year=ExtractYear('month_date')) \
+            .values_list('year', flat=True) \
+            .distinct()
+
+        current_year = datetime.today().year
+
+        years = list(years)
+        if current_year not in years:
+            years.append(current_year)
+        return Response({"years": sorted(years)})
+
+
+class GetMonthView(APIView):
+    def get(self, request):
+        student_id = self.kwargs.get('student_id')
+        year = self.kwargs.get('year')
+        all_months = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
+
+        queryset = AttendancePerMonth.objects.filter(
+            student_id=student_id,
+            month_date__month__in=all_months,
+            month_date__year=year
+        ).annotate(month_number=ExtractMonth('month_date'))
+
+        months_with_attendance = queryset.values_list('month_number', flat=True).distinct()
+
+        missing_months = [month for month in all_months if month not in months_with_attendance]
+
+        month_names = [calendar.month_name[month] for month in missing_months]
+        return Response(month_names)
 
 
 class GetStudentBalance(APIView):
