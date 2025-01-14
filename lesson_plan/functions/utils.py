@@ -34,13 +34,17 @@ def update_lesson_plan(group_id):
     current_date = datetime.now()
     future_date_limit = current_date + timedelta(days=5)
 
-    for day in plan_days:
+    future_days = [
+        day for day in plan_days if
+        current_date.date() <= date(current_year, current_month, day) <= future_date_limit.date()
+    ]
+
+    for day in future_days:
         date_get = date(current_year, current_month, day)
-        if date_get <= future_date_limit.date():
-            teachers = group.teacher.all()
-            for teacher in teachers:
-                exist = LessonPlan.objects.filter(date=date_get, group_id=group_id, teacher_id=teacher.id).exists()
-                if not exist:
-                    LessonPlan.objects.create(group_id=group_id, teacher_id=teacher.id, date=date_get)
+        teachers = group.teacher.all()
+        for teacher in teachers:
+            exist = LessonPlan.objects.filter(date=date_get, group_id=group_id, teacher_id=teacher.id).exists()
+            if not exist:
+                LessonPlan.objects.create(group_id=group_id, teacher_id=teacher.id, date=date_get)
 
     return JsonResponse({"message": "Lesson plans updated"}, status=200)
