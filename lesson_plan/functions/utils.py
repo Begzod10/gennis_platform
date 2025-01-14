@@ -35,11 +35,17 @@ def update_lesson_plan(group_id):
     future_date_limit = current_date + timedelta(days=5)
 
     future_days = [
-        day for day in plan_days if
-        current_date.date() <= date(current_year, current_month, day) <= future_date_limit.date()
+        day for day in plan_days
+        if current_date.date() < date(current_year, current_month, day) <= future_date_limit.date()
     ]
 
+    valid_days = []
     for day in future_days:
+        weekday = date(current_year, current_month, day).strftime('%A')
+        if weekday in week_list:
+            valid_days.append(day)
+
+    for day in valid_days:
         date_get = date(current_year, current_month, day)
         teachers = group.teacher.all()
         for teacher in teachers:
