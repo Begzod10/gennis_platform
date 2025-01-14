@@ -27,6 +27,7 @@ def update_lesson_plan(group_id):
 
     current_year = datetime.now().year
     current_month = datetime.now().month
+
     number_days = number_of_days_in_month(current_year, current_month)
     plan_days = weekday_from_date(list(range(1, number_days + 1)), current_month, current_year, week_list)
 
@@ -34,16 +35,13 @@ def update_lesson_plan(group_id):
     current_date = datetime.now()
     future_date_limit = current_date + timedelta(days=5)
 
-    future_days = [
-        day for day in plan_days
-        if current_date.date() < date(current_year, current_month, day) <= future_date_limit.date()
-    ]
-
     valid_days = []
-    for day in future_days:
-        weekday = date(current_year, current_month, day).strftime('%A')
-        if weekday in week_list:
-            valid_days.append(day)
+    for day in plan_days:
+        date_get = date(current_year, current_month, day)
+        if current_date.date() < date_get <= future_date_limit.date():
+            weekday = date_get.strftime('%A')
+            if weekday in week_list:
+                valid_days.append(day)
 
     for day in valid_days:
         date_get = date(current_year, current_month, day)
