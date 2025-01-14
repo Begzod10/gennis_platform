@@ -18,8 +18,9 @@ def number_of_days_in_month(year, month):
 def weekday_from_date(day_list, month, year, week_list):
     filtered_days = []
     for days in day_list:
-        weekday_name = calendar.day_name[date(year, int(month), days).weekday()]
-        if weekday_name in week_list:
+        if calendar.day_name[
+            date(day=days, month=int(month), year=year).weekday()
+        ] in week_list:
             filtered_days.append(days)
     return filtered_days
 
