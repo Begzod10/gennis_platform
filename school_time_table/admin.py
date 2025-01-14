@@ -14,7 +14,7 @@ class HoursAdmin(admin.ModelAdmin):
 # Register the ClassTimeTable model
 @admin.register(ClassTimeTable)
 class ClassTimeTableAdmin(admin.ModelAdmin):
-    list_display = ('name', 'group', 'week', 'room', 'hours', 'branch', 'teacher', 'subject', 'flow')
+    list_display = ('name', 'group', 'date', 'room', 'hours', 'branch', 'teacher', 'subject', 'flow')
     search_fields = ('name', 'group__name', 'room__name', 'teacher__user__username', 'subject__name')
     list_filter = ('week', 'branch', 'teacher', 'subject')
     filter_horizontal = ('students',)
