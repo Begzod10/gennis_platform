@@ -27,7 +27,7 @@ def weekday_from_date(day_list, month, year, week_list):
 def update_lesson_plan(group_id):
     time_table_group = ClassTimeTable.objects.filter(group_id=group_id).order_by('id')
 
-    week_list = [time_table.date.date.strftime('%A') for time_table in time_table_group]
+    week_list = [time_table.date.strftime('%A') for time_table in time_table_group]
 
     current_year = datetime.now().year
     current_month = datetime.now().month
@@ -43,9 +43,11 @@ def update_lesson_plan(group_id):
     for day in plan_days:
         if current_day2 >= day:
             date_get = datetime.strptime(f"{current_year}-{current_month}-{day}", "%Y-%m-%d")
-            exist = LessonPlan.objects.filter(date=date_get, group_id=group_id, teacher_id=group.teacher.id).exists()
-            if not exist:
-                lesson_plan = LessonPlan.objects.create(group_id=group_id, teacher_id=group.teacher.id, date=date_get)
-                lesson_plan.save()
+            teachers = group.teacher.all()
+            for teacher in teachers:
+                exist = LessonPlan.objects.filter(date=date_get, group_id=group_id, teacher_id=teacher.id).exists()
+                if not exist:
+                    lesson_plan = LessonPlan.objects.create(group_id=group_id, teacher_id=teacher.id, date=date_get)
+                    lesson_plan.save()
 
     return JsonResponse({"message": "Lesson plans updated"}, status=200)

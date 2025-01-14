@@ -14,7 +14,7 @@ class LessonPlan(models.Model):
     assessment = models.TextField(null=True, blank=True)
     activities = models.TextField(null=True, blank=True)
     resources = models.TextField(null=True, blank=True)
-    updated = models.DateField()
+    updated = models.DateField(null=True)
 
 
 class LessonPlanStudents(models.Model):
