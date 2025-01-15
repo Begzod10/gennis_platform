@@ -1,5 +1,5 @@
 import json
-
+from django.db import transaction
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -10,6 +10,7 @@ from students.models import DeletedStudent, StudentPayment, StudentCharity, Stud
     Student
 from students.serializers import DeletedStudentSerializer, StudentPaymentSerializer, StudentCharitySerializer, \
     StudentHistoryGroupsSerializer, StudentSerializer, StudentListSerializer
+from attendances.models import AttendancePerMonth
 
 
 class StudentCreateView(CustomResponseMixin, generics.CreateAPIView):
@@ -43,13 +44,12 @@ class StudentDestroyView(generics.DestroyAPIView):
     serializer_class = StudentSerializer
 
     def delete(self, request, *args, **kwargs):
-        student = self.get_object()
-        new_student, created = DeletedNewStudent.objects.get_or_create(student=student)  # new studentni ochirish
-        if not created:
-            new_student.delete()
-            return Response({"msg": "O'quvchi muvofaqqiyatlik qaytarildi !"}, status=status.HTTP_200_OK)
-
-        else:
+        with transaction.atomic():
+            student = self.get_object()
+            new_student, created = DeletedNewStudent.objects.get_or_create(student=student)
+            if not created:
+                new_student.delete()
+                return Response({"msg": "O'quvchi muvofaqqiyatlik qaytarildi !"}, status=status.HTTP_200_OK)
             return Response({"msg": "O'quvchi muvofaqqiyatlik o'chirildi !"}, status=status.HTTP_200_OK)
 
 
@@ -162,25 +162,36 @@ class DeletedStudentDestroy(CustomResponseMixin, generics.DestroyAPIView):
 
 class CreateDiscountForSchool(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
-        from attendances.models import AttendancePerMonth
-        data = json.loads(request.body)
+        data = request.data
+        required_fields = ['discount', 'student', 'reason']
+        missing_fields = [field for field in required_fields if field not in data]
+
+        if missing_fields:
+            return Response(
+                {"error": f"Missing required fields: {', '.join(missing_fields)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         discount = data['discount']
-        student = data['student']
-        attendances = AttendancePerMonth.objects.filter(student_id=student)
-        for attendance in attendances:
-            attendance.discount = discount
-            attendance.save()
-        student = Student.objects.get(pk=student)
-        StudentCharity.objects.update_or_create(
-            student=student,
-            defaults={
-                'charity_sum': discount,
-                'name': data['reason'],
-                "group": student.groups_student.first(),
-                "branch": student.user.branch
+        student_id = data['student']
+        reason = data['reason']
 
-            }
+        try:
+            student = Student.objects.get(pk=student_id)
+            attendances = AttendancePerMonth.objects.filter(student_id=student_id)
+            attendances.update(discount=discount)
 
-        )
+            StudentCharity.objects.update_or_create(
+                student=student,
+                defaults={
+                    'charity_sum': discount,
+                    'name': reason,
+                    "group": student.groups_student.first(),
+                    "branch": student.user.branch
+                }
+            )
+            return Response({"msg": "Chegirma muvaffaqiyatli yaratildi !"}, status=status.HTTP_200_OK)
 
-        return Response({"msg": "Chegirma muvaffaqiyatli yaratildi !"}, status=status.HTTP_200_OK)
+        except Student.DoesNotExist:
+            return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+

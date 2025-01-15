@@ -2,6 +2,8 @@ from django.db import models
 from group.models import Group
 from teachers.models import Teacher
 from django.conf import settings
+from django.db.models.signals import post_migrate
+from django.dispatch import receiver
 
 
 class ObservationInfo(models.Model):
@@ -43,3 +45,59 @@ class ObservationStatistics(models.Model):
 
     class Meta:
         ordering = ['id']
+
+
+@receiver(post_migrate)
+def create_default_overhead_types(sender, **kwargs):
+    default_values = [
+        {
+            "title": "Teacher follows her or his lesson plan"
+        },
+        {
+            "title": "Teacher is actively circulating in the room"
+        },
+        {
+            "title": "Teacher uses feedback to encourage critical thinking"
+        },
+        {
+            "title": "Students are collaborating with each other and engaged in"
+        },
+        {
+            "title": "Teacher talking time is 1/3"
+        },
+        {
+            "title": "Teacher uses a variety of media and resources for learning"
+        },
+        {
+            "title": "Teacher uses different approach of method"
+        },
+        {
+            "title": "Teacher has ready made materials for the lesson"
+        },
+        {
+            "title": "Lesson objective is present and communicated to students",
+
+        }
+    ]
+    for value in default_values:
+        ObservationInfo.objects.get_or_create(title=value['title'])
+    options = [
+        {
+            "name": "Missing",
+            "value": 1
+        },
+        {
+            "name": "Done but poorly",
+            "value": 2
+        },
+        {
+            "name": "Acceptable",
+            "value": 3
+        },
+        {
+            "name": "Sample for others",
+            "value": 4
+        },
+    ]
+    for option in options:
+        ObservationOptions.objects.get_or_create(name=option['name'], value=option['value'])

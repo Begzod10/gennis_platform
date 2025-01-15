@@ -6,8 +6,21 @@ from .api.get import ObservationDayRetrieveAPIView, ObservationDayListView, Obse
     ObservationStatisticsListView
 from .api.createdeleteupdate import ObservationDayCreateView, ObservationDayUpdateView, ObservationDayDestroyView, \
     ObservationStatisticsCreateView, ObservationStatisticsUpdateView, ObservationStatisticsDestroyView
+from observation.new_views import groups_to_observe, teacher_observe, set_observer, observed_group, observed_group_info
 
 urlpatterns = [
+    path('groups_to_observe/', groups_to_observe, name='groups_to_observe'),
+    path('groups_to_observe/<int:location_id>/', groups_to_observe, name='groups_to_observe_with_location'),
+
+    path('teacher_observe/<int:group_id>/', teacher_observe, name='teacher_observe'),
+
+    path('set_observer/<int:user_id>/', set_observer, name='set_observer'),
+
+    path('observed_group/<int:group_id>/', observed_group, name='observed_group'),
+    path('observed_group/<int:group_id>/<str:date>/', observed_group, name='observed_group_with_date'),
+
+    path('observed_group_info/<int:group_id>/', observed_group_info, name='observed_group_info'),
+
     path('observation_statistics_create/', ObservationStatisticsCreateView.as_view(),
          name='observation-statistics-create'),
     path('observation_statistics_update/<int:pk>/', ObservationStatisticsUpdateView.as_view(),

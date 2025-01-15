@@ -5,6 +5,8 @@ from rooms.models import Room
 from students.models import Student
 
 
+
+
 class WeekDays(models.Model):
     name_en = models.CharField(null=True)
     name_uz = models.CharField(null=True)
