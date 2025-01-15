@@ -659,6 +659,8 @@ class GetYearView(APIView):
         years = list(years)
         if current_year not in years:
             years.append(current_year)
+        if 2024 not in years:
+            years.append(2024)
         return Response({"years": sorted(years)})
 
 
@@ -687,6 +689,8 @@ class GetStudentBalance(APIView):
         student = Student.objects.get(user_id=user_id)
         balance = get_remaining_debt_for_student(student.id)
         return Response({"balance": balance}, status=status.HTTP_200_OK)
+
+
 class MissingAttendanceListView2(generics.RetrieveAPIView):
 
     def get_queryset(self):
