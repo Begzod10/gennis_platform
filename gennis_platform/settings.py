@@ -92,13 +92,22 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'gennis_platform.wsgi.application'
 
+<<<<<<< HEAD
+=======
+# DATABASES = {'default': {'ENGINE': 'django.db.backends.postgresql', 'NAME': 'gennis_platform', 'USER': 'postgres',
+#                          'PASSWORD': '123', 'HOST': '192.168.1.20', 'PORT': '5432'}}
+
+>>>>>>> 45075886c4c4f8467cecf51020569c95afbbcb70
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('DB_NAME', 'gennis_platform'),
         'USER': os.getenv('DB_USER', 'postgres'),
         'PASSWORD': os.getenv('DB_PASSWORD', '123'),
+<<<<<<< HEAD
         # 'HOST': os.getenv('DB_HOST', '192.168.1.40'),
+=======
+>>>>>>> 45075886c4c4f8467cecf51020569c95afbbcb70
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': '5432',
     }
