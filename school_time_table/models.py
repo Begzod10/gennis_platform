@@ -9,6 +9,9 @@ class Hours(models.Model):
     name = models.CharField()
     order = models.IntegerField()
 
+    def __str__(self):
+        return self.start_time
+
 
 class ClassTimeTable(models.Model):
     group = models.ForeignKey('group.Group', on_delete=models.CASCADE, null=True)

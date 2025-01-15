@@ -8,7 +8,7 @@ from .Api.TimeTable.CreateClassTimeTable import CreateClassTimeTable, ClassesFlo
 from .Api.TimeTable.UpdateClassTimeTable import UpdateClassTimeTable, UpdateClassTimeTableHours, UpdateFlowTimeTable
 from .Api.TimeTable.DeleteItemClassTimeTable import DeleteItemClassTimeTable
 from .Api.TimeTable.checks.checkNextLesson import CheckNextLesson
-
+from .views import TimeTableAPIView
 urlpatterns = [
     path('hours-list-create/', HourListCreateView.as_view(), name='hours-list-create'),
     path('hours-list-for-type/', HoursView.as_view(), name='hours-list-for-type'),
@@ -26,5 +26,6 @@ urlpatterns = [
     path('can-set-flow/', UpdateFlowTimeTable.as_view(), name='timetable-lessons'),
     path('check-next-lesson/', CheckNextLesson.as_view(),
          name='check-next-lesson'),
+    path('time_table_mobile/<int:pk>/', TimeTableAPIView.as_view(), name='time_table_mobile'),
 ]
 
