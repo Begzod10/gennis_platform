@@ -121,3 +121,6 @@ def teacher_salary_school(request=None, update=False, salary_id=None, worked_hou
         salary_month.worked_hours = worked_hours
         salary_month.save()
         return salary
+
+# 339000
+# 678000
