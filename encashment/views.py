@@ -393,10 +393,11 @@ class GetTeacherSalary(APIView):
     def get(self, request, *args, **kwargs):
         branch = request.query_params.get('branch')
         salaries = TeacherSalary.objects.filter(month_date__month=datetime.now().month,
-                                                month_date__year=datetime.now().year, branch_id=branch).all()
+                                                month_date__year=datetime.now().year, teacher__user__branch__id=branch).all()
         data = {
             'salary': [],
-            'dates': []
+            'dates': [],
+            'branch':branch
         }
         for salary in salaries:
             datas = {
@@ -420,7 +421,8 @@ class GetTeacherSalary(APIView):
         unique_dates = TeacherSalary.objects.annotate(
             year=ExtractYear('month_date'),
             month=ExtractMonth('month_date')
-        ).filter(branch__location__system__name='school').values('year', 'month').distinct().order_by('year', 'month')
+        ).filter(teacher__user__branch=branch).values('year', 'month').distinct().order_by('year', 'month')
+
 
         year_month_dict = {}
         for date in unique_dates:

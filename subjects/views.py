@@ -73,7 +73,7 @@ class CreateSubjectList(generics.ListCreateAPIView):
 
 
 class SubjectRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
 

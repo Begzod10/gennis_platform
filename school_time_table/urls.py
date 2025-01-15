@@ -27,3 +27,4 @@ urlpatterns = [
     path('check-next-lesson/', CheckNextLesson.as_view(),
          name='check-next-lesson'),
 ]
+

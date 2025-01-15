@@ -42,7 +42,7 @@ class WeekdaysInMonthAPIView(APIView):
             "year": year,
             "weekdays": weekdays,
             "students": data,
-            'teachers': Group.objects.get(pk=group_id).teacher.first().id
+            'teachers': Group.objects.get(id=group_id).teacher.first().id
 
         })
 

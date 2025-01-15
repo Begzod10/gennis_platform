@@ -6,8 +6,6 @@ from ...serializers import ClassTimeTableCreateUpdateSerializers
 from teachers.functions.school.CalculateTeacherSalary import teacher_salary_school
 
 
-
-
 class DeleteItemClassTimeTable(generics.RetrieveDestroyAPIView):
     queryset = ClassTimeTable.objects.all()
     serializer_class = ClassTimeTableCreateUpdateSerializers

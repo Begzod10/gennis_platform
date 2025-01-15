@@ -1,3 +1,5 @@
+
+from datetime import datetime
 from Calendar.models import Day
 from teachers.models import TeacherSalary, Teacher
 from school_time_table.models import ClassTimeTable
@@ -51,7 +53,6 @@ def calculate_teacher_salary(teacher):
         # salary.remaining_salary = remaining_salary
         # salary.total_salary = overall
         # salary.save()
-
 
 def teacher_salary_school(request=None, update=False, salary_id=None, worked_hours=0, deleted=False, teacher_id=None,
                           month_date=None, class_salary=None):

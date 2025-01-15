@@ -221,8 +221,10 @@ class AttendancePerDayCreateUpdateSerializerSchool(serializers.ModelSerializer):
         today = datetime.today()
         day = datetime.strptime(f"{today.year}-{date}", "%Y-%m-%d")
 
+
         errors = []
         created_instances = []
+        update_lesson_plan(group.id)
 
         for student in students:
             student_data = Student.objects.get(pk=student['id'])
