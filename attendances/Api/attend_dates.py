@@ -52,7 +52,7 @@ class WeekdaysInMonthAPIView(APIView):
         day = datetime.strptime(f"{today.year}-{date}", "%Y-%m-%d")
 
         attendances = AttendancePerDay.objects.filter(day=day, group=group_id).values_list('student_id',
-                                                                                            flat=True)
+                                                                                           flat=True)
 
         students = Student.objects.filter(groups_student=group_id).exclude(id__in=attendances).all()
 

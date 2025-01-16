@@ -27,7 +27,6 @@ class AttendancePerMonthSerializer(serializers.ModelSerializer):
                   'taken_salary', 'group']
 
 
-
 class AttendancePerDaySerializer(serializers.ModelSerializer):
     student = StudentSerializer()
     teacher = TeacherSerializer()
@@ -197,7 +196,7 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
 class StudentDetailSchoolSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     status = serializers.BooleanField()
-    reason = serializers.CharField(required=False,allow_null=True,allow_blank=True)
+    reason = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
 
 class AttendancePerDayCreateUpdateSerializerSchool(serializers.ModelSerializer):
@@ -220,7 +219,6 @@ class AttendancePerDayCreateUpdateSerializerSchool(serializers.ModelSerializer):
         date = validated_data.get('date')
         today = datetime.today()
         day = datetime.strptime(f"{today.year}-{date}", "%Y-%m-%d")
-
 
         errors = []
         created_instances = []
@@ -249,3 +247,6 @@ class AttendancePerDayCreateUpdateSerializerSchool(serializers.ModelSerializer):
             raise serializers.ValidationError({"detail": errors})
 
         return created_instances[0] if created_instances else None
+
+
+

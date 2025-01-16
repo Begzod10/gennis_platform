@@ -1,4 +1,5 @@
 from datetime import timedelta
+
 from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -28,18 +29,18 @@ class TimeTableAPIView(APIView):
                 if hour in lessons_by_hour:
                     lesson = lessons_by_hour[hour]
                     day_lessons.append({
-                        'time': f"{lesson.hours.start_time} - {lesson.hours.end_time}",
+                        'time': f"{lesson.hours.start_time.strftime('%H:%M')} - {lesson.hours.end_time.strftime('%H:%M')}",
                         'subject': lesson.subject.name if lesson.subject else None,
-                        'teacher': {
-                            'name': f"{lesson.teacher.user.name + ' ' + lesson.teacher.user.surname}" if lesson.teacher else None,
-                        },
+                        'teacher': f"{lesson.teacher.user.name + ' ' + lesson.teacher.user.surname}" if lesson.teacher else None,
+                        'teacher_color': lesson.teacher.color if lesson.teacher else None,
                         'room': lesson.room.name if lesson.room else None,
                     })
                 else:
                     day_lessons.append({
-                        'time': f"{hour.start_time} - {hour.end_time}",
+                        'time': f"{hour.start_time.strftime('%H:%M')} - {hour.end_time.strftime('%H:%M')}",
                         'subject': None,
                         'teacher': None,
+                        'teacher_color': None,
                         'room': None,
                     })
 
@@ -51,7 +52,7 @@ class TimeTableAPIView(APIView):
             current_date += timedelta(days=1)
 
         response_data = {
-            'times': [f"{hour.start_time} - {hour.end_time}" for hour in all_hours],
+            'times': [f"{hour.start_time.strftime('%H:%M')} - {hour.end_time.strftime('%H:%M')}" for hour in all_hours],
             'days': timetable
         }
         return Response(response_data)

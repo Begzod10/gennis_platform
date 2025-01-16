@@ -1,15 +1,18 @@
 import calendar
+from datetime import datetime
 
 from django.db.models.functions import ExtractYear, ExtractMonth
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import F
 
 from attendances.models import AttendancePerMonth
 from attendances.serializers import AttendancePerMonthSerializer
 from students.models import StudentPayment, StudentCharity
 from students.serializers import get_remaining_debt_for_student
+from .models import AttendancePerDay
 
 
 # Create your views here.
@@ -97,3 +100,38 @@ class GroupStudentsForChangeDebtView(APIView):
                          })
 
         return Response({'students': data})
+
+
+class AttendanceDayAPIView(APIView):
+    def get(self, request, group_id):
+        current_year = datetime.now().year
+        current_month = datetime.now().month
+
+        attendances = AttendancePerDay.objects.filter(
+            group_id=group_id
+        ).values(
+            year=F('day__year'),
+            month=F('day__month')
+        ).distinct()
+
+        months_data = []
+        years = set()
+
+        for record in attendances:
+            year = record['year']
+            month = f"{record['month']:02d}"
+            if not any(month_data['months'][0] == month and month_data['year'] == year for month_data in months_data):
+                months_data.append({
+                    "months": [month],
+                    "year": year
+                })
+            years.add(year)
+
+        return Response({
+            "data": {
+                "current_month": current_month,
+                "current_year": current_year,
+                "months": months_data,
+                "years": sorted(list(years))
+            }
+        })

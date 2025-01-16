@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from group.models import Group
+from user.models import CustomUser
 from ..models import AttendancePerDay, Student
 
 
@@ -96,7 +97,7 @@ class AttendanceListForAllGroups(APIView):
 
 
 class AttendanceListSchool(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_attendances_json(self, group, month_date):
         attendances = AttendancePerDay.objects.filter(group=group, day__month=month_date.month).distinct()
@@ -152,7 +153,7 @@ class AttendanceListSchool(APIView):
 
     def post(self, request, group_id):
         data = json.loads(request.body)
-        month_date = datetime(data['year'], data['month'], 1)
+        month_date = datetime(int(data['year']), int(data['month']), 1)
         group = Group.objects.get(pk=group_id)
         attendances_json = self.get_attendances_json(group, month_date)
         return Response({'students': attendances_json})
