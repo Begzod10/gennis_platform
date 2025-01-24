@@ -262,7 +262,7 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     name = serializers.SerializerMethodField(required=False, read_only=True)
     surname = serializers.SerializerMethodField(required=False, read_only=True)
-    date = serializers.SerializerMethodField(required=False, read_only=True)
+    date = serializers.DateField(input_formats=["%Y-%m-%d"], required=True)
     payment_type_name = serializers.SerializerMethodField(required=False, read_only=True)
 
     class Meta:
@@ -275,9 +275,6 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
     def get_surname(self, obj):
         return obj.teacher.user.surname
 
-    def get_date(self, obj):
-        return obj.date.strftime('%Y-%m-%d')
-
     def get_payment_type_name(self, obj):
         return obj.payment.name
 
@@ -285,6 +282,7 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
         teacher = validated_data.get('teacher')
         salary_id = validated_data.get('salary_id')
         salary_amount = validated_data.get('salary')
+        date = validated_data.get('date')
 
         if salary_id:
             salary_id.taken_salary += salary_amount
@@ -297,6 +295,7 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
             payment=validated_data.get('payment'),
             branch=validated_data.get('branch'),
             salary=salary_amount,
+            date=date,
             deleted=False,
             comment=validated_data.get('comment', ''),
         )
@@ -305,6 +304,7 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         salary_id = validated_data.get('salary_id', instance.salary_id)
         salary_amount = validated_data.get('salary', instance.salary)
+        date = validated_data.get('date', instance.date)  # Sana yangilanadi
 
         if salary_id != instance.salary_id:
             if instance.salary_id:
@@ -320,6 +320,7 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
         instance.payment = validated_data.get('payment', instance.payment)
         instance.branch = validated_data.get('branch', instance.branch)
         instance.salary = salary_amount
+        instance.date = date
         instance.comment = validated_data.get('comment', instance.comment)
         instance.save()
         return instance
