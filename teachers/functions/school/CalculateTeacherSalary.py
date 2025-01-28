@@ -14,7 +14,7 @@ def calculate_teacher_salary(teacher):
     working_days = Day.objects.filter(year__year=today.year, month__month_number=int(month),
                                       type_id__color='green').count()
 
-    month_date = datetime(today.year, today.month - 1, 1)
+    month_date = datetime(today.year, 12, 1)
     exist_salary = TeacherSalary.objects.filter(teacher=teacher, month_date=month_date).exists()
     # month_date2 = datetime(2024, 12, 1)
     #
