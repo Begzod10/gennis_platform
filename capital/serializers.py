@@ -94,20 +94,13 @@ class OldCapitalSerializers(serializers.ModelSerializer):
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     payment_type = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
     by_who = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), required=False, allow_null=True)
-    added_date = serializers.DateField(required=False)
-    day = serializers.CharField(required=False, write_only=True)
-    month = serializers.CharField(required=False, write_only=True)
+    added_date = serializers.DateField(input_formats=["%Y-%m-%d"], required=True)
 
     class Meta:
         model = OldCapital
         fields = '__all__'
 
     def create(self, validated_data):
-        month = int(validated_data.pop('month'))
-        day = int(validated_data.pop('day'))
-        current_year = datetime.now().year
-        date = datetime(year=current_year, month=month, day=day).date()
-
         jwt_auth = JWTAuthentication()
         request = self.context['request']
         header = request.META.get('HTTP_AUTHORIZATION')
@@ -116,7 +109,18 @@ class OldCapitalSerializers(serializers.ModelSerializer):
             validated_token = jwt_auth.get_validated_token(raw_token)
             user_id = validated_token['user_id']
             validated_data['by_who_id'] = user_id
-        return OldCapital.objects.create(**validated_data, added_date=date)
+        return OldCapital.objects.create(**validated_data)
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        if instance.payment_type:
+            representation['payment'] = {
+                'id': instance.payment_type.id,
+                'name': instance.payment_type.name
+            }
+
+        return representation
 
 
 class OldCapitalListSerializers(serializers.ModelSerializer):
@@ -127,4 +131,3 @@ class OldCapitalListSerializers(serializers.ModelSerializer):
     class Meta:
         model = OldCapital
         fields = ['id', 'by_who', 'branch', 'payment_type', 'added_date', 'price', 'name']
-

@@ -77,7 +77,7 @@ class TeacherSalaryList(models.Model):
                                   related_name='salary_id_salary_list')
     payment = models.ForeignKey(PaymentTypes, on_delete=models.SET_NULL, null=True,
                                 related_name='payment_id_salary_list')
-    date = models.DateField(auto_now_add=True, null=True)  # true qilish kerak
+    date = models.DateField(null=True)  # true qilish kerak
     comment = models.CharField(max_length=300)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='branch_id_salary_list')
     deleted = models.BooleanField(default=False)

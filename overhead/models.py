@@ -40,5 +40,5 @@ class Overhead(models.Model):
     price = models.IntegerField(null=True)
     branch = models.ForeignKey('branch.Branch', on_delete=models.CASCADE, null=True)
     type = models.ForeignKey(OverheadType, on_delete=models.SET_NULL, null=True)
-    old_id = models.IntegerField(null=True, unique=True)
+    # old_id = models.IntegerField(null=True, unique=True)
     deleted = models.BooleanField(default=False)
