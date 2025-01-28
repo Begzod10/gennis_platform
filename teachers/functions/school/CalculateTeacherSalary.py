@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from Calendar.models import Day
 from teachers.models import TeacherSalary, Teacher
@@ -24,8 +23,8 @@ def calculate_teacher_salary(teacher):
             teacher=teacher,
             month_date=month_date2,
             defaults={
-                'total_salary': teacher.teacher_salary_type.salary,
-                'remaining_salary': teacher.teacher_salary_type.salary,
+                'total_salary': 0,
+                'remaining_salary': 0,
                 'taken_salary': 0,
                 'total_black_salary': 0,
                 'percentage': 50,
@@ -44,7 +43,6 @@ def calculate_teacher_salary(teacher):
                     'percentage': 50,
                 }
             )
-
 
             # if salary.total_salary != salary.teacher.teacher_salary_type.salary:
         #     salary.total_salary = salary.teacher.teacher_salary_type.salary
@@ -69,6 +67,7 @@ def calculate_teacher_salary(teacher):
         # salary.remaining_salary = remaining_salary
         # salary.total_salary = overall
         # salary.save()
+
 
 def teacher_salary_school(request=None, update=False, salary_id=None, worked_hours=0, deleted=False, teacher_id=None,
                           month_date=None, class_salary=None):
