@@ -1,11 +1,10 @@
-
-from datetime import datetime
 from Calendar.models import Day
-from teachers.models import TeacherSalary, Teacher
-from school_time_table.models import ClassTimeTable
+from datetime import datetime
+
+from Calendar.models import Day
 from flows.models import Flow
-from datetime import date, timedelta, datetime
-from django.db.models.functions import TruncDate
+from school_time_table.models import ClassTimeTable
+from teachers.models import TeacherSalary, Teacher
 
 
 def calculate_teacher_salary(teacher):
@@ -15,7 +14,7 @@ def calculate_teacher_salary(teacher):
     working_days = Day.objects.filter(year__year=today.year, month__month_number=int(month),
                                       type_id__color='green').count()
 
-    month_date = datetime(today.year, today.month, 1)
+    month_date = datetime(2024, 12, 1)
     exist_salary = TeacherSalary.objects.filter(teacher=teacher, month_date=month_date).exists()
     month_date2 = datetime(2024, 12, 1)
 
@@ -30,6 +29,7 @@ def calculate_teacher_salary(teacher):
             'percentage': 50,
         }
     )
+
     if not exist_salary:
         if teacher.teacher_salary_type is not None:
             salary, _ = TeacherSalary.objects.get_or_create(
@@ -43,7 +43,6 @@ def calculate_teacher_salary(teacher):
                     'percentage': 50,
                 }
             )
-
 
             # if salary.total_salary != salary.teacher.teacher_salary_type.salary:
         #     salary.total_salary = salary.teacher.teacher_salary_type.salary
@@ -68,6 +67,7 @@ def calculate_teacher_salary(teacher):
         # salary.remaining_salary = remaining_salary
         # salary.total_salary = overall
         # salary.save()
+
 
 def teacher_salary_school(request=None, update=False, salary_id=None, worked_hours=0, deleted=False, teacher_id=None,
                           month_date=None, class_salary=None):
