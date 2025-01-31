@@ -19,18 +19,17 @@ def calculate_teacher_salary(teacher):
     exist_salary = TeacherSalary.objects.filter(teacher=teacher, month_date=month_date).exists()
     month_date2 = datetime(2024, 12, 1)
 
-    if teacher.teacher_salary_type is None:
-        TeacherSalary.objects.get_or_create(
-            teacher=teacher,
-            month_date=month_date2,
-            defaults={
-                'total_salary': teacher.teacher_salary_type.salary,
-                'remaining_salary': teacher.teacher_salary_type.salary,
-                'taken_salary': 0,
-                'total_black_salary': 0,
-                'percentage': 50,
-            }
-        )
+    TeacherSalary.objects.get_or_create(
+        teacher=teacher,
+        month_date=month_date2,
+        defaults={
+            'total_salary': teacher.teacher_salary_type.salary,
+            'remaining_salary': teacher.teacher_salary_type.salary,
+            'taken_salary': 0,
+            'total_black_salary': 0,
+            'percentage': 50,
+        }
+    )
     if not exist_salary:
         if teacher.teacher_salary_type is not None:
             salary, _ = TeacherSalary.objects.get_or_create(

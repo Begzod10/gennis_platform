@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
+
 from gennis_platform.settings import gennis_server
 from user.models import CustomUser, UserSalaryList
 from user.serializers import UserSerializerWrite, UserSalaryListSerializers, CustomTokenObtainPairSerializer
@@ -70,11 +71,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class UsernameCheck(APIView):
 
     def post(self, request, *args, **kwargs):
-        import requests
-        def check_username(username):
-            external_api_url = f"{gennis_server}/api/check_username_turon"
-            response = requests.post(external_api_url, json={"username": username})
-            return response.json()
+
 
         username = request.data.get('username', None)
 
@@ -82,19 +79,11 @@ class UsernameCheck(APIView):
             try:
                 user = CustomUser.objects.get(username=username)
                 if user == request.user:
-                    statuss = check_username(username)
-                    if statuss['found'] == True:
-                        return Response({'exists': True}, status=status.HTTP_200_OK)
-                    else:
-                        return Response({'exists': False}, status=status.HTTP_200_OK)
+                    return Response({'exists': False}, status=status.HTTP_200_OK)
                 else:
                     return Response({'exists': True}, status=status.HTTP_200_OK)
             except CustomUser.DoesNotExist:
-                statuss = check_username(username)
-                if statuss['found'] == True:
-                    return Response({'exists': True}, status=status.HTTP_200_OK)
-                else:
-                    return Response({'exists': False}, status=status.HTTP_200_OK)
+                return Response({'exists': False}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Username not provided'}, status=status.HTTP_400_BAD_REQUEST)
 
