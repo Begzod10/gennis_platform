@@ -2,14 +2,15 @@ import jwt
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
+from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
+
 from user.serializers import CustomUserSerializer
-from permissions.functions.CheckUserPermissions import check_user_permissions
-import time
+from .serializers import UserSalaryUpdateSerializers, UserSalary
 
 
 class CustomTokenRefreshView(TokenRefreshView):
@@ -58,3 +59,7 @@ class CustomTokenRefreshView(TokenRefreshView):
         })
         return Response(response_data, status=status.HTTP_200_OK)
 
+
+class UserSalaryUpdateView(generics.UpdateAPIView):
+    serializer_class = UserSalaryUpdateSerializers
+    queryset = UserSalary.objects.all()

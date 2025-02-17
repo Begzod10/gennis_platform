@@ -1,5 +1,5 @@
 from django.urls import path
-
+from .views import UserSalaryUpdateView
 from user.Api.read import (
 
     UserListCreateView,
@@ -33,6 +33,7 @@ urlpatterns = [
     path('salaries/update/<int:pk>/', UserSalaryListUpdateView.as_view(), name='salary-update'),
     path('salaries/delete/<int:pk>/', UserSalaryListDestroyView.as_view(), name='salary-delete'),
     path('salaries/', UserSalaryListListView.as_view(), name='salary-list'),
+    path('salaries/update1/<int:pk>', UserSalaryUpdateView.as_view(), name='salary-list'),
     path('salaries-deleted/', DeletedUserSalaryListListView.as_view(), name='salary-list'),
     path('salaries/<int:pk>/', UserSalaryListDetailView.as_view(), name='salary-detail'),
     path('users/me/', UserMe.as_view(), name='user-me'),

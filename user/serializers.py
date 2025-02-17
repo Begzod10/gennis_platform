@@ -7,7 +7,6 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from werkzeug.security import check_password_hash
 
 from branch.serializers import BranchSerializer
-from gennis_platform.settings import classroom_server
 from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from permissions.models import ManySystem, ManyBranch, ManyLocation
@@ -363,3 +362,9 @@ class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ('username', 'surname', 'name', 'id', 'groups', 'profile_photo', 'location_id')
+
+
+class UserSalaryUpdateSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = UserSalary
+        fields = '__all__'

@@ -1,10 +1,10 @@
-from datetime import datetime
 from Calendar.models import Day
-from teachers.models import TeacherSalary, Teacher
-from school_time_table.models import ClassTimeTable
+from datetime import datetime
+
+from Calendar.models import Day
 from flows.models import Flow
-from datetime import date, timedelta, datetime
-from django.db.models.functions import TruncDate
+from school_time_table.models import ClassTimeTable
+from teachers.models import TeacherSalary, Teacher
 
 
 def calculate_teacher_salary(teacher):
@@ -16,20 +16,20 @@ def calculate_teacher_salary(teacher):
 
     month_date = datetime(today.year, today.month, 1)
     exist_salary = TeacherSalary.objects.filter(teacher=teacher, month_date=month_date).exists()
-    # month_date2 = datetime(2024, 12, 1)
-    #
-    # if teacher.teacher_salary_type is None:
-    #     TeacherSalary.objects.get_or_create(
-    #         teacher=teacher,
-    #         month_date=month_date2,
-    #         defaults={
-    #             'total_salary': 0,
-    #             'remaining_salary': 0,
-    #             'taken_salary': 0,
-    #             'total_black_salary': 0,
-    #             'percentage': 50,
-    #         }
-    #     )
+    month_date2 = datetime(2024, 12, 1)
+
+    TeacherSalary.objects.get_or_create(
+        teacher=teacher,
+        month_date=month_date2,
+        defaults={
+            'total_salary': teacher.teacher_salary_type.salary,
+            'remaining_salary': teacher.teacher_salary_type.salary,
+            'taken_salary': 0,
+            'total_black_salary': 0,
+            'percentage': 50,
+        }
+    )
+
     if not exist_salary:
         if teacher.teacher_salary_type is not None:
             salary, _ = TeacherSalary.objects.get_or_create(
