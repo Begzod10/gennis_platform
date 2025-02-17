@@ -107,6 +107,12 @@ def get_remaining_debt_for_student(student_id):
                 month_date__month=9, month_date__year=2024
             ).exclude(
                 month_date__month=10, month_date__year=2024
+            ).exclude(
+                month_date__month=11, month_date__year=2024
+            ).exclude(
+                month_date__month=12, month_date__year=2024
+            ).exclude(
+                month_date__month=1, month_date__year=2025
             )
         else:
             attendances = AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id).all()
@@ -129,6 +135,12 @@ def get_remaining_debt_for_student(student_id):
                 month_date__month=9, month_date__year=2024
             ).exclude(
                 month_date__month=10, month_date__year=2024
+            ).exclude(
+                month_date__month=11, month_date__year=2024
+            ).exclude(
+                month_date__month=12, month_date__year=2024
+            ).exclude(
+                month_date__month=1, month_date__year=2025
             ).aggregate(total_remaining_debt=Sum('remaining_debt'))
         else:
             remaining_debt_sum = AttendancePerMonth.objects.filter(
