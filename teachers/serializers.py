@@ -263,6 +263,7 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
     surname = serializers.SerializerMethodField(required=False, read_only=True)
     date = serializers.DateField(input_formats=["%Y-%m-%d"], required=True)
     payment_type_name = serializers.SerializerMethodField(required=False, read_only=True)
+    comment = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
         model = TeacherSalaryList

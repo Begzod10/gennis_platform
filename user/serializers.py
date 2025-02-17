@@ -107,6 +107,7 @@ class UserSalaryListSerializers(serializers.ModelSerializer):
     name = serializers.SerializerMethodField(required=False, read_only=True)
     surname = serializers.SerializerMethodField(required=False, read_only=True)
     payment_type_name = serializers.SerializerMethodField(required=False, read_only=True)
+    comment = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
         model = UserSalaryList
