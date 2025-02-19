@@ -78,7 +78,7 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
         return Response(student_serializer.data)
 
 
-# @method_decorator(cache_page(60 * 2), name='dispatch')
+# @method_decorator(cache_page(60 * 2), name='dispatch')s
 class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ActiveListSerializer
@@ -642,7 +642,6 @@ class StudentCharityModelView(APIView):
         payment.payment_sum = sum
         payment.reason = request.data.get('reason', None)
         payment.save()
-
         return Response({"msg": "Chegirma muvaffaqiyatli o'zgartirildi"})
 
 

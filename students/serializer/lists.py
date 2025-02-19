@@ -18,7 +18,10 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.calculate_age()
 
     def get_language(self, obj):
-        return obj.language.name
+        if obj.language:
+            return obj.language.name
+        else:
+            return None
 
     def get_id(self, obj):
         # Access related Student objects
