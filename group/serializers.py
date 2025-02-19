@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django.db.models import Q
 from rest_framework import serializers
+from django.utils.timezone import now
 
 from branch.models import Branch
 from branch.serializers import BranchSerializer
@@ -117,6 +118,15 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         delete_type = validated_data.get("delete_type")
         comment = validated_data.get("comment")
         group_reason = validated_data.get("group_reason")
+        price = validated_data.pop("price")
+        instance.price = price
+        instance.save()
+        today = datetime.now().replace(day=1)
+        attendances = instance.attendance_per_month.filter(month_date__gte=today)
+
+        for attendance in attendances:
+            attendance.total_debt = price
+            attendance.save()
         teacher_status = True
         for attr, value in validated_data.items():
             if attr != 'update_method' and attr != 'students' and attr != 'teacher':

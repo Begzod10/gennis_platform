@@ -37,4 +37,5 @@ urlpatterns = [
     path('add/class/filtered/', AddClassesList.as_view(), name='add_class_filtered'),
     path('create/class/teachers/', CreateGroupTeacherListView.as_view(), name='create_class_teachers'),
     path('group-students/<int:pk>/', GroupStudentsClassRoom.as_view(), name='group-students'),
+
 ]
