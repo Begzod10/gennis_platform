@@ -164,23 +164,32 @@ class CreateDiscountForSchool(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         from attendances.models import AttendancePerMonth
         data = json.loads(request.body)
-        discount = data['discount']
-        student = data['student']
-        attendances = AttendancePerMonth.objects.filter(student_id=student)
+
+        student_id = data['student']
+        student = Student.objects.get(pk=student_id)
+        attendances = AttendancePerMonth.objects.filter(student_id=student_id)
+
+        type_discount = request.query_params.get('type', 'sum')
+        discount = int(data['discount'])
+
         for attendance in attendances:
-            attendance.discount = discount
+            if type_discount == 'percentage':
+                discount_amount = (attendance.total_debt * discount) / 100
+                attendance.discount_percentage = discount
+            else:
+                discount_amount = discount
+
+            attendance.discount = discount_amount
             attendance.save()
-        student = Student.objects.get(pk=student)
+
         StudentCharity.objects.update_or_create(
             student=student,
             defaults={
-                'charity_sum': discount,
+                'charity_sum': discount_amount,
                 'name': data['reason'],
                 "group": student.groups_student.first(),
                 "branch": student.user.branch
-
             }
-
         )
 
-        return Response({"msg": "Chegirma muvaffaqiyatli yaratildi !"}, status=status.HTTP_200_OK)
+        return Response({"msg": "Chegirma muvaffaqiyatli yaratildi!"}, status=status.HTTP_200_OK)

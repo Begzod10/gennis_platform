@@ -25,6 +25,7 @@ class AttendancePerMonth(models.Model):
     absent_days = models.IntegerField(default=0, null=True)
     scored_days = models.IntegerField(default=0, null=True)
     discount = models.IntegerField(null=True, default=0)
+    discount_percentage = models.IntegerField(null=True, default=0)
     old_money = models.CharField(max_length=255, null=True)
 
 
