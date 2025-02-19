@@ -1,3 +1,5 @@
+import pprint
+
 from rest_framework import serializers
 
 from branch.models import Branch
@@ -29,7 +31,7 @@ class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher
         fields = ['user', 'subject', 'color', 'total_students', 'id', 'teacher_salary_type', 'salary_percentage',
-                  'class_type', 'working_hours']
+                  'class_type', 'working_hours', 'class_salary']
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -201,6 +203,7 @@ class TeacherSalaryCreateSerializersUpdate(serializers.ModelSerializer):
     teacher_salary_type = serializers.PrimaryKeyRelatedField(queryset=TeacherSalaryType.objects.all(), required=False,
                                                              allow_null=True)
     worked_hours = serializers.IntegerField(required=False, allow_null=True)
+    salary_type = serializers.BooleanField(required=False)
 
     class Meta:
         model = TeacherSalary
@@ -208,14 +211,17 @@ class TeacherSalaryCreateSerializersUpdate(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         salary = super().update(instance, validated_data)
-        worked_hours = validated_data.get('worked_hours', None)
-        class_salary = validated_data.get('class_salary', None)
-        print('salary', class_salary)
-        if worked_hours is not None:
-            from .functions.school.CalculateTeacherSalary import teacher_salary_school
-            if instance.teacher.user.branch.location.system.name == 'school':
-                teacher_salary_school(instance.teacher, update=True, salary_id=instance.id, worked_hours=worked_hours,
-                                      class_salary=class_salary)
+        pprint.pprint(validated_data)
+        type_salary = validated_data.get('salary_type', None)
+        from .functions.school.CalculateTeacherSalary import teacher_salary_school
+        if instance.teacher.user.branch.location.system.name == 'school':
+            if type_salary:
+                worked_hours = validated_data.get('worked_hours', None)
+                teacher_salary_school(salary_id=instance.id, worked_hours=worked_hours, class_salary=0,
+                                      type_salary=type_salary)
+            else:
+                class_salary = validated_data.get('class_salary', None)
+                teacher_salary_school(salary_id=instance.id, worked_hours=0, class_salary=class_salary)
 
         return salary
 
