@@ -1,16 +1,16 @@
 import json
 from datetime import datetime
 
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from group.models import Group
+from group.serializers import GroupSerializer
 from students.models import Student
 from students.models import StudentHistoryGroups
 
-from group.serializers import GroupSerializer
 
-from rest_framework.permissions import IsAuthenticated
 class MoveToGroupApi(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -45,10 +45,13 @@ class MoveToGroupApi(APIView):
                 to_group.students.add(student)
                 attendances_per_month = student.attendancepermonth_set.filter(group=group,
                                                                               student=student,
-                                                                              month_date__gte=today.strftime("%Y-%m-%d"),
+                                                                              month_date__gte=today.strftime(
+                                                                                  "%Y-%m-%d"),
                                                                               payment=0)
                 for attendance in attendances_per_month:
                     attendance.group = to_group
+                    if to_group.price:
+                        attendance.total_debt = to_group.price
                     attendance.save()
                 StudentHistoryGroups.objects.create(group=to_group, student=student,
                                                     teacher=to_group.teacher.all()[0],
