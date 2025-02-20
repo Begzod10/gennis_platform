@@ -52,6 +52,7 @@ def calculate_teacher_salary(teacher):
         salary_month.total_salary = salary + teacher.class_salary
         salary_month.remaining_salary = (salary + teacher.class_salary) - salary_month.taken_salary
         salary_month.worked_hours = worked_hours
+        salary_month.save()
 
 
 def teacher_salary_school(salary_id=None, worked_hours=0, class_salary=None, type_salary=False):
