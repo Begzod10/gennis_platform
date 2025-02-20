@@ -44,8 +44,8 @@ def calculate_teacher_salary(teacher):
         salary_month = TeacherSalary.objects.get(teacher=teacher, month_date=month_date)
         worked_hours = working_days_in_month(today.year, today.month)
         stavka = teacher.teacher_salary_type.salary
-        default_hours = 20
-        salary = (worked_hours / default_hours) * stavka
+
+        salary = (worked_hours / teacher.working_hours) * stavka
         ustama = (salary / 100) * teacher.salary_percentage
         salary = salary + ustama
         salary_month.class_salary = teacher.class_salary
@@ -62,8 +62,7 @@ def teacher_salary_school(salary_id=None, worked_hours=0, class_salary=None, typ
 
     if type_salary:
         stavka = teacher.teacher_salary_type.salary
-        default_hours = 20
-        salary = (total_days / default_hours) * stavka
+        salary = (total_days / teacher.working_hours) * stavka
         ustama = (salary / 100) * teacher.salary_percentage
         salary = salary + ustama
         salary_month.total_salary = salary + teacher.class_salary
