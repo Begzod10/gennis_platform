@@ -69,7 +69,6 @@ def teacher_salary_school(salary_id=None, worked_hours=0, class_salary=None, typ
         salary_month.total_salary = salary + teacher.class_salary
         salary_month.remaining_salary = (salary + teacher.class_salary) - salary_month.taken_salary
         salary_month.worked_hours = worked_hours
-
     else:
         salary_month.total_salary = class_salary
         salary_month.remaining_salary = class_salary - salary_month.taken_salary
