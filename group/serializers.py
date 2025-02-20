@@ -121,8 +121,9 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         price = validated_data.pop("price")
         instance.price = price
         instance.save()
-        today = datetime.now().replace(day=1)
-        attendances = instance.attendance_per_month.filter(month_date__gte=today)
+        today = datetime.now().replace(day=1).strftime("%Y-%m-%d")
+        from attendances.models import AttendancePerMonth
+        attendances = AttendancePerMonth.objects.filter(month_date__gte=today,group=instance)
 
         for attendance in attendances:
             attendance.total_debt = price
