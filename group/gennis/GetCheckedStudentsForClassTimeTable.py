@@ -25,7 +25,8 @@ class GetCheckedStudentsForClassTimeTable(APIView):
         deleted = DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
         students = Student.objects.filter(groups_student__isnull=True, user__branch_id=branch_id,
                                           deleted_student_student__deleted__isnull=True,
-                                          deleted_student_student_new__isnull=True,class_number=group.class_number).exclude(id__in=deleted).exclude(
+                                          deleted_student_student_new__isnull=True,
+                                          class_number=group.class_number).exclude(id__in=deleted).exclude(
             id__in=ignore_students).distinct()
         for student in students:
             should_add_student = False
@@ -88,10 +89,9 @@ class CheckedStudentsMoveToGroup(APIView):
                             f"{student.user.name} {student.user.surname} ning {class_time_table.flow.name} patokidagi dars jadvali {group.class_number.number}-{group.color.name} sinif dars jadvaliga togri kelmadi")
 
             if student_status:
-                student_history_group = StudentHistoryGroups.objects.get(group=group, student=student)
-                student_history_group.left_day = today
-                student_history_group.reason = reason
-                student_history_group.save()
+                student_history_group = StudentHistoryGroups.objects.filter(group=group, student=student).update(
+                    left_day=today, reason=reason)
+
                 group.students.remove(student)
                 to_group.students.add(student)
                 StudentHistoryGroups.objects.create(group=to_group, student=student,

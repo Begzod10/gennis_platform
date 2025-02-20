@@ -78,7 +78,7 @@ class DeletedGroupStudents(QueryParamFilterMixin, APIView):
         return Response(student_serializer.data)
 
 
-# @method_decorator(cache_page(60 * 2), name='dispatch')
+# @method_decorator(cache_page(60 * 2), name='dispatch')s
 class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ActiveListSerializer
@@ -315,6 +315,8 @@ class GetMonth(APIView):
     def get(self, request, student_id, attendance_id):
         student = Student.objects.get(pk=student_id)
         group = student.groups_student.first()
+        if group is None:
+            return Response([])
         month = AttendancePerMonth.objects.filter(student_id=student_id, status=False,
                                                   group_id=group.id).all().order_by(
             'month_date__year', 'month_date__month')
@@ -423,6 +425,8 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
         student_id = self.kwargs.get('student_id')
         student = Student.objects.get(pk=student_id)
         group = student.groups_student.first()
+        if not group:
+            return AttendancePerMonth.objects.none()
         return AttendancePerMonth.objects.filter(
             student_id=student_id,
             group_id=group.id,
@@ -431,6 +435,8 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        if not queryset.exists():
+            return Response([])
         student_id = self.kwargs.get('student_id')
 
         months_with_attendance = queryset.values_list('month_number', flat=True).distinct()
@@ -496,6 +502,8 @@ class MissingAttendanceView(APIView):
     def post(self, request, student_id):
         student = Student.objects.get(pk=student_id)
         group = student.groups_student.first()
+        if group is None:
+            return Response([])
         data = json.loads(request.body)
         month = data['month']
         old_months = ["September", "October", "November", "December"]
@@ -642,7 +650,6 @@ class StudentCharityModelView(APIView):
         payment.payment_sum = sum
         payment.reason = request.data.get('reason', None)
         payment.save()
-
         return Response({"msg": "Chegirma muvaffaqiyatli o'zgartirildi"})
 
 
