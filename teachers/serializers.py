@@ -1,7 +1,7 @@
 import pprint
 
 from rest_framework import serializers
-
+from teachers.functions.school.CalculateTeacherSalary import calculate_teacher_salary
 from branch.models import Branch
 from branch.serializers import BranchSerializer
 from classes.models import ClassTypes
@@ -62,6 +62,7 @@ class TeacherSerializer(serializers.ModelSerializer):
         return teacher
 
     def update(self, instance, validated_data):
+        calculate_teacher_salary(instance)
         user_data = validated_data.pop('user', None)
         subject_data = validated_data.pop('subject')
 
