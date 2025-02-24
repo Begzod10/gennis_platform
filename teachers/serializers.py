@@ -166,8 +166,10 @@ class TeacherSerializerRead(serializers.ModelSerializer):
 
     def get_calculate(self, obj):
         from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
-
-        calculate_teacher_salary(obj)
+        teacher = Teacher.objects.get(user=obj.user)
+        if teacher:
+            if teacher.user.branch.location.system.name == 'school':
+                calculate_teacher_salary(obj)
 
     def get_status(self, obj):
         flows = Flow.objects.filter(teacher=obj).exists()
