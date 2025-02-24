@@ -166,6 +166,7 @@ class TeacherSerializerRead(serializers.ModelSerializer):
 
     def get_calculate(self, obj):
         from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
+
         calculate_teacher_salary(obj)
 
     def get_status(self, obj):

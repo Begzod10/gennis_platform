@@ -63,7 +63,7 @@ class StudentCharityAPIView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         student_charity = self.kwargs.get('pk')
         charity = StudentCharity.objects.filter(student=student_charity).first()
-        student_charity_data = self.get_serializer(charity).data
+        student_charity_data = self.get_serializer(charity).data if charity else None
         return Response(student_charity_data)
 
 
