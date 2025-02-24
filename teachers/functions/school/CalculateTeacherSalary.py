@@ -41,7 +41,7 @@ def calculate_teacher_salary(teacher):
                         'percentage': 50,
                     }
                 )
-        if teacher.teacher_salary_type:
+        if teacher.teacher_salary_type and teacher.working_hours:
             salary_month = TeacherSalary.objects.get(teacher=teacher, month_date=month_date)
             worked_hours = working_days_in_month(today.year, today.month)
             stavka = teacher.teacher_salary_type.salary
