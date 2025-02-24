@@ -167,7 +167,7 @@ class TeacherSerializerRead(serializers.ModelSerializer):
     def get_calculate(self, obj):
         from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
         teacher = Teacher.objects.get(user=obj.user)
-        if not teacher.user.student:
+        if teacher:
             if teacher.user.branch.location.system.name == 'school':
                 calculate_teacher_salary(obj)
 
