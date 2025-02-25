@@ -42,7 +42,7 @@ def calculate_teacher_salary(teacher):
                     }
                 )
         if teacher.teacher_salary_type and teacher.working_hours:
-            if teacher.working_hours != 0:
+            if int(teacher.working_hours) != 0:
                 salary_month = TeacherSalary.objects.get(teacher=teacher, month_date=month_date)
                 worked_hours = working_days_in_month(today.year, today.month)
                 stavka = teacher.teacher_salary_type.salary

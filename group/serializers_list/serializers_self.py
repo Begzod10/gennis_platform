@@ -42,7 +42,7 @@ class GroupListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Group
-        fields = ['id', 'teacher', "status", "name", "count", "students", "class_number", "color"]
+        fields = ['id', 'teacher', "status", "name", "count", "students", "class_number", "color", 'price']
 
     def get_teacher(self, obj):
         name = ""
