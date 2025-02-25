@@ -517,7 +517,7 @@ class MissingAttendanceView(APIView):
             student_id=student_id,
             month_date=month_date,
             group_id=group.id,
-            total_debt=group.class_number.price,
+            total_debt=group.price if group.price else group.class_number.price,
             system=group.system
 
         )

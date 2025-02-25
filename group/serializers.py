@@ -119,6 +119,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         comment = validated_data.get("comment")
         group_reason = validated_data.get("group_reason")
         price = validated_data.pop("price", None)
+        print(price)
         if price:
             instance.price = price
             instance.save()
