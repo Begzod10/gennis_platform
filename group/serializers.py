@@ -118,16 +118,18 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         delete_type = validated_data.get("delete_type")
         comment = validated_data.get("comment")
         group_reason = validated_data.get("group_reason")
-        price = validated_data.pop("price")
-        instance.price = price
-        instance.save()
-        today = datetime.now().replace(day=1).strftime("%Y-%m-%d")
-        from attendances.models import AttendancePerMonth
-        attendances = AttendancePerMonth.objects.filter(month_date__gte=today,group=instance)
+        price = validated_data.pop("price", None)
+        print(price)
+        if price:
+            instance.price = price
+            instance.save()
+            today = datetime.now().replace(day=1).strftime("%Y-%m-%d")
+            from attendances.models import AttendancePerMonth
+            attendances = AttendancePerMonth.objects.filter(month_date__gte=today, group=instance)
 
-        for attendance in attendances:
-            attendance.total_debt = price
-            attendance.save()
+            for attendance in attendances:
+                attendance.total_debt = price
+                attendance.save()
         teacher_status = True
         for attr, value in validated_data.items():
             if attr != 'update_method' and attr != 'students' and attr != 'teacher':
@@ -139,9 +141,9 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                                                          teacher=instance.teacher.all()[0])
                 teacher_history_group.left_day = datetime.now()
                 teacher_history_group.save()
-                teach =instance.teacher.all()[0]
-                request(url=f"{classroom_server}/delete_teacher_from_group/{teach.user_id}/{instance.id}/turon",method='DELETE')
-
+                teach = instance.teacher.all()[0]
+                request(url=f"{classroom_server}/delete_teacher_from_group/{teach.user_id}/{instance.id}/turon",
+                        method='DELETE')
 
                 for time_table in instance.classtimetable_set.all():
                     instance.teacher.all()[0].class_time_table.remove(time_table)
