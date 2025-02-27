@@ -7,15 +7,16 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from overhead.models import Overhead, OverheadType
+from overhead.serializer.lists import ActiveListTeacherSerializer
 from overhead.serializers import OverheadSerializerGet, OverheadSerializerGetTYpe, MonthDaysSerializer
 from permissions.response import QueryParamFilterMixin
-from overhead.serializer.lists import ActiveListTeacherSerializer
 
 
 class OverheadListView(QueryParamFilterMixin, generics.ListAPIView):
     filter_mappings = {
         'status': 'deleted',
-        'branch': 'branch_id'
+        'branch': 'branch_id',
+        'type': 'type_id'
 
     }
     permission_classes = [IsAuthenticated]
@@ -78,7 +79,7 @@ class MonthDaysView(APIView):
             previous_month_value = last_day_of_previous_month.strftime('%m')
             start_of_previous_month = last_day_of_previous_month.replace(day=1)
             days_in_previous_month = [start_of_previous_month + timedelta(days=i) for i in
-                                       range((last_day_of_previous_month - start_of_previous_month).days + 1)]
+                                      range((last_day_of_previous_month - start_of_previous_month).days + 1)]
 
             # Ma'lumotni yig'ish
             response_data = [
@@ -104,4 +105,3 @@ class MonthDaysView(APIView):
             return Response(serializer.data)
         except Exception as e:
             return Response({"error": str(e)}, status=400)
-
