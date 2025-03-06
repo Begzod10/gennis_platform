@@ -8,17 +8,19 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from user.seriliazer.employer import EmployerSerializer
+
 from gennis_platform import settings
 from gennis_platform.settings import classroom_server
 from permissions.response import IsAdminOrIsSelf
 from permissions.response import QueryParamFilterMixin
 from subjects.serializers import SubjectSerializer, Subject
 from user.models import CustomUser, UserSalaryList
-from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalary, CustomAutoGroup, \
-    UserSalarySerializersRead
+from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalary, CustomAutoGroup
+from user.seriliazer.employer import EmployerSerializer
+from user.seriliazer.employer import UserForOneMonthListSerializer, EmployerSalaryMonths
 from ..serialziers_list import UsersWithJobSerializers
-from user.seriliazer.employer import UserForOneMonthListSerializer,EmployerSalaryMonths
+
+
 class UserListCreateView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -152,6 +154,10 @@ class UserSalaryMonthView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
 
         user_salary_list = self.get_object()
+        for user_salary in user_salary_list:
+            if user_salary.taken_salary == user_salary.total_salary:
+                user_salary.remaining_salary = 0
+                user_salary.save()
         if isinstance(user_salary_list, queryset):
             user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
         else:
