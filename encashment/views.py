@@ -266,7 +266,7 @@ class GetSchoolStudents(APIView):
 
         students_per_class = {}
         for _class in classes:
-            students = Student.objects.filter(groups_student__class_number=_class)
+            students = Student.objects.filter(groups_student__class_number=_class,user__branch__id=_class.branch_id).all()
             students_per_class[_class.number] = students
 
         all_students = [student for students in students_per_class.values() for student in students]
