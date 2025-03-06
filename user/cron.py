@@ -39,8 +39,8 @@ from .models import CustomUser, UserSalary
 def create_user_salary(user_id):
     user_1 = CustomUser.objects.get(id=user_id)
     for permission in user_1.customautogroup_set.all():
-        current_year_old = 2024
-        current_month_old = 9
+        current_year_old = 2025
+        current_month_old = 2
         user_salary_old = UserSalary.objects.filter(date__year=current_year_old, date__month=current_month_old,
                                                     user=user_1)
         if not user_salary_old:
