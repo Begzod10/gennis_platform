@@ -81,12 +81,13 @@ class UserSalaryListDetailView(QueryParamFilterMixin, generics.RetrieveAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         get_salary = UserSalary.objects.get(id=self.kwargs.get('pk'))
-        salaries = UserSalaryList.objects.filter(user_salary_id=get_salary.id, deleted=False, ).all()
+        salaries = UserSalaryList.objects.filter(user_salary_id=get_salary.id, deleted=False).all()
         total_salary = 0
         for sal in salaries:
             total_salary += sal.salary
         remaining_salary = get_salary.total_salary - total_salary
         get_salary.remaining_salary = remaining_salary
+        get_salary.taken_salary = total_salary
         get_salary.save()
         user_salary_list = self.filter_queryset(self.get_object())
         user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
