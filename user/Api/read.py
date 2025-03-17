@@ -81,7 +81,7 @@ class UserSalaryListDetailView(QueryParamFilterMixin, generics.RetrieveAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         get_salary = UserSalary.objects.get(id=self.kwargs.get('pk'))
-        salaries = UserSalaryList.objects.filter(user_salary_id=get_salary.id).all()
+        salaries = UserSalaryList.objects.filter(user_salary_id=get_salary.id, deleted=False, ).all()
         total_salary = 0
         for sal in salaries:
             total_salary += sal.salary
