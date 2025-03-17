@@ -163,10 +163,10 @@ class UserSalaryMonthView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
 
         user_salary_list = self.get_object()
+
         for user_salary in user_salary_list:
-            if user_salary.taken_salary == user_salary.total_salary:
-                user_salary.remaining_salary = 0
-                user_salary.save()
+            user_salary.remaining_salary = user_salary.total_salary - user_salary.taken_salary
+            user_salary.save()
         if isinstance(user_salary_list, queryset):
             user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
         else:
