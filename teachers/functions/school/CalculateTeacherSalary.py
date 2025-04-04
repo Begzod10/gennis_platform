@@ -7,6 +7,7 @@ from school_time_table.models import ClassTimeTable
 from teachers.models import TeacherSalary, Teacher
 
 from datetime import date, timedelta
+from django.db.models import Count
 
 
 def working_days_in_month(year, month):
@@ -58,6 +59,13 @@ def calculate_teacher_salary(teacher):
                 )
         if teacher.teacher_salary_type and teacher.working_hours:
             if int(teacher.working_hours) != 0:
+                dupes = TeacherSalary.objects.values('teacher', 'month_date') \
+                    .annotate(count=Count('id')).filter(count__gt=1)
+
+                for d in dupes:
+                    salaries = TeacherSalary.objects.filter(teacher=d['teacher'], month_date=d['month_date'])
+                    for salary in salaries[1:]:  # keep one, delete the rest
+                        salary.delete()
                 salary_month = TeacherSalary.objects.get(teacher=teacher, month_date=month_date)
                 worked_hours = working_days_in_month(today.year, today.month)
                 stavka = teacher.teacher_salary_type.salary
