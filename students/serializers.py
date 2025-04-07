@@ -80,6 +80,7 @@ class GroupSerializerStudents(serializers.ModelSerializer):
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
                   'branch', 'language', 'level', 'subject', 'teacher', 'system', 'class_number', 'color',
                   'course_types']
+
     def get_name(self, obj):
         if obj.name:
             return obj.name
@@ -141,6 +142,10 @@ def get_remaining_debt_for_student(student_id):
                 month_date__month=12, month_date__year=2024
             ).exclude(
                 month_date__month=1, month_date__year=2025
+            ).exclude(
+                month_date__month=2, month_date__year=2025
+            ).exclude(
+                month_date__month=3, month_date__year=2025
             ).aggregate(total_remaining_debt=Sum('remaining_debt'))
         else:
             remaining_debt_sum = AttendancePerMonth.objects.filter(
