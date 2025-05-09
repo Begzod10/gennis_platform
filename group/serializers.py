@@ -22,6 +22,7 @@ from system.serializers import SystemSerializers
 from teachers.models import Teacher, TeacherHistoryGroups
 from teachers.serializers import TeacherSerializer
 from time_table.models import GroupTimeTable
+import pprint
 
 
 class CourseTypesSerializers(serializers.ModelSerializer):
@@ -112,7 +113,9 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         return group
 
     def update(self, instance, validated_data):
+        pprint.pprint(validated_data)
         group_type = validated_data.get('group_type')
+        color = validated_data.get('color')
         update_method = validated_data.get("update_method")
         students = validated_data.get("students")
         delete_type = validated_data.get("delete_type")
@@ -265,6 +268,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         #                                                                      teacher=instance.teacher.all()[0])
         #             student_history_group.left_day = datetime.now()
         #             student_history_group.save()
+        instance.color = validated_data.get('color', instance.color)
         instance.save()
         return instance
 

@@ -131,10 +131,12 @@ class GroupSerializerTeachers(serializers.ModelSerializer):
     level = SubjectLevelSerializer()
     subject = SubjectSerializer()
     system = SystemSerializers()
+    color = serializers.SerializerMethodField()
+    class_number = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
-        fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
+        fields = ['id', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
                   'branch', 'language', 'level', 'subject', 'teacher', 'system', 'class_number', 'color',
                   'course_types']
 
