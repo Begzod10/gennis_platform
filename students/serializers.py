@@ -253,7 +253,7 @@ class StudentListSerializer(serializers.ModelSerializer):
     def get_contract(self, obj):
         contracts = obj.contract_student_id.all()
         if contracts.exists():
-            contract_list = [{"url": contract.contract.url} for contract in contracts]
+            contract_list = [{"url": contract.contract.url if contract.contract else None} for contract in contracts]
         else:
             contract_list = []
         return contract_list
