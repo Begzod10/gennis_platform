@@ -12,9 +12,10 @@ from payments.models import PaymentTypes
 
 class CustomAutoGroup(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='custom_permission')
-    salary = models.IntegerField(blank=True, null=True,default=0)
+    salary = models.IntegerField(blank=True, null=True, default=0)
     old_id = models.IntegerField(blank=True, null=True, unique=True)
     user = models.ForeignKey('user.CustomUser', blank=True, null=True, on_delete=models.CASCADE)
+    deleted = models.BooleanField(default=False, null=True)
 
     def __str__(self):
         return f"{self.group.name} - Salary: {self.salary}"

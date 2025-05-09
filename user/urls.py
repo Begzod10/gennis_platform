@@ -11,7 +11,8 @@ from user.Api.read import (
     EmployerRetrieveView,
     UserSalaryMonthView,
     UsersWithJob,
-    DeletedUserSalaryListListView
+    DeletedUserSalaryListListView,
+    EmployerDeleteView
 )
 from user.Api.write import (
     UserCreateView,
@@ -22,6 +23,7 @@ from user.Api.write import (
     UserSalaryListDestroyView,
     UsernameCheck
 )
+
 app_name = 'user'
 urlpatterns = [
     path('users/create/', UserCreateView.as_view(), name='user-create'),
@@ -39,6 +41,7 @@ urlpatterns = [
     path('users/me/', UserMe.as_view(), name='user-me'),
     path('employeers/', EmployeersListView.as_view(), name='employer-list'),
     path('employers/<int:pk>/', EmployerRetrieveView.as_view(), name='employer-retrieve'),
+    path('employers/delete/<int:pk>', EmployerDeleteView.as_view(), name='employer-delete'),
     path('username-check/', UsernameCheck.as_view(), name='username-check'),
     path('users-job/', UsersWithJob.as_view(), name='user-jobs'),
     path('user-salary/<int:pk>/', UserSalaryMonthView.as_view(), name='usersalary-check'),

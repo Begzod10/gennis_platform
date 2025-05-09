@@ -3,12 +3,12 @@ import requests
 from django.db.models.query import QuerySet as queryset
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from gennis_platform import settings
 from gennis_platform.settings import classroom_server
 from permissions.response import IsAdminOrIsSelf
@@ -19,6 +19,7 @@ from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, 
 from user.seriliazer.employer import EmployerSerializer
 from user.seriliazer.employer import UserForOneMonthListSerializer, EmployerSalaryMonths
 from ..serialziers_list import UsersWithJobSerializers
+from user.cron import create_user_salary
 
 
 class UserListCreateView(generics.ListAPIView):
@@ -127,6 +128,19 @@ class UserMe(APIView):
         return Response(serializer.data)
 
 
+class EmployerDeleteView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
+    queryset = CustomAutoGroup.objects.all()
+    serializer_class = EmployerSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.deleted = True
+        instance.save()
+        return Response(status=status.HTTP_200_OK, data={"msg": "Employer deleted successfully"})
+
+
 class EmployeersListView(QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -137,7 +151,7 @@ class EmployeersListView(QueryParamFilterMixin, generics.ListAPIView):
         'job': 'group__id'
     }
 
-    queryset = CustomAutoGroup.objects.all()
+    queryset = CustomAutoGroup.objects.filter(deleted=False).all()
     serializer_class = EmployerSerializer
 
 
@@ -145,7 +159,7 @@ class EmployerRetrieveView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     serializer_class = Employeers
-    queryset = CustomAutoGroup.objects.all()
+    queryset = CustomAutoGroup.objects.filter(deleted=False).all()
 
     def get_object(self):
         from user.cron import create_user_salary
