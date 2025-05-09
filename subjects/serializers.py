@@ -37,7 +37,9 @@ class SubjectSerializer(serializers.ModelSerializer):
 
         test = Subject.objects.exclude(classroom_id__in=subject_ids).filter(teacher=None, student=None,
                                                                             group=None).delete()
-
+        subject_check = Subject.objects.filter(Subject.name == "Global Perspective").exists()
+        if not subject_check:
+            Subject.objects.create(name="Global Perspective", classroom_id=1)
         return subjects
 
 
