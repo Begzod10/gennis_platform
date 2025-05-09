@@ -67,9 +67,9 @@ class CreateSubjectList(generics.ListCreateAPIView):
     serializer_class = SubjectSerializer
 
     def get(self, request, *args, **kwargs):
-        subject_check = Subject.objects.filter(Subject.name == "Global Perspective").exists()
-        if not subject_check:
-            Subject.objects.create(name="Global Perspective", classroom_id=1)
+        # subject_check = Subject.objects.filter(Subject.name == "Global Perspective").exists()
+        # if not subject_check:
+        #     Subject.objects.create(name="Global Perspective", classroom_id=1)
         queryset = Subject.objects.all()
         serializer = SubjectSerializer(queryset, many=True)
         return Response(serializer.data)
