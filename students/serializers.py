@@ -101,7 +101,7 @@ def get_remaining_debt_for_student(student_id):
     group = student.groups_student.first()
     if group:
         branch_name = student.user.branch.name
-        if branch_name == "Sergeli":
+        if branch_name == "Sergeli" or branch_name == "Chirchiq":
             attendances = AttendancePerMonth.objects.filter(
                 student_id=student_id
             ).exclude(
@@ -114,7 +114,11 @@ def get_remaining_debt_for_student(student_id):
                 month_date__month=12, month_date__year=2024
             ).exclude(
                 month_date__month=1, month_date__year=2025
-            )
+            ).exclude(
+                month_date__month=2, month_date__year=2025
+            ).exclude(
+                month_date__month=3, month_date__year=2025
+            ).aggregate(total_remaining_debt=Sum('remaining_debt'))
         else:
             attendances = AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id).all()
         current_date = date.today()
@@ -127,7 +131,7 @@ def get_remaining_debt_for_student(student_id):
                 month.save()
             month.remaining_debt = month.total_debt - (month.payment + month.discount)
             month.save()
-        if branch_name == "Sergeli":
+        if branch_name == "Sergeli" or branch_name == "Chirchiq":
             remaining_debt_sum = AttendancePerMonth.objects.filter(
                 student_id=student_id,
                 group_id=group.id,
