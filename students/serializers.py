@@ -118,7 +118,7 @@ def get_remaining_debt_for_student(student_id):
                 month_date__month=2, month_date__year=2025
             ).exclude(
                 month_date__month=3, month_date__year=2025
-            ).aggregate(total_remaining_debt=Sum('remaining_debt'))
+            )
         else:
             attendances = AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id).all()
         current_date = date.today()
