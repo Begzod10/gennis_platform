@@ -48,11 +48,11 @@ class AddToGroupApi(APIView):
             st.total_payment_month += group.price
             st.save()
             status = False
-            for st_group in student.groups_student:
-                if group.group_time_table.start_time != st_group.group_time_table.start_time and group.group_time_table.week != st_group.group_time_table.week and group.group_time_table.room != st_group.group_time_table.room and group.group_time_table.end_time != st_group.group_time_table.end_time:
-                    status = True
-            if status:
-                group.students.add(st)
+            # for st_group in student.groups_student:
+            #     if group.group_time_table.start_time != st_group.group_time_table.start_time and group.group_time_table.week != st_group.group_time_table.week and group.group_time_table.room != st_group.group_time_table.room and group.group_time_table.end_time != st_group.group_time_table.end_time:
+            #         status = True
+            # if status:
+            group.students.add(st)
         serializer = GroupSerializer(group)
         return Response({'data': serializer.data})
 
