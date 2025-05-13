@@ -20,7 +20,7 @@ class OverheadSerializerCreate(serializers.ModelSerializer):
 
     class Meta:
         model = Overhead
-        fields = ['id', 'name', 'payment', 'price', 'branch', 'type', 'day', 'month', 'created']
+        fields = ['id', 'name', 'payment', 'price', 'branch', 'type',  'created']
 
     def create(self, validated_data):
         if not validated_data.get('name') and validated_data.get('type'):

@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
-
+from rest_framework import status as http_status
 from group.models import Group, SubjectLevel
 from group.serializers import GroupSerializer, GroupCreateUpdateSerializer
 from students.models import Student
@@ -40,21 +40,33 @@ class AddToGroupApi(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
-        group = Group.objects.get(pk=pk)
-        data = json.loads(request.body)
-        students = data.get('students')
-        for student in students:
-            st = Student.objects.get(pk=student)
-            st.total_payment_month += group.price
-            st.save()
-            status = False
-            # for st_group in student.groups_student:
-            #     if group.group_time_table.start_time != st_group.group_time_table.start_time and group.group_time_table.week != st_group.group_time_table.week and group.group_time_table.room != st_group.group_time_table.room and group.group_time_table.end_time != st_group.group_time_table.end_time:
-            #         status = True
-            # if status:
-            group.students.add(st)
-        serializer = GroupSerializer(group)
-        return Response({'data': serializer.data})
+        group = get_object_or_404(Group, pk=pk)
+        students = request.data.get('students', [])
+
+        for student_id in students:
+            student = get_object_or_404(Student, pk=student_id)
+
+            # Check for schedule conflict
+            conflict = False
+            for st_group in student.groups_student.all():
+                if (
+                        group.group_time_table.start_time == st_group.group_time_table.start_time and
+                        group.group_time_table.end_time == st_group.group_time_table.end_time and
+                        group.group_time_table.week == st_group.group_time_table.week and
+                        group.group_time_table.room == st_group.group_time_table.room
+                ):
+                    conflict = True
+                    break
+
+            if conflict:
+                continue  # Skip this student due to conflict
+
+            # Update payment and add to group
+            student.total_payment_month += group.price
+            student.save()
+            group.students.add(student)
+
+        return Response({"message": "Students added successfully"}, status=http_status.HTTP_200_OK)
 
     def get(self, request, pk):
         group = Group.objects.get(pk=pk)
