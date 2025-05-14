@@ -8,8 +8,6 @@ from payments.serializers import PaymentTypes, PaymentTypesSerializers
 from .models import Overhead, OverheadType
 
 
-
-
 class OverheadSerializerCreate(serializers.ModelSerializer):
     price = serializers.IntegerField(required=False)
     name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
@@ -19,9 +17,11 @@ class OverheadSerializerCreate(serializers.ModelSerializer):
     day = serializers.CharField(required=False, write_only=True)
     month = serializers.CharField(required=False, write_only=True)
 
+    created = serializers.SerializerMethodField(required=False)
+
     class Meta:
         model = Overhead
-        fields = ['id', 'name', 'payment', 'price', 'branch', 'type', 'day', 'month']
+        fields = ['id', 'name', 'payment', 'price', 'branch', 'type', 'day', 'month', 'created']
 
     def create(self, validated_data):
         month = int(validated_data.pop('month'))
@@ -31,6 +31,8 @@ class OverheadSerializerCreate(serializers.ModelSerializer):
         overhead = Overhead.objects.create(**validated_data, created=date)
         return overhead
 
+    def get_created(self, obj):
+        return obj.created.strftime('%Y-%m-%d')
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
