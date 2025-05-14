@@ -8,6 +8,8 @@ from payments.serializers import PaymentTypes, PaymentTypesSerializers
 from .models import Overhead, OverheadType
 
 
+
+
 class OverheadSerializerCreate(serializers.ModelSerializer):
     price = serializers.IntegerField(required=False)
     name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
@@ -16,17 +18,19 @@ class OverheadSerializerCreate(serializers.ModelSerializer):
     type = serializers.PrimaryKeyRelatedField(queryset=OverheadType.objects.all(), allow_null=True, required=False)
     day = serializers.CharField(required=False, write_only=True)
     month = serializers.CharField(required=False, write_only=True)
-    created = serializers.DateField(input_formats=["%Y-%m-%d"], required=True)
 
     class Meta:
         model = Overhead
-        fields = ['id', 'name', 'payment', 'price', 'branch', 'type',  'created']
+        fields = ['id', 'name', 'payment', 'price', 'branch', 'type', 'day', 'month']
 
     def create(self, validated_data):
-        if not validated_data.get('name') and validated_data.get('type'):
-            validated_data['name'] = validated_data['type'].name
+        month = int(validated_data.pop('month'))
+        day = int(validated_data.pop('day'))
+        current_year = datetime.now().year
+        date = datetime(year=current_year, month=month, day=day)
+        overhead = Overhead.objects.create(**validated_data, created=date)
+        return overhead
 
-        return super().create(validated_data)
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
