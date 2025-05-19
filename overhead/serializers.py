@@ -1,3 +1,4 @@
+import pprint
 from datetime import datetime
 
 from rest_framework import serializers
@@ -15,14 +16,13 @@ class OverheadSerializerCreate(serializers.ModelSerializer):
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     type = serializers.PrimaryKeyRelatedField(queryset=OverheadType.objects.all(), allow_null=True, required=False)
 
-    created = serializers.SerializerMethodField(required=False)
+
 
     class Meta:
         model = Overhead
         fields = ['id', 'name', 'payment', 'price', 'branch', 'type', 'created']
 
     def create(self, validated_data):
-
         overhead = Overhead.objects.create(**validated_data)
         return overhead
 
