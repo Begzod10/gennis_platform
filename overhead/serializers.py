@@ -14,21 +14,16 @@ class OverheadSerializerCreate(serializers.ModelSerializer):
     payment = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     type = serializers.PrimaryKeyRelatedField(queryset=OverheadType.objects.all(), allow_null=True, required=False)
-    day = serializers.CharField(required=False, write_only=True)
-    month = serializers.CharField(required=False, write_only=True)
 
     created = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Overhead
-        fields = ['id', 'name', 'payment', 'price', 'branch', 'type', 'day', 'month', 'created']
+        fields = ['id', 'name', 'payment', 'price', 'branch', 'type', 'created']
 
     def create(self, validated_data):
-        month = int(validated_data.pop('month'))
-        day = int(validated_data.pop('day'))
-        current_year = datetime.now().year
-        date = datetime(year=current_year, month=month, day=day)
-        overhead = Overhead.objects.create(**validated_data, created=date)
+
+        overhead = Overhead.objects.create(**validated_data)
         return overhead
 
     def get_created(self, obj):

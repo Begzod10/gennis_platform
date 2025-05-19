@@ -61,9 +61,20 @@ class DeleteGroups(APIView):
                 student_history_group.left_day = today
                 student_history_group.save()
             for teacher in group.teacher.all():
-                teacher_history_group = TeacherHistoryGroups.objects.get(group=group, teacher=teacher)
-                teacher_history_group.left_day = today
-                teacher_history_group.save()
+                # Get all related history records
+                history_qs = TeacherHistoryGroups.objects.filter(group=group, teacher=teacher).order_by(
+                    '-joined_day')  # or 'created_at'
+
+                if history_qs.exists():
+                    # Keep the most recent one
+                    main_record = history_qs.first()
+                    main_record.left_day = today
+                    main_record.save()
+
+                    # Delete all the others
+                    history_qs.exclude(id=main_record.id).delete()
+
+                teacher.save()
                 teacher.save()
             for time_table in class_time_tables:
                 time_table.delete()
