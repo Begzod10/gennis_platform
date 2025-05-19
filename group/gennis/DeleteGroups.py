@@ -57,9 +57,17 @@ class DeleteGroups(APIView):
                                                                               month_date__gte=month_date, payment=0)
                 for attendance in attendances_per_month:
                     attendance.delete()
-                student_history_group = StudentHistoryGroups.objects.get(group=group, student=student)
-                student_history_group.left_day = today
-                student_history_group.save()
+                student_history_group = StudentHistoryGroups.objects.filter(group=group, student=student).order_by(
+                    '-joined_day')
+                if student_history_group.exists():
+                    main_record = student_history_group.first()
+                    main_record.left_day = today
+                    main_record.save()
+
+                    # Delete all the others
+                    student_history_group.exclude(id=main_record.id).delete()
+
+                student.save()
             for teacher in group.teacher.all():
                 # Get all related history records
                 history_qs = TeacherHistoryGroups.objects.filter(group=group, teacher=teacher).order_by(
@@ -74,7 +82,6 @@ class DeleteGroups(APIView):
                     # Delete all the others
                     history_qs.exclude(id=main_record.id).delete()
 
-                teacher.save()
                 teacher.save()
             for time_table in class_time_tables:
                 time_table.delete()
