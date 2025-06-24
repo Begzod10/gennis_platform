@@ -10,8 +10,8 @@ from attendances.models import AttendancePerMonth
 from books.models import BranchPayment
 from books.serializers import BranchPaymentListSerializers
 from capital.models import Capital
-from capital.serializers import OldCapital
 from capital.serializer.old_capital import OldCapitalsListSerializers
+from capital.serializers import OldCapital
 from classes.models import ClassNumber
 from overhead.models import Overhead
 from overhead.serializers import OverheadSerializerGet
@@ -586,6 +586,51 @@ class EncashmentsSchool(APIView):
         overall_total = 0
         payment_results = []
 
+        attendance_per_months = AttendancePerMonth.objects.filter(
+            student__user__branch_id=branch,
+            month_date=datetime(ot, do, 1)
+        )
+
+        remaining_debt_total = attendance_per_months.aggregate(total=Sum('remaining_debt'))['total'] or 0
+        total_debt = attendance_per_months.aggregate(total=Sum('total_debt'))['total'] or 0
+
+        teacher_salary = TeacherSalary.objects.filter(
+            month_date__month=do,
+            month_date__year=ot,
+            branch_id=branch
+        )
+        teacher_remaining_salary = teacher_salary.aggregate(total=Sum('remaining_salary'))['total'] or 0
+        teacher_total_salary = teacher_salary.aggregate(total=Sum('total_salary'))['total'] or 0
+
+        user_salary = UserSalary.objects.filter(
+            date__month=do,
+            date__year=ot,
+            user__branch_id=branch
+        )
+        user_remaining_salary = user_salary.aggregate(total=Sum('remaining_salary'))['total'] or 0
+        user_total_salary = user_salary.aggregate(total=Sum('total_salary'))['total'] or 0
+
+        info = {
+            "student": {
+                "remaining_debt": remaining_debt_total,
+                "total_debt": total_debt,
+                "payments": []
+            },
+            "teacher": {
+                "remaining_salary": teacher_remaining_salary,
+                "total_salary": teacher_total_salary,
+                "salaries": []
+            },
+            "user": {
+                "remaining_salary": user_remaining_salary,
+                "total_salary": user_total_salary,
+                "salaries": []
+            },
+            "overhead": [],
+            "capital": [],
+            "total": []
+        }
+
         for payment_type in payment_types:
             students_qs = AttendancePerMonth.objects.filter(
                 student__user__branch_id=branch,
@@ -613,14 +658,17 @@ class EncashmentsSchool(APIView):
             )
 
             overhead_types = ['Gaz', 'Svet', 'Suv', 'Arenda', 'Oshxona uchun', 'Reklama uchun', 'Boshqa']
-            overhead_totals = {name.lower().replace(' ', '_'): Overhead.objects.filter(
-                created__year=ot,
-                created__month=do,
-                payment=payment_type,
-                branch_id=branch,
-                deleted=False,
-                type__name=name
-            ).aggregate(total=Sum('price'))['total'] or 0 for name in overhead_types}
+            overhead_totals = {
+                name.lower().replace(' ', '_'): Overhead.objects.filter(
+                    created__year=ot,
+                    created__month=do,
+                    payment=payment_type,
+                    branch_id=branch,
+                    deleted=False,
+                    type__name=name
+                ).aggregate(total=Sum('price'))['total'] or 0
+                for name in overhead_types
+            }
 
             total_overhead_payment = sum(overhead_totals.values())
 
@@ -651,6 +699,7 @@ class EncashmentsSchool(APIView):
             )
             overall_total += payment_total
 
+            # Build the full report per payment type
             payment_results.append({
                 'payment_type': payment_type.name,
                 'students': {
@@ -681,11 +730,39 @@ class EncashmentsSchool(APIView):
                 'payment_total': payment_total
             })
 
+            # Optional: Populate the summary info dictionary
+            info['student']['payments'].append({
+                "payment_type": payment_type.name,
+                "student_total_payment": student_payment
+            })
+            info['teacher']['salaries'].append({
+                "payment_type": payment_type.name,
+                "teacher_total_salary": teacher_total_salary
+            })
+            info['user']['salaries'].append({
+                "payment_type": payment_type.name,
+                "worker_total_salary": worker_total_salary
+            })
+            info['overhead'].append({
+                "payment_type": payment_type.name,
+                "total_overhead_payment": total_overhead_payment
+            })
+            info['capital'].append({
+                "payment_type": payment_type.name,
+                "total_capital": capital_total
+            })
+            info['total'].append({
+                "payment_type": payment_type.name,
+                "payment_total": payment_total
+            })
+
+        # Unique dates for frontend filtering
         unique_dates = UserSalary.objects.annotate(
             year=ExtractYear('date'),
             month=ExtractMonth('date')
-        ).filter(user__branch__location__system__name='school').values('year', 'month').distinct().order_by('year',
-                                                                                                            'month')
+        ).filter(
+            user__branch__location__system__name='school'
+        ).values('year', 'month').distinct().order_by('year', 'month')
 
         year_month_dict = {}
         for date in unique_dates:
@@ -697,6 +774,7 @@ class EncashmentsSchool(APIView):
 
         return Response({
             'payment_results': payment_results,
+            'summary': info,
             'overall_total': overall_total,
             'dates': [{'year': year, 'months': months} for year, months in year_month_dict.items()],
         })
