@@ -1,29 +1,86 @@
+from datetime import datetime
+
+from django.db.models import OuterRef, Exists
+from django.db.models import Q
+from django.utils import timezone
 from rest_framework import generics
+from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from lead.models import Lead, LeadCall
-from lead.serializers import LeadListSerializer, LeadCallListSerializer
+from lead.serializers import LeadListSerializer, LeadCallListSerializer, LeadCallSerializer
+from lead.utils import calculate_leadcall_status_stats
 
 
 class LeadListAPIView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    def get_serializer_class(self):
+        date_param = self.request.query_params.get('date')
+        today = timezone.now().date()
 
-    queryset = Lead.objects.all()
-    serializer_class = LeadListSerializer
+        if date_param:
+            try:
+                selected_date = datetime.strptime(date_param, "%Y-%m-%d").date()
+                if selected_date > today:
+                    raise ValidationError("Kelajak sanasi bilan so‘rov yuborish mumkin emas.")
+                # Agar o‘tmish bo‘lsa LeadCall serializer ishlaydi
+                return LeadCallListSerializer if selected_date < today else LeadListSerializer
+            except ValueError:
+                raise ValidationError("Sana formati noto‘g‘ri. Format: YYYY-MM-DD")
+        return LeadListSerializer
 
-    def get(self, request, *args, **kwargs):
+    def get_queryset(self):
+        date_param = self.request.query_params.get('date')
+        today = timezone.now().date()
+        selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
 
-        queryset = Lead.objects.all()
-        location_id = self.request.query_params.get('location_id', None)
-        branch_id = self.request.query_params.get('branch_id', None)
+        if selected_date < today:
+            # O‘tmish — faqat LeadCall larni qaytarish
+            return LeadCall.objects.filter(
+                created=selected_date,
+                deleted=False
+            )
 
-        if branch_id is not None:
-            queryset = queryset.filter(branch_id=branch_id)
-        if location_id is not None:
-            queryset = queryset.filter(location_id=location_id)
-        serializer = LeadListSerializer(queryset, many=True)
-        return Response(serializer.data)
+        # Bugungi yoki kelajak kunlar uchun Lead larni qaytarish
+        leads = Lead.objects.filter(deleted=False)
+
+        leads = leads.annotate(
+            has_leadcall_today=Exists(
+                LeadCall.objects.filter(
+                    lead=OuterRef('pk'),
+                    delay=selected_date,
+                    deleted=False
+                )
+            ),
+            has_other_leadcalls=Exists(
+                LeadCall.objects.filter(
+                    lead=OuterRef('pk'),
+                    deleted=False
+                ).exclude(delay=selected_date)
+            )
+        ).filter(
+            Q(has_other_leadcalls=False) | Q(has_leadcall_today=True)
+        )
+
+        return leads
+
+    def list(self, request, *args, **kwargs):
+
+        date_param = request.query_params.get('date')
+        selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else None
+
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+
+        # Faqat bugungi Lead uchun statistika hisoblash
+        # stats = {}
+        stats = calculate_leadcall_status_stats(selected_date, requests=request)
+
+        return Response({
+            "data": serializer.data,
+            **stats
+        })
 
 
 class LeadRetrieveAPIView(generics.RetrieveAPIView):
@@ -67,13 +124,17 @@ class LeadCallListAPIView(generics.ListAPIView):
         return Response(serializer.data)
 
 
-class LeadCallRetrieveAPIView(generics.RetrieveAPIView):
+class LeadCallRetrieveAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     queryset = LeadCall.objects.all()
-    serializer_class = LeadCallListSerializer
+    serializer_class = LeadCallSerializer
 
-    def retrieve(self, request, *args, **kwargs):
-        lead_call = self.get_object()
-        lead_call_data = self.get_serializer(lead_call).data
-        return Response(lead_call_data)
+    def list(self, request, *args, **kwargs):
+        pk = kwargs['pk']
+        try:
+            lead_call = LeadCall.objects.filter(lead_id=pk, status=False).all()
+        except LeadCall.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        serializer = LeadCallSerializer(lead_call, many=True)
+        return Response(serializer.data)

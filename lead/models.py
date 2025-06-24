@@ -1,5 +1,5 @@
 from django.db import models
-
+from user.models import CustomUser
 from branch.models import Branch
 from subjects.models import Subject
 
@@ -7,12 +7,26 @@ from subjects.models import Subject
 class Lead(models.Model):
     name = models.CharField(max_length=250)
     phone = models.CharField(max_length=250)
-    subject = models.ForeignKey(Subject, related_name='subject_id_lead', on_delete=models.CASCADE)
-    branch = models.ForeignKey(Branch, related_name='branch_id_lead', on_delete=models.CASCADE)
+    surname = models.CharField(max_length=250, null=True)
+    created = models.DateField(auto_now_add=True)
+    type = models.CharField(max_length=250, null=True)
+    deleted = models.BooleanField(default=False)
 
 
 class LeadCall(models.Model):
-    lead = models.ForeignKey(Lead, related_name='lead_id_leadCall',on_delete=models.CASCADE)
+    lead = models.ForeignKey(Lead, related_name='lead_id_leadCall', on_delete=models.CASCADE)
+    status = models.BooleanField(default=False)
     created = models.DateField(auto_now_add=True)
-    delay = models.DateField()
-    comment = models.TextField()
+    delay = models.DateField(null=True)
+    comment = models.TextField(null=True)
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
+    deleted = models.BooleanField(default=False)
+
+
+
+class OperatorPercent(models.Model):
+    percent = models.IntegerField()
+    total_lead = models.IntegerField()
+    accepted = models.IntegerField()
+    date = models.DateField(null=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
