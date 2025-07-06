@@ -9,11 +9,11 @@ from branch.serializers import BranchListSerializer
 class BranchListAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
-    queryset = Branch.objects.filter(location__system__name='school').all()
+    queryset = Branch.objects.filter(location__system__name='School').all()
     serializer_class = BranchListSerializer
 
     def get(self, request, *args, **kwargs):
-        queryset = Branch.objects.filter(location__system__name='school').all()
+        queryset = Branch.objects.all()
         location_id = self.request.query_params.get('location_id', None)
 
         if location_id is not None:
