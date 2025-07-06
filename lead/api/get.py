@@ -8,6 +8,7 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from datetime import date
 
 from lead.models import Lead, LeadCall
 from lead.serializers import LeadListSerializer, LeadCallListSerializer, LeadCallSerializer
@@ -24,7 +25,6 @@ class LeadListAPIView(generics.ListAPIView):
                 selected_date = datetime.strptime(date_param, "%Y-%m-%d").date()
                 if selected_date > today:
                     raise ValidationError("Kelajak sanasi bilan so‘rov yuborish mumkin emas.")
-                # Agar o‘tmish bo‘lsa LeadCall serializer ishlaydi
                 return LeadCallListSerializer if selected_date < today else LeadListSerializer
             except ValueError:
                 raise ValidationError("Sana formati noto‘g‘ri. Format: YYYY-MM-DD")
@@ -36,13 +36,11 @@ class LeadListAPIView(generics.ListAPIView):
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
 
         if selected_date < today:
-            # O‘tmish — faqat LeadCall larni qaytarish
             return LeadCall.objects.filter(
                 created=selected_date,
                 deleted=False
             )
 
-        # Bugungi yoki kelajak kunlar uchun Lead larni qaytarish
         leads = Lead.objects.filter(deleted=False)
 
         leads = leads.annotate(
@@ -73,7 +71,6 @@ class LeadListAPIView(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
 
-        # Faqat bugungi Lead uchun statistika hisoblash
         # stats = {}
         stats = calculate_leadcall_status_stats(selected_date, requests=request)
 
@@ -138,3 +135,24 @@ class LeadCallRetrieveAPIView(generics.ListAPIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         serializer = LeadCallSerializer(lead_call, many=True)
         return Response(serializer.data)
+
+
+class LeadCallTodayListView(generics.ListAPIView):
+    serializer_class = LeadListSerializer
+
+    def get_queryset(self):
+        today = date.today()
+        leadcalls_today = LeadCall.objects.filter(created=today)
+        lead_ids = leadcalls_today.values_list('lead', flat=True)
+        return Lead.objects.filter(id__in=lead_ids)
+
+    def list(self, request, *args, **kwargs):
+        today = timezone.now().date()
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        stats = calculate_leadcall_status_stats(today, requests=request)
+
+        return Response({
+            "data": serializer.data,
+            **stats
+        })
