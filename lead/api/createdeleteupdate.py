@@ -17,6 +17,11 @@ from datetime import datetime
 from django.core.files.base import ContentFile
 
 
+class LeadCreateView(generics.CreateAPIView):
+    queryset = Lead.objects.all()
+    serializer_class = LeadSerializer
+
+
 class LeadDestroyView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
