@@ -1,7 +1,7 @@
 from datetime import date
 
 from rest_framework import serializers
-from datetime import datetime, timedelta
+
 from .models import Lead, LeadCall
 
 
@@ -34,6 +34,8 @@ class LeadListSerializer(serializers.ModelSerializer):
         else:
             return 'red'
 
+from datetime import datetime, timedelta
+
 
 class LeadCallSerializer(serializers.ModelSerializer):
     lead = serializers.PrimaryKeyRelatedField(queryset=Lead.objects.all())
@@ -54,4 +56,4 @@ class LeadCallListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LeadCall
-        fields = ['id', 'lead', 'delay', 'comment', 'status']
+        fields = ['id', 'lead', 'delay', 'comment','status']

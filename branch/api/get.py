@@ -2,7 +2,7 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from branch.models import Branch
+from branch.models import Branch, Location
 from branch.serializers import BranchListSerializer
 
 
@@ -18,6 +18,19 @@ class BranchListAPIView(generics.ListAPIView):
 
         if location_id is not None:
             queryset = queryset.filter(location_id=location_id)
+        serializer = BranchListSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class BranchListFilterAPIView(generics.ListAPIView):
+    # permission_classes = [IsAuthenticated]
+
+    queryset = Branch.objects.all()
+    serializer_class = BranchListSerializer
+
+    def get(self, request, *args, **kwargs):
+        locations = Location.objects.filter(system__name='school').all()
+        queryset = Branch.objects.filter(location__in=locations).all()
         serializer = BranchListSerializer(queryset, many=True)
         return Response(serializer.data)
 

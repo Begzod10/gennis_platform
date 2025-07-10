@@ -4,13 +4,22 @@ from branch.models import Branch
 from subjects.models import Subject
 
 
+class LeadBlock(models.Model):
+    name = models.CharField(max_length=250)
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
+    deleted = models.BooleanField(default=False)
+
+
 class Lead(models.Model):
     name = models.CharField(max_length=250)
     phone = models.CharField(max_length=250)
     surname = models.CharField(max_length=250, null=True)
-    created = models.DateField(auto_now_add=True)
+    created = models.DateField(auto_now_add=True, null=True)
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
     type = models.CharField(max_length=250, null=True)
     deleted = models.BooleanField(default=False)
+    block_id = models.ForeignKey(LeadBlock, on_delete=models.SET_NULL, null=True)
+    index = models.IntegerField(null=True, blank=True, default=0)
 
 
 class LeadCall(models.Model):
@@ -21,7 +30,8 @@ class LeadCall(models.Model):
     comment = models.TextField(null=True)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
     deleted = models.BooleanField(default=False)
-
+    audio_file = models.FileField(null=True, blank=True, upload_to='audio/', default="")
+    other_infos = models.JSONField(null=True)
 
 
 class OperatorPercent(models.Model):

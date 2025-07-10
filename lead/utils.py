@@ -4,7 +4,7 @@ from django.utils import timezone
 from .models import Lead, LeadCall, OperatorPercent
 
 
-def calculate_leadcall_status_stats(selected_date=None, requests=None):
+def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id=None):
     user = requests.user
     today = timezone.now().date()
     target_date = selected_date or today
@@ -21,7 +21,7 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None):
             pass
 
     # Barcha aktiv leadlar
-    leads = Lead.objects.filter(deleted=False)
+    leads = Lead.objects.filter(deleted=False, branch_id=branch_id)
 
     # Completed: bugungi sana bilan yaratilgan LeadCall mavjud bo‘lsa
     leads_with_today_created_call = leads.annotate(
@@ -72,7 +72,7 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None):
     elif progressing == 0 and completed > 0:
         accepted_percentage = 100
     else:
-        accepted_percentage = round((completed / (progressing+completed)) * 100, 2) if total_leads else 0
+        accepted_percentage = round((completed / (progressing + completed)) * 100, 2) if total_leads else 0
 
     # Saqlash bugungi kunga
     if target_date == today:

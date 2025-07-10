@@ -1,15 +1,15 @@
 import os
 from datetime import timedelta
 from pathlib import Path
+from dotenv import load_dotenv
 
+load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-8!t!6$g#(34ro((m-7t$#(zek1=b=y2ltslop@w71$^6)wb_rc'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
-classroom_server = 'https://classroom.gennis.uz/api'
-gennis_server = 'https://gennis.uz'
-# classroom_server = 'http://192.168.1.61:5001/api'
-# gennis_server = 'http://192.168.1.61:5002'
+classroom_server = os.getenv('CLASSROOM_SERVER')
+gennis_server = os.getenv('GENNIS_SERVER')
 
 DEBUG = True
 
@@ -90,16 +90,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'gennis_platform.wsgi.application'
 
-
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'gennis_platform'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', '123'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 

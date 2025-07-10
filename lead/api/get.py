@@ -32,6 +32,7 @@ class LeadListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         date_param = self.request.query_params.get('date')
+        branch_id = self.request.query_params.get('branch_id')
         today = timezone.now().date()
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
 
@@ -41,7 +42,7 @@ class LeadListAPIView(generics.ListAPIView):
                 deleted=False
             )
 
-        leads = Lead.objects.filter(deleted=False)
+        leads = Lead.objects.filter(deleted=False, branch_id=branch_id)
 
         leads = leads.annotate(
             has_leadcall_today=Exists(
@@ -64,15 +65,18 @@ class LeadListAPIView(generics.ListAPIView):
         return leads
 
     def list(self, request, *args, **kwargs):
-
         date_param = request.query_params.get('date')
+        branch_id = request.query_params.get('branch_id')
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else None
 
         queryset = self.get_queryset()
+
+        if branch_id:
+            queryset = queryset.filter(branch_id=branch_id)  # or branch__id=branch_id if it's a related model
+
         serializer = self.get_serializer(queryset, many=True)
 
-        # stats = {}
-        stats = calculate_leadcall_status_stats(selected_date, requests=request)
+        stats = calculate_leadcall_status_stats(selected_date, requests=request, branch_id=branch_id)
 
         return Response({
             "data": serializer.data,
@@ -142,15 +146,17 @@ class LeadCallTodayListView(generics.ListAPIView):
 
     def get_queryset(self):
         today = date.today()
-        leadcalls_today = LeadCall.objects.filter(created=today)
+        branch_id = self.request.query_params.get('branch_id')
+        leadcalls_today = LeadCall.objects.filter(created=today, branch_id=branch_id)
         lead_ids = leadcalls_today.values_list('lead', flat=True)
         return Lead.objects.filter(id__in=lead_ids)
 
     def list(self, request, *args, **kwargs):
         today = timezone.now().date()
+        bran_id = request.query_params.get('branch_id')
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
-        stats = calculate_leadcall_status_stats(today, requests=request)
+        stats = calculate_leadcall_status_stats(today, requests=request, branch_id=bran_id)
 
         return Response({
             "data": serializer.data,
