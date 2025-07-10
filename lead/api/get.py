@@ -15,9 +15,6 @@ from lead.serializers import LeadListSerializer, LeadCallListSerializer, LeadCal
 from lead.utils import calculate_leadcall_status_stats
 
 
-
-
-
 class LeadListAPIView(generics.ListAPIView):
     def get_serializer_class(self):
         date_param = self.request.query_params.get('date')
@@ -35,7 +32,7 @@ class LeadListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         date_param = self.request.query_params.get('date')
-        branch_id = self.request.query_params.get('branch_id')
+        # branch_id = self.request.query_params.get('branch_id')
         today = timezone.now().date()
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
 
@@ -45,8 +42,8 @@ class LeadListAPIView(generics.ListAPIView):
                 deleted=False
             )
 
-        leads = Lead.objects.filter(deleted=False, branch_id=branch_id)
-
+        # leads = Lead.objects.filter(deleted=False, branch_id=branch_id)
+        leads = Lead.objects.filter(deleted=False)
         leads = leads.annotate(
             has_leadcall_today=Exists(
                 LeadCall.objects.filter(
@@ -69,17 +66,18 @@ class LeadListAPIView(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         date_param = request.query_params.get('date')
-        branch_id = request.query_params.get('branch_id')
+        # branch_id = request.query_params.get('branch_id')
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else None
 
         queryset = self.get_queryset()
 
-        if branch_id:
-            queryset = queryset.filter(branch_id=branch_id)  # or branch__id=branch_id if it's a related model
+        # if branch_id:
+        #     queryset = queryset.filter(branch_id=branch_id)  # or branch__id=branch_id if it's a related model
 
         serializer = self.get_serializer(queryset, many=True)
 
-        stats = calculate_leadcall_status_stats(selected_date, requests=request, branch_id=branch_id)
+        # stats = calculate_leadcall_status_stats(selected_date, requests=request, branch_id=branch_id)
+        stats = calculate_leadcall_status_stats(selected_date, requests=request)
 
         return Response({
             "data": serializer.data,
@@ -159,7 +157,7 @@ class LeadCallTodayListView(generics.ListAPIView):
         bran_id = request.query_params.get('branch_id')
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
-        stats = calculate_leadcall_status_stats(today, requests=request, branch_id=bran_id)
+        stats = calculate_leadcall_status_stats(today, requests=request)
 
         return Response({
             "data": serializer.data,
