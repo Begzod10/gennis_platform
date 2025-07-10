@@ -147,14 +147,15 @@ class LeadCallTodayListView(generics.ListAPIView):
 
     def get_queryset(self):
         today = date.today()
-        branch_id = self.request.query_params.get('branch_id')
-        leadcalls_today = LeadCall.objects.filter(created=today, branch_id=branch_id)
+        # branch_id = self.request.query_params.get('branch_id')
+        # leadcalls_today = LeadCall.objects.filter(created=today, branch_id=branch_id)
+        leadcalls_today = LeadCall.objects.filter(created=today)
         lead_ids = leadcalls_today.values_list('lead', flat=True)
         return Lead.objects.filter(id__in=lead_ids)
 
     def list(self, request, *args, **kwargs):
         today = timezone.now().date()
-        bran_id = request.query_params.get('branch_id')
+        branch_id = request.query_params.get('branch_id')
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         stats = calculate_leadcall_status_stats(today, requests=request)
