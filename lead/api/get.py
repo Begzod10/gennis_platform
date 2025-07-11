@@ -38,6 +38,8 @@ class LeadListAPIView(generics.ListAPIView):
         for lead in all_leads:
             lead.given_to_operator = False
             lead.save()
+        OperatorLead.objects.filter(operator=self.request.user).delete()
+
         date_param = self.request.query_params.get('date')
         branch_id = self.request.query_params.get('branch_id')
         user = self.request.user
