@@ -34,18 +34,15 @@ class LeadListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         get_branch = Branch.objects.get(id=8)
-        all_leads = Lead.objects.filter(branch=get_branch).all()
-        for lead in all_leads:
-            lead.given_to_operator = False
-            lead.save()
-        OperatorLead.objects.filter(operator=self.request.user).delete()
 
         date_param = self.request.query_params.get('date')
         branch_id = self.request.query_params.get('branch_id')
+
         user = self.request.user
         today = timezone.now().date()
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
-
+        OperatorLead.objects.filter(date=selected_date).delete()
+        Lead.objects.filter(branch=get_branch).update(given_to_operator=False)
         # 1. If date is in the past, return LeadCalls
         if selected_date < today:
             return LeadCall.objects.filter(
