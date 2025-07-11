@@ -34,7 +34,7 @@ class LeadListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         get_branch = Branch.objects.get(id=8)
-        all_leads = Lead.objects.filter(Lead.branch == get_branch).all()
+        all_leads = Lead.objects.filter(branch=get_branch).all()
         for lead in all_leads:
             lead.given_to_operator = False
             lead.save()
