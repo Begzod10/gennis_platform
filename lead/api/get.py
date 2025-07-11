@@ -138,6 +138,7 @@ class LeadListAPIView(generics.ListAPIView):
 
         return Response({
             "data": serializer.data,
+            "operators": operators,
             **stats
         })
 
