@@ -119,7 +119,7 @@ class LeadListAPIView(generics.ListAPIView):
             operatorlead__in=operator_lead,
             finished=False
         )
-        return assigned_leads
+        return assigned_leads, operators
 
     def list(self, request, *args, **kwargs):
         date_param = request.query_params.get('date')
