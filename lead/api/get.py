@@ -33,10 +33,10 @@ class LeadListAPIView(generics.ListAPIView):
         return LeadListSerializer
 
     def get_queryset(self):
-        all_leads = Lead.objects.all()
-        for lead in all_leads:
-            lead.branch_id = 8
-            lead.save()
+        # all_leads = Lead.objects.all()
+        # for lead in all_leads:
+        #     lead.branch_id = 8
+        #     lead.save()
         date_param = self.request.query_params.get('date')
         branch_id = self.request.query_params.get('branch_id')
         user = self.request.user
