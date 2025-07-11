@@ -5,7 +5,7 @@ from .models import Lead, LeadCall, OperatorPercent
 
 
 # def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id=None):
-def calculate_leadcall_status_stats(selected_date=None, requests=None):
+def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id=None, operator_lead=None):
     user = requests.user
     today = timezone.now().date()
     target_date = selected_date or today
@@ -21,11 +21,7 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None):
         except OperatorPercent.DoesNotExist:
             pass
 
-    # Barcha aktiv leadlar
-    # leads = Lead.objects.filter(deleted=False, branch_id=branch_id)
-    leads = Lead.objects.filter(deleted=False)
-
-    # Completed: bugungi sana bilan yaratilgan LeadCall mavjud bo‘lsa
+    leads = Lead.objects.filter(deleted=False, branch_id=branch_id, operatorlead__in=operator_lead)
     leads_with_today_created_call = leads.annotate(
         has_today_leadcall=Exists(
             LeadCall.objects.filter(

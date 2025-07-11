@@ -37,10 +37,14 @@ class LeadListSerializer(serializers.ModelSerializer):
 
 class LeadCallSerializer(serializers.ModelSerializer):
     lead = serializers.PrimaryKeyRelatedField(queryset=Lead.objects.all())
+    name = serializers.ReadOnlyField(source='lead.name')
+    surname = serializers.ReadOnlyField(source='lead.surname')
+    phone = serializers.ReadOnlyField(source='lead.phone')
 
     class Meta:
         model = LeadCall
-        fields = "__all__"
+        fields = ['id', 'lead', 'delay', 'comment', 'status', 'created', 'audio_file', 'other_infos', 'name', 'surname',
+                  'phone']
 
     def create(self, validated_data):
         if 'delay' not in validated_data or validated_data['delay'] is None:

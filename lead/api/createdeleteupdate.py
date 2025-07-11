@@ -21,6 +21,16 @@ class LeadCreateView(generics.CreateAPIView):
     queryset = Lead.objects.all()
     serializer_class = LeadSerializer
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        existing_lead = Lead.objects.filter(phone=request.data['phone']).first()
+        if existing_lead:
+            return Response({'message': "lead already exists"}, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        lead = serializer.save()
+        stats = calculate_leadcall_status_stats(requests=request)
+        return Response({'message': "created", **stats}, status=status.HTTP_201_CREATED)
+
 
 class LeadDestroyView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -56,13 +66,17 @@ class LeadCallCreateView(generics.CreateAPIView):
         if (data["status"]):
             from user.models import CustomUser
             lead = Lead.objects.filter(pk=data['lead']).first()
+            lead.finished = True
+            lead.save()
             user_create = CustomUser.objects.create(
-                username=lead.name + lead.surname + lead.phone,
+                # username=lead.name + lead.surname + lead.phone,
                 name=lead.name,
                 surname=lead.surname,
                 branch_id=lead.branch_id,
+                comment=lead_call.comment
             )
             user_create.set_password('12345678')
+            user_create.save()
             from students.models import Student
             student = Student.objects.create(
                 user=user_create

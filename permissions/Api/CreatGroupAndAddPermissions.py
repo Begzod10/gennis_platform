@@ -65,8 +65,6 @@ class Jobs(APIView):
     def post(self, request):
         data = json.loads(request.body)
 
-
-
         group, created = Group.objects.get_or_create(name=data['name'])
 
         AuthGroupSystem.objects.create(group_id=group.pk, system_id_id=data['system_id'])
