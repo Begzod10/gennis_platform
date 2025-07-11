@@ -20,8 +20,10 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
             }
         except OperatorPercent.DoesNotExist:
             pass
-
-    leads = Lead.objects.filter(deleted=False, branch_id=branch_id, operatorlead__in=operator_lead)
+    if operator_lead:
+        leads = Lead.objects.filter(deleted=False, branch_id=branch_id, operatorlead__in=operator_lead)
+    else:
+        leads = Lead.objects.filter(deleted=False, branch_id=branch_id)
     leads_with_today_created_call = leads.annotate(
         has_today_leadcall=Exists(
             LeadCall.objects.filter(

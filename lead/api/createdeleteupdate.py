@@ -28,8 +28,8 @@ class LeadCreateView(generics.CreateAPIView):
             return Response({'message': "lead already exists"}, status=status.HTTP_400_BAD_REQUEST)
         serializer.is_valid(raise_exception=True)
         lead = serializer.save()
-        stats = calculate_leadcall_status_stats(requests=request)
-        return Response({'message': "created", **stats}, status=status.HTTP_201_CREATED)
+
+        return Response({'message': "created"}, status=status.HTTP_201_CREATED)
 
 
 class LeadDestroyView(generics.DestroyAPIView):
