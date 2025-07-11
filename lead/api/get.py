@@ -119,26 +119,25 @@ class LeadListAPIView(generics.ListAPIView):
             operatorlead__in=operator_lead,
             finished=False
         )
-        return assigned_leads, operators
+        return assigned_leads
 
     def list(self, request, *args, **kwargs):
         date_param = request.query_params.get('date')
         branch_id = request.query_params.get('branch_id')
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else None
 
-        queryset = self.get_queryset()
+        queryset, operators = self.get_queryset()
         # if branch_id:
         #     queryset = queryset.filter(branch_id=branch_id)  # or branch__id=branch_id if it's a related model
 
         serializer = self.get_serializer(queryset, many=True)
         user = request.user
         operator_lead = OperatorLead.objects.filter(operator=user, date=selected_date)
-        stats, operators = calculate_leadcall_status_stats(selected_date, requests=request, branch_id=branch_id,
-                                                           operator_lead=operator_lead)
+        stats = calculate_leadcall_status_stats(selected_date, requests=request, branch_id=branch_id,
+                                                operator_lead=operator_lead)
 
         return Response({
             "data": serializer.data,
-            "operators": operators,
             **stats
         })
 
@@ -224,8 +223,8 @@ class LeadCallTodayListView(generics.ListAPIView):
         queryset = self.get_queryset()
         queryset = queryset.filter(branch_id=branch_id, given_to_operator=True, operatorlead__in=operator_lead)
         serializer = self.get_serializer(queryset, many=True)
-        stats, operators = calculate_leadcall_status_stats(today, requests=request, branch_id=branch_id,
-                                                           operator_lead=operator_lead)
+        stats = calculate_leadcall_status_stats(today, requests=request, branch_id=branch_id,
+                                                operator_lead=operator_lead)
 
         return Response({
             "data": serializer.data,
