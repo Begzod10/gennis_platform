@@ -10,7 +10,7 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
+from students.models import Branch
 from lead.models import Lead, LeadCall, OperatorLead
 from lead.serializers import LeadListSerializer, LeadCallListSerializer, LeadCallSerializer, LeadSerializer
 from lead.utils import calculate_leadcall_status_stats
@@ -33,10 +33,11 @@ class LeadListAPIView(generics.ListAPIView):
         return LeadListSerializer
 
     def get_queryset(self):
-        # all_leads = Lead.objects.all()
-        # for lead in all_leads:
-        #     lead.branch_id = 8
-        #     lead.save()
+        get_branch = Branch.objects.get(id=8)
+        all_leads = Lead.objects.filter(Lead.branch == get_branch).all()
+        for lead in all_leads:
+            lead.given_to_operator = False
+            lead.save()
         date_param = self.request.query_params.get('date')
         branch_id = self.request.query_params.get('branch_id')
         user = self.request.user
