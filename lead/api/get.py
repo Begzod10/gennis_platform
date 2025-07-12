@@ -39,7 +39,7 @@ class LeadListAPIView(generics.ListAPIView):
         user = self.request.user
         today = timezone.now().date()
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
-        Lead.objects.filter(branch_id=branch_id).update(finished=False)
+        # Lead.objects.filter(branch_id=branch_id).update(finished=False)
         if selected_date < today:
             return LeadCall.objects.filter(
                 created=selected_date,
