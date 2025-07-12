@@ -41,8 +41,8 @@ class LeadListAPIView(generics.ListAPIView):
         user = self.request.user
         today = timezone.now().date()
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
-        # OperatorLead.objects.filter(date=selected_date).delete()
-        # Lead.objects.filter(branch=get_branch).update(given_to_operator=False)
+        OperatorLead.objects.filter(date=selected_date).delete()
+        Lead.objects.filter(branch=get_branch).update(finished=False)
         # 1. If date is in the past, return LeadCalls
         if selected_date < today:
             return LeadCall.objects.filter(
