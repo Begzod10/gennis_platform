@@ -44,7 +44,7 @@ class LeadCallSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeadCall
         fields = ['id', 'lead', 'delay', 'comment', 'status', 'created', 'audio_file', 'other_infos', 'name', 'surname',
-                  'phone']
+                  'phone','is_agreed']
 
     def create(self, validated_data):
         if 'delay' not in validated_data or validated_data['delay'] is None:

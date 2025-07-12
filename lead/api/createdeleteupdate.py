@@ -63,7 +63,7 @@ class LeadCallCreateView(generics.CreateAPIView):
         stats = calculate_leadcall_status_stats(requests=request)
         data = request.data
 
-        if (data["status"]):
+        if (data["is_agreed"]):
             from user.models import CustomUser
             lead = Lead.objects.filter(pk=data['lead']).first()
             lead.finished = True

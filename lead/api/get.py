@@ -1,4 +1,3 @@
-import pprint
 from collections import defaultdict
 from datetime import date
 from datetime import datetime
@@ -10,7 +9,7 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from students.models import Branch
+
 from lead.models import Lead, LeadCall, OperatorLead
 from lead.serializers import LeadListSerializer, LeadCallListSerializer, LeadCallSerializer, LeadSerializer
 from lead.utils import calculate_leadcall_status_stats
@@ -33,7 +32,6 @@ class LeadListAPIView(generics.ListAPIView):
         return LeadListSerializer
 
     def get_queryset(self):
-        get_branch = Branch.objects.get(id=8)
 
         date_param = self.request.query_params.get('date')
         branch_id = self.request.query_params.get('branch_id')
@@ -41,9 +39,7 @@ class LeadListAPIView(generics.ListAPIView):
         user = self.request.user
         today = timezone.now().date()
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
-        OperatorLead.objects.filter(date=selected_date).delete()
-        Lead.objects.filter(branch=get_branch).update(finished=False)
-        # 1. If date is in the past, return LeadCalls
+        Lead.objects.filter(branch_id=branch_id).update(finished=False)
         if selected_date < today:
             return LeadCall.objects.filter(
                 created=selected_date,

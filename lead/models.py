@@ -1,7 +1,8 @@
 from django.db import models
-from user.models import CustomUser
+
 from branch.models import Branch
 from subjects.models import Subject
+from user.models import CustomUser
 
 
 class LeadBlock(models.Model):
@@ -33,6 +34,7 @@ class LeadCall(models.Model):
     deleted = models.BooleanField(default=False)
     audio_file = models.FileField(null=True, blank=True, upload_to='audio/', default="")
     other_infos = models.JSONField(null=True)
+    is_agreed = models.BooleanField(default=False)
 
 
 class OperatorPercent(models.Model):
