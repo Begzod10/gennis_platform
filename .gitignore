@@ -8,3 +8,4 @@ frontend/build
 transfer
 auto_git_pull.log
 transfer/
+.env
