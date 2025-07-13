@@ -115,5 +115,5 @@ def calculate_all_percentage(selected_date=None):
         "total_leads": accepted + progressing,
         "progressing": progressing,
         "completed": accepted,
-        "accepted_percentage": percentage / operators_percent.count() if operators_percent.count() else 0
+        "accepted_percentage": round( percentage / operators_percent.count(), 2) if operators_percent.count() else 0
     }
