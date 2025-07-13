@@ -33,6 +33,12 @@ class OperatorPercentAdmin(admin.ModelAdmin):
 
 @admin.register(OperatorLead)
 class OperatorLeadAdmin(admin.ModelAdmin):
-    list_display = ('id', 'operator', 'lead', 'date', 'created')
-    list_filter = ('date', 'operator')
-    search_fields = ('lead__name', 'operator__username')
+    list_display = ('id', 'operator_display', 'lead_display', 'date', 'created')
+
+    def operator_display(self, obj):
+        return str(obj.operator) if obj.operator else "-"
+    operator_display.short_description = "Operator"
+
+    def lead_display(self, obj):
+        return str(obj.lead) if obj.lead else "-"
+    lead_display.short_description = "Lead"
