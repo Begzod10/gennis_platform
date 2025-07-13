@@ -50,3 +50,6 @@ class OperatorLead(models.Model):
     operator = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     date = models.DateField(null=True)
     created = models.DateField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('lead', 'date')

@@ -1,21 +1,21 @@
+from datetime import datetime
+
 from django.db.models import Exists, OuterRef
-from django.utils import timezone
 
 from .models import Lead, LeadCall, OperatorPercent
 
 
-# def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id=None):
 def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id=None, operator_lead=None):
-    user = requests.user
-    today = timezone.now().date()
+    user = requests.user  # faqat bitta user
+    today = datetime.now().date()
     target_date = selected_date or today
-
     if target_date < today:
         try:
             op = OperatorPercent.objects.get(user=user, date=target_date)
             return {
-                "status_true_count": op.accepted,
-                "total_leads": op.total_lead,
+                "total_leads": op.accepted + op.total_lead,
+                "progressing": op.total_lead,
+                "completed": op.accepted,
                 "accepted_percentage": op.percent
             }
         except OperatorPercent.DoesNotExist:
@@ -44,21 +44,21 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
             LeadCall.objects.filter(
                 lead=OuterRef('pk'),
                 deleted=False
-            )
+            ).exclude(delay=target_date)
         )
     ).filter(has_any_call=False)
 
-    leads_with_delay_today_but_not_created_today = leads.annotate(
-        has_delay_today_but_no_created_today=Exists(
-            LeadCall.objects.filter(
-                lead=OuterRef('pk'),
-                delay=target_date,
-                deleted=False
-            ).exclude(created=target_date)
-        )
-    ).filter(has_delay_today_but_no_created_today=True)
+    # leads_with_delay_today_but_not_created_today = leads.annotate(
+    #     has_delay_today_but_no_created_today=Exists(
+    #         LeadCall.objects.filter(
+    #             lead=OuterRef('pk'),
+    #             delay=target_date,
+    #             deleted=False
+    #         ).exclude(created=target_date)
+    #     )
+    # ).filter(has_delay_today_but_no_created_today=True)
 
-    progressing = leads_with_no_leadcall.count() + leads_with_delay_today_but_not_created_today.count()
+    progressing = leads_with_no_leadcall.count()
 
     total_leads = completed + progressing
 
@@ -76,15 +76,16 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
 
     # Saqlash bugungi kunga
     if target_date == today:
-        OperatorPercent.objects.update_or_create(
-            user=user,
-            date=target_date,
-            defaults={
-                "percent": accepted_percentage,
-                "total_lead": total_leads,
-                "accepted": status_true_count
-            }
-        )
+        if user.groups.filter(name='operator').exists():
+            OperatorPercent.objects.update_or_create(
+                user=user,
+                date=target_date,
+                defaults={
+                    "percent": accepted_percentage,
+                    "total_lead": progressing,
+                    "accepted": completed
+                }
+            )
 
     return {
         "status_true_count": status_true_count,
@@ -92,4 +93,27 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
         "progressing": progressing,
         "completed": completed,
         "accepted_percentage": accepted_percentage
+    }
+
+
+def calculate_all_percentage(selected_date=None):
+    from user.models import CustomUser
+    operators = CustomUser.objects.filter(groups__name='operator')
+    if selected_date is None:
+        selected_date = datetime.now().date()
+    operators_percent = OperatorPercent.objects.filter(user__in=operators, date=selected_date)
+    accepted = 0
+    progressing = 0
+    percentage = 0
+    for operator in operators_percent:
+        accepted += operator.accepted
+        progressing += operator.total_lead
+        percentage += operator.percent
+
+    return {
+        "status_true_count": 0,
+        "total_leads": accepted + progressing,
+        "progressing": progressing,
+        "completed": accepted,
+        "accepted_percentage": percentage / operators_percent.count() if operators_percent.count() else 0
     }

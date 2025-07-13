@@ -15,7 +15,7 @@ import asyncio
 from asgiref.sync import sync_to_async
 from datetime import datetime
 from django.core.files.base import ContentFile
-
+from lead.models import OperatorLead
 
 class LeadCreateView(generics.CreateAPIView):
     queryset = Lead.objects.all()
@@ -46,8 +46,11 @@ class LeadDestroyView(generics.DestroyAPIView):
             lead_cal.deleted = True
             lead_cal.save()
         instance.save()
-        stats = calculate_leadcall_status_stats(requests=request)
-
+        today = datetime.today().date()
+        branch_id = request.user.branch_id
+        operator_lead = OperatorLead.objects.filter(operator=request.user,date=today)
+        stats = calculate_leadcall_status_stats(today, requests=request, branch_id=branch_id,
+                                                operator_lead=operator_lead)
         return Response({'message': "deleted", **stats}, status=status.HTTP_200_OK)
 
 
@@ -60,7 +63,10 @@ class LeadCallCreateView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         lead_call = serializer.save()
-        stats = calculate_leadcall_status_stats(requests=request)
+        today = datetime.today().date()
+        branch_id = request.user.branch_id
+        operator_lead = OperatorLead.objects.filter(operator=request.user,date=today)
+        stats = calculate_leadcall_status_stats(today, requests=request, branch_id=branch_id,operator_lead=operator_lead)
         data = request.data
 
         if (data["is_agreed"]):

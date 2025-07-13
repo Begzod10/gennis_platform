@@ -1,9 +1,7 @@
 from collections import defaultdict
-from datetime import date
 from datetime import datetime
 
 from django.db.models import Exists, OuterRef, Q
-from django.utils import timezone
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -12,14 +10,14 @@ from rest_framework.response import Response
 
 from lead.models import Lead, LeadCall, OperatorLead
 from lead.serializers import LeadListSerializer, LeadCallListSerializer, LeadCallSerializer, LeadSerializer
-from lead.utils import calculate_leadcall_status_stats
+from lead.utils import calculate_leadcall_status_stats, calculate_all_percentage
 from user.models import CustomUser
 
 
 class LeadListAPIView(generics.ListAPIView):
     def get_serializer_class(self):
         date_param = self.request.query_params.get('date')
-        today = timezone.now().date()
+        today = datetime.now().date()
 
         if date_param:
             try:
@@ -37,24 +35,38 @@ class LeadListAPIView(generics.ListAPIView):
         branch_id = self.request.query_params.get('branch_id')
 
         user = self.request.user
-        today = timezone.now().date()
+        if user.groups.filter(name='admin').exists():
+            operator_id = self.request.query_params.get('operator_id')
+            if operator_id:
+                user = CustomUser.objects.get(pk=operator_id)
+            else:
+                user = None
+
+        today = datetime.now().date()
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
-        # Lead.objects.filter(branch_id=branch_id).update(finished=False)
+        operators = CustomUser.objects.filter(groups__name='operator', branch_id=branch_id)
+
         if selected_date < today:
+            if user:
+                operator_lead = OperatorLead.objects.filter(operator=user, date=selected_date).values_list('lead',
+                                                                                                           flat=True)
+            else:
+                operator_lead = OperatorLead.objects.filter(operator__in=operators, date=selected_date).values_list(
+                    'lead', flat=True)
             return LeadCall.objects.filter(
                 created=selected_date,
-                deleted=False
+                deleted=False,
+                lead__in=operator_lead
             )
 
+
         # 2. Get all operators of this branch
-        operators = CustomUser.objects.filter(groups__name='operator', branch_id=branch_id)
         operator_count = operators.count()
 
         # 3. Get today's leads that haven't been given or finished
         leads = Lead.objects.filter(
             deleted=False,
             branch_id=branch_id,
-            given_to_operator=False,
             finished=False
         )
         leads = leads.annotate(
@@ -70,7 +82,8 @@ class LeadListAPIView(generics.ListAPIView):
                     lead=OuterRef('pk'),
                     deleted=False
                 ).exclude(delay=selected_date)
-            )
+            ),
+
         ).filter(
             Q(has_other_leadcalls=False) | Q(has_leadcall_today=True)
         )
@@ -93,49 +106,82 @@ class LeadListAPIView(generics.ListAPIView):
 
                 lead = leads[lead_index]
                 _, created = OperatorLead.objects.get_or_create(
-                    operator=selected_operator,
                     lead=lead,
-                    date=selected_date
+                    date=selected_date,
+                    defaults={
+                        "operator": selected_operator
+                    }
                 )
 
                 if created:
-                    lead.given_to_operator = True
-                    lead.save()
                     operator_lead_counts[selected_operator.id] += 1
 
                 lead_index += 1
 
-        # 5. Return only this operator's leads for today
-        operator_lead = OperatorLead.objects.filter(operator=user, date=selected_date)
+        if user:
+            operator_lead = OperatorLead.objects.filter(operator=user, date=selected_date)
+        else:
+            operator_lead = OperatorLead.objects.filter(operator__in=operators, date=selected_date)
         assigned_leads = Lead.objects.filter(
             deleted=False,
-            given_to_operator=True,
             branch_id=branch_id,
             operatorlead__in=operator_lead,
             finished=False
         )
-        return assigned_leads, [op.id for op in operators]
+        assigned_leads = assigned_leads.annotate(
+
+            has_other_leadcalls=Exists(
+                LeadCall.objects.filter(
+                    lead=OuterRef('pk'),
+                    deleted=False,
+
+                ).exclude(delay=selected_date)
+            )
+
+        ).filter(
+            Q(has_other_leadcalls=False)
+        )
+        return assigned_leads
 
     def list(self, request, *args, **kwargs):
         date_param = request.query_params.get('date')
         branch_id = request.query_params.get('branch_id')
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else None
 
-        queryset, operators = self.get_queryset()
-        # if branch_id:
-        #     queryset = queryset.filter(branch_id=branch_id)  # or branch__id=branch_id if it's a related model
+        operators = CustomUser.objects.filter(groups__name='operator', branch_id=branch_id).values_list('id', flat=True)
+
+        queryset = self.get_queryset()
 
         serializer = self.get_serializer(queryset, many=True)
-        user = request.user
-        operator_lead = OperatorLead.objects.filter(operator=user, date=selected_date)
-        stats = calculate_leadcall_status_stats(selected_date, requests=request, branch_id=branch_id,
-                                                operator_lead=operator_lead)
+        operator_id = self.request.query_params.get('operator_id')
+        user = self.request.user  # faqat bitta user
+        if user.groups.filter(name='admin').exists():
+            if operator_id:
+                user = CustomUser.objects.get(pk=operator_id)  # tanlangan operator
+            else:
+                user = None
 
-        return Response({
-            "data": serializer.data,
-            "operators": operators,
-            **stats
-        })
+        if user:
+            operator_lead = OperatorLead.objects.filter(operator=user, date=selected_date)
+        else:
+            operator_lead = OperatorLead.objects.filter(operator__in=operators, date=selected_date)
+        if user is not None:
+            stats = calculate_leadcall_status_stats(selected_date, requests=request, branch_id=branch_id,
+                                                    operator_lead=operator_lead)
+
+            return Response({
+                "data": serializer.data,
+                "operators": operators,
+                **stats
+            })
+        else:
+            stats = calculate_all_percentage(selected_date)
+
+            return Response({
+                "data": serializer.data,
+                "operators": operators,
+                **stats
+            })
 
 
 class LeadRetrieveAPIView(generics.RetrieveAPIView):
@@ -201,28 +247,123 @@ class LeadCallRetrieveAPIView(generics.ListAPIView):
 class LeadCallTodayListView(generics.ListAPIView):
     serializer_class = LeadListSerializer
 
-    def get_queryset(self):
-        today = date.today()
-        user = self.request.user
+    def get_selected_date(self):
+        """
+        Query parametrlardan selected_date ni aniqlash.
+        """
+        date_param = self.request.query_params.get('date')
+        today = datetime.now().date()
 
-        # branch_id = self.request.query_params.get('branch_id')
-        # leadcalls_today = LeadCall.objects.filter(created=today, branch_id=branch_id)
-        leadcalls_today = LeadCall.objects.filter(created=today)
+        if date_param:
+            try:
+                selected_date = datetime.strptime(date_param, "%Y-%m-%d").date()
+                if selected_date > today:
+                    raise ValidationError("Kelajak sanasi bilan so‘rov yuborish mumkin emas.")
+                return selected_date
+            except ValueError:
+                raise ValidationError("Sana formati noto‘g‘ri. Format: YYYY-MM-DD")
+        return today
+
+    def get_operator_user(self):
+        """
+        Agar admin bo‘lsa va operator_id kelgan bo‘lsa, shuni qaytaradi.
+        """
+        user = self.request.user
+        if user.groups.filter(name='admin').exists():
+            operator_id = self.request.query_params.get('operator_id')
+            if operator_id:
+                try:
+                    return CustomUser.objects.get(pk=operator_id)
+                except CustomUser.DoesNotExist:
+                    raise ValidationError("Bunday operator mavjud emas.")
+            return None
+        return user
+
+    def get_operator_leads(self, operator, date):
+        """
+        OperatorLead querysetini qaytaradi.
+        """
+        if operator:
+            return OperatorLead.objects.filter(operator=operator, date=date)
+        else:
+            operators = CustomUser.objects.filter(groups__name='operator')
+            return OperatorLead.objects.filter(operator__in=operators, date=date)
+
+    def get_queryset(self):
+        selected_date = self.get_selected_date()
+        branch_id = self.request.query_params.get('branch_id')
+
+        operator_user = self.get_operator_user()
+        operator_lead_qs = self.get_operator_leads(operator_user, selected_date)
+
+        today = datetime.now().date()
+        if selected_date < today:
+            operator_lead_ids = operator_lead_qs.values_list('lead', flat=True)
+            return LeadCall.objects.filter(
+                created=selected_date,
+                deleted=False,
+                lead__in=operator_lead_ids,
+            )
+
+        leadcalls_today = LeadCall.objects.filter(created=selected_date, deleted=False)
         lead_ids = leadcalls_today.values_list('lead', flat=True)
-        return Lead.objects.filter(id__in=lead_ids)
+
+        leads = Lead.objects.filter(
+            id__in=lead_ids,
+            branch_id=branch_id,
+            operatorlead__in=operator_lead_qs,
+            deleted=False,
+        )
+
+        return leads
+
+    def get_serializer_class(self):
+        selected_date = self.get_selected_date()
+        today = datetime.now().date()
+
+        if selected_date < today:
+            return LeadCallListSerializer
+        return LeadListSerializer
 
     def list(self, request, *args, **kwargs):
-        today = timezone.now().date()
-        user = request.user
-        branch_id = request.query_params.get('branch_id')
-        operator_lead = OperatorLead.objects.filter(operator=user, date=today)
+        selected_date = self.get_selected_date()
+        operator_user = self.get_operator_user()
+        operator_lead_qs = self.get_operator_leads(operator_user, selected_date)
+
         queryset = self.get_queryset()
-        queryset = queryset.filter(branch_id=branch_id, given_to_operator=True, operatorlead__in=operator_lead)
         serializer = self.get_serializer(queryset, many=True)
-        stats = calculate_leadcall_status_stats(today, requests=request, branch_id=branch_id,
-                                                operator_lead=operator_lead)
+
+        branch_id = request.query_params.get('branch_id')
+
+        if operator_user:
+            stats = calculate_leadcall_status_stats(
+                selected_date,
+                requests=request,
+                branch_id=branch_id,
+                operator_lead=operator_lead_qs,
+            )
+        else:
+            stats = calculate_all_percentage(selected_date)
 
         return Response({
             "data": serializer.data,
             **stats
         })
+
+
+class OperatorsListView(generics.ListAPIView):
+
+    def get_queryset(self):
+        return CustomUser.objects.filter(groups__name='operator')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        data = []
+        for user in queryset:
+            data.append({
+                "id": user.id,
+                "name": user.name + " " + user.surname
+
+            })
+
+        return Response(data)
