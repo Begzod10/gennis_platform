@@ -63,10 +63,10 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
         accepted_percentage = 100
     else:
         accepted_percentage = round((completed / (progressing + completed)) * 100, 2) if total_leads else 0
-    operator_percent = OperatorPercent.objects.all()
-    for op in operator_percent:
-        op.branch_id = branch_id
-        op.save()
+    # operator_percent = OperatorPercent.objects.all()
+    # for op in operator_percent:
+    #     op.branch_id = branch_id
+    #     op.save()
     # Saqlash bugungi kunga
     if target_date == today:
         if user.groups.filter(name='operator').exists():
@@ -76,7 +76,8 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
                 defaults={
                     "percent": accepted_percentage,
                     "total_lead": progressing,
-                    "accepted": completed
+                    "accepted": completed,
+                    "branch_id": branch_id
                 }
             )
 
