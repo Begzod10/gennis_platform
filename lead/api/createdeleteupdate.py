@@ -16,6 +16,7 @@ from asgiref.sync import sync_to_async
 from datetime import datetime
 from django.core.files.base import ContentFile
 from lead.models import OperatorLead
+from user.models import CustomUser
 
 
 class LeadCreateView(generics.CreateAPIView):
@@ -23,12 +24,27 @@ class LeadCreateView(generics.CreateAPIView):
     serializer_class = LeadSerializer
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        existing_lead = Lead.objects.filter(phone=request.data['phone']).first()
+        data = request.data.copy()
+        operator_id = data.pop('operator', None)  # Remove operator before passing to serializer
+
+        existing_lead = Lead.objects.filter(phone=data.get('phone')).first()
         if existing_lead:
             return Response({'message': "lead already exists"}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
-        lead = serializer.save()
+        serializer.save()
+
+        if operator_id:
+            try:
+                operator = CustomUser.objects.get(id=operator_id, groups__name='operator')
+                OperatorLead.objects.create(
+                    lead=serializer.instance,
+                    operator=operator,
+                    date=datetime.today().date()
+                )
+            except CustomUser.DoesNotExist:
+                return Response({'message': 'Invalid operator ID'}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({'message': "created"}, status=status.HTTP_201_CREATED)
 

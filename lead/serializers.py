@@ -3,6 +3,7 @@ from datetime import date
 from rest_framework import serializers
 from datetime import datetime, timedelta
 from .models import Lead, LeadCall
+from user.models import CustomUser
 
 
 class LeadSerializer(serializers.ModelSerializer):

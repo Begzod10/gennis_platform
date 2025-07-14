@@ -259,7 +259,7 @@ class LeadListAPIView(generics.ListAPIView):
             )
         ).filter(
             Q(has_other_leadcalls=False)
-        )
+        ).order_by('pk')
 
         return assigned_leads
 
