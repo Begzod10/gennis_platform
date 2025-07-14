@@ -1,6 +1,6 @@
 from django.urls import path
 from .api.get import LeadRetrieveAPIView, LeadListAPIView, LeadCallRetrieveAPIView, LeadCallListAPIView, \
-    LeadCallTodayListView
+    LeadCallTodayListView,OperatorsListView
 from .api.createdeleteupdate import LeadDestroyView, LeadCallCreateView, \
     lead_call_ring, LeadCreateView
 
@@ -15,4 +15,5 @@ urlpatterns = [
     path('lead_create/', LeadCreateView.as_view(), name='lead-create'),
     path('lead_call/<int:pk>/', LeadCallRetrieveAPIView.as_view(), name='lead-call'),
     path('lead_call_list/', LeadCallListAPIView.as_view(), name='lead-call-list'),
+    path('operators/', OperatorsListView.as_view(), name='lead-call-list'),
 ]
