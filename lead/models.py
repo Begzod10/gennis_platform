@@ -35,6 +35,7 @@ class LeadCall(models.Model):
     audio_file = models.FileField(null=True, blank=True, upload_to='audio/', default="")
     other_infos = models.JSONField(null=True)
     is_agreed = models.BooleanField(default=False)
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
 
 
 class OperatorPercent(models.Model):

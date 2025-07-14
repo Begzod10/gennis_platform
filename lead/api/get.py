@@ -295,7 +295,7 @@ class LeadListAPIView(generics.ListAPIView):
                 **stats
             })
         else:
-            stats = calculate_all_percentage(selected_date)
+            stats = calculate_all_percentage(selected_date, branch_id)
 
             return Response({
                 "data": serializer.data,
@@ -399,14 +399,14 @@ class LeadCallTodayListView(generics.ListAPIView):
             return None
         return user
 
-    def get_operator_leads(self, operator, date):
+    def get_operator_leads(self, operator, date, branch_id):
         """
         OperatorLead querysetini qaytaradi.
         """
         if operator:
             return OperatorLead.objects.filter(operator=operator, date=date)
         else:
-            operators = CustomUser.objects.filter(groups__name='operator')
+            operators = CustomUser.objects.filter(groups__name='operator', branch_id=branch_id)
             return OperatorLead.objects.filter(operator__in=operators, date=date)
 
     def get_queryset(self):
@@ -414,7 +414,7 @@ class LeadCallTodayListView(generics.ListAPIView):
         branch_id = self.request.query_params.get('branch_id')
 
         operator_user = self.get_operator_user()
-        operator_lead_qs = self.get_operator_leads(operator_user, selected_date)
+        operator_lead_qs = self.get_operator_leads(operator_user, selected_date, branch_id)
 
         today = datetime.now().date()
         if selected_date < today:
@@ -425,7 +425,7 @@ class LeadCallTodayListView(generics.ListAPIView):
                 lead__in=operator_lead_ids,
             )
 
-        leadcalls_today = LeadCall.objects.filter(created=selected_date, deleted=False)
+        leadcalls_today = LeadCall.objects.filter(created=selected_date, deleted=False, branch_id=branch_id)
         lead_ids = leadcalls_today.values_list('lead', flat=True)
 
         leads = Lead.objects.filter(
@@ -448,13 +448,12 @@ class LeadCallTodayListView(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         selected_date = self.get_selected_date()
         operator_user = self.get_operator_user()
-        operator_lead_qs = self.get_operator_leads(operator_user, selected_date)
 
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
 
         branch_id = request.query_params.get('branch_id')
-
+        operator_lead_qs = self.get_operator_leads(operator_user, selected_date, branch_id)
         if operator_user:
             stats = calculate_leadcall_status_stats(
                 selected_date,
@@ -463,7 +462,7 @@ class LeadCallTodayListView(generics.ListAPIView):
                 operator_lead=operator_lead_qs,
             )
         else:
-            stats = calculate_all_percentage(selected_date)
+            stats = calculate_all_percentage(selected_date, branch_id)
 
         return Response({
             "data": serializer.data,
@@ -474,7 +473,8 @@ class LeadCallTodayListView(generics.ListAPIView):
 class OperatorsListView(generics.ListAPIView):
 
     def get_queryset(self):
-        return CustomUser.objects.filter(groups__name='operator')
+        branch_id = self.request.query_params.get('branch_id')
+        return CustomUser.objects.filter(groups__name='operator', branch_id=branch_id)
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()

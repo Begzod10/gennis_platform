@@ -17,6 +17,7 @@ from datetime import datetime
 from django.core.files.base import ContentFile
 from lead.models import OperatorLead
 
+
 class LeadCreateView(generics.CreateAPIView):
     queryset = Lead.objects.all()
     serializer_class = LeadSerializer
@@ -48,7 +49,7 @@ class LeadDestroyView(generics.DestroyAPIView):
         instance.save()
         today = datetime.today().date()
         branch_id = request.user.branch_id
-        operator_lead = OperatorLead.objects.filter(operator=request.user,date=today)
+        operator_lead = OperatorLead.objects.filter(operator=request.user, date=today)
         stats = calculate_leadcall_status_stats(today, requests=request, branch_id=branch_id,
                                                 operator_lead=operator_lead)
         return Response({'message': "deleted", **stats}, status=status.HTTP_200_OK)
@@ -65,8 +66,9 @@ class LeadCallCreateView(generics.CreateAPIView):
         lead_call = serializer.save()
         today = datetime.today().date()
         branch_id = request.user.branch_id
-        operator_lead = OperatorLead.objects.filter(operator=request.user,date=today)
-        stats = calculate_leadcall_status_stats(today, requests=request, branch_id=branch_id,operator_lead=operator_lead)
+        operator_lead = OperatorLead.objects.filter(operator=request.user, date=today)
+        stats = calculate_leadcall_status_stats(today, requests=request, branch_id=branch_id,
+                                                operator_lead=operator_lead)
         data = request.data
 
         if (data["is_agreed"]):
