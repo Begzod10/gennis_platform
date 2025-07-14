@@ -48,16 +48,6 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
         )
     ).filter(has_any_call=False)
 
-    # leads_with_delay_today_but_not_created_today = leads.annotate(
-    #     has_delay_today_but_no_created_today=Exists(
-    #         LeadCall.objects.filter(
-    #             lead=OuterRef('pk'),
-    #             delay=target_date,
-    #             deleted=False
-    #         ).exclude(created=target_date)
-    #     )
-    # ).filter(has_delay_today_but_no_created_today=True)
-
     progressing = leads_with_no_leadcall.count()
 
     total_leads = completed + progressing
@@ -73,7 +63,10 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
         accepted_percentage = 100
     else:
         accepted_percentage = round((completed / (progressing + completed)) * 100, 2) if total_leads else 0
-
+    operator_percent = OperatorPercent.objects.all()
+    for op in operator_percent:
+        op.branch_id = branch_id
+        op.save()
     # Saqlash bugungi kunga
     if target_date == today:
         if user.groups.filter(name='operator').exists():
@@ -115,5 +108,5 @@ def calculate_all_percentage(selected_date=None):
         "total_leads": accepted + progressing,
         "progressing": progressing,
         "completed": accepted,
-        "accepted_percentage": round( percentage / operators_percent.count(), 2) if operators_percent.count() else 0
+        "accepted_percentage": round(percentage / operators_percent.count(), 2) if operators_percent.count() else 0
     }

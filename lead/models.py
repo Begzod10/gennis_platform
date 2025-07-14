@@ -43,6 +43,7 @@ class OperatorPercent(models.Model):
     accepted = models.IntegerField()
     date = models.DateField(null=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
 
 
 class OperatorLead(models.Model):
