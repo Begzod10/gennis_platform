@@ -99,7 +99,6 @@ def lead_call_ring(request):
         callid = call_response.get('callid')
 
         final_info = await wait_until_call_finished(vats, callid)
-        pprint.pprint(final_info)
         if final_info['status'] == 'success':
             url = final_info['record']
 
