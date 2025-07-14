@@ -63,6 +63,11 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
         accepted_percentage = 100
     else:
         accepted_percentage = round((completed / (progressing + completed)) * 100, 2) if total_leads else 0
+
+    lead_call = LeadCall.objects.all()
+    for lc in lead_call:
+        lc.branch_id = branch_id
+        lc.save()
     # operator_percent = OperatorPercent.objects.all()
     # for op in operator_percent:
     #     op.branch_id = branch_id
