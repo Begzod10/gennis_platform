@@ -500,3 +500,12 @@ class LeadsByBranchListView(generics.ListAPIView):
         branch_id = self.request.query_params.get('branch_id')
         date = self.request.query_params.get('date')
         return Lead.objects.filter(branch_id=branch_id, created=date)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        lead_count = queryset.count()
+        return Response({
+            "data": serializer.data,
+            "lead_count": lead_count
+        })
