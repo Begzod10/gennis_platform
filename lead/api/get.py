@@ -225,19 +225,23 @@ class LeadListAPIView(generics.ListAPIView):
             else:
                 # Pick operator with fewest total leads
                 sorted_operators = sorted(operators, key=lambda op: operator_lead_counts[op.id])
-                operator = sorted_operators[0]
+                operator = sorted_operators[0] if sorted_operators else None
 
             # Assign today's lead if not already assigned
-            _, created = OperatorLead.objects.get_or_create(
-                lead=lead,
-                date=selected_date,
-                defaults={"operator": operator}
-            )
+            if operator:
+                _, created = OperatorLead.objects.get_or_create(
+                    lead=lead,
+                    date=selected_date,
+                    defaults={"operator": operator}
+                )
 
-            if created:
-                operator_lead_counts[operator.id] += 1
+                if created:
+                    operator_lead_counts[operator.id] += 1
 
-            lead_index += 1
+                lead_index += 1
+
+            else:
+                lead_index += 1
 
         # Fetch the leads assigned for today
         if user:
@@ -487,3 +491,12 @@ class OperatorsListView(generics.ListAPIView):
             })
 
         return Response(data)
+
+
+class LeadsByBranchListView(generics.ListAPIView):
+    serializer_class = LeadListSerializer
+
+    def get_queryset(self):
+        branch_id = self.request.query_params.get('branch_id')
+        date = self.request.query_params.get('date')
+        return Lead.objects.filter(branch_id=branch_id, created=date)
