@@ -202,7 +202,7 @@ class LeadListAPIView(generics.ListAPIView):
         ).filter(
             Q(has_other_leadcalls=False)
         ).order_by('pk')
-        leads_by_operators = OperatorLead.objects.filter(operator=user, date=selected_date)
+        leads_by_operators = OperatorLead.objects.filter(operator=user, date='2025-07-15')
         print('leads_by_operators', len(leads_by_operators))
         # Annotate leads with call status
         # leads = leads.annotate(
