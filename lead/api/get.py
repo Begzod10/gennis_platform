@@ -180,7 +180,7 @@ class LeadListAPIView(generics.ListAPIView):
         if user is not None:
             stats = calculate_leadcall_status_stats(selected_date, requests=request, branch_id=branch_id,
                                                     operator_lead=operator_lead)
-
+            print("operator_lead", operator_lead.count())
             return Response({
                 "data": serializer.data,
                 "operators": list(operators.values("id", "name", "surname")),
