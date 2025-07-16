@@ -178,9 +178,14 @@ class LeadListAPIView(generics.ListAPIView):
         else:
             operator_lead = OperatorLead.objects.filter(operator__in=operators, date=selected_date)
         if user is not None:
-            stats = calculate_leadcall_status_stats(selected_date, requests=request, branch_id=branch_id,
-                                                    operator_lead=operator_lead)
-            # print("operator_lead", operator_lead.count())
+            stats, leadcall_today_ids = calculate_leadcall_status_stats(selected_date, requests=request,
+                                                                        branch_id=branch_id,
+                                                                        operator_lead=operator_lead)
+            queryset = self.get_queryset()
+            if leadcall_today_ids:
+                queryset = queryset.filter(Q(pk__in=leadcall_today_ids))
+            queryset = queryset.filter(Q(pk__in=leadcall_today_ids))
+            serializer = self.get_serializer(queryset, many=True)
             return Response({
                 "data": serializer.data,
                 "operators": list(operators.values("id", "name", "surname")),

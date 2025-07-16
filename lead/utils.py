@@ -20,7 +20,7 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
                 "progressing": op.total_lead,
                 "completed": op.accepted,
                 "accepted_percentage": op.percent
-            }
+            }, None
         except OperatorPercent.DoesNotExist:
             pass
 
@@ -83,7 +83,7 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
         "progressing": progressing,
         "completed": completed,
         "accepted_percentage": accepted_percentage
-    }
+    }, leadcall_today_ids
 
 
 def calculate_all_percentage(selected_date=None, branch_id=None):
