@@ -207,6 +207,7 @@ class LeadListAPIView(generics.ListAPIView):
         leads_by_operators = OperatorLead.objects.filter(date=selected_date, operator__in=operators).all()
         not_assigned_leads = all_leads.exclude(operatorlead__in=leads_by_operators).filter(finished=False)
         print('leads_by_operators', len(leads_by_operators))
+        print('not_assigned_leads', len(not_assigned_leads))
         # Annotate leads with call status
         leads = leads.annotate(
             has_leadcall_today=Exists(
