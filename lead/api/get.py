@@ -192,7 +192,7 @@ class LeadListAPIView(generics.ListAPIView):
                 LeadCall.objects.filter(
                     lead=OuterRef('pk'),
                     deleted=False
-                ).exclude(delay='2025-07-15')
+                ).exclude(delay='2025-07-14')
             )
         ).filter(
             Q(has_other_leadcalls=False)
