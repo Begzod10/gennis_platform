@@ -6,12 +6,12 @@ from .models import Lead, LeadCall, OperatorPercent
 
 
 def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id=None, operator_lead=None):
-    from django.db.models import Exists, OuterRef, Q
+    from django.db.models import Exists, OuterRef
     user = requests.user
     today = datetime.now().date()
     target_date = selected_date or today
 
-    # If viewing historical stats (cached in DB)
+    # If viewing past data, return cached
     if target_date < today:
         try:
             op = OperatorPercent.objects.get(user=user, date=target_date)
@@ -24,66 +24,47 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
         except OperatorPercent.DoesNotExist:
             pass
 
-    # Get relevant leads
+    # Get today's leads assigned to the operator
     if operator_lead:
-        leads = Lead.objects.filter(
+        today_leads = Lead.objects.filter(
             deleted=False,
+            finished=False,
             branch_id=branch_id,
             operatorlead__in=operator_lead
-        )
+        ).distinct()
     else:
-        leads = Lead.objects.filter(
+        today_leads = Lead.objects.filter(
             deleted=False,
+            finished=False,
             branch_id=branch_id
-        )
+        ).distinct()
 
-    # ✅ Leads with LeadCall created today
-    leads_with_today_created_call = leads.annotate(
-        has_today_leadcall=Exists(
-            LeadCall.objects.filter(
-                lead=OuterRef('pk'),
-                created=target_date,
-                deleted=False
-            )
-        )
-    ).filter(has_today_leadcall=True)
+    # Leads that had a call today
+    leadcall_today_ids = LeadCall.objects.filter(
+        lead__in=today_leads,
+        created=target_date,
+        deleted=False
+    ).values_list('lead_id', flat=True)
 
-    completed = leads_with_today_created_call.count()
-
-    # 🔄 Leads with no LeadCall at all (excluding delay or created today)
-    leads_with_no_leadcall = leads.annotate(
-        has_any_call=Exists(
-            LeadCall.objects.filter(
-                lead=OuterRef('pk'),
-                deleted=False
-            ).exclude(
-                Q(created=target_date) | Q(delay=target_date)
-            )
-        )
-    ).filter(has_any_call=False).exclude(id__in=leads_with_today_created_call)
-
-    progressing = leads_with_no_leadcall.count()
-
-    total_leads = progressing + completed
-    # print("total_leads", total_leads)
-    print("completed", completed)
-    print("progressing", progressing)
-    # ✅ Leads that had status=True at least once
+    # Split by completed vs progressing
+    completed = today_leads.filter(id__in=leadcall_today_ids).count()
+    progressing = today_leads.exclude(id__in=leadcall_today_ids).count()
+    total_leads = today_leads.count()
+    print(f"Completed: {completed}, Progressing: {progressing}, Total: {total_leads}")
+    # status=True count (regardless of date)
     status_true_count = LeadCall.objects.filter(
-        lead__in=leads,
+        lead__in=today_leads,
         status=True,
         deleted=False
-    ).values('lead').distinct().count()
+    ).values('lead_id').distinct().count()
 
-    # % Calculation
-    if completed == 0 and progressing == 0:
+    # Percentage
+    if total_leads == 0:
         accepted_percentage = 0
-    elif progressing == 0 and completed > 0:
-        accepted_percentage = 100
     else:
-        accepted_percentage = round((completed / total_leads) * 100, 2) if total_leads else 0
+        accepted_percentage = round((completed / total_leads) * 100, 2)
 
-    # Save today's result into DB
+    # Save to DB if today
     if target_date == today and user.groups.filter(name='operator').exists():
         OperatorPercent.objects.update_or_create(
             user=user,
