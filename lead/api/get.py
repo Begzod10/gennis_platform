@@ -370,17 +370,17 @@ class LeadListAPIView(generics.ListAPIView):
         operator_ids = []
         not_assigned_leads = OperatorLead.objects.filter(~Q(lead__in=leads_missing_today))
         print("not_assigned_leads", len(not_assigned_leads))
-        # for lead in leads_missing_today:
-        #     prev = OperatorLead.objects.filter(lead=lead).order_by('-date').first()
-        #     operator_ids.append(prev.operator.id)
-        #     if prev:
-        #         _, created = OperatorLead.objects.get_or_create(
-        #             lead=lead,
-        #             date=selected_date,
-        #             defaults={'operator': prev.operator}
-        #         )
-        #         if created:
-        #             operator_lead_counts[prev.operator.id] += 1
+        for lead in leads_missing_today:
+            prev = OperatorLead.objects.filter(lead=lead).order_by('-date').first()
+            operator_ids.append(prev.operator.id)
+            if prev:
+                _, created = OperatorLead.objects.get_or_create(
+                    lead=lead,
+                    date=selected_date,
+                    defaults={'operator': prev.operator}
+                )
+                if created:
+                    operator_lead_counts[prev.operator.id] += 1
         operator_ids = list(set(operator_ids))
         print("operator_ids", operator_ids)
         print("operator_lead_counts", operator_lead_counts)
@@ -439,6 +439,7 @@ class LeadListAPIView(generics.ListAPIView):
         return leads
 
         # return assigned_leads
+        # all leads 452
 
     def list(self, request, *args, **kwargs):
         date_param = request.query_params.get('date')
