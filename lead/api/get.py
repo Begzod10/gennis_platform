@@ -371,6 +371,7 @@ class LeadListAPIView(generics.ListAPIView):
         for lead in leads_missing_today:
             prev = OperatorLead.objects.filter(lead=lead).order_by('-date').first()
             if prev and prev.operator in operators:
+                print("prev", prev)
                 _, created = OperatorLead.objects.get_or_create(
                     lead=lead,
                     date=selected_date,
