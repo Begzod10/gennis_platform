@@ -180,14 +180,10 @@ class LeadListAPIView(generics.ListAPIView):
         # Count total leads each operator has (across all dates)
         operator_lead_counts = defaultdict(int)
         for op in operators:
-            operator_lead_counts[op.id] = OperatorLead.objects.filter(operator=op).count()
+            operator_lead_counts[op.id] = OperatorLead.objects.filter(operator=op, date=selected_date).count()
 
         # Get today's leads (unfinished, not deleted)
-        all_leads = Lead.objects.filter(
-            deleted=False,
-            branch_id=branch_id
-        )
-        print('All leads', len(all_leads))
+
         leads = Lead.objects.filter(
             deleted=False,
             branch_id=branch_id,
@@ -202,28 +198,28 @@ class LeadListAPIView(generics.ListAPIView):
         ).filter(
             Q(has_other_leadcalls=False)
         ).order_by('pk')
-        leads_by_operators = OperatorLead.objects.filter(operator=user, date='2025-07-15').values_list('lead',
-                                                                                                       flat=True)
+        leads_by_operators = OperatorLead.objects.filter(date='2025-07-15').values_list('lead',
+                                                                                        flat=True)
         print('leads_by_operators', len(leads_by_operators))
         # Annotate leads with call status
-        # leads = leads.annotate(
-        #     has_leadcall_today=Exists(
-        #         LeadCall.objects.filter(
-        #             lead=OuterRef('pk'),
-        #             delay=selected_date,
-        #             deleted=False
-        #         )
-        #     ),
-        #     has_other_leadcalls=Exists(
-        #         LeadCall.objects.filter(
-        #             lead=OuterRef('pk'),
-        #             deleted=False
-        #         ).exclude(delay=selected_date)
-        #     ),
-        # ).filter(
-        #     Q(has_other_leadcalls=False)
-        # )
-        print('leads', len(leads))
+        leads = leads.annotate(
+            has_leadcall_today=Exists(
+                LeadCall.objects.filter(
+                    lead=OuterRef('pk'),
+                    delay=selected_date,
+                    deleted=False
+                )
+            ),
+            has_other_leadcalls=Exists(
+                LeadCall.objects.filter(
+                    lead=OuterRef('pk'),
+                    deleted=False
+                ).exclude(delay=selected_date)
+            ),
+        ).filter(
+            Q(has_other_leadcalls=False)
+        )
+
         leads = list(leads)
         total_leads = len(leads)
 
