@@ -430,8 +430,6 @@ class LeadListAPIView(generics.ListAPIView):
                     deleted=False
                 ).exclude(delay=selected_date)
             )
-        ).filter(
-            has_old_calls=False
         ).order_by('pk')
         print('leads', len(leads))
         return leads
