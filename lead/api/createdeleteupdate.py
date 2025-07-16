@@ -80,6 +80,8 @@ class LeadCallCreateView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         lead_call = serializer.save()
+        lead_call.branch_id = request.user.branch_id
+        lead_call.save()
         today = datetime.today().date()
         branch_id = request.user.branch_id
         operator_lead = OperatorLead.objects.filter(operator=request.user, date=today)

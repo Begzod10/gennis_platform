@@ -66,7 +66,7 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
 
     total_leads = progressing + completed
     # print("total_leads", total_leads)
-    # print("completed", completed)
+    print("completed", completed)
     # print("progressing", progressing)
     # ✅ Leads that had status=True at least once
     status_true_count = LeadCall.objects.filter(
