@@ -322,6 +322,7 @@ class LeadListAPIView(generics.ListAPIView):
         today = now().date()
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
         operators = CustomUser.objects.filter(groups__name='operator', branch_id=branch_id)
+        print("operators", len(operators))
 
         # Short-circuit if date is in the past
         if selected_date < today:
