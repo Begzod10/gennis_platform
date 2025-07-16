@@ -231,24 +231,20 @@ class LeadListAPIView(generics.ListAPIView):
 
         lead_index = 0
 
-        leads_with_other_calls = Lead.objects.filter(
+        leads_to_assign = Lead.objects.filter(
             deleted=False,
             branch_id=branch_id,
             finished=False
-        ).filter(
-            Exists(
+        ).annotate(
+            has_other_calls=Exists(
                 LeadCall.objects.filter(
                     lead=OuterRef('pk'),
                     deleted=False
                 ).exclude(delay=selected_date)
             )
+        ).filter(
+            has_other_calls=False
         )
-
-        leads_to_assign = Lead.objects.filter(
-            deleted=False,
-            branch_id=branch_id,
-            finished=False
-        ).exclude(id__in=leads_with_other_calls.values('id'))
         print('leads_to_assign', len(leads_to_assign))
         # while lead_index < total_leads:
         #     lead = leads[lead_index]
