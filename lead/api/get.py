@@ -198,6 +198,7 @@ class LeadListAPIView(generics.ListAPIView):
         ).filter(
             Q(has_other_leadcalls=False)
         ).order_by('pk')
+        print('leads', len(leads))
         leads_by_operators = OperatorLead.objects.filter(date='2025-07-14').values_list('lead',
                                                                                         flat=True)
         print('leads_by_operators', len(leads_by_operators))
@@ -222,7 +223,7 @@ class LeadListAPIView(generics.ListAPIView):
 
         leads = list(leads)
         total_leads = len(leads)
-
+        print('total_leads2', total_leads)
         lead_index = 0
         # while lead_index < total_leads:
         #     lead = leads[lead_index]
