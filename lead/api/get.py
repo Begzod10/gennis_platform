@@ -387,6 +387,13 @@ class LeadListAPIView(generics.ListAPIView):
             finished=False
         )
         not_assigned_leads = OperatorLead.objects.filter(~Q(lead__in=all_leads)).values_list('lead', flat=True)
+        finished_leads = OperatorLead.objects.filter(lead__finished=True, branch_id=branch_id).values_list('lead',
+                                                                                                           flat=True)
+        deleted_leads = OperatorLead.objects.filter(lead__deleted=True, branch_id=branch_id).values_list('lead',
+                                                                                                         flat=True)
+
+        print("finished_leads", len(finished_leads))
+        print("deleted_leads", len(deleted_leads))
         print("not_assigned_leads", len(not_assigned_leads))
         print("operator_ids", operator_ids)
         print("operator_lead_counts", operator_lead_counts)
