@@ -335,7 +335,8 @@ class LeadCallTodayListView(generics.ListAPIView):
             operatorlead__in=operator_lead_qs,
             deleted=False,
         )
-        print("leads", leads)
+        print("leads", len(leads))
+
         return leads
 
     def get_serializer_class(self):
