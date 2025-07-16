@@ -192,7 +192,7 @@ class LeadListAPIView(generics.ListAPIView):
                 LeadCall.objects.filter(
                     lead=OuterRef('pk'),
                     deleted=False
-                ).exclude(delay=selected_date)
+                ).exclude(delay='2025-07-15')
             )
         ).filter(
             Q(has_other_leadcalls=False)
@@ -223,36 +223,36 @@ class LeadListAPIView(generics.ListAPIView):
         total_leads = len(leads)
 
         lead_index = 0
-        while lead_index < total_leads:
-            lead = leads[lead_index]
-
-            # Check if lead has previous assignment
-            previous_assignment = OperatorLead.objects.filter(
-                lead=lead
-            ).order_by('-date').first()
-
-            if previous_assignment:
-                operator = previous_assignment.operator
-            else:
-                # Pick operator with fewest total leads
-                sorted_operators = sorted(operators, key=lambda op: operator_lead_counts[op.id])
-                operator = sorted_operators[0] if sorted_operators else None
-
-            # Assign today's lead if not already assigned
-            if operator:
-                _, created = OperatorLead.objects.get_or_create(
-                    lead=lead,
-                    date=selected_date,
-                    defaults={"operator": operator}
-                )
-
-                if created:
-                    operator_lead_counts[operator.id] += 1
-
-                lead_index += 1
-
-            else:
-                lead_index += 1
+        # while lead_index < total_leads:
+        #     lead = leads[lead_index]
+        #
+        #     # Check if lead has previous assignment
+        #     previous_assignment = OperatorLead.objects.filter(
+        #         lead=lead
+        #     ).order_by('-date').first()
+        #
+        #     if previous_assignment:
+        #         operator = previous_assignment.operator
+        #     else:
+        #         # Pick operator with fewest total leads
+        #         sorted_operators = sorted(operators, key=lambda op: operator_lead_counts[op.id])
+        #         operator = sorted_operators[0] if sorted_operators else None
+        #
+        #     # Assign today's lead if not already assigned
+        #     if operator:
+        #         _, created = OperatorLead.objects.get_or_create(
+        #             lead=lead,
+        #             date=selected_date,
+        #             defaults={"operator": operator}
+        #         )
+        #
+        #         if created:
+        #             operator_lead_counts[operator.id] += 1
+        #
+        #         lead_index += 1
+        #
+        #     else:
+        #         lead_index += 1
 
         # Fetch the leads assigned for today
         if user:
