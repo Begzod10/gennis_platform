@@ -367,17 +367,20 @@ class LeadListAPIView(generics.ListAPIView):
             operatorlead__date=selected_date
         )
         print("leads_missing_today", len(leads_missing_today))
-
+        operator_ids = []
         for lead in leads_missing_today:
             prev = OperatorLead.objects.filter(lead=lead).order_by('-date').first()
-            if prev and prev.operator in operators:
-                _, created = OperatorLead.objects.get_or_create(
-                    lead=lead,
-                    date=selected_date,
-                    defaults={'operator': prev.operator}
-                )
-                if created:
-                    operator_lead_counts[prev.operator.id] += 1
+            operator_ids.append(prev.operator.id)
+            # if prev and prev.operator in operators:
+            #     _, created = OperatorLead.objects.get_or_create(
+            #         lead=lead,
+            #         date=selected_date,
+            #         defaults={'operator': prev.operator}
+            #     )
+            #     if created:
+            #         operator_lead_counts[prev.operator.id] += 1
+        operator_ids = list(set(operator_ids))
+        print("operator_ids", operator_ids)
         print("operator_lead_counts", operator_lead_counts)
         # 🔎 Step 2: Assign new leads that were never assigned or called before (except today)
         leads_to_assign = Lead.objects.filter(
