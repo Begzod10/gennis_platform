@@ -1,16 +1,17 @@
 from datetime import datetime
 
 from django.db.models import Exists, OuterRef
-
+from user.models import CustomUser
 from .models import Lead, LeadCall, OperatorPercent
 
 
-def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id=None, operator_lead=None):
+def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id=None, operator_lead=None,
+                                    operator_id=None):
     from django.db.models import Exists, OuterRef
     user = requests.user
     today = datetime.now().date()
     target_date = selected_date or today
-
+    operator = CustomUser.objects.filter(id=operator_id).first()
     # If viewing past data, return cached
     if target_date < today:
         try:
@@ -64,8 +65,7 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
         accepted_percentage = round((completed / total_leads) * 100, 2)
 
     # Save to DB if today
-    print(user.groups)
-    if target_date == today and user.groups.filter(name='operator').exists():
+    if target_date == today and operator:
         OperatorPercent.objects.update_or_create(
             user=user,
             date=target_date,
