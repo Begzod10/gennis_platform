@@ -328,10 +328,10 @@ class LeadListAPIView(generics.ListAPIView):
         )
 
         print("operators", len(operators))
-        # previous_assignment = OperatorLead.objects.filter(
-        #     operator__in=operators,
-        #     date=selected_date
-        # ).delete()
+        previous_assignment = OperatorLead.objects.filter(
+            operator__in=operators,
+            date=selected_date
+        ).delete()
         # Short-circuit if date is in the past
         if selected_date < today:
             operator_leads = OperatorLead.objects.filter(
@@ -350,7 +350,6 @@ class LeadListAPIView(generics.ListAPIView):
             op.id: OperatorLead.objects.filter(operator=op, date=selected_date).count()
             for op in operators
         }
-        print("operator_lead_counts", operator_lead_counts)
 
         # 🔁 Step 1: Reassign unfinished leads with a previous assignment but no assignment today
         previously_assigned_leads = OperatorLead.objects.filter(
@@ -379,7 +378,7 @@ class LeadListAPIView(generics.ListAPIView):
                 if created:
                     print("created", created)
                     operator_lead_counts[prev.operator.id] += 1
-
+        print("operator_lead_counts", operator_lead_counts)
         # 🔎 Step 2: Assign new leads that were never assigned or called before (except today)
         leads_to_assign = Lead.objects.filter(
             deleted=False,
@@ -399,17 +398,17 @@ class LeadListAPIView(generics.ListAPIView):
         ).order_by('pk')
         print("leads_to_assign", len(leads_to_assign))
         #
-        for lead in leads_to_assign:
-            sorted_ops = sorted(operators, key=lambda op: operator_lead_counts[op.id])
-            selected_op = sorted_ops[0] if sorted_ops else None
-            if selected_op:
-                _, created = OperatorLead.objects.get_or_create(
-                    lead=lead,
-                    date=selected_date,
-                    defaults={'operator': selected_op}
-                )
-                if created:
-                    operator_lead_counts[selected_op.id] += 1
+        # for lead in leads_to_assign:
+        #     sorted_ops = sorted(operators, key=lambda op: operator_lead_counts[op.id])
+        #     selected_op = sorted_ops[0] if sorted_ops else None
+        #     if selected_op:
+        #         _, created = OperatorLead.objects.get_or_create(
+        #             lead=lead,
+        #             date=selected_date,
+        #             defaults={'operator': selected_op}
+        #         )
+        #         if created:
+        #             operator_lead_counts[selected_op.id] += 1
 
         # 📦 Return today's assigned leads
         today_operator_leads = OperatorLead.objects.filter(
