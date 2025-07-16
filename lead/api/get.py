@@ -355,7 +355,7 @@ class LeadCallTodayListView(generics.ListAPIView):
         branch_id = request.query_params.get('branch_id')
         operator_lead_qs = self.get_operator_leads(operator_user, selected_date, branch_id)
         if operator_user:
-            stats = calculate_leadcall_status_stats(
+            stats, _ = calculate_leadcall_status_stats(
                 selected_date,
                 requests=request,
                 branch_id=branch_id,
