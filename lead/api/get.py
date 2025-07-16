@@ -53,8 +53,6 @@ class LeadListAPIView(generics.ListAPIView):
         today = now().date()
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
 
-
-
         # Operator lead counts today
         operator_lead_counts = {
             op.id: OperatorLead.objects.filter(operator=op, date=selected_date).count()
@@ -164,8 +162,6 @@ class LeadListAPIView(generics.ListAPIView):
         )
 
         queryset = self.get_queryset()
-
-        serializer = self.get_serializer(queryset, many=True)
         operator_id = self.request.query_params.get('operator_id')
         user = self.request.user  # faqat bitta user
         if user.groups.filter(name='admin').exists():
@@ -195,8 +191,11 @@ class LeadListAPIView(generics.ListAPIView):
                 **stats
             })
         else:
-            stats = calculate_all_percentage(selected_date, branch_id)
-
+            stats, leadcall_today_ids = calculate_all_percentage(selected_date, branch_id)
+            if leadcall_today_ids:
+                leadcall_today_ids = list(leadcall_today_ids)
+                queryset = queryset.exclude(Q(pk__in=leadcall_today_ids))
+            serializer = self.get_serializer(queryset, many=True)
             return Response({
                 "data": serializer.data,
                 "operators": list(operators.values("id", "name", "surname")),
@@ -366,7 +365,7 @@ class LeadCallTodayListView(generics.ListAPIView):
                 operator_id=operator_user.id
             )
         else:
-            stats = calculate_all_percentage(selected_date, branch_id)
+            stats, _ = calculate_all_percentage(selected_date, branch_id)
 
         return Response({
             "data": serializer.data,

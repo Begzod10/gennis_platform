@@ -102,12 +102,29 @@ def calculate_all_percentage(selected_date=None, branch_id=None):
     percentage = 0
     total_leads = 0
     for operator in operators_percent:
-        print("accepted", operator.accepted, "total_lead", operator.total_lead, "percent", operator.percent,
-              "progressing", operator.progressing)
         accepted += operator.accepted
         progressing += operator.progressing
         percentage += operator.percent
         total_leads += operator.total_lead
+
+    today_leads = Lead.objects.filter(
+        deleted=False,
+        finished=False,
+        branch_id=branch_id,
+        operatorlead__in=operators
+    ).distinct()
+
+    # Leads that had a call today
+    leadcall_today_ids = LeadCall.objects.filter(
+        lead__in=today_leads,
+        created=selected_date,
+        deleted=False
+    ).values_list('lead_id', flat=True)
+
+    # Split by completed vs progressing
+    completed = today_leads.filter(id__in=leadcall_today_ids).count()
+    progressing = today_leads.exclude(id__in=leadcall_today_ids).count()
+    total_leads = today_leads.count()
 
     return {
         "status_true_count": 0,
@@ -115,4 +132,4 @@ def calculate_all_percentage(selected_date=None, branch_id=None):
         "progressing": progressing,
         "completed": accepted,
         "accepted_percentage": round(percentage / operators_percent.count(), 2) if operators_percent.count() else 0
-    }
+    }, leadcall_today_ids
