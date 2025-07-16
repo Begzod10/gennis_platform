@@ -229,7 +229,7 @@ class LeadListAPIView(generics.ListAPIView):
             # Check if lead has previous assignment
             previous_assignment = OperatorLead.objects.filter(
                 lead=lead
-            ).exclude(date=selected_date).order_by('-date').first()
+            ).order_by('-date').first()
 
             if previous_assignment:
                 operator = previous_assignment.operator
