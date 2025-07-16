@@ -185,7 +185,8 @@ class LeadListAPIView(generics.ListAPIView):
         # Get today's leads (unfinished, not deleted)
         all_leads = Lead.objects.filter(
             deleted=False,
-            branch_id=branch_id
+            branch_id=branch_id,
+            finished=False
         )
         print('all_leads', len(all_leads))
         leads = Lead.objects.filter(
