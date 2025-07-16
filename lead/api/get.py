@@ -350,6 +350,7 @@ class LeadListAPIView(generics.ListAPIView):
             op.id: OperatorLead.objects.filter(operator=op, date=selected_date).count()
             for op in operators
         }
+        print("operator_lead_counts", operator_lead_counts)
 
         # 🔁 Step 1: Reassign unfinished leads with a previous assignment but no assignment today
         previously_assigned_leads = OperatorLead.objects.filter(
