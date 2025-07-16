@@ -325,7 +325,8 @@ class LeadListAPIView(generics.ListAPIView):
         todays_operator_lead = OperatorLead.objects.filter(
             operator__in=operators,
             date='2025-07-16'
-        )
+        ).delete()
+
         print('todays_operator_lead', len(todays_operator_lead))
         # Short-circuit if date is in the past
         # if selected_date < today:
