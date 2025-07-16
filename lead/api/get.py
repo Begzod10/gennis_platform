@@ -183,7 +183,7 @@ class LeadListAPIView(generics.ListAPIView):
                                                                         operator_lead=operator_lead)
             queryset = self.get_queryset()
             if leadcall_today_ids:
-                queryset = queryset.filter(pk__in=leadcall_today_ids)
+                queryset = queryset.filter(Q(pk__in=leadcall_today_ids))
             queryset = queryset.filter(Q(pk__in=leadcall_today_ids))
             serializer = self.get_serializer(queryset, many=True)
             return Response({
