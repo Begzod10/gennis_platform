@@ -16,8 +16,8 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
         try:
             op = OperatorPercent.objects.get(user=user, date=target_date)
             return {
-                "total_leads": op.total_lead,
-                "progressing": op.progressing,
+                "total_leads": op.accepted + op.total_lead,
+                "progressing": op.total_lead,
                 "completed": op.accepted,
                 "accepted_percentage": op.percent
             }, None
@@ -71,8 +71,7 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
             date=target_date,
             defaults={
                 "percent": accepted_percentage,
-                "progressing": progressing,
-                "total_lead": total_leads,
+                "total_lead": progressing,
                 "accepted": completed,
                 "branch_id": branch_id
             }

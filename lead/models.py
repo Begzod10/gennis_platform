@@ -42,6 +42,7 @@ class OperatorPercent(models.Model):
     percent = models.IntegerField()
     total_lead = models.IntegerField()
     accepted = models.IntegerField()
+    progressing = models.IntegerField(default=0)
     date = models.DateField(null=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
