@@ -191,7 +191,7 @@ class LeadListAPIView(generics.ListAPIView):
                 **stats
             })
         else:
-            stats, leadcall_today_ids = calculate_all_percentage(selected_date, branch_id)
+            stats, leadcall_today_ids = calculate_all_percentage(selected_date, branch_id, operator_lead)
             if leadcall_today_ids:
                 leadcall_today_ids = list(leadcall_today_ids)
                 queryset = queryset.exclude(Q(pk__in=leadcall_today_ids))
@@ -365,7 +365,7 @@ class LeadCallTodayListView(generics.ListAPIView):
                 operator_id=operator_user.id
             )
         else:
-            stats, _ = calculate_all_percentage(selected_date, branch_id)
+            stats, _ = calculate_all_percentage(selected_date, branch_id, operator_lead_qs)
 
         return Response({
             "data": serializer.data,

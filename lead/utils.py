@@ -86,7 +86,7 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
     }, leadcall_today_ids
 
 
-def calculate_all_percentage(selected_date=None, branch_id=None):
+def calculate_all_percentage(selected_date=None, branch_id=None, operator_lead=None):
     from user.models import CustomUser
     operators = CustomUser.objects.filter(
         branch_id=branch_id,
@@ -111,7 +111,7 @@ def calculate_all_percentage(selected_date=None, branch_id=None):
         deleted=False,
         finished=False,
         branch_id=branch_id,
-        operatorlead__in=operators
+        operatorlead__in=operator_lead
     ).distinct()
 
     # Leads that had a call today
