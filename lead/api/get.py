@@ -398,7 +398,14 @@ class LeadListAPIView(generics.ListAPIView):
 
         print("finished_leads", len(finished_leads))
         print("deleted_leads", len(deleted_leads))
-        print("not_assigned_leads", len(not_assigned_leads))
+        unassigned_leads = Lead.objects.filter(
+            branch_id=branch_id,
+            deleted=False,
+            finished=False
+        ).exclude(
+            id__in=OperatorLead.objects.values_list('lead', flat=True)
+        )
+        print("unassigned_leads", len(unassigned_leads))
         print("operator_ids", operator_ids)
         print("operator_lead_counts", operator_lead_counts)
         # 🔎 Step 2: Assign new leads that were never assigned or called before (except today)
