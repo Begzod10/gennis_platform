@@ -379,22 +379,23 @@ class LeadListAPIView(generics.ListAPIView):
         #             operator_lead_counts[prev.operator.id] += 1
 
         # 🔎 Step 2: Assign new leads that were never assigned or called before (except today)
-        # leads_to_assign = Lead.objects.filter(
-        #     deleted=False,
-        #     branch_id=branch_id,
-        #     finished=False
-        # ).annotate(
-        #     has_old_calls=Exists(
-        #         LeadCall.objects.filter(
-        #             lead=OuterRef('pk'),
-        #             deleted=False
-        #         ).exclude(delay=selected_date)
-        #     )
-        # ).filter(
-        #     has_old_calls=False
-        # ).exclude(
-        #     operatorlead__date=selected_date
-        # ).order_by('pk')
+        leads_to_assign = Lead.objects.filter(
+            deleted=False,
+            branch_id=branch_id,
+            finished=False
+        ).annotate(
+            has_old_calls=Exists(
+                LeadCall.objects.filter(
+                    lead=OuterRef('pk'),
+                    deleted=False
+                ).exclude(delay=selected_date)
+            )
+        ).filter(
+            has_old_calls=False
+        ).exclude(
+            operatorlead__date=selected_date
+        ).order_by('pk')
+        print("leads_to_assign", len(leads_to_assign))
         #
         # for lead in leads_to_assign:
         #     sorted_ops = sorted(operators, key=lambda op: operator_lead_counts[op.id])
