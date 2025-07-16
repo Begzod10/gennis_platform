@@ -377,7 +377,6 @@ class LeadListAPIView(generics.ListAPIView):
                     defaults={'operator': prev.operator}
                 )
                 if created:
-                    print("created", created)
                     operator_lead_counts[prev.operator.id] += 1
         print("operator_lead_counts", operator_lead_counts)
         # 🔎 Step 2: Assign new leads that were never assigned or called before (except today)
