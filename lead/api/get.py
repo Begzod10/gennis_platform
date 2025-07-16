@@ -183,6 +183,11 @@ class LeadListAPIView(generics.ListAPIView):
             operator_lead_counts[op.id] = OperatorLead.objects.filter(operator=op).count()
 
         # Get today's leads (unfinished, not deleted)
+        all_leads = Lead.objects.filter(
+            deleted=False,
+            branch_id=branch_id
+        )
+        print('All leads', len(all_leads))
         leads = Lead.objects.filter(
             deleted=False,
             branch_id=branch_id,
