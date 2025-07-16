@@ -205,7 +205,7 @@ class LeadListAPIView(generics.ListAPIView):
                 ).exclude(delay=selected_date)
             ),
         ).filter(
-            Q(has_other_leadcalls=False) | Q(has_leadcall_today=True)
+            Q(has_other_leadcalls=False)
         )
 
         leads = list(leads)
