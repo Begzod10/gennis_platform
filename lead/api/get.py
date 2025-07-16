@@ -30,281 +30,6 @@ class LeadListAPIView(generics.ListAPIView):
                 raise ValidationError("Sana formati noto‘g‘ri. Format: YYYY-MM-DD")
         return LeadListSerializer
 
-    # def get_queryset(self):
-    #
-    #     date_param = self.request.query_params.get('date')
-    #     branch_id = self.request.query_params.get('branch_id')
-    #
-    #     user = self.request.user
-    #     if user.groups.filter(name='admin').exists():
-    #         operator_id = self.request.query_params.get('operator_id')
-    #         if operator_id:
-    #             user = CustomUser.objects.get(pk=operator_id)
-    #         else:
-    #             user = None
-    #
-    #     today = datetime.now().date()
-    #     selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
-    #     operators = CustomUser.objects.filter(groups__name='operator', branch_id=branch_id)
-    #
-    #     if selected_date < today:
-    #         if user:
-    #             operator_lead = OperatorLead.objects.filter(operator=user, date=selected_date).values_list('lead',
-    #                                                                                                        flat=True)
-    #         else:
-    #             operator_lead = OperatorLead.objects.filter(operator__in=operators, date=selected_date).values_list(
-    #                 'lead', flat=True)
-    #         return LeadCall.objects.filter(
-    #             created=selected_date,
-    #             deleted=False,
-    #             lead__in=operator_lead
-    #         )
-    #
-    #
-    #     # 2. Get all operators of this branch
-    #     operator_count = operators.count()
-    #
-    #     # 3. Get today's leads that haven't been given or finished
-    #     leads = Lead.objects.filter(
-    #         deleted=False,
-    #         branch_id=branch_id,
-    #         finished=False
-    #     )
-    #     leads = leads.annotate(
-    #         has_leadcall_today=Exists(
-    #             LeadCall.objects.filter(
-    #                 lead=OuterRef('pk'),
-    #                 delay=selected_date,
-    #                 deleted=False
-    #             )
-    #         ),
-    #         has_other_leadcalls=Exists(
-    #             LeadCall.objects.filter(
-    #                 lead=OuterRef('pk'),
-    #                 deleted=False
-    #             ).exclude(delay=selected_date)
-    #         ),
-    #
-    #     ).filter(
-    #         Q(has_other_leadcalls=False) | Q(has_leadcall_today=True)
-    #     )
-    #
-    #     leads = list(leads)
-    #     total_leads = len(leads)
-    #
-    #     # 4. Distribute leads to the least-loaded operators
-    #     if operator_count > 0 and total_leads > 0:
-    #         # Count how many leads each operator already has
-    #         operator_lead_counts = defaultdict(int)
-    #         for op in operators:
-    #             operator_lead_counts[op.id] = OperatorLead.objects.filter(operator=op, date=selected_date).count()
-    #
-    #         lead_index = 0
-    #         while lead_index < total_leads:
-    #             # Always pick operator with fewest leads
-    #             sorted_operators = sorted(operators, key=lambda op: operator_lead_counts[op.id])
-    #             selected_operator = sorted_operators[0]
-    #
-    #             lead = leads[lead_index]
-    #             _, created = OperatorLead.objects.get_or_create(
-    #                 lead=lead,
-    #                 date=selected_date,
-    #                 defaults={
-    #                     "operator": selected_operator
-    #                 }
-    #             )
-    #
-    #             if created:
-    #                 operator_lead_counts[selected_operator.id] += 1
-    #
-    #             lead_index += 1
-    #
-    #     if user:
-    #         operator_lead = OperatorLead.objects.filter(operator=user, date=selected_date)
-    #     else:
-    #         operator_lead = OperatorLead.objects.filter(operator__in=operators, date=selected_date)
-    #     assigned_leads = Lead.objects.filter(
-    #         deleted=False,
-    #         branch_id=branch_id,
-    #         operatorlead__in=operator_lead,
-    #         finished=False
-    #     )
-    #     assigned_leads = assigned_leads.annotate(
-    #
-    #         has_other_leadcalls=Exists(
-    #             LeadCall.objects.filter(
-    #                 lead=OuterRef('pk'),
-    #                 deleted=False,
-    #
-    #             ).exclude(delay=selected_date)
-    #         )
-    #
-    #     ).filter(
-    #         Q(has_other_leadcalls=False)
-    #     )
-    #     return assigned_leads
-    from datetime import datetime
-    from collections import defaultdict
-    from django.db.models import Q, Exists, OuterRef
-
-    # def get_queryset(self):
-    #     date_param = self.request.query_params.get('date')
-    #     branch_id = self.request.query_params.get('branch_id')
-    #
-    #     user = self.request.user
-    #     if user.groups.filter(name='admin').exists():
-    #         operator_id = self.request.query_params.get('operator_id')
-    #         if operator_id:
-    #             user = CustomUser.objects.get(pk=operator_id)
-    #         else:
-    #             user = None
-    #
-    #     today = datetime.now().date()
-    #     selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
-    #     operators = CustomUser.objects.filter(groups__name='operator', branch_id=branch_id)
-    #
-    #     # If selected_date is in the past, just return the leads for that day
-    #     if selected_date < today:
-    #         if user:
-    #             operator_lead = OperatorLead.objects.filter(operator=user, date=selected_date).values_list('lead',
-    #                                                                                                        flat=True)
-    #         else:
-    #             operator_lead = OperatorLead.objects.filter(operator__in=operators, date=selected_date).values_list(
-    #                 'lead', flat=True)
-    #
-    #         return LeadCall.objects.filter(
-    #             created=selected_date,
-    #             deleted=False,
-    #             lead__in=operator_lead
-    #         )
-    #
-    #     # Count total leads each operator has (across all dates)
-    #     operator_lead_counts = defaultdict(int)
-    #     for op in operators:
-    #         operator_lead_counts[op.id] = OperatorLead.objects.filter(operator=op, date=selected_date).count()
-    #
-    #     # Get today's leads (unfinished, not deleted)
-    #     all_leads = Lead.objects.filter(
-    #         deleted=False,
-    #         branch_id=branch_id,
-    #         finished=False
-    #     )
-    #
-    #     leads = Lead.objects.filter(
-    #         deleted=False,
-    #         branch_id=branch_id,
-    #         finished=False
-    #     ).annotate(
-    #         has_other_leadcalls=Exists(
-    #             LeadCall.objects.filter(
-    #                 lead=OuterRef('pk'),
-    #                 deleted=False
-    #             ).exclude(delay=selected_date)
-    #         )
-    #     ).filter(
-    #         Q(has_other_leadcalls=False)
-    #     ).order_by('pk')
-    #
-    #     leads_by_operators = OperatorLead.objects.filter(date=selected_date, operator__in=operators).all()
-    #     not_assigned_leads = all_leads.exclude(operatorlead__in=leads_by_operators).filter(finished=False)
-    #     print('leads_by_operators', len(leads_by_operators))
-    #     print('not_assigned_leads', len(not_assigned_leads))
-    #     # Annotate leads with call status
-    #     leads = leads.annotate(
-    #         has_leadcall_today=Exists(
-    #             LeadCall.objects.filter(
-    #                 lead=OuterRef('pk'),
-    #                 delay=selected_date,
-    #                 deleted=False
-    #             )
-    #         ),
-    #         has_other_leadcalls=Exists(
-    #             LeadCall.objects.filter(
-    #                 lead=OuterRef('pk'),
-    #                 deleted=False
-    #             ).exclude(delay=selected_date)
-    #         ),
-    #     ).filter(
-    #         Q(has_other_leadcalls=False)
-    #     )
-    #
-    #     leads = list(leads)
-    #     total_leads = len(leads)
-    #
-    #     lead_index = 0
-    #
-    #     leads_to_assign = Lead.objects.filter(
-    #         deleted=False,
-    #         branch_id=branch_id,
-    #         finished=False
-    #     ).annotate(
-    #         has_other_calls=Exists(
-    #             LeadCall.objects.filter(
-    #                 lead=OuterRef('pk'),
-    #                 deleted=False
-    #             ).exclude(delay=selected_date)
-    #         )
-    #     ).filter(
-    #         has_other_calls=False
-    #     )
-    #     print('leads_to_assign', len(leads_to_assign))
-    #     while lead_index < total_leads:
-    #         lead = leads[lead_index]
-    #
-    #         # Check if lead has previous assignment
-    #         previous_assignment = OperatorLead.objects.filter(
-    #             lead=lead
-    #         ).order_by('-date').first()
-    #
-    #         if previous_assignment:
-    #             operator = previous_assignment.operator
-    #         else:
-    #             # Pick operator with fewest total leads
-    #             sorted_operators = sorted(operators, key=lambda op: operator_lead_counts[op.id])
-    #             operator = sorted_operators[0] if sorted_operators else None
-    #
-    #         # Assign today's lead if not already assigned
-    #         if operator:
-    #             _, created = OperatorLead.objects.get_or_create(
-    #                 lead=lead,
-    #                 date=selected_date,
-    #                 defaults={"operator": operator}
-    #             )
-    #
-    #             if created:
-    #                 operator_lead_counts[operator.id] += 1
-    #
-    #             lead_index += 1
-    #
-    #         else:
-    #             lead_index += 1
-    #
-    #     # Fetch the leads assigned for today
-    #     if user:
-    #         operator_lead = OperatorLead.objects.filter(operator=user, date=selected_date)
-    #     else:
-    #         operator_lead = OperatorLead.objects.filter(operator__in=operators, date=selected_date)
-    #
-    #     assigned_leads = Lead.objects.filter(
-    #         deleted=False,
-    #         branch_id=branch_id,
-    #         operatorlead__in=operator_lead,
-    #         finished=False
-    #     ).annotate(
-    #         has_other_leadcalls=Exists(
-    #             LeadCall.objects.filter(
-    #                 lead=OuterRef('pk'),
-    #                 deleted=False
-    #             ).exclude(delay=selected_date)
-    #         )
-    #     ).filter(
-    #         Q(has_other_leadcalls=False)
-    #     ).order_by('pk')
-    from collections import defaultdict
-    from datetime import datetime
-    from django.db.models import OuterRef, Exists, Q
-    from django.utils.timezone import now
-
     def get_queryset(self):
         from django.db.models import Q, Count
 
@@ -329,8 +54,6 @@ class LeadListAPIView(generics.ListAPIView):
             customautogroup__deleted=False
         )
 
-        print("operators", len(operators))
-
         # Operator lead counts today
         operator_lead_counts = {
             op.id: OperatorLead.objects.filter(operator=op, date=selected_date).count()
@@ -349,8 +72,6 @@ class LeadListAPIView(generics.ListAPIView):
         ).exclude(
             operatorlead__date=selected_date
         )
-
-        print("leads_missing_today", len(leads_missing_today))
 
         for lead in leads_missing_today:
             prev = OperatorLead.objects.filter(lead=lead).order_by('-date').first()
@@ -387,9 +108,9 @@ class LeadListAPIView(generics.ListAPIView):
         # Unassigned leads
         unassigned_leads = all_open_leads.exclude(id__in=already_assigned_lead_ids)
 
-        print("finished_leads", Lead.objects.filter(branch_id=branch_id, finished=True).count())
-        print("deleted_leads", Lead.objects.filter(branch_id=branch_id, deleted=True).count())
-        print("unassigned_leads", unassigned_leads.count())
+        # print("finished_leads", Lead.objects.filter(branch_id=branch_id, finished=True).count())
+        # print("deleted_leads", Lead.objects.filter(branch_id=branch_id, deleted=True).count())
+        # print("unassigned_leads", unassigned_leads.count())
 
         for lead in unassigned_leads:
             sorted_ops = sorted(operators, key=lambda op: operator_lead_counts.get(op.id, 0))
@@ -403,14 +124,14 @@ class LeadListAPIView(generics.ListAPIView):
                 if created:
                     operator_lead_counts[selected_op.id] += 1
 
-        print("operator_lead_counts", operator_lead_counts)
+        # print("operator_lead_counts", operator_lead_counts)
 
         # Return leads assigned to current user (or selected operator) today
         today_operator_leads = OperatorLead.objects.filter(
             date=selected_date,
             operator=user if user else None
         )
-        print("today_operator_leads", today_operator_leads.count())
+        # print("today_operator_leads", today_operator_leads.count())
 
         leads = Lead.objects.filter(
             deleted=False,
@@ -426,7 +147,7 @@ class LeadListAPIView(generics.ListAPIView):
             )
         ).order_by('pk')
 
-        print("leads", leads.count())
+        # print("leads", leads.count())
 
         return leads
 
@@ -577,7 +298,11 @@ class LeadCallTodayListView(generics.ListAPIView):
         if operator:
             return OperatorLead.objects.filter(operator=operator, date=date)
         else:
-            operators = CustomUser.objects.filter(groups__name='operator', branch_id=branch_id)
+            operators = CustomUser.objects.filter(
+                branch_id=branch_id,
+                customautogroup__group__name='operator',
+                customautogroup__deleted=False
+            )
             return OperatorLead.objects.filter(operator__in=operators, date=date)
 
     def get_queryset(self):
@@ -605,7 +330,7 @@ class LeadCallTodayListView(generics.ListAPIView):
             operatorlead__in=operator_lead_qs,
             deleted=False,
         )
-
+        print("leads", leads)
         return leads
 
     def get_serializer_class(self):
