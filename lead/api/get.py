@@ -328,7 +328,10 @@ class LeadListAPIView(generics.ListAPIView):
         )
 
         print("operators", len(operators))
-
+        previous_assignment = OperatorLead.objects.filter(
+            operator__in=operators,
+            date=selected_date
+        ).delete()
         # Short-circuit if date is in the past
         if selected_date < today:
             operator_leads = OperatorLead.objects.filter(
@@ -433,7 +436,11 @@ class LeadListAPIView(generics.ListAPIView):
         branch_id = request.query_params.get('branch_id')
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else None
 
-        operators = CustomUser.objects.filter(groups__name='operator', branch_id=branch_id).values_list('id', flat=True)
+        operators = CustomUser.objects.filter(
+            branch_id=branch_id,
+            customautogroup__group__name='operator',
+            customautogroup__deleted=False
+        )
 
         queryset = self.get_queryset()
 
@@ -639,7 +646,12 @@ class OperatorsListView(generics.ListAPIView):
 
     def get_queryset(self):
         branch_id = self.request.query_params.get('branch_id')
-        return CustomUser.objects.filter(groups__name='operator', branch_id=branch_id)
+        operators = CustomUser.objects.filter(
+            branch_id=branch_id,
+            customautogroup__group__name='operator',
+            customautogroup__deleted=False
+        )
+        return operators
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()

@@ -97,7 +97,11 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
 
 def calculate_all_percentage(selected_date=None, branch_id=None):
     from user.models import CustomUser
-    operators = CustomUser.objects.filter(groups__name='operator', branch_id=branch_id)
+    operators = CustomUser.objects.filter(
+        branch_id=branch_id,
+        customautogroup__group__name='operator',
+        customautogroup__deleted=False
+    )
     if selected_date is None:
         selected_date = datetime.now().date()
     operators_percent = OperatorPercent.objects.filter(user__in=operators, date=selected_date, branch_id=branch_id)
