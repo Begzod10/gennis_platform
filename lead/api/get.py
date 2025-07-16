@@ -381,7 +381,12 @@ class LeadListAPIView(generics.ListAPIView):
                 if created:
                     operator_lead_counts[prev.operator.id] += 1
         operator_ids = list(set(operator_ids))
-        not_assigned_leads = OperatorLead.objects.filter(~Q(lead__in=leads_missing_today))
+        all_leads = Lead.objects.filter(
+            branch_id=branch_id,
+            deleted=False,
+            finished=False
+        )
+        not_assigned_leads = OperatorLead.objects.filter(~Q(lead__in=all_leads)).values_list('lead', flat=True)
         print("not_assigned_leads", len(not_assigned_leads))
         print("operator_ids", operator_ids)
         print("operator_lead_counts", operator_lead_counts)
