@@ -399,17 +399,17 @@ class LeadListAPIView(generics.ListAPIView):
         ).order_by('pk')
         print("leads_to_assign", len(leads_to_assign))
         #
-        # for lead in leads_to_assign:
-        #     sorted_ops = sorted(operators, key=lambda op: operator_lead_counts[op.id])
-        #     selected_op = sorted_ops[0] if sorted_ops else None
-        #     if selected_op:
-        #         _, created = OperatorLead.objects.get_or_create(
-        #             lead=lead,
-        #             date=selected_date,
-        #             defaults={'operator': selected_op}
-        #         )
-        #         if created:
-        #             operator_lead_counts[selected_op.id] += 1
+        for lead in leads_to_assign:
+            sorted_ops = sorted(operators, key=lambda op: operator_lead_counts[op.id])
+            selected_op = sorted_ops[0] if sorted_ops else None
+            if selected_op:
+                _, created = OperatorLead.objects.get_or_create(
+                    lead=lead,
+                    date=selected_date,
+                    defaults={'operator': selected_op}
+                )
+                if created:
+                    operator_lead_counts[selected_op.id] += 1
 
         # 📦 Return today's assigned leads
         today_operator_leads = OperatorLead.objects.filter(
@@ -417,7 +417,8 @@ class LeadListAPIView(generics.ListAPIView):
             operator=user if user else None
         )
         print("today_operator_leads", len(today_operator_leads))
-        return Lead.objects.filter(
+
+        leads = Lead.objects.filter(
             deleted=False,
             branch_id=branch_id,
             finished=False,
@@ -432,6 +433,8 @@ class LeadListAPIView(generics.ListAPIView):
         ).filter(
             has_old_calls=False
         ).order_by('pk')
+        print('leads', len(leads))
+        return leads
 
         # return assigned_leads
 
