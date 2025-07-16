@@ -35,7 +35,7 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
     ).filter(has_today_leadcall=True)
 
     completed = leads_with_today_created_call.count()
-
+    print('completed', completed)
     # Progressing: 2ta holat
     # 1) Umuman LeadCall yo‘q
     # 2) LeadCall bor, lekin delay == today, va created != today
@@ -49,7 +49,7 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
     ).filter(has_any_call=False)
 
     progressing = leads_with_no_leadcall.count()
-
+    print('progressing', progressing)
     total_leads = completed + progressing
 
     status_true_count = LeadCall.objects.filter(
