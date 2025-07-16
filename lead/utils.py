@@ -64,9 +64,8 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
         accepted_percentage = round((completed / total_leads) * 100, 2)
 
     # Save to DB if today
-    print("target_date", target_date, "today", today, "user.groups.filter(name='operator').exists()", user.groups.filter(name='operator').exists())
+    print(user.groups)
     if target_date == today and user.groups.filter(name='operator').exists():
-
         OperatorPercent.objects.update_or_create(
             user=user,
             date=target_date,
