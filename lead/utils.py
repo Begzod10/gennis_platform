@@ -96,6 +96,7 @@ def calculate_all_percentage(selected_date=None, branch_id=None):
     if selected_date is None:
         selected_date = datetime.now().date()
     operators_percent = OperatorPercent.objects.filter(user__in=operators, date=selected_date, branch_id=branch_id)
+    print("operators_percent", len(operators_percent))
     accepted = 0
     progressing = 0
     percentage = 0
