@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from lead.models import Lead, LeadCall, OperatorLead
 from lead.serializers import LeadListSerializer, LeadCallListSerializer, LeadCallSerializer, LeadSerializer
 from lead.utils import calculate_leadcall_status_stats, calculate_all_percentage
-from user.models import CustomUser
+from user.models import CustomUser, CustomAutoGroup
 from django.utils.timezone import now
 
 
@@ -321,7 +321,8 @@ class LeadListAPIView(generics.ListAPIView):
 
         today = now().date()
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
-        operators = CustomUser.objects.filter(groups__name='operator', branch_id=branch_id)
+        group_operators = CustomAutoGroup.objects.filter(group__name='operator', deleted=False)
+        operators = CustomUser.objects.filter(branch_id=branch_id, groups__in=group_operators)
         print("operators", len(operators))
 
         # Short-circuit if date is in the past
