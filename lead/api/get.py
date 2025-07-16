@@ -216,7 +216,7 @@ class LeadListAPIView(generics.ListAPIView):
         # ).filter(
         #     Q(has_other_leadcalls=False)
         # )
-
+        print('leads', leads)
         leads = list(leads)
         total_leads = len(leads)
 
