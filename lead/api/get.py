@@ -328,10 +328,10 @@ class LeadListAPIView(generics.ListAPIView):
         )
 
         print("operators", len(operators))
-        previous_assignment = OperatorLead.objects.filter(
-            operator__in=operators,
-            date=selected_date
-        ).delete()
+        # previous_assignment = OperatorLead.objects.filter(
+        #     operator__in=operators,
+        #     date=selected_date
+        # ).delete()
         # Short-circuit if date is in the past
         if selected_date < today:
             operator_leads = OperatorLead.objects.filter(
