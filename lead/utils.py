@@ -6,9 +6,12 @@ from .models import Lead, LeadCall, OperatorPercent
 
 
 def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id=None, operator_lead=None):
-    user = requests.user  # faqat bitta user
+    from django.db.models import Exists, OuterRef, Q
+    user = requests.user
     today = datetime.now().date()
     target_date = selected_date or today
+
+    # If viewing historical stats (cached in DB)
     if target_date < today:
         try:
             op = OperatorPercent.objects.get(user=user, date=target_date)
@@ -20,10 +23,21 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
             }
         except OperatorPercent.DoesNotExist:
             pass
+
+    # Get relevant leads
     if operator_lead:
-        leads = Lead.objects.filter(deleted=False, branch_id=branch_id, operatorlead__in=operator_lead)
+        leads = Lead.objects.filter(
+            deleted=False,
+            branch_id=branch_id,
+            operatorlead__in=operator_lead
+        )
     else:
-        leads = Lead.objects.filter(deleted=False, branch_id=branch_id)
+        leads = Lead.objects.filter(
+            deleted=False,
+            branch_id=branch_id
+        )
+
+    # ✅ Leads with LeadCall created today
     leads_with_today_created_call = leads.annotate(
         has_today_leadcall=Exists(
             LeadCall.objects.filter(
@@ -35,56 +49,52 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
     ).filter(has_today_leadcall=True)
 
     completed = leads_with_today_created_call.count()
-    print('completed', completed)
-    # Progressing: 2ta holat
-    # 1) Umuman LeadCall yo‘q
-    # 2) LeadCall bor, lekin delay == today, va created != today
+
+    # 🔄 Leads with no LeadCall at all (excluding delay or created today)
     leads_with_no_leadcall = leads.annotate(
         has_any_call=Exists(
             LeadCall.objects.filter(
                 lead=OuterRef('pk'),
                 deleted=False
-            ).exclude(delay=target_date)
+            ).exclude(
+                Q(created=target_date) | Q(delay=target_date)
+            )
         )
-    ).filter(has_any_call=False)
+    ).filter(has_any_call=False).exclude(id__in=leads_with_today_created_call)
 
     progressing = leads_with_no_leadcall.count()
-    print('progressing', progressing)
-    total_leads = completed + progressing
 
+    total_leads = progressing + completed
+    print("total_leads", total_leads)
+    print("completed", completed)
+    print("progressing", progressing)
+    # ✅ Leads that had status=True at least once
     status_true_count = LeadCall.objects.filter(
         lead__in=leads,
         status=True,
         deleted=False
     ).values('lead').distinct().count()
+
+    # % Calculation
     if completed == 0 and progressing == 0:
         accepted_percentage = 0
     elif progressing == 0 and completed > 0:
         accepted_percentage = 100
     else:
-        accepted_percentage = round((completed / (progressing + completed)) * 100, 2) if total_leads else 0
+        accepted_percentage = round((completed / total_leads) * 100, 2) if total_leads else 0
 
-    # lead_call = LeadCall.objects.all()
-    # for lc in lead_call:
-    #     lc.branch_id = branch_id
-    #     lc.save()
-    # operator_percent = OperatorPercent.objects.all()
-    # for op in operator_percent:
-    #     op.branch_id = branch_id
-    #     op.save()
-    # Saqlash bugungi kunga
-    if target_date == today:
-        if user.groups.filter(name='operator').exists():
-            OperatorPercent.objects.update_or_create(
-                user=user,
-                date=target_date,
-                defaults={
-                    "percent": accepted_percentage,
-                    "total_lead": progressing,
-                    "accepted": completed,
-                    "branch_id": branch_id
-                }
-            )
+    # Save today's result into DB
+    if target_date == today and user.groups.filter(name='operator').exists():
+        OperatorPercent.objects.update_or_create(
+            user=user,
+            date=target_date,
+            defaults={
+                "percent": accepted_percentage,
+                "total_lead": progressing,
+                "accepted": completed,
+                "branch_id": branch_id
+            }
+        )
 
     return {
         "status_true_count": status_true_count,
