@@ -322,7 +322,11 @@ class LeadCallTodayListView(generics.ListAPIView):
             )
 
         leadcalls_today = LeadCall.objects.filter(created=selected_date, deleted=False)
-        print("leadcalls_today", leadcalls_today)
+        for leadcall in leadcalls_today:
+            leadcall.branch_id = branch_id
+            leadcall.save()
+            leadcalls_today = LeadCall.objects.filter(created=selected_date, deleted=False, branch_id=branch_id)
+        print("leadcalls_today", len(leadcalls_today))
         lead_ids = leadcalls_today.values_list('lead', flat=True)
 
         leads = Lead.objects.filter(
