@@ -321,8 +321,10 @@ class LeadListAPIView(generics.ListAPIView):
 
         today = now().date()
         selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
-        group_operators = CustomAutoGroup.objects.filter(group__name='operator', deleted=False)
+        group_operators = CustomAutoGroup.objects.filter(group__name='operator', deleted=False).values_list('group',
+                                                                                                            flat=True)
         operators = CustomUser.objects.filter(branch_id=branch_id, groups__in=group_operators)
+
         print("operators", len(operators))
 
         # Short-circuit if date is in the past
