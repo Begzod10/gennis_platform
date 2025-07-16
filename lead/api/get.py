@@ -188,7 +188,7 @@ class LeadListAPIView(generics.ListAPIView):
             branch_id=branch_id,
             finished=False
         )
-        print('all_leads', len(all_leads))
+
         leads = Lead.objects.filter(
             deleted=False,
             branch_id=branch_id,
@@ -203,10 +203,9 @@ class LeadListAPIView(generics.ListAPIView):
         ).filter(
             Q(has_other_leadcalls=False)
         ).order_by('pk')
-        print('leads', len(leads))
-        leads_by_operators = OperatorLead.objects.all()
+
+        leads_by_operators = OperatorLead.objects.filter(date=selected_date, operator__in=operators).all()
         not_assigned_leads = all_leads.exclude(operatorlead__in=leads_by_operators).filter(finished=False)
-        print('not_assigned_leads', len(not_assigned_leads))
         print('leads_by_operators', len(leads_by_operators))
         # Annotate leads with call status
         leads = leads.annotate(
@@ -229,8 +228,28 @@ class LeadListAPIView(generics.ListAPIView):
 
         leads = list(leads)
         total_leads = len(leads)
-        print('total_leads2', total_leads)
+
         lead_index = 0
+
+        leads_with_other_calls = Lead.objects.filter(
+            deleted=False,
+            branch_id=branch_id,
+            finished=False
+        ).filter(
+            Exists(
+                LeadCall.objects.filter(
+                    lead=OuterRef('pk'),
+                    deleted=False
+                ).exclude(delay=selected_date)
+            )
+        )
+
+        leads_to_assign = Lead.objects.filter(
+            deleted=False,
+            branch_id=branch_id,
+            finished=False
+        ).exclude(id__in=leads_with_other_calls.values('id'))
+        print('leads_to_assign', len(leads_to_assign))
         # while lead_index < total_leads:
         #     lead = leads[lead_index]
         #
