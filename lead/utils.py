@@ -63,7 +63,6 @@ def calculate_leadcall_status_stats(selected_date=None, requests=None, branch_id
         accepted_percentage = 0
     else:
         accepted_percentage = round((completed / total_leads) * 100, 2)
-    print("operator", operator)
     # Save to DB if today
     if target_date == today and operator:
         OperatorPercent.objects.update_or_create(

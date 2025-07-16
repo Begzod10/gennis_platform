@@ -36,23 +36,24 @@ class LeadListAPIView(generics.ListAPIView):
         date_param = self.request.query_params.get('date')
         branch_id = self.request.query_params.get('branch_id')
         user = self.request.user
-
-        # Handle admin override for operator filtering
-        if user.groups.filter(name='admin').exists():
-            operator_id = self.request.query_params.get('operator_id')
-            if operator_id:
-                user = CustomUser.objects.get(pk=operator_id)
-            else:
-                user = None
-
-        today = now().date()
-        selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
-
         operators = CustomUser.objects.filter(
             branch_id=branch_id,
             customautogroup__group__name='operator',
             customautogroup__deleted=False
         )
+        # Handle admin override for operator filtering
+        if user.groups.filter(name='admin').exists():
+            operator_id = self.request.query_params.get('operator_id')
+            if operator_id:
+                operator = CustomUser.objects.get(pk=operator_id)
+            else:
+                operator = operators
+        else:
+            operator = user
+        today = now().date()
+        selected_date = datetime.strptime(date_param, "%Y-%m-%d").date() if date_param else today
+
+
 
         # Operator lead counts today
         operator_lead_counts = {
@@ -129,7 +130,7 @@ class LeadListAPIView(generics.ListAPIView):
         # Return leads assigned to current user (or selected operator) today
         today_operator_leads = OperatorLead.objects.filter(
             date=selected_date,
-            operator=user if user else None
+            operator__in=operator
         )
         # print("today_operator_leads", today_operator_leads.count())
 
