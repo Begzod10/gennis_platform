@@ -187,35 +187,26 @@ class LeadListAPIView(generics.ListAPIView):
             deleted=False,
             branch_id=branch_id,
             finished=False
-        ).annotate(
+        )
+
+        # Annotate leads with call status
+        leads = leads.annotate(
+            has_leadcall_today=Exists(
+                LeadCall.objects.filter(
+                    lead=OuterRef('pk'),
+                    delay=selected_date,
+                    deleted=False
+                )
+            ),
             has_other_leadcalls=Exists(
                 LeadCall.objects.filter(
                     lead=OuterRef('pk'),
                     deleted=False
                 ).exclude(delay=selected_date)
-            )
+            ),
         ).filter(
             Q(has_other_leadcalls=False)
-        ).order_by('pk')
-
-        # Annotate leads with call status
-        # leads = leads.annotate(
-        #     has_leadcall_today=Exists(
-        #         LeadCall.objects.filter(
-        #             lead=OuterRef('pk'),
-        #             delay=selected_date,
-        #             deleted=False
-        #         )
-        #     ),
-        #     has_other_leadcalls=Exists(
-        #         LeadCall.objects.filter(
-        #             lead=OuterRef('pk'),
-        #             deleted=False
-        #         ).exclude(delay=selected_date)
-        #     ),
-        # ).filter(
-        #     Q(has_other_leadcalls=False)
-        # )
+        )
 
         leads = list(leads)
         total_leads = len(leads)
