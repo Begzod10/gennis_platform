@@ -101,6 +101,7 @@ def calculate_all_percentage(selected_date=None, branch_id=None):
     progressing = 0
     percentage = 0
     for operator in operators_percent:
+        print("accepted", operator.accepted, "total_lead", operator.total_lead, "percent", operator.percent)
         accepted += operator.accepted
         progressing += operator.total_lead
         percentage += operator.percent
