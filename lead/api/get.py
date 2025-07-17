@@ -1,7 +1,7 @@
-from collections import defaultdict
 from datetime import datetime
 
 from django.db.models import Exists, OuterRef, Q
+from django.utils.timezone import now
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -11,8 +11,7 @@ from rest_framework.response import Response
 from lead.models import Lead, LeadCall, OperatorLead
 from lead.serializers import LeadListSerializer, LeadCallListSerializer, LeadCallSerializer, LeadSerializer
 from lead.utils import calculate_leadcall_status_stats, calculate_all_percentage
-from user.models import CustomUser, CustomAutoGroup
-from django.utils.timezone import now
+from user.models import CustomUser
 
 
 class LeadListAPIView(generics.ListAPIView):
@@ -31,7 +30,6 @@ class LeadListAPIView(generics.ListAPIView):
         return LeadListSerializer
 
     def get_queryset(self):
-        from django.db.models import Q, Count
 
         date_param = self.request.query_params.get('date')
         branch_id = self.request.query_params.get('branch_id')
@@ -402,8 +400,9 @@ class LeadsByBranchListView(generics.ListAPIView):
 
     def get_queryset(self):
         branch_id = self.request.query_params.get('branch_id')
-        date = self.request.query_params.get('date')
-        return Lead.objects.filter(branch_id=branch_id, created=date)
+        to_date = self.request.query_params.get('to')
+        from_date = self.request.query_params.get('from')
+        return Lead.objects.filter(branch_id=branch_id, created__range=[from_date, to_date])
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
