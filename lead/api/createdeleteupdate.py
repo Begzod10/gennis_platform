@@ -94,19 +94,34 @@ class LeadCallCreateView(generics.CreateAPIView):
             lead = Lead.objects.filter(pk=data['lead']).first()
             lead.finished = True
             lead.save()
-            user_create = CustomUser.objects.create(
-                # username=lead.name + lead.surname + lead.phone,
+
+            from students.models import Student
+
+            # Define a unique identifier (e.g. name + surname + branch + phone)
+            existing_user = CustomUser.objects.filter(
                 name=lead.name,
                 surname=lead.surname,
                 branch_id=lead.branch_id,
                 comment=lead_call.comment
-            )
-            user_create.set_password('12345678')
-            user_create.save()
-            from students.models import Student
-            student = Student.objects.create(
-                user=user_create
-            )
+            ).first()
+
+            if not existing_user:
+                user_create = CustomUser.objects.create(
+                    name=lead.name,
+                    surname=lead.surname,
+                    branch_id=lead.branch_id,
+                    comment=lead_call.comment
+                )
+                user_create.set_password('12345678')
+                user_create.save()
+            else:
+                user_create = existing_user
+
+            # Check if a Student already exists for this user
+            student_exists = Student.objects.filter(user=user_create).exists()
+
+            if not student_exists:
+                student = Student.objects.create(user=user_create)
 
         return Response({
             "data": self.get_serializer(lead_call).data,
