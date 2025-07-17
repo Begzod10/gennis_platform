@@ -128,7 +128,7 @@ class LeadListAPIView(generics.ListAPIView):
         # Return leads assigned to current user (or selected operator) today
         today_operator_leads = OperatorLead.objects.filter(
             date=selected_date,
-            operator__in=operator
+            operator__in=[operator] if isinstance(operator, CustomUser) else operator
         )
         # print("today_operator_leads", today_operator_leads.count())
 
