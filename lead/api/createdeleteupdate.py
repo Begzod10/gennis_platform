@@ -1,22 +1,21 @@
-import pprint
+import asyncio
+from datetime import datetime
 
+import requests
+from asgiref.sync import sync_to_async
+from django.core.files.base import ContentFile
 from rest_framework import generics
 from rest_framework import status
+from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-import requests
-from vats.vats_process import VatsProcess, wait_until_call_finished
+
 from lead.models import Lead, LeadCall
+from lead.models import OperatorLead
 from lead.serializers import LeadSerializer, LeadCallSerializer
 from lead.utils import calculate_leadcall_status_stats
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-import asyncio
-from asgiref.sync import sync_to_async
-from datetime import datetime
-from django.core.files.base import ContentFile
-from lead.models import OperatorLead
 from user.models import CustomUser
+from vats.vats_process import VatsProcess, wait_until_call_finished
 
 
 class LeadCreateView(generics.CreateAPIView):
@@ -85,8 +84,8 @@ class LeadCallCreateView(generics.CreateAPIView):
         today = datetime.today().date()
         branch_id = request.user.branch_id
         operator_lead = OperatorLead.objects.filter(operator=request.user, date=today)
-        stats = calculate_leadcall_status_stats(today, requests=request, branch_id=branch_id,
-                                                operator_lead=operator_lead)
+        stats, leadcall_today_ids = calculate_leadcall_status_stats(today, requests=request, branch_id=branch_id,
+                                                                    operator_lead=operator_lead)
         data = request.data
 
         if (data["is_agreed"]):

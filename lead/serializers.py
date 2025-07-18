@@ -14,6 +14,7 @@ class LeadSerializer(serializers.ModelSerializer):
 
 class LeadListSerializer(serializers.ModelSerializer):
     color = serializers.SerializerMethodField()
+    comment =serializers.SerializerMethodField()
 
     class Meta:
         model = Lead
@@ -34,6 +35,11 @@ class LeadListSerializer(serializers.ModelSerializer):
             return 'pink'
         else:
             return 'red'
+
+    def get_comment(self, obj):
+        leadcalls = obj.lead_id_leadCall.all().order_by('-created')
+        last_call = leadcalls.first()
+        return last_call.comment if last_call else None
 
 
 class LeadCallSerializer(serializers.ModelSerializer):
