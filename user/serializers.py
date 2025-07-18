@@ -274,7 +274,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         from lead.models import Lead
         Lead.objects.filter(branch__name="Gazalkent").all().update(
-            branch=Branch.objects.filter(name="Xo'jakent", branch__location__system__name='school').first())
+            branch=Branch.objects.filter(name="Xo'jakent", location__system__name='school').first())
 
         username = attrs.get('username')
         password = attrs.get('password')
