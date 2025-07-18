@@ -52,8 +52,9 @@ class LeadAdmin(admin.ModelAdmin):
 @admin.register(LeadCall)
 class LeadCallAdmin(admin.ModelAdmin):
     list_display = ('id', 'lead', 'status', 'created', 'delay', 'deleted', 'is_agreed')
-    list_filter = ('status', 'deleted', 'is_agreed')
+    list_filter = ('lead', 'status', 'deleted', 'is_agreed')
     search_fields = ('comment',)
+
 
 
 @admin.register(OperatorPercent)
