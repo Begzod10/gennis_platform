@@ -9,7 +9,7 @@ from branch.serializers import BranchListSerializer
 class BranchListAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
-    queryset = Branch.objects.filter(location__system__name='school').all()
+    queryset = Branch.objects.filter(location__system__name='school').all().exclude(name='Gazalkent').exclude(name='Sergeli')
     serializer_class = BranchListSerializer
 
     def get(self, request, *args, **kwargs):
