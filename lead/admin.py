@@ -52,7 +52,7 @@ class LeadAdmin(admin.ModelAdmin):
 @admin.register(LeadCall)
 class LeadCallAdmin(admin.ModelAdmin):
     list_display = ('id', 'lead', 'status', 'created', 'delay', 'deleted', 'is_agreed')
-    list_filter = ('lead', 'status', 'deleted', 'is_agreed','lead__branch')
+    list_filter = ( 'status', 'deleted', 'is_agreed','lead__branch')
     search_fields = ('comment',)
 
 
@@ -67,6 +67,7 @@ class OperatorPercentAdmin(admin.ModelAdmin):
 @admin.register(OperatorLead)
 class OperatorLeadAdmin(admin.ModelAdmin):
     list_display = ('id', 'operator_display', 'lead_display', 'date', 'created')
+    list_filter = ('date','lead__branch')
 
     def operator_display(self, obj):
         return str(obj.operator) if obj.operator else "-"
