@@ -65,8 +65,8 @@ class LeadDestroyView(generics.DestroyAPIView):
         today = datetime.today().date()
         branch_id = request.user.branch_id
         operator_lead = OperatorLead.objects.filter(operator=request.user, date=today)
-        stats = calculate_leadcall_status_stats(today, requests=request, branch_id=branch_id,
-                                                operator_lead=operator_lead)
+        stats, leadcall_today_ids = calculate_leadcall_status_stats(today, requests=request, branch_id=branch_id,
+                                                                    operator_lead=operator_lead)
         return Response({'message': "deleted", **stats}, status=status.HTTP_200_OK)
 
 

@@ -56,3 +56,8 @@ class OperatorLead(models.Model):
 
     class Meta:
         unique_together = ('lead', 'date')
+
+
+class LeadFromRecommendation(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE)
+    lead2 = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='lead2')
