@@ -52,7 +52,7 @@ class LeadAdmin(admin.ModelAdmin):
 @admin.register(LeadCall)
 class LeadCallAdmin(admin.ModelAdmin):
     list_display = ('id', 'lead', 'status', 'created', 'delay', 'deleted', 'is_agreed')
-    list_filter = ('lead', 'status', 'deleted', 'is_agreed')
+    list_filter = ('lead', 'status', 'deleted', 'is_agreed','lead__branch')
     search_fields = ('comment',)
 
 
