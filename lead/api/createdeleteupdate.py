@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from lead.models import Lead, LeadCall
+from lead.models import Lead, LeadCall, LeadFromRecommendation
 from lead.models import OperatorLead
 from lead.serializers import LeadSerializer, LeadCallSerializer
 from lead.utils import calculate_leadcall_status_stats
@@ -171,3 +171,21 @@ def lead_call_ring(request):
 
     result = asyncio.run(make_call())
     return Response({"data": result}, status=status.HTTP_200_OK)
+
+
+class LeadCreateWithTwo(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = Lead.objects.all()
+    serializer_class = LeadSerializer
+
+    def create(self, request, *args, **kwargs):
+        lead_id = request.data.pop('lead_id', None)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        lead = serializer.save()
+        lead.save()
+        LeadFromRecommendation.objects.create(lead_id=lead_id, lead2=lead)
+
+        return Response({
+            "data": self.get_serializer(lead).data,
+        }, status=status.HTTP_200_OK)

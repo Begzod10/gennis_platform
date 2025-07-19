@@ -257,7 +257,12 @@ class LeadCallRetrieveAPIView(generics.ListAPIView):
 
         serializer = LeadCallSerializer(lead_call, many=True)
         get_lead = Lead.objects.filter(pk=pk).first()
-        return Response({"history": serializer.data, "lead": LeadSerializer(get_lead).data},
+        from lead.models import LeadFromRecommendation
+        leads = LeadFromRecommendation.objects.filter(lead__id=pk,lead__deleted=False).values_list('lead2', flat=True)
+        lead = Lead.objects.filter(id__in=leads,deleted=False).all()
+
+        return Response({"history": serializer.data, "lead": LeadSerializer(get_lead).data,
+                         "invites": LeadListSerializer(lead, many=True).data},
                         status=status.HTTP_200_OK)
 
 

@@ -1,12 +1,14 @@
 from datetime import date
+from datetime import datetime, timedelta
 
 from rest_framework import serializers
-from datetime import datetime, timedelta
+
 from .models import Lead, LeadCall
-from user.models import CustomUser
 
 
 class LeadSerializer(serializers.ModelSerializer):
+    lead_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+
     class Meta:
         model = Lead
         fields = '__all__'
@@ -14,7 +16,7 @@ class LeadSerializer(serializers.ModelSerializer):
 
 class LeadListSerializer(serializers.ModelSerializer):
     color = serializers.SerializerMethodField()
-    comment =serializers.SerializerMethodField()
+    comment = serializers.SerializerMethodField()
 
     class Meta:
         model = Lead
@@ -40,6 +42,7 @@ class LeadListSerializer(serializers.ModelSerializer):
         leadcalls = obj.lead_id_leadCall.all().order_by('-created')
         last_call = leadcalls.first()
         return last_call.comment if last_call else None
+
 
 
 class LeadCallSerializer(serializers.ModelSerializer):

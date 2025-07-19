@@ -2,7 +2,7 @@ from django.urls import path
 from .api.get import LeadRetrieveAPIView, LeadListAPIView, LeadCallRetrieveAPIView, LeadCallListAPIView, \
     LeadCallTodayListView, OperatorsListView, LeadsByBranchListView
 from .api.createdeleteupdate import LeadDestroyView, LeadCallCreateView, \
-    lead_call_ring, LeadCreateView
+    lead_call_ring, LeadCreateView,LeadCreateWithTwo
 
 urlpatterns = [
 
@@ -17,4 +17,5 @@ urlpatterns = [
     path('lead_call_list/', LeadCallListAPIView.as_view(), name='lead-call-list'),
     path('operators/', OperatorsListView.as_view(), name='lead-call-list'),
     path('leads_by_branch/', LeadsByBranchListView.as_view(), name='lead-call-list'),
+    path('lead_create_with_two/', LeadCreateWithTwo.as_view(), name='lead-create-with-two'),
 ]
