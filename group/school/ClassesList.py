@@ -15,6 +15,12 @@ class ClassesView(QueryParamFilterMixin, generics.ListCreateAPIView):
         'branch': 'branch_id'
     }
     queryset = Group.objects.filter(class_number__isnull=False, deleted=False).order_by('class_number__number')
+    groups = Group.objects.filter(class_number__isnull=False, deleted=False).order_by('class_number__number')
+    for gr in groups:
+        gr.students.clear()
+        gr.teacher.clear()
+        gr.deleted = True
+        gr.save()
     serializer_class = GroupListSerializer
 
 
@@ -23,7 +29,7 @@ class AddClassesList(QueryParamFilterMixin, generics.ListAPIView):
     filter_mappings = {
         'branch': 'branch_id'
     }
-    queryset = Group.objects.filter(class_number__isnull=False,deleted=False).order_by('class_number__number')
+    queryset = Group.objects.filter(class_number__isnull=False, deleted=False).order_by('class_number__number')
     serializer_class = AddClassesSerializers
 
 
