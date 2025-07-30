@@ -30,7 +30,7 @@ class BranchListFilterAPIView(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         locations = Location.objects.filter(system__name='school').all()
-        queryset = Branch.objects.filter(location__in=locations).all().exclude(name='Gazalkent')
+        queryset = Branch.objects.filter(location__in=locations).all().exclude(name='Gazalkent').exclude(name='Test')
         serializer = BranchListSerializer(queryset, many=True)
         return Response(serializer.data)
 
