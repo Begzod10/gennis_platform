@@ -21,7 +21,7 @@ class UpdateClassTimeTable(generics.RetrieveUpdateDestroyAPIView):
         self.perform_update(write_serializer)
 
         read_serializer = ClassTimeTableReadSerializers(instance)
-        teacher_salary_school(request)
+        # teacher_salary_school(request)
         return Response({'lesson': read_serializer.data, 'msg': "Dars muvaffaqqiyatli o'zgartirildi"})
 
 
