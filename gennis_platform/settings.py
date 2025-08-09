@@ -130,12 +130,12 @@ SIMPLE_JWT = {
 CELERY_BEAT_SCHEDULE = {
     "update-students-class-in-august": {
         "task": "group.tasks.update_class_task",
-        "schedule": crontab(minute=0, hour=0, day_of_month="9", month_of_year="8"),
+        "schedule": crontab(minute=0, hour=0, day_of_month="10", month_of_year="8"),
     },
 }
+
 CELERY_BROKER_URL = "redis://localhost:6379/0"
 CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
-
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Tashkent'
