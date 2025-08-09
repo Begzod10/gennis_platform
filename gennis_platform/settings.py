@@ -12,9 +12,9 @@ from celery.schedules import crontab
 classroom_server = os.getenv('CLASSROOM_SERVER')
 gennis_server = os.getenv('GENNIS_SERVER')
 
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['school.gennis.uz', 'localhost', '127.0.0.1']
 
 INSTALLED_APPS = [
     # 'unfold'
