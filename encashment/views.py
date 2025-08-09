@@ -443,14 +443,17 @@ class GetTeacherSalary(APIView):
         branch = request.query_params.get('branch')
         salaries = TeacherSalary.objects.filter(month_date__month=month,
                                                 month_date__year=year, branch_id=branch).all()
-        data = {}
+        data = {
+            'salary': [],
+            'dates': [],
+        }
         for salary in salaries:
             datas = {
                 'id': salary.id,
                 'name': salary.teacher.user.name,
                 'surname': salary.teacher.user.surname,
                 'phone': salary.teacher.user.phone,
-                'total_salary': salary.salary,
+                'total_salary': salary.total_salary,
                 'taken_salary': salary.taken_salary,
                 'remaining_salary': salary.remaining_salary,
                 'subject': salary.teacher.subject.name,
@@ -531,14 +534,17 @@ class GetEMployerSalary(APIView):
         branch = request.query_params.get('branch')
         salaries = UserSalary.objects.filter(date__month=month,
                                              date__year=year, user__branch__id=branch).all()
-        data = {}
+        data = {
+            'salary': [],
+            'dates': []
+        }
         for salary in salaries:
             datas = {
                 'id': salary.id,
                 'name': salary.user.name,
                 'surname': salary.user.surname,
                 'phone': salary.user.phone,
-                'total_salary': salary.salary,
+                'total_salary': salary.total_salary,
                 'taken_salary': salary.taken_salary,
                 'remaining_salary': salary.remaining_salary,
                 'cash': UserSalaryList.objects.filter(user_salary_id=salary.id, payment_types__name='cash').aggregate(
