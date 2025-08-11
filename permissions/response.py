@@ -6,7 +6,7 @@ from rest_framework import permissions
 from mobile.get_user import get_user
 from permissions.models import ManyBranch, ManyLocation
 from user.functions.functions import check_auth
-
+from django.db.models import Aggregate, Value,Sum
 
 class CustomResponseMixin:
     def get_custom_message(self, method):
@@ -129,7 +129,7 @@ class GetModelsMixin:
         return location_data
 
     def get_branch_data(self, branch, type_name, model):
-        branch_data = {'id': branch.branch.id, 'name': branch.branch.name, 'count': 0}
+        branch_data = {'id': branch.branch.id, 'name': branch.branch.name, 'count': 0,'summa':0}
         self.get_student_data(branch.branch, type_name, branch_data, model)
 
         return branch_data
@@ -172,14 +172,19 @@ class GetModelsMixin:
             from encashment.views import OldCapital, Overhead, UserSalaryList, StudentPayment, TeacherSalaryList
             if type_name == 'capital':
                 branch_data['count'] = OldCapital.objects.filter(branch_id=branch.id).count()
+                branch_data['summa'] = OldCapital.objects.filter(branch_id=branch.id).aggregate(Sum('price'))
             if type_name == 'overhead':
                 branch_data['count'] = Overhead.objects.filter(branch_id=branch.id).count()
+                branch_data['summa'] = Overhead.objects.filter(branch_id=branch.id).aggregate(Sum('price'))
             if type_name == 'employeesSalary':
                 branch_data['count'] = UserSalaryList.objects.filter(branch_id=branch.id).count()
+                branch_data['summa'] = UserSalaryList.objects.filter(branch_id=branch.id).aggregate(Sum('salary'))
             if type_name == 'studentsPayments':
                 branch_data['count'] = StudentPayment.objects.filter(branch_id=branch.id).count()
+                branch_data['summa'] = StudentPayment.objects.filter(branch_id=branch.id).aggregate(Sum('payment_sum'))
             if type_name == 'teachersSalary':
                 branch_data['count'] = TeacherSalaryList.objects.filter(branch_id=branch.id).count()
+                branch_data['summa'] = TeacherSalaryList.objects.filter(branch_id=branch.id).aggregate(Sum('salary'))
 
 
 class IsAdminOrIsSelf(permissions.BasePermission):
