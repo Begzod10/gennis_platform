@@ -102,21 +102,21 @@ class StudentPaymentListAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     queryset = StudentPayment.objects.all()
-    serializer_class = StudentPaymentListSerializer
+    serializer_class = StudentPaymentListSerializerTest
 
-    def get(self, request, *args, **kwargs):
+    def get_queryset(self):
         branch_id = self.request.query_params.get('branch')
-        if branch_id == 'null'  or branch_id == 'undefined':
-            branch_id = None
-        if branch_id is not None:
-            queryset = StudentPayment.objects.filter(deleted=False, status=False, branch=branch_id).all().order_by(
-                "-date")
-        else:
-            queryset = StudentPayment.objects.filter(deleted=False, status=False,
-                                                     branch=request.user.branch).all().order_by("-date")
 
-        serializer = StudentPaymentListSerializerTest(queryset, many=True)
-        return Response(serializer.data)
+        if branch_id in ['null', 'undefined']:
+            branch_id = None
+
+        if branch_id is not None:
+            queryset = StudentPayment.objects.filter(deleted=False, status=False, branch=branch_id).order_by("-date")
+        else:
+            queryset = StudentPayment.objects.filter(deleted=False, status=False, branch=self.request.user.branch).order_by(
+                "-date")
+
+        return queryset
 
 
 class StudentDeletedPaymentListAPIView(generics.ListAPIView):
