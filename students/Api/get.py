@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from rooms.models import Room
-from students.models import StudentPayment, StudentHistoryGroups, StudentCharity, Student,DeletedStudent
+from students.models import StudentPayment, StudentHistoryGroups, StudentCharity, Student, DeletedStudent
 from students.serializers import StudentPaymentListSerializer, StudentHistoryGroupsListSerializer, \
     StudentCharityListSerializer, StudentListSerializer
 from subjects.models import Subject
@@ -105,8 +105,15 @@ class StudentPaymentListAPIView(generics.ListAPIView):
     serializer_class = StudentPaymentListSerializer
 
     def get(self, request, *args, **kwargs):
-        queryset = StudentPayment.objects.filter(deleted=False, status=False,
-                                                 branch=request.user.branch).all().order_by("-date")
+        branch_id = self.request.query_params.get('branch')
+        if branch_id == 'null'  or branch_id == 'undefined':
+            branch_id = None
+        if branch_id is not None:
+            queryset = StudentPayment.objects.filter(deleted=False, status=False, branch=branch_id).all().order_by(
+                "-date")
+        else:
+            queryset = StudentPayment.objects.filter(deleted=False, status=False,
+                                                     branch=request.user.branch).all().order_by("-date")
 
         serializer = StudentPaymentListSerializerTest(queryset, many=True)
         return Response(serializer.data)
@@ -191,37 +198,23 @@ class FilteredStudentsListView(APIView):
         subjects = Subject.objects.filter(student__subject__student__isnull=False).all()
 
         subjects_with_students = {
-            subject.id: {
-                "id": subject.id,
-                "name": subject.name,
-                "students": [],
-                "subject_status": False
-            }
-            for subject in subjects
-        }
+            subject.id: {"id": subject.id, "name": subject.name, "students": [], "subject_status": False} for subject in
+            subjects}
 
-        errors = {
-            'rooms': [],
-        }
+        errors = {'rooms': [], }
 
         time_tables = json.loads(request.body)
         deleted = DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
 
-
-        students = Student.objects.filter(
-            user__branch_id=location_id,
-            deleted_student_student__deleted__isnull=True,
-            subject__student__isnull=False
-        ).exclude(id__in=deleted).select_related('user').prefetch_related('subject', 'group_time_table').distinct()
+        students = Student.objects.filter(user__branch_id=location_id, deleted_student_student__deleted__isnull=True,
+                                          subject__student__isnull=False).exclude(id__in=deleted).select_related(
+            'user').prefetch_related('subject', 'group_time_table').distinct()
         room_ids = [t['room'] for t in time_tables]
         rooms = Room.objects.filter(id__in=room_ids)
 
-        room_time_tables = GroupTimeTable.objects.filter(
-            week_id__in=[t['week'] for t in time_tables],
-            room__in=rooms,
-            start_time__gte=min([t['start_time'] for t in time_tables]),
-            end_time__lte=max([t['end_time'] for t in time_tables])
-        )
+        room_time_tables = GroupTimeTable.objects.filter(week_id__in=[t['week'] for t in time_tables], room__in=rooms,
+                                                         start_time__gte=min([t['start_time'] for t in time_tables]),
+                                                         end_time__lte=max([t['end_time'] for t in time_tables]))
 
         teachers = Teacher.objects.filter(user__branch_id=location_id).prefetch_related('group_time_table')
 
@@ -233,30 +226,24 @@ class FilteredStudentsListView(APIView):
                 room = next((r for r in rooms if r.id == time_table['room']), None)
 
                 if room:
-                    room_time_table = next(
-                        (rt for rt in room_time_tables if rt.room == room and rt.week_id == time_table['week']
-                         and rt.start_time >= datetime.strptime(time_table['start_time'], "%H:%M").time()
-                         and rt.end_time <= datetime.strptime(time_table['end_time'], "%H:%M").time()), None)
+                    room_time_table = next((rt for rt in room_time_tables if
+                                            rt.room == room and rt.week_id == time_table[
+                                                'week'] and rt.start_time >= datetime.strptime(time_table['start_time'],
+                                                                                               "%H:%M").time() and rt.end_time <= datetime.strptime(
+                                                time_table['end_time'], "%H:%M").time()), None)
                     if room_time_table:
                         errors['rooms'].append(
                             f'Bu voxta {room.name} xonasida {room_time_table.group.name}ni darsi bor')
 
-                time_table_st = student.group_time_table.filter(
-                    week_id=time_table['week'],
-                    start_time__gte=time_table['start_time'],
-                    end_time__lte=time_table['end_time']
-                ).first()
+                time_table_st = student.group_time_table.filter(week_id=time_table['week'],
+                                                                start_time__gte=time_table['start_time'],
+                                                                end_time__lte=time_table['end_time']).first()
 
                 if time_table_st:
-                    student_data['extra_info'] = {
-                        'status': False,
-                        'reason': f"{student.user.name} {student.user.surname} o'quvchini {time_table.group.name} guruhida darsi bor"
-                    }
+                    student_data['extra_info'] = {'status': False,
+                                                  'reason': f"{student.user.name} {student.user.surname} o'quvchini {time_table.group.name} guruhida darsi bor"}
                 else:
-                    student_data['extra_info'] = {
-                        'status': True,
-                        'reason': ''
-                    }
+                    student_data['extra_info'] = {'status': True, 'reason': ''}
 
                 if not should_add_student:
                     should_add_student = True
@@ -268,31 +255,21 @@ class FilteredStudentsListView(APIView):
 
         for teacher in teachers:
             teacher_data = TeacherSerializerRead(teacher).data
-            time_table_tch = teacher.group_time_table.filter(
-                week_id=time_table['week'],
-                start_time__gte=time_table['start_time'],
-                end_time__lte=time_table['end_time']
-            ).first()
+            time_table_tch = teacher.group_time_table.filter(week_id=time_table['week'],
+                                                             start_time__gte=time_table['start_time'],
+                                                             end_time__lte=time_table['end_time']).first()
 
             if time_table_tch:
-                teacher_data['extra_info'] = {
-                    'status': False,
-                    'reason': f"{teacher.user.name} {teacher.user.surname} o'quvchini {time_table.group.name} guruhida darsi bor"
-                }
+                teacher_data['extra_info'] = {'status': False,
+                                              'reason': f"{teacher.user.name} {teacher.user.surname} o'quvchini {time_table.group.name} guruhida darsi bor"}
             else:
-                teacher_data['extra_info'] = {
-                    'status': True,
-                    'reason': ''
-                }
+                teacher_data['extra_info'] = {'status': True, 'reason': ''}
 
             if not teacher_data in teachers_list:
                 teachers_list.append(teacher_data)
 
-        return Response({
-            'subjects_with_students': subjects_with_students.values(),
-            'teachers': teachers_list,
-            'errors': errors
-        })
+        return Response(
+            {'subjects_with_students': subjects_with_students.values(), 'teachers': teachers_list, 'errors': errors})
 
 
 class SchoolStudents(generics.ListAPIView):
@@ -303,7 +280,7 @@ class SchoolStudents(generics.ListAPIView):
     def get_queryset(self):
         branch_id = self.request.query_params.get('branch')
         deleted = DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
-        return Student.objects.filter(user__branch_id=branch_id,        deleted_student_student__deleted__isnull=True,
+        return Student.objects.filter(user__branch_id=branch_id, deleted_student_student__deleted__isnull=True,
                                       groups_student__isnull=True).exclude(id__in=deleted).distinct()
 
 
