@@ -15,7 +15,7 @@ from .views import (CreateContractView, UploadPDFContractView, StudentListView, 
                     DeleteStudentPayment, DeleteFromDeleted, MissingAttendanceListView, MissingAttendanceView,
                     MissingAttendanceListView2,
                     GetYearView, GetMonthView,
-                    StudentCharityModelView, GetStudentBalance
+                    StudentCharityModelView, GetStudentBalance, StudentClassNumberView
                     )
 
 app_name = 'Students'
@@ -75,5 +75,6 @@ urlpatterns = [
     path('get_year/', GetYearView.as_view(), name='get_year'),
     path('get_month/', GetMonthView.as_view(), name='get_month'),
     path('charity_month/<int:student_id>/', StudentCharityModelView.as_view(), name='charity_month'),
-    path('get_balance/<int:user_id>/', GetStudentBalance.as_view())
+    path('get_balance/<int:user_id>/', GetStudentBalance.as_view()),
+    path('update_student_class_number/', StudentClassNumberView.as_view())
 ]

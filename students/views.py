@@ -27,7 +27,7 @@ from students.serializer.lists import ActiveListSerializer, ActiveListDeletedStu
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
 from .serializers import StudentCharity
 from .serializers import (StudentListSerializer,
-                          DeletedNewStudentListSerializer, StudentPaymentListSerializer)
+                          DeletedNewStudentListSerializer, StudentPaymentListSerializer, StudentClassNumberSerializer)
 
 
 class StudentListView(ListAPIView):
@@ -771,3 +771,7 @@ class MissingAttendanceListView2(generics.RetrieveAPIView):
             "month": month_names,
             "data": data
         })
+
+
+class StudentClassNumberView(generics.RetrieveAPIView):
+    serializer_class = StudentClassNumberSerializer
