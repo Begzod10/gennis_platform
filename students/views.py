@@ -98,7 +98,7 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
             Student.objects
             .filter(~Q(id__in=excluded_ids) & Q(groups_student__isnull=True))
             .distinct()
-            .order_by('pk')  # or 'id'
+            .order_by('-pk')  # or 'id'
         )
 
 
