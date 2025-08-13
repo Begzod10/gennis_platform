@@ -1,3 +1,5 @@
+from datetime import timedelta, date
+
 from rest_framework import serializers
 
 from branch.models import Branch
@@ -15,7 +17,6 @@ from teachers.models import Teacher
 from teachers.serializers import TeacherSerializer
 from time_table.models import WeekDays
 from time_table.serializers import WeekDaysSerializer
-
 
 # class HoursTypeSerializers(serializers.ModelSerializer):
 #     class Meta:
@@ -148,7 +149,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
     hours_list = serializers.SerializerMethodField()
 
     def get_time_tables(self, obj):
-        date = self.context['date']
+        date_ls = self.context['date']
         branch = self.context['branch']
         week = self.context['week']
         rooms = Room.objects.filter(branch=branch, deleted=False).all()
@@ -162,11 +163,16 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                 'lessons': []
             }
             for hour in hours:
-                if week:
-                    lesson = room.classtimetable_set.filter(date=date, hours=hour, branch=branch, week=week).order_by(
+                if week and date_ls == None:
+                    today = date.today()
+                    today_weekday = today.isoweekday()
+                    shift_days = week.order - today_weekday
+                    week_day_date = today + timedelta(days=shift_days)
+                    lesson = room.classtimetable_set.filter(date=week_day_date, hours=hour, branch=branch,
+                                                            week=week).order_by(
                         'hours__order').first()
                 else:
-                    lesson = room.classtimetable_set.filter(date=date, hours=hour, branch=branch).order_by(
+                    lesson = room.classtimetable_set.filter(date=date_ls, hours=hour, branch=branch).order_by(
                         'hours__order').first()
                 if lesson:
                     group_info = GroupClassSerializerList(lesson.group).data if lesson.group else None
@@ -255,7 +261,8 @@ class ClassTimeTableForClassSerializer(serializers.Serializer):
                     'room': room_info,
                     'teacher': teacher_info,
                     'subject': subject_info,
-                    'hours': hour.id
+                    'hours': hour.id,
+                    'date': lesson.date.isoformat() if lesson.date else None
                 }
 
                 info['lessons'].append(lesson_info)
@@ -275,7 +282,8 @@ class ClassTimeTableForClassSerializer(serializers.Serializer):
                     'room': room_info,
                     'teacher': teacher_info,
                     'subject': subject_info,
-                    'hours': hour.id
+                    'hours': hour.id,
+                    'date': lesson.date.isoformat() if lesson.date else None
                 })
             else:
                 info['lessons'].append({
@@ -286,6 +294,7 @@ class ClassTimeTableForClassSerializer(serializers.Serializer):
                     'subject': {},
                     'room': {},
                     'is_flow': False,
+                    'date': ''
                 })
         time_tables.append(info)
         return time_tables
@@ -308,8 +317,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
     hours_list = serializers.SerializerMethodField()
 
     def get_time_tables(self, obj):
-        # week = self.context['week']
-        date = self.context['date']
+        date_ls = self.context['date']
         branch = self.context['branch']
         week = self.context['week']
         hours = Hours.objects.all().order_by('order')
@@ -324,15 +332,20 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
             }
 
             for hour in hours:
-                if week:
-                    lesson = group.classtimetable_set.filter(date=date, hours=hour, branch=branch, week=week).order_by(
+                if week and date_ls == None:
+                    today = date.today()
+                    today_weekday = today.isoweekday()
+                    shift_days = week.order - today_weekday
+                    week_day_date = today + timedelta(days=shift_days)
+                    lesson = group.classtimetable_set.filter(date=week_day_date, hours=hour, branch=branch,
+                                                             week=week).order_by(
                         'hours__order').first()
                 else:
-                    lesson = group.classtimetable_set.filter(date=date, hours=hour, branch=branch).order_by(
+                    lesson = group.classtimetable_set.filter(date=date_ls, hours=hour, branch=branch).order_by(
                         'hours__order').first()
                 flow_class_time_table = None
                 for student in group.students.all():
-                    flow_class_time_table = student.class_time_table.filter(date=date, hours=hour, branch=branch,
+                    flow_class_time_table = student.class_time_table.filter(date=date_ls, hours=hour, branch=branch,
                                                                             flow__isnull=False).order_by(
                         'hours__order').first()
                     if flow_class_time_table:
@@ -355,7 +368,8 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                         'room': room_info,
                         'teacher': teacher_info,
                         'subject': subject_info,
-                        'hours': hour.id
+                        'hours': hour.id,
+                        'date': lesson.date.isoformat() if lesson.date else None
                     }
 
                     info['lessons'].append(lesson_info)
@@ -377,7 +391,8 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                         'room': room_info,
                         'teacher': teacher_info,
                         'subject': subject_info,
-                        'hours': hour.id
+                        'hours': hour.id,
+                        'date': lesson.date.isoformat() if lesson.date else None
                     })
                 else:
                     info['lessons'].append({
@@ -388,6 +403,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                         'subject': {},
                         'room': {},
                         'is_flow': False,
+                        'date': ''
                     })
 
             time_tables.append(info)

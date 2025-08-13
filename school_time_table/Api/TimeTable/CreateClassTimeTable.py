@@ -85,6 +85,7 @@ class ClassTimeTableLessonsView(APIView):
         branch = Branch.objects.get(id=branch_id)
         if week_id:
             week = WeekDays.objects.get(id=week_id)
+            date = None
         else:
             week = None
         serializer = ClassTimeTableTest2Serializer(context={'date': date, 'branch': branch, "week": week})
@@ -103,8 +104,10 @@ class ClassTimeTableForClassView(APIView):
         branch = Branch.objects.get(id=branch_id)
         if week_id:
             week = WeekDays.objects.get(id=week_id)
+            date = None
         else:
             week = None
+
         serializer = ClassTimeTableForClassSerializer2(context={'date': date, 'branch': branch, "week": week})
         data = {
             'time_tables': serializer.get_time_tables(None),
