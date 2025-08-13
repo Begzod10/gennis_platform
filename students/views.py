@@ -94,7 +94,8 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
         excluded_ids = list(DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)) + list(
             DeletedNewStudent.objects.values_list('student_id', flat=True))
 
-        return Student.objects.filter(~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)).distinct()
+        return Student.objects.filter(~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)).distinct().order_by(
+            Student.pk)
 
 
 class ActiveStudents(QueryParamFilterMixin, ListAPIView):
