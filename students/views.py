@@ -685,5 +685,4 @@ class StudentClassNumberUpdateView(APIView):
             student = Student.objects.get(id=st)
             student.class_number = class_number_get
             student.save()
-
         return Response({"msg": "O'quvchilar sinf raqami o'zgartirildi"}, status=status.HTTP_200_OK)
