@@ -2,7 +2,7 @@ import json
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 from group.models import Group
 from ...models import ClassTimeTable
@@ -18,6 +18,8 @@ from branch.models import Branch
 from flows.serializers import FlowsSerializer
 from teachers.models import Teacher, TeacherSalary
 from classes.models import ClassNumberSubjects
+from rest_framework import status
+from django.db import transaction
 
 
 class CreateClassTimeTable(generics.ListCreateAPIView):
@@ -77,12 +79,15 @@ class ClassesFlows(generics.ListAPIView):
 class ClassTimeTableLessonsView(APIView):
     def get(self, request):
         creat_week_days()
-        # week_id = self.request.query_params.get('week')
+        week_id = self.request.query_params.get('week')
         date = self.request.query_params.get('date')
         branch_id = self.request.query_params.get('branch')
         branch = Branch.objects.get(id=branch_id)
-        # week = WeekDays.objects.get(id=week_id)
-        serializer = ClassTimeTableTest2Serializer(context={'date': date, 'branch': branch})
+        if week_id:
+            week = WeekDays.objects.get(id=week_id)
+        else:
+            week = None
+        serializer = ClassTimeTableTest2Serializer(context={'date': date, 'branch': branch, "week": week})
         data = {
             'time_tables': serializer.get_time_tables(None),
             'hours_list': serializer.get_hours_list(None)
@@ -92,12 +97,15 @@ class ClassTimeTableLessonsView(APIView):
 
 class ClassTimeTableForClassView(APIView):
     def get(self, request):
-        # week_id = self.request.query_params.get('week')
+        week_id = self.request.query_params.get('week')
         date = self.request.query_params.get('date')
         branch_id = self.request.query_params.get('branch')
         branch = Branch.objects.get(id=branch_id)
-        # week = WeekDays.objects.get(id=week_id)
-        serializer = ClassTimeTableForClassSerializer2(context={'date': date, 'branch': branch})
+        if week_id:
+            week = WeekDays.objects.get(id=week_id)
+        else:
+            week = None
+        serializer = ClassTimeTableForClassSerializer2(context={'date': date, 'branch': branch, "week": week})
         data = {
             'time_tables': serializer.get_time_tables(None),
             'hours_list': serializer.get_hours_list(None)
@@ -189,3 +197,41 @@ class CheckClassTimeTable(APIView):
                             msg.append(
                                 f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.flow.name}" patokida darsi bor')
         return Response({'status': status, 'msg': msg})
+
+
+class CopyWeekScheduleAPIView(APIView):
+    """
+    Bir haftalik darslarni boshqa haftaga kochirish API
+    """
+
+    def post(self, request):
+        source_monday_str = request.data.get("source_monday")
+        target_monday_str = request.data.get("target_monday")
+
+        source_monday = date.fromisoformat(source_monday_str)
+        target_monday = date.fromisoformat(target_monday_str)
+
+        shift_days = (target_monday - source_monday).days
+
+        source_lessons = ClassTimeTable.objects.filter(
+            date__gte=source_monday,
+            date__lt=source_monday + timedelta(days=7)
+        )
+
+        if not source_lessons.exists():
+            return Response({"error": "Manba haftada dars topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+        new_lessons = []
+        with transaction.atomic():
+            for old in source_lessons:
+                students = old.students.all()
+                old.pk = None
+                old.date = old.date + timedelta(days=shift_days)
+                old.save()
+                old.students.set(students)
+                new_lessons.append(old.id)
+
+        return Response({
+            "message": f"{len(new_lessons)} ta dars nusxalandi",
+            "new_ids": new_lessons
+        }, status=status.HTTP_201_CREATED)

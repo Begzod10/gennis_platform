@@ -150,6 +150,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
     def get_time_tables(self, obj):
         date = self.context['date']
         branch = self.context['branch']
+        week = self.context['week']
         rooms = Room.objects.filter(branch=branch, deleted=False).all()
         hours = Hours.objects.all().order_by('order')
         time_tables = []
@@ -161,8 +162,12 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                 'lessons': []
             }
             for hour in hours:
-                lesson = room.classtimetable_set.filter(date=date, hours=hour, branch=branch).order_by(
-                    'hours__order').first()
+                if week:
+                    lesson = room.classtimetable_set.filter(date=date, hours=hour, branch=branch, week=week).order_by(
+                        'hours__order').first()
+                else:
+                    lesson = room.classtimetable_set.filter(date=date, hours=hour, branch=branch).order_by(
+                        'hours__order').first()
                 if lesson:
                     group_info = GroupClassSerializerList(lesson.group).data if lesson.group else None
                     flow_info = {'id': lesson.flow.id, 'name': lesson.flow.name,
@@ -306,6 +311,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
         # week = self.context['week']
         date = self.context['date']
         branch = self.context['branch']
+        week = self.context['week']
         hours = Hours.objects.all().order_by('order')
         time_tables = []
         groups = Group.objects.filter(branch=branch, deleted=False).all().order_by('class_number__number')
@@ -318,8 +324,12 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
             }
 
             for hour in hours:
-                lesson = group.classtimetable_set.filter(date=date, hours=hour, branch=branch).order_by(
-                    'hours__order').first()
+                if week:
+                    lesson = group.classtimetable_set.filter(date=date, hours=hour, branch=branch, week=week).order_by(
+                        'hours__order').first()
+                else:
+                    lesson = group.classtimetable_set.filter(date=date, hours=hour, branch=branch).order_by(
+                        'hours__order').first()
                 flow_class_time_table = None
                 for student in group.students.all():
                     flow_class_time_table = student.class_time_table.filter(date=date, hours=hour, branch=branch,
@@ -394,4 +404,3 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
             }
             for hour in hours
         ]
-
