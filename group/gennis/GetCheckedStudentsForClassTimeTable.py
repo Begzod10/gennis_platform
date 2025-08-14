@@ -33,12 +33,6 @@ class GetCheckedStudentsForClassTimeTable(APIView):
             deleted_student_student__deleted__isnull=True,
             deleted_student_student_new__isnull=True,
             class_number=group.class_number
-        ).exclude(
-            id__in=deleted
-        ).exclude(
-            id__in=ignore_students
-        ).exclude(
-            groups_student__id__in=student_deleted_groups
         ).distinct()
         for student in students:
 
