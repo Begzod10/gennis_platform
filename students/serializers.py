@@ -482,3 +482,20 @@ class DeletedStudentListSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeletedStudent
         fields = ['id', 'student', 'group', 'teacher', 'group_reason', 'deleted_date', 'comment']
+
+
+class StudentClassNumberSerializer(serializers.ModelSerializer):
+    students = serializers.SerializerMethodField(required=False)
+
+    class Meta:
+        model = Student
+        fields = ['class_number', 'students']
+
+    def update(self, instance, validated_data):
+        students = validated_data.pop('students', None)
+        for student in students:
+            get_student = Student.objects.get(id=student)
+            get_student.class_number = instance
+            get_student.save()
+
+        return {"msg": "O'quvchilar sinf raqami o'zgartirildi"}

@@ -43,7 +43,7 @@ def update_class_task():
     students = Student.objects.select_related('user', 'class_number').filter(
         Q(user__registered_date__month__gte=9) | Q(user__registered_date__month__lte=6),
         class_number__isnull=False
-    ).exclude(user__branch__name="Chirchiq")
+    )
 
     logger.info("Qidiruv bo'yicha %d ta talaba topildi.", students.count())
 
