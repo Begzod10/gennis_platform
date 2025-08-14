@@ -30,10 +30,11 @@ class GetCheckedStudentsForClassTimeTable(APIView):
         students = Student.objects.filter(
             groups_student__isnull=True,
             user__branch_id=branch_id,
-            deleted_student_student__deleted__isnull=True,
-            # deleted_student_student_new__isnull=True,
+
+            deleted_student_student_new__isnull=True,
             class_number=group.class_number
-        ).exclude(id__in=ignore_students).distinct()
+        ).exclude(id__in=ignore_students).exclude(id__in=deleted).exclude(
+            groups_student__in=student_deleted_groups).distinct()
         for student in students:
 
             student_data = StudentListSerializer(student).data
