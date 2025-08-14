@@ -23,17 +23,23 @@ class GetCheckedStudentsForClassTimeTable(APIView):
         data = json.loads(request.body)
         ignore_students = data['ignore_students']
         deleted = DeletedStudent.objects.filter(deleted=False).values_list('student_id', flat=True)
-        students = Student.objects.filter(groups_student__isnull=True, user__branch_id=branch_id,
-                                          deleted_student_student__deleted__isnull=True,
-                                          deleted_student_student_new__isnull=True,
-                                          class_number=group.class_number).exclude(id__in=deleted).exclude(
-            id__in=ignore_students).distinct()
+        student_deleted_groups = Group.objects.filter(
+            deleted=True, branch_id=branch_id
+        ).values_list('id', flat=True)
+
+        students = Student.objects.filter(
+            groups_student__isnull=True,
+            user__branch_id=branch_id,
+
+            deleted_student_student_new__isnull=True,
+            class_number=group.class_number
+        ).exclude(id__in=ignore_students).exclude(id__in=deleted).exclude(
+            groups_student__in=student_deleted_groups).distinct()
         for student in students:
-            should_add_student = False
+
             student_data = StudentListSerializer(student).data
             class_time_tables = student.class_time_table.filter(flow__isnull=False).all()
-            if not should_add_student:
-                should_add_student = True
+
             if class_time_tables:
                 for class_time_table in class_time_tables:
                     group_time_table = group.classtimetable_set.filter(hours_id=class_time_table.hours_id,
@@ -55,8 +61,8 @@ class GetCheckedStudentsForClassTimeTable(APIView):
                     'status': True,
                     'reason': ''
                 }
-            if should_add_student:
-                students_list.append(student_data)
+
+            students_list.append(student_data)
         return Response({'students': students_list})
 
 
