@@ -60,7 +60,7 @@ class GetCheckedStudentsForClassTimeTable(APIView):
                 }
 
             students_list.append(student_data)
-        return Response({'students': students_list, "not_filtered": students})
+        return Response({'students': students_list})
 
 
 class CheckedStudentsMoveToGroup(APIView):
