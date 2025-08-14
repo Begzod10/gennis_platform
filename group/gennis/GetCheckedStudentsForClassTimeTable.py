@@ -31,7 +31,7 @@ class GetCheckedStudentsForClassTimeTable(APIView):
             groups_student__isnull=True,
             user__branch_id=branch_id,
             class_number=group.class_number
-        ).distinct()
+        ).exclude(id__in=ignore_students).distinct()
         for student in students:
 
             student_data = StudentListSerializer(student).data
