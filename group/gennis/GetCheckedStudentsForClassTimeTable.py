@@ -29,11 +29,10 @@ class GetCheckedStudentsForClassTimeTable(APIView):
                                           class_number=group.class_number).exclude(id__in=deleted).exclude(
             id__in=ignore_students).distinct()
         for student in students:
-            should_add_student = False
+
             student_data = StudentListSerializer(student).data
             class_time_tables = student.class_time_table.filter(flow__isnull=False).all()
-            if not should_add_student:
-                should_add_student = True
+
             if class_time_tables:
                 for class_time_table in class_time_tables:
                     group_time_table = group.classtimetable_set.filter(hours_id=class_time_table.hours_id,
@@ -55,8 +54,8 @@ class GetCheckedStudentsForClassTimeTable(APIView):
                     'status': True,
                     'reason': ''
                 }
-            if should_add_student:
-                students_list.append(student_data)
+
+            students_list.append(student_data)
         return Response({'students': students_list})
 
 
