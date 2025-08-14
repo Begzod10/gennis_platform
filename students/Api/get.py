@@ -118,18 +118,12 @@ class StudentPaymentListAPIView(generics.ListAPIView):
 
         return queryset
 
-
 class StudentDeletedPaymentListAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
-
-    queryset = StudentPayment.objects.all()
     serializer_class = StudentPaymentListSerializer
 
-    def get(self, request, *args, **kwargs):
-        queryset = StudentPayment.objects.filter(deleted=True).all()
-
-        serializer = StudentPaymentListSerializer(queryset, many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        return StudentPayment.objects.filter(deleted=True)
 
 
 class StudentPaymentAPIView(generics.RetrieveAPIView):
