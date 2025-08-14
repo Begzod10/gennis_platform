@@ -72,16 +72,12 @@ class TeacherSalaryListAPIView(QueryParamFilterMixin, generics.ListAPIView):
         'status': 'deleted',
         'branch': 'branch',
         'teacher_salary': 'salary_id',
-
     }
-    queryset = TeacherSalaryList.objects.all()
     serializer_class = TeacherSalaryListReadSerializers
 
-    def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.queryset)
-        data = self.get_serializer(queryset, many=True).data
-
-        return Response(data)
+    def get_queryset(self):
+        queryset = TeacherSalaryList.objects.all()
+        return self.filter_queryset(queryset)
 
 
 class TeacherSalaryDetailAPIView(generics.RetrieveAPIView):

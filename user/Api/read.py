@@ -61,14 +61,11 @@ class DeletedUserSalaryListListView(QueryParamFilterMixin, generics.ListAPIView)
         'branch': 'branch_id',
     }
     permission_classes = [IsAuthenticated]
-
-    queryset = UserSalaryList.objects.filter(deleted=True).all()
     serializer_class = UserSalaryListSerializersRead
 
-    def get(self, request, *args, **kwargs):
-        queryset = UserSalaryList.objects.filter(deleted=True).all()
-        serializer = UserSalaryListSerializersRead(queryset, many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        queryset = UserSalaryList.objects.filter(deleted=True)
+        return self.filter_queryset(queryset)
 
 
 class UserSalaryListDetailView(QueryParamFilterMixin, generics.RetrieveAPIView):
