@@ -31,13 +31,14 @@ class Teacher(models.Model):
     deleted_date = models.DateField(null=True)
     working_hours = models.CharField(max_length=50, null=True)
     class_salary = models.IntegerField(default=0, null=True)
+    face_id = models.CharField(null=True)
     # system = models.ForeignKey('system.System', on_delete=models.SET_NULL, null=True)
 
 
 class TeacherAttendance(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True,
                                 related_name='teacher_attendance_teacher')
-    day = models.DateField(null=True)
+    day = models.DateTimeField(null=True)
     status = models.BooleanField(null=True)
     system = models.ForeignKey(System, on_delete=models.SET_NULL, null=True, related_name='teacher_attendance_system')
 

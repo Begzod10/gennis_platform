@@ -42,7 +42,7 @@ class ActiveListTeacherSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Teacher
-        fields = ('id', 'name', 'surname', 'username', 'age', 'phone', 'subject', 'status')
+        fields = ('id', 'name', 'surname', 'username', 'age', 'phone', 'subject', 'status', 'face_id')
 
     def get_name(self, obj):
         return obj.user.name

@@ -40,6 +40,7 @@ class CustomUser(AbstractUser):
     balance = models.BigIntegerField(null=True)
     # test_text = models.CharField(null=True, blank=True)
     # turon_old_id = models.IntegerField(null=True, unique=True)
+
     groups = models.ManyToManyField(
         Group,
         related_name='custom_user_set',  # related_name'ni o'zgartiring
