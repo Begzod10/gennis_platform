@@ -254,7 +254,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                             #     url=f"{classroom_server}/delete_student_from_group/{student.user_id}/{instance.id}/turon",
                             #     method='DELETE')
                             instance.students.remove(student)
-                            DeletedNewStudent.objects.create(student=student, comment=comment)
+                            # DeletedNewStudent.objects.create(student=student, comment=comment)
                             if instance.group_time_table.all():
                                 for time_table in instance.group_time_table.all():
                                     student.group_time_table.remove(time_table)
