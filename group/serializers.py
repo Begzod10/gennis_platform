@@ -267,11 +267,10 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                             if instance.group_time_table.all():
                                 for time_table in instance.group_time_table.all():
                                     student.group_time_table.remove(time_table)
-                    student_history_group, _ = StudentHistoryGroups.objects.get_or_create(group=instance,
-                                                                                          teacher=
-                                                                                          instance.teacher.all()[0])
-                    student_history_group.left_day = datetime.now()
-                    student_history_group.save()
+                            student_history_group, _ = StudentHistoryGroups.objects.get_or_create(group=instance,
+                                                                                                  student=student, )
+                            student_history_group.left_day = datetime.now()
+                            student_history_group.save()
         instance.color = validated_data.get('color', instance.color)
         instance.save()
         return instance
