@@ -249,5 +249,4 @@ class TeacherFaceIdView(APIView):
         teacher = Teacher.objects.get(face_id=face_id, user__branch_id=branch.id)
 
         teacher_attendance, created = TeacherAttendance.objects.get_or_create(teacher=teacher, day=date_obj)
-        print(timezone.localtime(teacher_attendance.day, tz))
         return Response({'face_id': teacher.face_id}, status=status.HTTP_200_OK)
