@@ -31,7 +31,7 @@ class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher
         fields = ['user', 'subject', 'color', 'total_students', 'id', 'teacher_salary_type', 'salary_percentage',
-                  'class_type', 'working_hours', 'class_salary']
+                  'class_type', 'working_hours', 'class_salary', 'face_id']
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)

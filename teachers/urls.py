@@ -7,7 +7,8 @@ from teachers.Api.read import (
     TeacherSalaryListAPIView,
     TeacherSalaryDetailAPIView,
     TeacherSalaryDetailAPIView2,
-    TeacherSalaryListView, TeacherSalaryListDetailView, GetTeacherBalance,TeacherSalaryListDetailView2
+    TeacherSalaryListView, TeacherSalaryListDetailView, GetTeacherBalance, TeacherSalaryListDetailView2,
+    TeacherFaceIdView
 )
 from teachers.Api.write import (
     TeacherCreateView, TeacherUpdateView, TeacherDestroyView,
@@ -60,5 +61,6 @@ urlpatterns = [
          name='salary-types'),
     path('group-student/<int:pk>/', GetGroupStudents.as_view(),
          name='group-student'),
-    path('get_balance/<int:user_id>/', GetTeacherBalance.as_view())
+    path('get_balance/<int:user_id>/', GetTeacherBalance.as_view()),
+    path('teacher_face_id/', TeacherFaceIdView.as_view())
 ]
