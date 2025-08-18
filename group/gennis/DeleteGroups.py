@@ -21,7 +21,7 @@ class DeleteGroups(APIView):
 
         today = datetime.now()
         group = Group.objects.get(pk=pk)
-        send(url=f"{classroom_server}/delete_group/{group.id}/turon", method='DELETE')
+        # send(url=f"{classroom_server}/delete_group/{group.id}/turon", method='DELETE')
 
         group.deleted = True
         group.save()
