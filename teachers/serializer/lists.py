@@ -62,7 +62,7 @@ class ActiveListTeacherSerializer(serializers.ModelSerializer):
     def get_status(self, obj):
         return not (
                 Flow.objects.filter(teacher=obj).exists() or
-                Group.objects.filter(teacher=obj).exists()
+                Group.objects.filter(teacher=obj, deleted=False).exists()
         )
 
 
