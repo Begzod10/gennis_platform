@@ -60,7 +60,6 @@ class QueryParamFilterMixin:
                 except ValueError:
                     continue
 
-
             elif value.startswith('[') and value.endswith(']'):
                 value_list = value.strip('[]').split(',')
                 self.filter_conditions &= Q(**{f'{field}__in': [v.strip() for v in value_list]})
@@ -72,8 +71,8 @@ class QueryParamFilterMixin:
         if self.filter_conditions:
             queryset = queryset.filter(self.filter_conditions)
 
-        return queryset
-
+        # Muhim: DRF filter_backends (SearchFilter, OrderingFilter, va hokazo) ni ham ishlatish
+        return super().filter_queryset(queryset)
 
 class GetModelsMixin:
     tables = [{'name': 'Students', 'value': ['new_students', 'studying_students', 'deleted_students']},
