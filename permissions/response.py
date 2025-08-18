@@ -138,7 +138,7 @@ class GetModelsMixin:
         return location_data
 
     def get_branch_data(self, branch, type_name, model):
-        branch_data = {'id': branch.branch.id, 'name': branch.branch.name, 'count': 0, 'summa': 0}
+        branch_data = {'id': branch.branch.id, 'name': branch.branch.name, 'count': 0, 'summa': 0,'deleted_count': 0}
         self.get_student_data(branch.branch, type_name, branch_data, model)
 
         return branch_data
@@ -153,6 +153,7 @@ class GetModelsMixin:
                 branch_data['count'] = Student.objects.filter(user__branch_id=branch.id).exclude(
                     id__in=deleted_student_ids).exclude(id__in=deleted_new_student_ids).filter(
                     groups_student__isnull=True).count()
+                branch_data['deleted_count'] = deleted_new_student_ids.count()
             elif type_name == 'studying_students':
                 branch_data['count'] = Student.objects.filter(user__branch_id=branch.id,
                                                               groups_student__isnull=False).exclude(
@@ -164,19 +165,23 @@ class GetModelsMixin:
         if model == 'Group':
             from group.models import Group
             if type_name == 'groups':
-                branch_data['count'] = Group.objects.filter(branch_id=branch.id).count()
+                branch_data['count'] = Group.objects.filter(branch_id=branch.id,deleted=False).count()
+                branch_data['deleted_count'] = Group.objects.filter(branch_id=branch.id,deleted=True).count()
         if model == 'Teacher':
             from teachers.models import Teacher
             if type_name == 'teachers':
-                branch_data['count'] = Teacher.objects.filter(user__branch_id=branch.id).count()
+                branch_data['count'] = Teacher.objects.filter(user__branch_id=branch.id,deleted=False).count()
+                branch_data['deleted_count'] = Teacher.objects.filter(user__branch_id=branch.id,deleted=True).count()
         if model == 'Users':
             from user.models import CustomAutoGroup
             if type_name == 'worker':
-                branch_data['count'] = CustomAutoGroup.objects.filter(user__branch_id=branch.id).count()
+                branch_data['count'] = CustomAutoGroup.objects.filter(user__branch_id=branch.id,deleted=False).count()
+                branch_data['deleted_count'] = CustomAutoGroup.objects.filter(user__branch_id=branch.id,deleted=True).count()
         if model == 'Rooms':
             from rooms.models import Room
             if type_name == 'rooms':
-                branch_data['count'] = Room.objects.filter(branch_id=branch.id).count()
+                branch_data['count'] = Room.objects.filter(branch_id=branch.id,deleted=False).count()
+                branch_data['deleted_count'] = Room.objects.filter(branch_id=branch.id,deleted=True).count()
         from django.db.models import Sum
 
         if model == 'Accounting':
