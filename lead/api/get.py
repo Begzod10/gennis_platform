@@ -40,7 +40,7 @@ class LeadListAPIView(generics.ListAPIView):
             customautogroup__deleted=False
         )
         # Handle admin override for operator filtering
-        if user.groups.filter(name='admin').exists():
+        if user.groups.filter(name='admin').exists() or user.groups.filter(name='director').exists():
             operator_id = self.request.query_params.get('operator_id')
             if operator_id:
                 operator = CustomUser.objects.get(pk=operator_id)
@@ -162,7 +162,7 @@ class LeadListAPIView(generics.ListAPIView):
         queryset = self.get_queryset()
         operator_id = self.request.query_params.get('operator_id')
         user = self.request.user  # faqat bitta user
-        if user.groups.filter(name='admin').exists():
+        if user.groups.filter(name='admin').exists() or user.groups.filter(name='director').exists():
             if operator_id:
                 user = CustomUser.objects.get(pk=operator_id)  # tanlangan operator
             else:
@@ -258,8 +258,8 @@ class LeadCallRetrieveAPIView(generics.ListAPIView):
         serializer = LeadCallSerializer(lead_call, many=True)
         get_lead = Lead.objects.filter(pk=pk).first()
         from lead.models import LeadFromRecommendation
-        leads = LeadFromRecommendation.objects.filter(lead__id=pk,lead__deleted=False).values_list('lead2', flat=True)
-        lead = Lead.objects.filter(id__in=leads,deleted=False).all()
+        leads = LeadFromRecommendation.objects.filter(lead__id=pk, lead__deleted=False).values_list('lead2', flat=True)
+        lead = Lead.objects.filter(id__in=leads, deleted=False).all()
 
         return Response({"history": serializer.data, "lead": LeadSerializer(get_lead).data,
                          "invites": LeadListSerializer(lead, many=True).data},
@@ -291,7 +291,7 @@ class LeadCallTodayListView(generics.ListAPIView):
         Agar admin bo‘lsa va operator_id kelgan bo‘lsa, shuni qaytaradi.
         """
         user = self.request.user
-        if user.groups.filter(name='admin').exists():
+        if user.groups.filter(name='admin').exists() or user.groups.filter(name='director').exists():
             operator_id = self.request.query_params.get('operator_id')
             if operator_id:
                 try:
