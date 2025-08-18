@@ -71,6 +71,7 @@ class GroupListSerialize2r(serializers.ModelSerializer):
     name = serializers.SerializerMethodField(required=False)
     class_number = serializers.CharField(required=False, source='class_number.number')
     color = serializers.CharField(required=False, source='color.name')
+    students = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Group
