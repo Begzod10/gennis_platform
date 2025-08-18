@@ -64,6 +64,8 @@ class DeletedGroupStudents(QueryParamFilterMixin, ListAPIView):
         'age': 'student__user__birth_date',
         'language': 'student__user__language_id',
     }
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['student__user__name', 'student__user__surname', 'student__user__username']
 
     def get_queryset(self):
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
@@ -107,6 +109,8 @@ class ActiveStudents(QueryParamFilterMixin, ListAPIView):
     serializer_class = ActiveListSerializer
     filter_mappings = {'branch': 'user__branch_id', 'subject': 'subject__id', 'age': 'user__birth_date',
                        'language': 'user__language_id', }
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['user__name', 'user__surname', 'user__username']
 
     def get_queryset(self, *args, **kwargs):
         deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True,
