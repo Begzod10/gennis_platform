@@ -75,7 +75,7 @@ class GroupListSerialize2r(serializers.ModelSerializer):
 
     class Meta:
         model = Group
-        fields = ['id', 'teacher', "status", "name", "count", "class_number", "color", 'price']
+        fields = ['id', 'teacher', "status", "name", "count", "class_number", "color", 'price',"students"]
 
     def get_teacher(self, obj):
         name = ""
