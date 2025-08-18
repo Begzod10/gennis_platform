@@ -60,12 +60,10 @@ class ActiveListTeacherSerializer(serializers.ModelSerializer):
         return obj.user.surname
 
     def get_status(self, obj):
-        flows = Flow.objects.filter(teacher=obj).exists()
-        group = Group.objects.filter(teacher=obj, deleted=False).exists()
-        if flows or group:
-            return False
-        else:
-            return True
+        return not (
+                Flow.objects.filter(teacher=obj).exists() or
+                Group.objects.filter(teacher=obj, deleted=False).exists()
+        )
 
 
 class ActiveListTeacherSerializerTime(serializers.ModelSerializer):
