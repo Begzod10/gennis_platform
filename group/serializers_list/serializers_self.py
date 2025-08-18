@@ -95,7 +95,6 @@ class GroupListSerialize2r(serializers.ModelSerializer):
 
     def get_students(self, obj):
         students = obj.students.all()
-        list_id = []
-        for i in students:
-            list_id.append(i.user)
-        return UserSerializer(list_id, many=True).data
+        from students.serializer.lists import ActiveListSerializer
+
+        return ActiveListSerializer(students, many=True).data
