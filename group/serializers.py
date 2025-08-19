@@ -110,6 +110,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                     student.group_time_table.add(group_time_table)
                 for teacher in group.teacher.all():
                     teacher.group_time_table.add(group_time_table)
+
         return group
 
     def update(self, instance, validated_data):
@@ -122,7 +123,6 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         comment = validated_data.get("comment")
         group_reason = validated_data.get("group_reason")
         price = validated_data.pop("price", None)
-        print(price)
         if price:
             instance.price = price
             instance.save()
@@ -273,7 +273,8 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                             student_history_group.save()
         instance.color = validated_data.get('color', instance.color)
         instance.save()
-        return instance
+        from group.serializers_list.serializers_self import GroupListSerializer
+        return GroupListSerializer(instance).data
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -340,7 +341,7 @@ class GroupSerializer(serializers.ModelSerializer):
     def get_color(self, obj):
         from classes.serializers import ClassColorsSerializers
         from lesson_plan.functions.utils import update_lesson_plan
-        update_lesson_plan(obj.id)
+        # update_lesson_plan(obj.id)
         return ClassColorsSerializers(obj.color).data
 
 
