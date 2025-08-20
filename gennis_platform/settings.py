@@ -123,7 +123,6 @@ REST_FRAMEWORK = {
     ],
 }
 
-
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -139,6 +138,16 @@ CELERY_BEAT_SCHEDULE = {
         "task": "group.tasks.update_class_task",
         "schedule": crontab(minute=0, hour=0, day_of_month="10", month_of_year="8"),
     },
+    "update-students-debts": {
+        "task": "students.tasks.update_debts_task",
+        # "schedule": crontab(minute=0, hour=0, day_of_month="20", month_of_year="8"),
+        "schedule": crontab(minute="*/1"),
+    },
+    "update-school-time-table": {
+        "task": "school_time_table.tasks.update_school_time_table_task",
+        "schedule": crontab(minute=0, hour=0, day_of_week="saturday")
+        # "schedule": crontab(minute="*/1"),
+    }
 }
 
 CELERY_BROKER_URL = "redis://localhost:6379/0"
