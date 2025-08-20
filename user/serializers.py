@@ -264,7 +264,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     'id': group.id,
                     'subject': group.subject,
                     'teacher_salary': group.teacher_salary,
-                    'price': group.price
+                    'price': group.price,
+                    "teacher_id": user.id
                 } for group in teacher.group_set.all()]
             }
             # res = self.send_data(object, f'{classroom_server}/api/turon_user')
