@@ -224,8 +224,8 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                     student.class_time_table.remove(time_table)
         else:
             if 'teacher' in validated_data:
-                teacher_history_group = TeacherHistoryGroups.objects.get(group=instance,
-                                                                         teacher=instance.teacher.all()[0])
+                teacher_history_group = TeacherHistoryGroups.objects.filter(group=instance,
+                                                                         teacher=instance.teacher.all()[0]).first()
                 teacher_history_group.left_day = datetime.now()
                 teacher_history_group.save()
                 for time_table in instance.group_time_table.all():

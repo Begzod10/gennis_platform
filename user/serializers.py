@@ -214,7 +214,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     {
                         'name': group.name if group.name else f'{group.class_number.number}-{group.color.name}',
                         'id': group.id,
-                        'subject': [
+                        'subjects': [
                             {'id': subject.subject.id, 'name': subject.subject.name} for subject in
                             ClassNumberSubjects.objects.filter(class_number_id=group.class_number.id).all()
                         ],
@@ -254,7 +254,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'role': 'teacher',
                 'birth_date': user.birth_date.isoformat() if user.birth_date else None,
                 'phone_number': user.phone,
-                'subject': [{
+                'subjects': [{
                     'id': subject.id,
                     'name': subject.name
                 } for subject in teacher.subject.all()],
@@ -262,12 +262,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'groups': [{
                     'name': group.name if group.name else f'{group.class_number.number}-{group.color.name}',
                     'id': group.id,
-                    'subject': group.subject,
+                    'subjects': [
+                        {'id': subject.subject.id, 'name': subject.subject.name} for subject in
+                        ClassNumberSubjects.objects.filter(class_number_id=group.class_number.id).all()
+                    ],
                     'teacher_salary': group.teacher_salary,
                     'price': group.price,
                     "teacher_id": user.id
                 } for group in teacher.group_set.all()]
             }
+            print(self.object)
             # res = self.send_data(object, f'{classroom_server}/api/turon_user')
             # self.usern = res['data']['username']
             return self.object
