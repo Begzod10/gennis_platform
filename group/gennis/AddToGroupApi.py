@@ -14,6 +14,8 @@ from students.models import Student
 from students.serializers import StudentSerializer
 from user.serializers import CustomUser, UserSerializerRead
 
+from group.functions.CreateSchoolStudentDebts import create_school_student_debts
+
 
 class AddToGroupApi(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
@@ -65,7 +67,7 @@ class AddToGroupApi(APIView):
             student.total_payment_month += group.price
             student.save()
             group.students.add(student)
-
+        create_school_student_debts(group, students)
         return Response({"message": "Students added successfully"}, status=http_status.HTTP_200_OK)
 
     def get(self, request, pk):
