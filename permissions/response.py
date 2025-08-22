@@ -1,7 +1,6 @@
 from datetime import date
 
 from django.db.models import Q
-from django.db.models import Sum
 from rest_framework import permissions
 
 from mobile.get_user import get_user
@@ -74,16 +73,14 @@ class QueryParamFilterMixin:
         # Muhim: DRF filter_backends (SearchFilter, OrderingFilter, va hokazo) ni ham ishlatish
         return super().filter_queryset(queryset)
 
+
 class GetModelsMixin:
     tables = [{'name': 'Students', 'value': ['new_students', 'studying_students', 'deleted_students']},
-              {'name': 'Group', 'value': ['groups']}, {'name': 'Teacher', 'value': ['teachers']},
-              {'name': 'Users', 'value': ['worker']}, {'name': 'Rooms', 'value': ['rooms']}, {'name': 'Accounting',
-                                                                                              'value': [
-                                                                                                  'studentsPayments',
-                                                                                                  'teachersSalary',
-                                                                                                  'employeesSalary',
-                                                                                                  'overhead',
-                                                                                                  'capital']}]
+              {'name': "Lead", 'value': ['leads']}, {'name': 'Group', 'value': ['groups']},
+              {'name': 'Teacher', 'value': ['teachers']}, {'name': 'Users', 'value': ['worker']},
+              {'name': 'Rooms', 'value': ['rooms']}, {'name': 'Accounting',
+                                                      'value': ['studentsPayments', 'teachersSalary', 'employeesSalary',
+                                                          'overhead', 'capital']}]
 
     def get_models(self, query_type):
         response = []
@@ -137,7 +134,7 @@ class GetModelsMixin:
         return location_data
 
     def get_branch_data(self, branch, type_name, model):
-        branch_data = {'id': branch.branch.id, 'name': branch.branch.name, 'count': 0, 'summa': 0,'deleted_count': 0}
+        branch_data = {'id': branch.branch.id, 'name': branch.branch.name, 'count': 0, 'summa': 0, 'deleted_count': 0}
         self.get_student_data(branch.branch, type_name, branch_data, model)
 
         return branch_data
@@ -164,23 +161,28 @@ class GetModelsMixin:
         if model == 'Group':
             from group.models import Group
             if type_name == 'groups':
-                branch_data['count'] = Group.objects.filter(branch_id=branch.id,deleted=False).count()
-                branch_data['deleted_count'] = Group.objects.filter(branch_id=branch.id,deleted=True).count()
+                branch_data['count'] = Group.objects.filter(branch_id=branch.id, deleted=False).count()
+                branch_data['deleted_count'] = Group.objects.filter(branch_id=branch.id, deleted=True).count()
         if model == 'Teacher':
             from teachers.models import Teacher
             if type_name == 'teachers':
-                branch_data['count'] = Teacher.objects.filter(user__branch_id=branch.id,deleted=False).count()
-                branch_data['deleted_count'] = Teacher.objects.filter(user__branch_id=branch.id,deleted=True).count()
+                branch_data['count'] = Teacher.objects.filter(user__branch_id=branch.id, deleted=False).count()
+                branch_data['deleted_count'] = Teacher.objects.filter(user__branch_id=branch.id, deleted=True).count()
         if model == 'Users':
             from user.models import CustomAutoGroup
             if type_name == 'worker':
-                branch_data['count'] = CustomAutoGroup.objects.filter(user__branch_id=branch.id,deleted=False).count()
-                branch_data['deleted_count'] = CustomAutoGroup.objects.filter(user__branch_id=branch.id,deleted=True).count()
+                branch_data['count'] = CustomAutoGroup.objects.filter(user__branch_id=branch.id, deleted=False).count()
+                branch_data['deleted_count'] = CustomAutoGroup.objects.filter(user__branch_id=branch.id,
+                                                                              deleted=True).count()
         if model == 'Rooms':
             from rooms.models import Room
             if type_name == 'rooms':
-                branch_data['count'] = Room.objects.filter(branch_id=branch.id,deleted=False).count()
-                branch_data['deleted_count'] = Room.objects.filter(branch_id=branch.id,deleted=True).count()
+                branch_data['count'] = Room.objects.filter(branch_id=branch.id, deleted=False).count()
+                branch_data['deleted_count'] = Room.objects.filter(branch_id=branch.id, deleted=True).count()
+        if model == "Lead":
+            from lead.models import Lead
+            branch_data['count'] = Lead.objects.filter(branch_id=branch.id, deleted=False).count()
+            branch_data['deleted_count'] = Lead.objects.filter(branch_id=branch.id, deleted=True).count()
         from django.db.models import Sum
 
         if model == 'Accounting':
@@ -188,29 +190,33 @@ class GetModelsMixin:
 
             if type_name == 'capital':
                 branch_data['count'] = OldCapital.objects.filter(branch_id=branch.id, deleted=False).count()
-                branch_data['summa'] = OldCapital.objects.filter(branch_id=branch.id, deleted=False) \
-                                           .aggregate(total=Sum('price'))['total'] or 0
+                branch_data['summa'] = \
+                OldCapital.objects.filter(branch_id=branch.id, deleted=False).aggregate(total=Sum('price'))[
+                    'total'] or 0
 
             if type_name == 'overhead':
                 branch_data['count'] = Overhead.objects.filter(branch_id=branch.id, deleted=False).count()
-                branch_data['summa'] = Overhead.objects.filter(branch_id=branch.id, deleted=False) \
-                                           .aggregate(total=Sum('price'))['total'] or 0
+                branch_data['summa'] = \
+                Overhead.objects.filter(branch_id=branch.id, deleted=False).aggregate(total=Sum('price'))['total'] or 0
 
             if type_name == 'employeesSalary':
                 branch_data['count'] = UserSalaryList.objects.filter(branch_id=branch.id, deleted=False).count()
-                branch_data['summa'] = UserSalaryList.objects.filter(branch_id=branch.id, deleted=False) \
-                                           .aggregate(total=Sum('salary'))['total'] or 0
+                branch_data['summa'] = \
+                UserSalaryList.objects.filter(branch_id=branch.id, deleted=False).aggregate(total=Sum('salary'))[
+                    'total'] or 0
 
             if type_name == 'studentsPayments':
                 branch_data['count'] = StudentPayment.objects.filter(branch_id=branch.id, deleted=False,
                                                                      status=False).count()
-                branch_data['summa'] = StudentPayment.objects.filter(branch_id=branch.id, deleted=False, status=False) \
-                                           .aggregate(total=Sum('payment_sum'))['total'] or 0
+                branch_data['summa'] = \
+                StudentPayment.objects.filter(branch_id=branch.id, deleted=False, status=False).aggregate(
+                    total=Sum('payment_sum'))['total'] or 0
 
             if type_name == 'teachersSalary':
                 branch_data['count'] = TeacherSalaryList.objects.filter(branch_id=branch.id, deleted=False).count()
-                branch_data['summa'] = TeacherSalaryList.objects.filter(branch_id=branch.id, deleted=False) \
-                                           .aggregate(total=Sum('salary'))['total'] or 0
+                branch_data['summa'] = \
+                TeacherSalaryList.objects.filter(branch_id=branch.id, deleted=False).aggregate(total=Sum('salary'))[
+                    'total'] or 0
 
 
 class IsAdminOrIsSelf(permissions.BasePermission):
