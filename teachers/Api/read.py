@@ -1,5 +1,5 @@
 from django.db.models.query import QuerySet
-from rest_framework import generics
+from rest_framework import generics,filters
 from rest_framework import status
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
@@ -49,6 +49,8 @@ class TeacherListView(QueryParamFilterMixin, generics.ListAPIView):
     }
     queryset = Teacher.objects.all()
     serializer_class = ActiveListTeacherSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['user__name', 'user__surname', 'user__username']
 
     def get_queryset(self):
         queryset = Teacher.objects.all()
