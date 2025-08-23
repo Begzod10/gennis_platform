@@ -12,10 +12,10 @@ from celery.schedules import crontab
 classroom_server = os.getenv('CLASSROOM_SERVER')
 gennis_server = os.getenv('GENNIS_SERVER')
 
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['*']
-# ALLOWED_HOSTS = ['school.gennis.uz', 'localhost', '127.0.0.1']
+# ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['school.gennis.uz', 'localhost', '127.0.0.1']
 
 INSTALLED_APPS = [
     'unfold',
@@ -159,8 +159,8 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-STATIC_URL = '/static/'
-STATIC_ROOT = '/home/ubuntu/gennis_website/gennis_platform/static/'
+STATIC_URL = '/static_admin/'
+STATIC_ROOT = BASE_DIR / 'static_admin'
 MEDIA_URL = '/media/'
 
 MEDIA_ROOT = BASE_DIR / 'media/'
