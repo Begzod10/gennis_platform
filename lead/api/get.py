@@ -411,9 +411,17 @@ class LeadsByBranchListView(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response({
+                "data": serializer.data,
+                "lead_count": queryset.count()
+            })
+
         serializer = self.get_serializer(queryset, many=True)
-        lead_count = queryset.count()
         return Response({
             "data": serializer.data,
-            "lead_count": lead_count
+            "lead_count": queryset.count()
         })
