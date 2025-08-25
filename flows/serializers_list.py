@@ -53,7 +53,7 @@ class FlowsSerializerProfile(serializers.ModelSerializer):
                 for subject in obj.teacher.subject.all()
             ],
 
-            'photo': obj.teacher.user.profile_img if obj.teacher.user.profile_img else None
+            'photo': obj.teacher.user.profile_img.url if obj.teacher.user.profile_img else None
         }
 
     def get_students(self, obj):
@@ -65,7 +65,7 @@ class FlowsSerializerProfile(serializers.ModelSerializer):
                 'phone': student.user.phone,
                 'parents_phone': student.parents_number,
                 'balance': self.get_debt(student),
-                'img': student.user.profile_img if student.user.profile_img else None
+                'img': student.user.profile_img.url if student.user.profile_img else None
             }
             for student in obj.students.all()
         ]
