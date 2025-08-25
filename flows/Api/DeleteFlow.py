@@ -11,23 +11,18 @@ class DeleteFlow(APIView):
         except Flow.DoesNotExist:
             return Response({'error': 'Flow not found'}, status=404)
 
-        # copy related objects to avoid issues while deleting in loop
-        students = list(flow.students.all())
-        class_time_tables = list(flow.classtimetable_set.all())
+        for class_time_table in flow.classtimetable_set.all():
+            # Avval timetable o‘chirilsin
+            class_time_table.delete()
 
-        for student in students:
-            for class_time_table in class_time_tables:
-                if class_time_table in student.class_time_table.all():
-                    student.class_time_table.remove(class_time_table)
+        # Keyin studentlarni detach qilamiz
+        flow.students.clear()
 
-                if flow.teacher and class_time_table in flow.teacher.classtimetable_set.all():
-                    flow.teacher.classtimetable_set.remove(class_time_table)
+        # Agar teacher bog‘langan bo‘lsa, timetable aloqalarini olib tashlash
+        if flow.teacher:
+            flow.teacher.classtimetable_set.clear()
 
-                class_time_table.delete()
-
-            flow.students.remove(student)
-
-        name = flow.name
+        # Oxirida flow o‘chirilsin
         flow.delete()
 
-        return Response({'msg': f'{name} patoki ochirildi'}, status=200)
+        return Response({'msg': f'{flow.name} patoki o‘chirildi'}, status=200)
