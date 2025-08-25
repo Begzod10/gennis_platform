@@ -82,13 +82,28 @@ class ClassTimeTableLessonsView(APIView):
         week_id = self.request.query_params.get('week')
         date = self.request.query_params.get('date')
         branch_id = self.request.query_params.get('branch')
+
+        group_id = self.request.query_params.get('group')
+        teacher_id = self.request.query_params.get('teacher')
+        student_id = self.request.query_params.get('student')
+
         branch = Branch.objects.get(id=branch_id)
         if week_id:
             week = WeekDays.objects.get(id=week_id)
             date = None
         else:
             week = None
-        serializer = ClassTimeTableTest2Serializer(context={'date': date, 'branch': branch, "week": week})
+
+        serializer = ClassTimeTableTest2Serializer(
+            context={
+                'date': date,
+                'branch': branch,
+                "week": week,
+                "group_id": group_id,
+                "teacher_id": teacher_id,
+                "student_id": student_id,
+            }
+        )
         data = {
             'time_tables': serializer.get_time_tables(None),
             'hours_list': serializer.get_hours_list(None)
