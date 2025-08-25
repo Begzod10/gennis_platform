@@ -3,7 +3,7 @@ import requests
 from django.db.models.query import QuerySet as queryset
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, status
+from rest_framework import generics, status,filters
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -51,6 +51,8 @@ class UserSalaryListListView(QueryParamFilterMixin, generics.ListAPIView):
         'branch': 'branch_id',
     }
     permission_classes = [IsAuthenticated]
+    search_fields = ['user__name', 'user__surname', 'user__username']
+    filter_backends = [filters.SearchFilter]
 
     queryset = UserSalaryList.objects.filter(deleted=False).all()
     serializer_class = UserSalaryListSerializersRead

@@ -81,6 +81,8 @@ class TeacherSalaryListAPIView(QueryParamFilterMixin, generics.ListAPIView):
         'teacher_salary': 'salary_id',
     }
     serializer_class = TeacherSalaryListReadSerializers
+    search_fields = ['teacher__user__name', 'teacher__user__surname', 'teacher__user__username']
+    filter_backends = [filters.SearchFilter]
 
     def get_queryset(self):
         queryset = TeacherSalaryList.objects.all()

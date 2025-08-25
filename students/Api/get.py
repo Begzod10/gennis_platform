@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 
-from rest_framework import generics
+from rest_framework import generics,filters
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -100,21 +100,21 @@ class StudentHistoryGroupsAPIView(generics.RetrieveAPIView):
 
 class StudentPaymentListAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
-
-    queryset = StudentPayment.objects.all()
     serializer_class = StudentPaymentListSerializerTest
+    search_fields = ['student__user__name', 'student__user__surname', 'student__user__username']
+    filter_backends = [filters.SearchFilter]
 
     def get_queryset(self):
         branch_id = self.request.query_params.get('branch')
 
-        if branch_id in ['null', 'undefined']:
-            branch_id = None
+        if branch_id in ['null', 'undefined', None, '']:
+            branch_id = self.request.user.branch.id
 
-        if branch_id is not None:
-            queryset = StudentPayment.objects.filter(deleted=False, status=False, branch=branch_id).order_by("-date")
-        else:
-            queryset = StudentPayment.objects.filter(deleted=False, status=False, branch=self.request.user.branch).order_by(
-                "-date")
+        queryset = StudentPayment.objects.filter(
+            deleted=False,
+            status=False,
+            branch=branch_id
+        ).order_by("-date")
 
         return queryset
 

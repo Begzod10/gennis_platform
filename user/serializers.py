@@ -164,10 +164,12 @@ class UserSalarySerializers(serializers.ModelSerializer):
 
 
 class UserSalaryListSerializersRead(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     user = UserSerializerRead(read_only=True)
     branch = BranchSerializer(read_only=True)
     user_salary = UserSalarySerializers(read_only=True)
     payment_types = PaymentTypesSerializers(read_only=True)
+    permission_id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = UserSalaryList

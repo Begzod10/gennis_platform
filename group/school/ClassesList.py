@@ -1,4 +1,4 @@
-from rest_framework import generics
+from rest_framework import generics,filters
 from rest_framework.permissions import IsAuthenticated
 
 from group.models import Group
@@ -13,6 +13,8 @@ class ClassesView(QueryParamFilterMixin, generics.ListCreateAPIView):
     filter_mappings = {'branch': 'branch_id', 'teacher': 'teacher__id', 'subject': 'subject_id',
         'course_types': 'course_types_id', 'created_date': 'created_date', 'deleted': 'deleted'}
     queryset = Group.objects.filter(class_number__isnull=False, deleted=False).order_by('class_number__number')
+    search_fields = ['name',"class_number__number",'class_number__class_types__name']
+    filter_backends = [filters.SearchFilter]
     # queryset = Group.objects.filter(class_number__isnull=False, deleted=False).order_by('class_number__number')
     # groups = Group.objects.filter(class_number__isnull=False, deleted=False).order_by('class_number__number')
     # for gr in groups:
