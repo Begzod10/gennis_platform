@@ -1,7 +1,7 @@
 import pprint
 
 from rest_framework import serializers
-
+from teachers.functions.school.CalculateTeacherSalary import calculate_teacher_salary
 from branch.models import Branch
 from branch.serializers import BranchSerializer
 from classes.models import ClassTypes
@@ -31,7 +31,7 @@ class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher
         fields = ['user', 'subject', 'color', 'total_students', 'id', 'teacher_salary_type', 'salary_percentage',
-                  'class_type', 'working_hours', 'class_salary']
+                  'class_type', 'working_hours', 'class_salary', 'face_id']
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -62,6 +62,7 @@ class TeacherSerializer(serializers.ModelSerializer):
         return teacher
 
     def update(self, instance, validated_data):
+        calculate_teacher_salary(instance)
         user_data = validated_data.pop('user', None)
         subject_data = validated_data.pop('subject')
 
@@ -130,10 +131,12 @@ class GroupSerializerTeachers(serializers.ModelSerializer):
     level = SubjectLevelSerializer()
     subject = SubjectSerializer()
     system = SystemSerializers()
+    color = serializers.SerializerMethodField()
+    class_number = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
-        fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
+        fields = ['id', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
                   'branch', 'language', 'level', 'subject', 'teacher', 'system', 'class_number', 'color',
                   'course_types']
 
@@ -165,7 +168,10 @@ class TeacherSerializerRead(serializers.ModelSerializer):
 
     def get_calculate(self, obj):
         from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
-        calculate_teacher_salary(obj)
+        teacher = Teacher.objects.get(user=obj.user)
+        if teacher:
+            if teacher.user.branch.location.system.name == 'school':
+                calculate_teacher_salary(obj)
 
     def get_status(self, obj):
         flows = Flow.objects.filter(teacher=obj).exists()

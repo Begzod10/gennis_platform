@@ -10,12 +10,9 @@ from user.functions.functions import check_auth
 
 class CustomResponseMixin:
     def get_custom_message(self, method):
-        messages = {
-            'POST': "muvaffaqiyatli yaratildi.",
-            'PUT': "maʼlumotlari muvaffaqiyatli yangilandi.",
-            'PATCH': "maʼlumotlari muvaffaqiyatli yangilandi.",
-            'DELETE': "maʼlumotlari muvaffaqiyatli o'chirildi.",
-        }
+        messages = {'POST': "muvaffaqiyatli yaratildi.", 'PUT': "maʼlumotlari muvaffaqiyatli yangilandi.",
+                    'PATCH': "maʼlumotlari muvaffaqiyatli yangilandi.",
+                    'DELETE': "maʼlumotlari muvaffaqiyatli o'chirildi.", }
         return messages.get(method, "amal muvaffaqiyatli yakunlandi.")
 
     def finalize_response(self, request, response, *args, **kwargs):
@@ -27,9 +24,7 @@ class CustomResponseMixin:
         if isinstance(response.data, dict):
             response.data['msg'] = custom_message
         elif isinstance(response.data, list):
-            response.data = {
-                'msg': custom_message,
-            }
+            response.data = {'msg': custom_message, }
         return response
 
 
@@ -57,6 +52,13 @@ class QueryParamFilterMixin:
                     self.filter_conditions &= Q(**{f'{field}__range': (birth_date_from, birth_date_to)})
                 except ValueError:
                     continue
+            elif param == "seats_number" and "-" in value:
+                try:
+                    from_seat, to_seat = map(int, value.split('-'))
+                    self.filter_conditions &= Q(**{field + "__gte": from_seat}) & Q(**{field + "__lte": to_seat})
+                except ValueError:
+                    continue
+
             elif value.startswith('[') and value.endswith(']'):
                 value_list = value.strip('[]').split(',')
                 self.filter_conditions &= Q(**{f'{field}__in': [v.strip() for v in value_list]})
@@ -68,45 +70,23 @@ class QueryParamFilterMixin:
         if self.filter_conditions:
             queryset = queryset.filter(self.filter_conditions)
 
-        return queryset
+        # Muhim: DRF filter_backends (SearchFilter, OrderingFilter, va hokazo) ni ham ishlatish
+        return super().filter_queryset(queryset)
 
 
 class GetModelsMixin:
-    tables = [
-        {
-            'name': 'Students',
-            'value': ['new_students', 'studying_students', 'deleted_students']
-        },
-        {
-            'name': 'Group',
-            'value': ['groups']
-        }, {
-            'name': 'Teacher',
-            'value': ['teachers']
-        },
-        {
-            'name': 'Users',
-            'value': ['worker']
-        },
-        {
-            'name': 'Rooms',
-            'value': ['rooms']
-        },
-        {
-            'name': 'Accounting',
-            'value': ['studentsPayments', 'teachersSalary', 'employeesSalary', 'overhead', 'capital']
-        }
-    ]
+    tables = [{'name': 'Students', 'value': ['new_students', 'studying_students', 'deleted_students']},
+              {'name': "Lead", 'value': ['leads']}, {'name': 'Group', 'value': ['groups']},
+              {'name': 'Teacher', 'value': ['teachers']}, {'name': 'Users', 'value': ['worker']},
+              {'name': 'Rooms', 'value': ['rooms']}, {'name': 'Accounting',
+                                                      'value': ['studentsPayments', 'teachersSalary', 'employeesSalary',
+                                                          'overhead', 'capital']}]
 
     def get_models(self, query_type):
         response = []
         if query_type:
             for item in query_type:
-                data = {
-                    'models': [],
-                    'types': [item['type']],
-                    'return': [item['name']]
-                }
+                data = {'models': [], 'types': [item['type']], 'return': [item['name']]}
                 for table in self.tables:
                     if item['type'].strip() in table['value']:
                         data['models'].append(table['name'])
@@ -123,11 +103,7 @@ class GetModelsMixin:
         for model_info in table_names:
             for model in model_info['models']:
                 for type_index, type_name in enumerate(model_info['types']):
-                    type_data = {
-                        'name': model_info['return'][type_index],
-                        'type': type_name,
-                        'list': []
-                    }
+                    type_data = {'name': model_info['return'][type_index], 'type': type_name, 'list': []}
                     datas.append(type_data)
 
                     for location in location_objs:
@@ -146,12 +122,10 @@ class GetModelsMixin:
         user, auth_error = check_auth(self.request)
         if auth_error:
             return auth_error
-        location_data = {
-            'id': location.location.id,
-            'name': location.location.name,
-            'count': ManyBranch.objects.filter(user=user, branch__location_id=location.location.id).count(),
-            'list': []
-        }
+        location_data = {'id': location.location.id, 'name': location.location.name,
+                         'count': ManyBranch.objects.filter(user=user,
+                                                            branch__location_id=location.location.id).count(),
+                         'list': []}
 
         for branch in ManyBranch.objects.filter(user=user, branch__location_id=location.location.id).all():
             branch_data = self.get_branch_data(branch, type_name, model)
@@ -160,11 +134,7 @@ class GetModelsMixin:
         return location_data
 
     def get_branch_data(self, branch, type_name, model):
-        branch_data = {
-            'id': branch.branch.id,
-            'name': branch.branch.name,
-            'count': 0
-        }
+        branch_data = {'id': branch.branch.id, 'name': branch.branch.name, 'count': 0, 'summa': 0, 'deleted_count': 0}
         self.get_student_data(branch.branch, type_name, branch_data, model)
 
         return branch_data
@@ -177,13 +147,13 @@ class GetModelsMixin:
 
             if type_name == 'new_students':
                 branch_data['count'] = Student.objects.filter(user__branch_id=branch.id).exclude(
-                    id__in=deleted_student_ids).exclude(id__in=deleted_new_student_ids
-                                                        ).filter(groups_student__isnull=True).count()
+                    id__in=deleted_student_ids).exclude(id__in=deleted_new_student_ids).filter(
+                    groups_student__isnull=True).count()
+                branch_data['deleted_count'] = deleted_new_student_ids.count()
             elif type_name == 'studying_students':
                 branch_data['count'] = Student.objects.filter(user__branch_id=branch.id,
                                                               groups_student__isnull=False).exclude(
-                    id__in=deleted_student_ids).exclude(id__in=deleted_new_student_ids
-                                                        ).count()
+                    id__in=deleted_student_ids).exclude(id__in=deleted_new_student_ids).count()
             elif type_name == 'deleted_students':
                 branch_data['count'] = Student.objects.filter(user__branch_id=branch.id,
                                                               groups_student__isnull=True).exclude(
@@ -191,31 +161,62 @@ class GetModelsMixin:
         if model == 'Group':
             from group.models import Group
             if type_name == 'groups':
-                branch_data['count'] = Group.objects.filter(branch_id=branch.id).count()
+                branch_data['count'] = Group.objects.filter(branch_id=branch.id, deleted=False).count()
+                branch_data['deleted_count'] = Group.objects.filter(branch_id=branch.id, deleted=True).count()
         if model == 'Teacher':
             from teachers.models import Teacher
             if type_name == 'teachers':
-                branch_data['count'] = Teacher.objects.filter(user__branch_id=branch.id).count()
+                branch_data['count'] = Teacher.objects.filter(user__branch_id=branch.id, deleted=False).count()
+                branch_data['deleted_count'] = Teacher.objects.filter(user__branch_id=branch.id, deleted=True).count()
         if model == 'Users':
             from user.models import CustomAutoGroup
             if type_name == 'worker':
-                branch_data['count'] = CustomAutoGroup.objects.filter(user__branch_id=branch.id).count()
+                branch_data['count'] = CustomAutoGroup.objects.filter(user__branch_id=branch.id, deleted=False).count()
+                branch_data['deleted_count'] = CustomAutoGroup.objects.filter(user__branch_id=branch.id,
+                                                                              deleted=True).count()
         if model == 'Rooms':
             from rooms.models import Room
             if type_name == 'rooms':
-                branch_data['count'] = Room.objects.filter(branch_id=branch.id).count()
+                branch_data['count'] = Room.objects.filter(branch_id=branch.id, deleted=False).count()
+                branch_data['deleted_count'] = Room.objects.filter(branch_id=branch.id, deleted=True).count()
+        if model == "Lead":
+            from lead.models import Lead
+            branch_data['count'] = Lead.objects.filter(branch_id=branch.id, deleted=False).count()
+            branch_data['deleted_count'] = Lead.objects.filter(branch_id=branch.id, deleted=True).count()
+        from django.db.models import Sum
+
         if model == 'Accounting':
             from encashment.views import OldCapital, Overhead, UserSalaryList, StudentPayment, TeacherSalaryList
+
             if type_name == 'capital':
-                branch_data['count'] = OldCapital.objects.filter(branch_id=branch.id).count()
+                branch_data['count'] = OldCapital.objects.filter(branch_id=branch.id, deleted=False).count()
+                branch_data['summa'] = \
+                OldCapital.objects.filter(branch_id=branch.id, deleted=False).aggregate(total=Sum('price'))[
+                    'total'] or 0
+
             if type_name == 'overhead':
-                branch_data['count'] = Overhead.objects.filter(branch_id=branch.id).count()
+                branch_data['count'] = Overhead.objects.filter(branch_id=branch.id, deleted=False).count()
+                branch_data['summa'] = \
+                Overhead.objects.filter(branch_id=branch.id, deleted=False).aggregate(total=Sum('price'))['total'] or 0
+
             if type_name == 'employeesSalary':
-                branch_data['count'] = UserSalaryList.objects.filter(branch_id=branch.id).count()
+                branch_data['count'] = UserSalaryList.objects.filter(branch_id=branch.id, deleted=False).count()
+                branch_data['summa'] = \
+                UserSalaryList.objects.filter(branch_id=branch.id, deleted=False).aggregate(total=Sum('salary'))[
+                    'total'] or 0
+
             if type_name == 'studentsPayments':
-                branch_data['count'] = StudentPayment.objects.filter(branch_id=branch.id).count()
+                branch_data['count'] = StudentPayment.objects.filter(branch_id=branch.id, deleted=False,
+                                                                     status=False).count()
+                branch_data['summa'] = \
+                StudentPayment.objects.filter(branch_id=branch.id, deleted=False, status=False).aggregate(
+                    total=Sum('payment_sum'))['total'] or 0
+
             if type_name == 'teachersSalary':
-                branch_data['count'] = TeacherSalaryList.objects.filter(branch_id=branch.id).count()
+                branch_data['count'] = TeacherSalaryList.objects.filter(branch_id=branch.id, deleted=False).count()
+                branch_data['summa'] = \
+                TeacherSalaryList.objects.filter(branch_id=branch.id, deleted=False).aggregate(total=Sum('salary'))[
+                    'total'] or 0
 
 
 class IsAdminOrIsSelf(permissions.BasePermission):

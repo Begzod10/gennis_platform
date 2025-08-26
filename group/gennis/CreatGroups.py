@@ -81,22 +81,6 @@ class CreatGroups(QueryParamFilterMixin, generics.ListCreateAPIView):
         return serializer_class(*args, **kwargs)  # corrected to use the right serializer
 
     def create(self, request, *args, **kwargs):
-
-        """
-        Create a new Group instance.
-
-        Args:
-            request: Request object.
-            *args: Additional positional arguments.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Response object with the newly created Group instance data.
-        """
-
-        write_serializer = self.get_serializer(data=request.data, partial=True)  # use self.get_serializer()
-
-    def create(self, request, *args, **kwargs):
         write_serializer = self.get_serializer(data=request.data, partial=True)
 
         write_serializer.is_valid(raise_exception=True)

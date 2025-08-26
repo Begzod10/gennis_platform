@@ -1,7 +1,7 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
+from group.serializers_list.serializers_self import GroupListSerialize2r
 from group.models import Group
 from group.serializers import GroupSerializer, GroupCreateUpdateSerializer
 
@@ -15,7 +15,7 @@ class GroupProfile(generics.RetrieveUpdateAPIView):
     def get_serializer_class(self):
         if self.request.method in ['PUT', 'PATCH']:
             return GroupCreateUpdateSerializer
-        return GroupSerializer
+        return GroupListSerialize2r
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()

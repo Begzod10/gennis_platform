@@ -1,89 +1,66 @@
+from datetime import date
+from datetime import datetime, timedelta
+
 from rest_framework import serializers
 
-from branch.models import Branch
-from branch.serializers import BranchSerializer
-from subjects.models import Subject
-from subjects.serializers import SubjectSerializer
 from .models import Lead, LeadCall
 
 
 class LeadSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=False)
-    name = serializers.CharField(max_length=255, required=False)
-    phone = serializers.CharField(max_length=255, required=False)
-    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())
-    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
+    lead_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = Lead
-        fields = ['id', 'name', 'phone', 'subject', 'branch']
-
-    def create(self, validated_data):
-        subject_data = validated_data.pop('subject')
-        branch_data = validated_data.pop('branch')
-        subject, _ = Subject.objects.get_or_create(**subject_data)
-        branch, _ = Branch.objects.get_or_create(**branch_data)
-
-        lead = Lead.objects.create(
-            subject=subject,
-            branch=branch,
-            **validated_data
-        )
-        return lead
-
-    def update(self, instance, validated_data):
-        subject_data = validated_data.pop('subject', None)
-        branch_data = validated_data.pop('branch', None)
-        if subject_data:
-            subject, _ = Subject.objects.get_or_create(**subject_data)
-            instance.subject = subject
-        if branch_data:
-            branch, _ = Branch.objects.get_or_create(**branch_data)
-            instance.branch = branch
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-
-        instance.save()
-        return instance
+        fields = '__all__'
 
 
 class LeadListSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=False)
-    name = serializers.CharField(max_length=255, required=False)
-    phone = serializers.CharField(max_length=255, required=False)
-    subject = SubjectSerializer(required=False)
-    branch = BranchSerializer(required=False)
+    color = serializers.SerializerMethodField()
+    comment = serializers.SerializerMethodField()
 
     class Meta:
         model = Lead
-        fields = ['id', 'name', 'phone', 'subject', 'branch']
+        fields = "__all__"
+
+    def get_color(self, obj):
+        today = date.today()
+        leadcalls = obj.lead_id_leadCall.all().order_by('-delay')
+
+        target_date = leadcalls.first().delay if leadcalls.exists() else obj.created
+        days_diff = (target_date - today).days
+
+        if days_diff <= 1:
+            return 'green'
+        elif days_diff == 2:
+            return 'yellow'
+        elif days_diff == 3:
+            return 'pink'
+        else:
+            return 'red'
+
+    def get_comment(self, obj):
+        leadcalls = obj.lead_id_leadCall.all().order_by('-created')
+        last_call = leadcalls.first()
+        return last_call.comment if last_call else None
+
 
 
 class LeadCallSerializer(serializers.ModelSerializer):
     lead = serializers.PrimaryKeyRelatedField(queryset=Lead.objects.all())
+    name = serializers.ReadOnlyField(source='lead.name')
+    surname = serializers.ReadOnlyField(source='lead.surname')
+    phone = serializers.ReadOnlyField(source='lead.phone')
 
     class Meta:
         model = LeadCall
-        fields = ['id', 'lead', 'delay', 'comment']
+        fields = ['id', 'lead', 'delay', 'comment', 'status', 'created', 'audio_file', 'other_infos', 'name', 'surname',
+                  'phone', 'is_agreed']
 
     def create(self, validated_data):
-        lead_data = validated_data.pop('lead')
-        lead = Lead.objects.get_or_create(**lead_data)
-        lead_call = LeadCall.objects.create(lead=lead, **validated_data)
+        if 'delay' not in validated_data or validated_data['delay'] is None:
+            validated_data['delay'] = (datetime.now() + timedelta(days=1)).date()
 
-        return lead_call
-
-    def update(self, instance, validated_data):
-        lead_data = validated_data.pop('lead', None)
-        if lead_data:
-            lead_serializer = LeadSerializer(instance=instance.lead, data=lead_data, partial=True)
-            lead_serializer.is_valid(raise_exception=True)
-            lead_serializer.save()
-        instance.delay = validated_data.get('delay', instance.delay)
-        instance.comment = validated_data.get('comment', instance.comment)
-        instance.save()
-
-        return instance
+        return LeadCall.objects.create(**validated_data)
 
 
 class LeadCallListSerializer(serializers.ModelSerializer):
@@ -91,4 +68,4 @@ class LeadCallListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LeadCall
-        fields = ['id', 'lead', 'delay', 'comment']
+        fields = ['id', 'lead', 'delay', 'comment', 'status']

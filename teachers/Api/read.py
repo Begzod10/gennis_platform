@@ -1,5 +1,5 @@
 from django.db.models.query import QuerySet
-from rest_framework import generics
+from rest_framework import generics,filters
 from rest_framework import status
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
@@ -7,13 +7,18 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from permissions.response import QueryParamFilterMixin
-from teachers.models import TeacherGroupStatistics, Teacher, TeacherSalaryList, TeacherSalary
+from teachers.models import TeacherGroupStatistics, Teacher, TeacherSalaryList, TeacherSalary, TeacherAttendance
 from teachers.serializer.lists import ActiveListTeacherSerializer, TeacherSalaryMonthlyListSerializer, \
     TeacherSalaryForOneMonthListSerializer, calc_teacher_salary
 from teachers.serializers import (
     TeacherSerializerRead, TeacherSalaryListReadSerializers, TeacherGroupStatisticsReadSerializers,
     TeacherSalaryReadSerializers
 )
+from branch.models import Branch
+from location.models import Location
+from django.utils.dateparse import parse_datetime
+from django.utils import timezone
+from datetime import datetime
 
 
 class TeacherGroupStatisticsListView(generics.ListAPIView):
@@ -44,6 +49,8 @@ class TeacherListView(QueryParamFilterMixin, generics.ListAPIView):
     }
     queryset = Teacher.objects.all()
     serializer_class = ActiveListTeacherSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['user__name', 'user__surname', 'user__username']
 
     def get_queryset(self):
         queryset = Teacher.objects.all()
@@ -72,16 +79,14 @@ class TeacherSalaryListAPIView(QueryParamFilterMixin, generics.ListAPIView):
         'status': 'deleted',
         'branch': 'branch',
         'teacher_salary': 'salary_id',
-
     }
-    queryset = TeacherSalaryList.objects.all()
     serializer_class = TeacherSalaryListReadSerializers
+    search_fields = ['teacher__user__name', 'teacher__user__surname', 'teacher__user__username']
+    filter_backends = [filters.SearchFilter]
 
-    def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.queryset)
-        data = self.get_serializer(queryset, many=True).data
-
-        return Response(data)
+    def get_queryset(self):
+        queryset = TeacherSalaryList.objects.all()
+        return self.filter_queryset(queryset)
 
 
 class TeacherSalaryDetailAPIView(generics.RetrieveAPIView):
@@ -224,3 +229,28 @@ class TeacherSalaryListDetailView2(QueryParamFilterMixin, generics.RetrieveAPIVi
             return queryset2
         except TeacherSalaryList.DoesNotExist:
             raise NotFound('UserSalary not found for the given user_id')
+
+
+class TeacherFaceIdView(APIView):
+    def post(self, request, *args, **kwargs):
+        face_id = request.data['face_id']
+        location_name = request.data['location_name']
+        date_str = request.data['date']  # e.g., "2025-08-15 14:00"
+
+        # Parse into datetime object
+        date_obj = parse_datetime(date_str)
+
+        tz = timezone.get_current_timezone()
+
+        if timezone.is_naive(date_obj):
+            # No timezone -> assume it's Asia/Tashkent
+            date_obj = timezone.make_aware(date_obj, tz)
+        else:
+            # Already has timezone -> convert to Asia/Tashkent
+            date_obj = date_obj.astimezone(tz)
+        location = Location.objects.get(name=location_name)
+        branch = Branch.objects.get(location=location, name=location_name)
+        teacher = Teacher.objects.get(face_id=face_id, user__branch_id=branch.id)
+
+        teacher_attendance, created = TeacherAttendance.objects.get_or_create(teacher=teacher, day=date_obj)
+        return Response({'face_id': teacher.face_id}, status=status.HTTP_200_OK)

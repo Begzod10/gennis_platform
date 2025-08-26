@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from flows.models import Flow
 from ...models import ClassTimeTable
 from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTableReadSerializers
-
+from teachers.functions.school.CalculateTeacherSalary import teacher_salary_school
 
 
 class UpdateClassTimeTable(generics.RetrieveUpdateDestroyAPIView):

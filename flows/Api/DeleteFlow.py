@@ -1,9 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-
 from flows.models import Flow
-
 
 
 class DeleteFlow(APIView):
@@ -13,15 +11,18 @@ class DeleteFlow(APIView):
         except Flow.DoesNotExist:
             return Response({'error': 'Flow not found'}, status=404)
 
-        students = flow.students.all()
-        for student in students:
-            if flow.classtimetable_set.all():
-                for class_time_table in flow.classtimetable_set.all():
-                    student.class_time_table.remove(class_time_table)
-                    if flow.teacher is not None:
-                        flow.teacher.classtimetable_set.remove(class_time_table)
-                    class_time_table.delete()
-            flow.students.remove(student)
+        for class_time_table in flow.classtimetable_set.all():
+            # Avval timetable o‘chirilsin
+            class_time_table.delete()
+
+        # Keyin studentlarni detach qilamiz
+        flow.students.clear()
+
+        # Agar teacher bog‘langan bo‘lsa, timetable aloqalarini olib tashlash
+        if flow.teacher:
+            flow.teacher.classtimetable_set.clear()
+
+        # Oxirida flow o‘chirilsin
         flow.delete()
 
-        return Response({'msg': f'{flow.name} patoki ochirildi'}, status=200)
+        return Response({'msg': f'{flow.name} patoki o‘chirildi'}, status=200)

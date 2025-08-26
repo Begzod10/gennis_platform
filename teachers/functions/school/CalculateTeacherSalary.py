@@ -7,6 +7,7 @@ from school_time_table.models import ClassTimeTable
 from teachers.models import TeacherSalary, Teacher
 
 from datetime import date, timedelta
+from django.db.models import Count
 
 
 def working_days_in_month(year, month):
@@ -24,34 +25,59 @@ def working_days_in_month(year, month):
 
 def calculate_teacher_salary(teacher):
     today = datetime.now()
+    teacher_get = Teacher.objects.get(user=teacher.user)
+    if teacher_get:
+        # old_month_date = datetime(today.year, today.month - 1, 1)
+        # old_exist_salary = TeacherSalary.objects.filter(teacher=teacher, month_date=old_month_date).exists()
+        # if not old_exist_salary:
+        #     if teacher.teacher_salary_type is not None:
+        #         salary, _ = TeacherSalary.objects.get_or_create(
+        #             teacher=teacher,
+        #             month_date=old_month_date,
+        #             defaults={
+        #                 'total_salary': teacher.teacher_salary_type.salary,
+        #                 'remaining_salary': teacher.teacher_salary_type.salary,
+        #                 'taken_salary': 0,
+        #                 'total_black_salary': 0,
+        #                 'percentage': 50,
+        #             }
+        #         )
+        month_date = datetime(today.year, today.month, 1)
+        exist_salary = TeacherSalary.objects.filter(teacher=teacher, month_date=month_date).exists()
+        if not exist_salary:
+            if teacher.teacher_salary_type is not None:
+                salary, _ = TeacherSalary.objects.get_or_create(
+                    teacher=teacher,
+                    month_date=month_date,
+                    defaults={
+                        'total_salary': teacher.teacher_salary_type.salary,
+                        'remaining_salary': teacher.teacher_salary_type.salary,
+                        'taken_salary': 0,
+                        'total_black_salary': 0,
+                        'percentage': 50,
+                    }
+                )
+        if teacher.teacher_salary_type and teacher.working_hours:
+            if int(teacher.working_hours) != 0:
+                dupes = TeacherSalary.objects.values('teacher', 'month_date') \
+                    .annotate(count=Count('id')).filter(count__gt=1)
 
-    month_date = datetime(today.year, today.month, 1)
-    exist_salary = TeacherSalary.objects.filter(teacher=teacher, month_date=month_date).exists()
-    if not exist_salary:
-        if teacher.teacher_salary_type is not None:
-            salary, _ = TeacherSalary.objects.get_or_create(
-                teacher=teacher,
-                month_date=month_date,
-                defaults={
-                    'total_salary': teacher.teacher_salary_type.salary,
-                    'remaining_salary': teacher.teacher_salary_type.salary,
-                    'taken_salary': 0,
-                    'total_black_salary': 0,
-                    'percentage': 50,
-                }
-            )
-    if teacher.teacher_salary_type:
-        salary_month = TeacherSalary.objects.get(teacher=teacher, month_date=month_date)
-        worked_hours = working_days_in_month(today.year, today.month)
-        stavka = teacher.teacher_salary_type.salary
-        default_hours = 20
-        salary = (worked_hours / default_hours) * stavka
-        ustama = (salary / 100) * teacher.salary_percentage
-        salary = salary + ustama
-        salary_month.class_salary = teacher.class_salary
-        salary_month.total_salary = salary + teacher.class_salary
-        salary_month.remaining_salary = (salary + teacher.class_salary) - salary_month.taken_salary
-        salary_month.worked_hours = worked_hours
+                for d in dupes:
+                    salaries = TeacherSalary.objects.filter(teacher=d['teacher'], month_date=d['month_date'])
+                    for salary in salaries[1:]:  # keep one, delete the rest
+                        salary.delete()
+                salary_month = TeacherSalary.objects.get(teacher=teacher, month_date=month_date)
+                worked_hours = working_days_in_month(today.year, today.month)
+                stavka = teacher.teacher_salary_type.salary
+
+                salary = (worked_hours / int(teacher.working_hours)) * stavka
+                ustama = (salary / 100) * teacher.salary_percentage
+                salary = salary + ustama
+                salary_month.class_salary = teacher.class_salary
+                salary_month.total_salary = salary + teacher.class_salary
+                salary_month.remaining_salary = (salary + teacher.class_salary) - salary_month.taken_salary
+                salary_month.worked_hours = worked_hours
+                salary_month.save()
 
 
 def teacher_salary_school(salary_id=None, worked_hours=0, class_salary=None, type_salary=False):
@@ -62,14 +88,12 @@ def teacher_salary_school(salary_id=None, worked_hours=0, class_salary=None, typ
 
     if type_salary:
         stavka = teacher.teacher_salary_type.salary
-        default_hours = 20
-        salary = (total_days / default_hours) * stavka
+        salary = (total_days / int(teacher.working_hours)) * stavka
         ustama = (salary / 100) * teacher.salary_percentage
         salary = salary + ustama
         salary_month.total_salary = salary + teacher.class_salary
         salary_month.remaining_salary = (salary + teacher.class_salary) - salary_month.taken_salary
         salary_month.worked_hours = worked_hours
-
     else:
         salary_month.total_salary = class_salary
         salary_month.remaining_salary = class_salary - salary_month.taken_salary

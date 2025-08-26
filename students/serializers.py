@@ -80,6 +80,7 @@ class GroupSerializerStudents(serializers.ModelSerializer):
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
                   'branch', 'language', 'level', 'subject', 'teacher', 'system', 'class_number', 'color',
                   'course_types']
+
     def get_name(self, obj):
         if obj.name:
             return obj.name
@@ -100,7 +101,7 @@ def get_remaining_debt_for_student(student_id):
     group = student.groups_student.first()
     if group:
         branch_name = student.user.branch.name
-        if branch_name == "Sergeli":
+        if branch_name == "Sergeli" or branch_name == "Chirchiq":
             attendances = AttendancePerMonth.objects.filter(
                 student_id=student_id
             ).exclude(
@@ -113,6 +114,10 @@ def get_remaining_debt_for_student(student_id):
                 month_date__month=12, month_date__year=2024
             ).exclude(
                 month_date__month=1, month_date__year=2025
+            ).exclude(
+                month_date__month=2, month_date__year=2025
+            ).exclude(
+                month_date__month=3, month_date__year=2025
             )
         else:
             attendances = AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id).all()
@@ -126,7 +131,7 @@ def get_remaining_debt_for_student(student_id):
                 month.save()
             month.remaining_debt = month.total_debt - (month.payment + month.discount)
             month.save()
-        if branch_name == "Sergeli":
+        if branch_name == "Sergeli" or branch_name == "Chirchiq":
             remaining_debt_sum = AttendancePerMonth.objects.filter(
                 student_id=student_id,
                 group_id=group.id,
@@ -141,6 +146,10 @@ def get_remaining_debt_for_student(student_id):
                 month_date__month=12, month_date__year=2024
             ).exclude(
                 month_date__month=1, month_date__year=2025
+            ).exclude(
+                month_date__month=2, month_date__year=2025
+            ).exclude(
+                month_date__month=3, month_date__year=2025
             ).aggregate(total_remaining_debt=Sum('remaining_debt'))
         else:
             remaining_debt_sum = AttendancePerMonth.objects.filter(
@@ -248,7 +257,7 @@ class StudentListSerializer(serializers.ModelSerializer):
     def get_contract(self, obj):
         contracts = obj.contract_student_id.all()
         if contracts.exists():
-            contract_list = [{"url": contract.contract.url} for contract in contracts]
+            contract_list = [{"url": contract.contract.url if contract.contract else None} for contract in contracts]
         else:
             contract_list = []
         return contract_list
@@ -473,3 +482,20 @@ class DeletedStudentListSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeletedStudent
         fields = ['id', 'student', 'group', 'teacher', 'group_reason', 'deleted_date', 'comment']
+
+
+class StudentClassNumberSerializer(serializers.ModelSerializer):
+    students = serializers.SerializerMethodField(required=False)
+
+    class Meta:
+        model = Student
+        fields = ['class_number', 'students']
+
+    def update(self, instance, validated_data):
+        students = validated_data.pop('students', None)
+        for student in students:
+            get_student = Student.objects.get(id=student)
+            get_student.class_number = instance
+            get_student.save()
+
+        return {"msg": "O'quvchilar sinf raqami o'zgartirildi"}

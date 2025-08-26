@@ -3,7 +3,6 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from permissions.response import CustomResponseMixin
 from teachers.models import Teacher, TeacherSalaryType
 from teachers.models import TeacherSalaryList, TeacherSalary

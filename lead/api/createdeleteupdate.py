@@ -1,22 +1,51 @@
-from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
+import asyncio
+from datetime import datetime
 
-from lead.models import Lead, LeadCall
+import requests
+from asgiref.sync import sync_to_async
+from django.core.files.base import ContentFile
+from rest_framework import generics
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from lead.models import Lead, LeadCall, LeadFromRecommendation
+from lead.models import OperatorLead
 from lead.serializers import LeadSerializer, LeadCallSerializer
+from lead.utils import calculate_leadcall_status_stats
+from user.models import CustomUser
+from vats.vats_process import VatsProcess, wait_until_call_finished
 
 
 class LeadCreateView(generics.CreateAPIView):
-    permission_classes = [IsAuthenticated]
-
     queryset = Lead.objects.all()
     serializer_class = LeadSerializer
 
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+        operator_id = data.pop('operator', None)  # Remove operator before passing to serializer
 
-class LeadUpdateView(generics.UpdateAPIView):
-    permission_classes = [IsAuthenticated]
+        existing_lead = Lead.objects.filter(phone=data.get('phone')).first()
+        if existing_lead:
+            return Response({'message': "lead already exists"}, status=status.HTTP_400_BAD_REQUEST)
 
-    queryset = Lead.objects.all()
-    serializer_class = LeadSerializer
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        if operator_id:
+            try:
+                operator = CustomUser.objects.get(id=operator_id, groups__name='operator')
+                OperatorLead.objects.create(
+                    lead=serializer.instance,
+                    operator=operator,
+                    date=datetime.today().date()
+                )
+            except CustomUser.DoesNotExist:
+                return Response({'message': 'Invalid operator ID'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'message': "created"}, status=status.HTTP_201_CREATED)
 
 
 class LeadDestroyView(generics.DestroyAPIView):
@@ -25,23 +54,138 @@ class LeadDestroyView(generics.DestroyAPIView):
     queryset = Lead.objects.all()
     serializer_class = LeadSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.deleted = True
+        lead_cals = LeadCall.objects.filter(lead=instance).all()
+        for lead_cal in lead_cals:
+            lead_cal.deleted = True
+            lead_cal.save()
+        instance.save()
+        today = datetime.today().date()
+        branch_id = request.user.branch_id
+        operator_lead = OperatorLead.objects.filter(operator=request.user, date=today)
+        stats, leadcall_today_ids = calculate_leadcall_status_stats(today, requests=request, branch_id=branch_id,
+                                                                    operator_lead=operator_lead)
+        return Response({'message': "deleted", **stats}, status=status.HTTP_200_OK)
+
 
 class LeadCallCreateView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
-
     queryset = LeadCall.objects.all()
     serializer_class = LeadCallSerializer
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        lead_call = serializer.save()
+        lead_call.branch_id = request.user.branch_id
+        lead_call.save()
+        today = datetime.today().date()
+        branch_id = request.user.branch_id
+        operator_lead = OperatorLead.objects.filter(operator=request.user, date=today)
+        stats, leadcall_today_ids = calculate_leadcall_status_stats(today, requests=request, branch_id=branch_id,
+                                                                    operator_lead=operator_lead)
+        data = request.data
 
-class LeadCallUpdateView(generics.UpdateAPIView):
+        if (data["is_agreed"]):
+            from user.models import CustomUser
+            lead = Lead.objects.filter(pk=data['lead']).first()
+            lead.finished = True
+            lead.save()
+
+            from students.models import Student
+
+            # Define a unique identifier (e.g. name + surname + branch + phone)
+            existing_user = CustomUser.objects.filter(
+                name=lead.name,
+                surname=lead.surname,
+                branch_id=lead.branch_id,
+                comment=lead_call.comment
+            ).first()
+
+            if not existing_user:
+                user_create = CustomUser.objects.create(
+                    name=lead.name,
+                    surname=lead.surname,
+                    branch_id=lead.branch_id,
+                    comment=lead_call.comment
+                )
+                user_create.set_password('12345678')
+                user_create.save()
+            else:
+                user_create = existing_user
+
+            # Check if a Student already exists for this user
+            student_exists = Student.objects.filter(user=user_create).exists()
+
+            if not student_exists:
+                student = Student.objects.create(user=user_create)
+
+        return Response({
+            "data": self.get_serializer(lead_call).data,
+            **stats
+        }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def lead_call_ring(request):
+    async def make_call():
+        vats = VatsProcess()
+
+        get_lead = await sync_to_async(Lead.objects.filter(pk=request.data['lead_id']).first)()
+
+        call_response = await vats.call_client('tis_sergeli', "993656845")
+        callid = call_response.get('callid')
+
+        final_info = await wait_until_call_finished(vats, callid)
+        if final_info['status'] == 'success':
+            url = final_info['record']
+
+            response = requests.get(url)
+            audio_file_field = None
+
+            if response.status_code == 200:
+                file_name = f"call_record_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp3"
+                audio_file_field = ContentFile(response.content, name=file_name)
+                print("File downloaded and ready to save")
+            else:
+                print("Failed to download. Status code:", response.status_code)
+            lead_call = await sync_to_async(LeadCall.objects.create)(
+                lead=get_lead,
+                comment=request.data['comment'] if 'comment' in request.data else '',
+                audio_file=audio_file_field,
+                other_infos=final_info
+            )
+            serialized = LeadCallSerializer(lead_call)
+            return {
+                "call_result": final_info,
+                "lead": serialized.data,
+                "success": True
+            }
+        else:
+            return {
+                "call_result": final_info,
+                "success": False
+            }
+
+    result = asyncio.run(make_call())
+    return Response({"data": result}, status=status.HTTP_200_OK)
+
+
+class LeadCreateWithTwo(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
+    queryset = Lead.objects.all()
+    serializer_class = LeadSerializer
 
-    queryset = LeadCall.objects.all()
-    serializer_class = LeadCallSerializer
+    def create(self, request, *args, **kwargs):
+        lead_id = request.data.pop('lead_id', None)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        lead = serializer.save()
+        lead.save()
+        LeadFromRecommendation.objects.create(lead_id=lead_id, lead2=lead)
 
-
-class LeadCallDestroyView(generics.DestroyAPIView):
-    permission_classes = [IsAuthenticated]
-
-    queryset = LeadCall.objects.all()
-    serializer_class = LeadCallSerializer
+        return Response({
+            "data": self.get_serializer(lead).data,
+        }, status=status.HTTP_200_OK)

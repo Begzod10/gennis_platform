@@ -3,20 +3,13 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-
-
 from ...models import Hours
 from ...serializers import HoursSerializers
 
 
-
 class HourListCreateView(generics.ListCreateAPIView):
-    queryset = Hours.objects.all().order_by('order')
+    queryset = Hours.objects.order_by('order').all()
     serializer_class = HoursSerializers
-
-
-
-
 
 
 class HoursView(APIView):
@@ -35,4 +28,3 @@ class HoursView(APIView):
         }
 
         return Response(result)
-

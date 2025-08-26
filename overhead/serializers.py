@@ -1,3 +1,4 @@
+import pprint
 from datetime import datetime
 
 from rest_framework import serializers
@@ -14,19 +15,19 @@ class OverheadSerializerCreate(serializers.ModelSerializer):
     payment = serializers.PrimaryKeyRelatedField(queryset=PaymentTypes.objects.all())
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
     type = serializers.PrimaryKeyRelatedField(queryset=OverheadType.objects.all(), allow_null=True, required=False)
-    day = serializers.CharField(required=False, write_only=True)
-    month = serializers.CharField(required=False, write_only=True)
-    created = serializers.DateField(input_formats=["%Y-%m-%d"], required=True)
+
+
 
     class Meta:
         model = Overhead
-        fields = ['id', 'name', 'payment', 'price', 'branch', 'type', 'day', 'month', 'created']
+        fields = ['id', 'name', 'payment', 'price', 'branch', 'type', 'created']
 
     def create(self, validated_data):
-        if not validated_data.get('name') and validated_data.get('type'):
-            validated_data['name'] = validated_data['type'].name
+        overhead = Overhead.objects.create(**validated_data)
+        return overhead
 
-        return super().create(validated_data)
+    def get_created(self, obj):
+        return obj.created.strftime('%Y-%m-%d')
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)

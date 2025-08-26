@@ -1,12 +1,7 @@
-import pprint
-from datetime import datetime
-
 from rest_framework import serializers
-from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
-from teachers.models import Teacher, TeacherHistoryGroups
-from group.models import Group, GroupReason, CourseTypes
-from students.serializer.lists import UserSerializer
-from teachers.serializers import TeacherSerializer
+
+from group.models import Group
+from teachers.models import Teacher
 
 
 class AddClassesSerializers(serializers.ModelSerializer):
@@ -36,13 +31,12 @@ class GroupListSerializer(serializers.ModelSerializer):
     teacher = serializers.SerializerMethodField(required=False)
     count = serializers.SerializerMethodField(required=False)
     name = serializers.SerializerMethodField(required=False)
-    students = serializers.SerializerMethodField(required=False)
     class_number = serializers.CharField(required=False, source='class_number.number')
     color = serializers.CharField(required=False, source='color.name')
 
     class Meta:
         model = Group
-        fields = ['id', 'teacher', "status", "name", "count", "students", "class_number", "color"]
+        fields = ['id', 'teacher', "status", "name", "count", "class_number", "color", 'price']
 
     def get_teacher(self, obj):
         name = ""
@@ -60,9 +54,48 @@ class GroupListSerializer(serializers.ModelSerializer):
         else:
             return f"{obj.class_number.number}-{obj.color.name}"
 
+    # def get_students(self, obj):
+    #     students = obj.students.all()
+    #     list_id = []
+    #     for i in students:
+    #         list_id.append(i.user)
+    #     return UserSerializer(list_id, many=True).data
+
+
+class GroupListSerialize2r(serializers.ModelSerializer):
+    teacher = serializers.SerializerMethodField(required=False)
+    count = serializers.SerializerMethodField(required=False)
+    name = serializers.SerializerMethodField(required=False)
+    class_number = serializers.CharField(required=False, source='class_number.number')
+    color = serializers.CharField(required=False, source='color.name')
+    students = serializers.SerializerMethodField(required=False)
+    language = serializers.SerializerMethodField(required=False)
+
+    class Meta:
+        model = Group
+        fields = ['id', 'teacher', "status", "name", "count", "class_number", "color", 'price', "students", "language"]
+
+    def get_teacher(self, obj):
+        name = ""
+        for i in obj.teacher.all():
+            name = f"{i.user.name} {i.user.surname}"
+
+        return name
+
+    def get_count(self, obj):
+        return obj.students.count()
+
+    def get_name(self, obj):
+        if obj.name:
+            return obj.name
+        else:
+            return f"{obj.class_number.number}-{obj.color.name}"
+
+    def get_language(self, obj):
+        return {"id": obj.language.id, "name": obj.language.name}
+
     def get_students(self, obj):
         students = obj.students.all()
-        list_id = []
-        for i in students:
-            list_id.append(i.user)
-        return UserSerializer(list_id, many=True).data
+        from students.serializer.lists import ActiveListSerializer
+
+        return ActiveListSerializer(students, many=True).data

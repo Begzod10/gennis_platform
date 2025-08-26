@@ -8,7 +8,6 @@ from time_table.serializers import GroupTimeTableReadSerializer, GroupTimeTableC
 
 class CreateGroupTimeTable(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
-
     queryset = GroupTimeTable.objects.all()
     serializer_class = GroupTimeTableCreateUpdateSerializer
 
@@ -64,4 +63,3 @@ class CreateGroupTimeTable(generics.ListCreateAPIView):
 #     serializer = GroupTimeTableReadSerializer(data=time_table, many=True)
 #     serializer.is_valid()
 #     return Response({"data": serializer.data})
-

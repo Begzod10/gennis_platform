@@ -3,22 +3,25 @@ import requests
 from django.db.models.query import QuerySet as queryset
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import generics
+from rest_framework import generics, status,filters
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from user.seriliazer.employer import EmployerSerializer
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from gennis_platform import settings
 from gennis_platform.settings import classroom_server
 from permissions.response import IsAdminOrIsSelf
 from permissions.response import QueryParamFilterMixin
 from subjects.serializers import SubjectSerializer, Subject
 from user.models import CustomUser, UserSalaryList
-from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalary, CustomAutoGroup, \
-    UserSalarySerializersRead
+from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalary, CustomAutoGroup
+from user.seriliazer.employer import EmployerSerializer
+from user.seriliazer.employer import UserForOneMonthListSerializer, EmployerSalaryMonths
 from ..serialziers_list import UsersWithJobSerializers
-from user.seriliazer.employer import UserForOneMonthListSerializer,EmployerSalaryMonths
+from user.cron import create_user_salary
+
+
 class UserListCreateView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -48,6 +51,8 @@ class UserSalaryListListView(QueryParamFilterMixin, generics.ListAPIView):
         'branch': 'branch_id',
     }
     permission_classes = [IsAuthenticated]
+    search_fields = ['user__name', 'user__surname', 'user__username']
+    filter_backends = [filters.SearchFilter]
 
     queryset = UserSalaryList.objects.filter(deleted=False).all()
     serializer_class = UserSalaryListSerializersRead
@@ -58,14 +63,11 @@ class DeletedUserSalaryListListView(QueryParamFilterMixin, generics.ListAPIView)
         'branch': 'branch_id',
     }
     permission_classes = [IsAuthenticated]
-
-    queryset = UserSalaryList.objects.filter(deleted=True).all()
     serializer_class = UserSalaryListSerializersRead
 
-    def get(self, request, *args, **kwargs):
-        queryset = UserSalaryList.objects.filter(deleted=True).all()
-        serializer = UserSalaryListSerializersRead(queryset, many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        queryset = UserSalaryList.objects.filter(deleted=True)
+        return self.filter_queryset(queryset)
 
 
 class UserSalaryListDetailView(QueryParamFilterMixin, generics.RetrieveAPIView):
@@ -78,6 +80,15 @@ class UserSalaryListDetailView(QueryParamFilterMixin, generics.RetrieveAPIView):
     serializer_class = UserForOneMonthListSerializer
 
     def retrieve(self, request, *args, **kwargs):
+        get_salary = UserSalary.objects.get(id=self.kwargs.get('pk'))
+        salaries = UserSalaryList.objects.filter(user_salary_id=get_salary.id, deleted=False).all()
+        total_salary = 0
+        for sal in salaries:
+            total_salary += sal.salary
+        remaining_salary = get_salary.total_salary - total_salary
+        get_salary.remaining_salary = remaining_salary
+        get_salary.taken_salary = total_salary
+        get_salary.save()
         user_salary_list = self.filter_queryset(self.get_object())
         user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
         return Response(user_salary_list_data)
@@ -116,6 +127,19 @@ class UserMe(APIView):
         return Response(serializer.data)
 
 
+class EmployerDeleteView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+
+    queryset = CustomAutoGroup.objects.all()
+    serializer_class = EmployerSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.deleted = True
+        instance.save()
+        return Response(status=status.HTTP_200_OK, data={"msg": "Employer deleted successfully"})
+
+
 class EmployeersListView(QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -126,7 +150,7 @@ class EmployeersListView(QueryParamFilterMixin, generics.ListAPIView):
         'job': 'group__id'
     }
 
-    queryset = CustomAutoGroup.objects.all()
+    queryset = CustomAutoGroup.objects.filter(deleted=False).all()
     serializer_class = EmployerSerializer
 
 
@@ -134,7 +158,7 @@ class EmployerRetrieveView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     serializer_class = Employeers
-    queryset = CustomAutoGroup.objects.all()
+    queryset = CustomAutoGroup.objects.filter(deleted=False).all()
 
     def get_object(self):
         from user.cron import create_user_salary
@@ -152,6 +176,10 @@ class UserSalaryMonthView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
 
         user_salary_list = self.get_object()
+
+        for user_salary in user_salary_list:
+            user_salary.remaining_salary = user_salary.total_salary - user_salary.taken_salary
+            user_salary.save()
         if isinstance(user_salary_list, queryset):
             user_salary_list_data = self.get_serializer(user_salary_list, many=True).data
         else:

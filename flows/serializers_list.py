@@ -1,14 +1,6 @@
 from rest_framework import serializers
 
-from branch.models import Branch
-from branch.serializers import BranchSerializer
-from students.models import Student
-from students.serializers import StudentSerializer, get_remaining_debt_for_student
-from subjects.models import Subject, SubjectLevel
-from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
-from teachers.models import Teacher
-from teachers.serializers import TeacherSerializer
-from .functions.flowClasses import flow_classes
+from students.serializers import get_remaining_debt_for_student
 from .models import Flow
 
 
@@ -50,10 +42,18 @@ class FlowsSerializerProfile(serializers.ModelSerializer):
 
     def get_teacher(self, obj):
         return {
+            "id":obj.teacher.id,
             'name': obj.teacher.user.name,
             'surname': obj.teacher.user.surname,
-            'subject': obj.teacher.subject.name,
-            'photo': obj.teacher.user.profile_img if obj.teacher.user.profile_img else None
+            'subject': [
+                {
+                    "id": subject.id,
+                    "name": subject.name
+                }
+                for subject in obj.teacher.subject.all()
+            ],
+
+            'photo': obj.teacher.user.profile_img.url if obj.teacher.user.profile_img else None
         }
 
     def get_students(self, obj):
@@ -65,7 +65,7 @@ class FlowsSerializerProfile(serializers.ModelSerializer):
                 'phone': student.user.phone,
                 'parents_phone': student.parents_number,
                 'balance': self.get_debt(student),
-                'img': student.user.profile_img if student.user.profile_img else None
+                'img': student.user.profile_img.url if student.user.profile_img else None
             }
             for student in obj.students.all()
         ]

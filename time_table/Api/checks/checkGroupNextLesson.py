@@ -1,18 +1,17 @@
 from datetime import datetime
-from rest_framework import generics
+
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from flows.models import Flow
-from school_time_table.models import ClassTimeTable, Hours
-from time_table.models import WeekDays
 from group.models import Group
+from time_table.models import WeekDays
 
 
 class CheckGroupNextLesson(APIView):
     def get(self, request):
 
-        group = Group.objects.get(pk=self.request.query_params.get('id'))
+        group = get_object_or_404(Group, pk=self.request.query_params.get('id'))
         weekday_name = datetime.today().strftime('%A')
         week_day = WeekDays.objects.get(name_en=weekday_name)
         if not group.group_time_table.all():
@@ -36,6 +35,5 @@ class CheckGroupNextLesson(APIView):
 
         if not next_lesson:
             return Response({"msg": "No next lesson"})
-        return Response(
-            {'room': next_lesson.room.name, 'hour': next_lesson.start_time.strftime('%H:%M'),
-             'day': next_lesson.week.name_uz})
+        return Response({'room': next_lesson.room.name, 'hour': next_lesson.start_time.strftime('%H:%M'),
+                         'day': next_lesson.week.name_uz})

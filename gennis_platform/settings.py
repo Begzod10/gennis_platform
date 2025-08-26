@@ -1,21 +1,24 @@
 import os
 from datetime import timedelta
 from pathlib import Path
+from dotenv import load_dotenv
 
+load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-8!t!6$g#(34ro((m-7t$#(zek1=b=y2ltslop@w71$^6)wb_rc'
+SECRET_KEY = os.getenv('SECRET_KEY')
+from celery.schedules import crontab
 
-# classroom_server = 'https://classroom.gennis.uz'
-gennis_server = 'https://gennis.uz'
-classroom_server = 'http://192.168.1.61:5001/api'
-# gennis_server = 'http://192.168.1.61:5002'
+classroom_server = os.getenv('CLASSROOM_SERVER')
+gennis_server = os.getenv('GENNIS_SERVER')
 
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = ['school.gennis.uz', 'localhost', '127.0.0.1']
 
 INSTALLED_APPS = [
+    'unfold',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -90,16 +93,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'gennis_platform.wsgi.application'
 
-
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'gennis_platform'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', '123'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
@@ -111,7 +112,12 @@ AUTH_USER_MODEL = 'user.CustomUser'
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
+    # 'PAGE_SIZE': 10,  # number of items per page
+
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
@@ -127,14 +133,36 @@ SIMPLE_JWT = {
     'USER_ID_CLAIM': 'user_id',
 }
 
+CELERY_BEAT_SCHEDULE = {
+    "update-students-class-in-august": {
+        "task": "group.tasks.update_class_task",
+        "schedule": crontab(minute=0, hour=0, day_of_month="10", month_of_year="8"),
+    },
+    # "update-students-debts": {
+    #     "task": "students.tasks.update_debts_task",
+    #     # "schedule": crontab(minute=0, hour=0, day_of_month="20", month_of_year="8"),
+    #     "schedule": crontab(minute="*/1"),
+    # },
+    "update-school-time-table": {
+        "task": "school_time_table.tasks.update_school_time_table_task",
+        "schedule": crontab(minute=0, hour=0, day_of_week="saturday")
+        # "schedule": crontab(minute="*/1"),
+    }
+}
+
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Tashkent'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-STATIC_URL = '/static/'
-STATIC_ROOT = '/home/ubuntu/gennis_website/gennis_platform/static/'
+STATIC_URL = '/static_admin/'
+STATIC_ROOT = BASE_DIR / 'static_admin'
+STATICFILES_DIRS = [BASE_DIR / "staticfiles"]
+
 MEDIA_URL = '/media/'
 
 MEDIA_ROOT = BASE_DIR / 'media/'

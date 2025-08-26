@@ -21,6 +21,8 @@ from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayme
 
 
 class StudentPaymentListSerializerTest(serializers.ModelSerializer):
+    student_id = serializers.CharField(source='student.id',
+                                       read_only=True)
     student_name = serializers.CharField(source='student.user.name',
                                          read_only=True)
     student_surname = serializers.CharField(source='student.user.surname',
@@ -33,4 +35,4 @@ class StudentPaymentListSerializerTest(serializers.ModelSerializer):
     class Meta:
         model = StudentPayment
         fields = ['id', 'student_name', 'student_surname', 'payment_type_name', 'payment_sum', 'status', 'added_data',
-                  'date']
+                  'date',"student_id"]
