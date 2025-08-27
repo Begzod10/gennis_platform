@@ -9,6 +9,7 @@ from .Api.TimeTable.UpdateClassTimeTable import UpdateClassTimeTable, UpdateClas
 from .Api.TimeTable.DeleteItemClassTimeTable import DeleteItemClassTimeTable
 from .Api.TimeTable.checks.checkNextLesson import CheckNextLesson
 from .views import TimeTableAPIView
+
 urlpatterns = [
     path('hours-list-create/', HourListCreateView.as_view(), name='hours-list-create'),
     path('hours-list-for-type/', HoursView.as_view(), name='hours-list-for-type'),
