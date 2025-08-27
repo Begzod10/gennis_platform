@@ -113,20 +113,20 @@ class UserSerializerWrite(serializers.ModelSerializer):
         # self.send_data(user_data)
         return user
 
-    def validate(self, attrs):
-        username = attrs.get("username")
-        password = attrs.get("password")
-
-        try:
-            user = CustomUser.objects.get(username=username)
-        except CustomUser.DoesNotExist:
-            raise serializers.ValidationError({"detail": "Foydalanuvchi topilmadi yoki parol noto‘g‘ri."})
-
-        if not user.check_password(password):
-            raise serializers.ValidationError({"detail": "Foydalanuvchi topilmadi yoki parol noto‘g‘ri."})
-
-        attrs["user"] = user
-        return attrs
+    # def validate(self, attrs):
+    #     username = attrs.get("username")
+    #     password = attrs.get("password")
+    #
+    #     try:
+    #         user = CustomUser.objects.get(username=username)
+    #     except CustomUser.DoesNotExist:
+    #         raise serializers.ValidationError({"detail": "Foydalanuvchi topilmadi yoki parol noto‘g‘ri."})
+    #
+    #     if not user.check_password(password):
+    #         raise serializers.ValidationError({"detail": "Foydalanuvchi topilmadi yoki parol noto‘g‘ri."})
+    #
+    #     attrs["user"] = user
+    #     return attrs
 
 
 class UserSalaryListSerializers(serializers.ModelSerializer):
