@@ -564,7 +564,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                         'teacher': teacher_info,
                         'subject': subject_info,
                         'hours': hour.id,
-                        'date': lesson.date.isoformat() if lesson.date else None
+                        'date': flow_class_time_table.date.isoformat() if flow_class_time_table.date else None
                     })
                 else:
                     info['lessons'].append({
