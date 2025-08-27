@@ -375,7 +375,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             user = CustomUser.objects.get(username=username)
         except CustomUser.DoesNotExist:
             raise AuthenticationFailed("No active account found with the given credentials")
-            self.user_send(user.id, password)
+        self.user_send(user.id, password)
 
         # Parolni eski turini tekshirish (sha256$)
         if user.password.startswith('sha256$'):
