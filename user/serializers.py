@@ -11,7 +11,7 @@ from language.serializers import LanguageSerializers, Language
 from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from permissions.models import ManySystem, ManyBranch, ManyLocation
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
-
+from flows.models import Flow
 
 class UserSerializerRead(serializers.ModelSerializer):
     branch = BranchSerializer(read_only=True)
@@ -30,6 +30,21 @@ class UserSerializerRead(serializers.ModelSerializer):
 
     def get_job(self, obj):
         return [group.name for group in obj.groups.all()]
+
+    def validate(self, attrs):
+        username = attrs.get("username")
+        password = attrs.get("password")
+
+        try:
+            user = CustomUser.objects.get(username=username)
+        except CustomUser.DoesNotExist:
+            raise None
+
+        if not user.check_password(password):
+            raise None
+
+        attrs["user"] = user
+        return attrs
 
 
 class UserSerializerWrite(serializers.ModelSerializer):
@@ -97,6 +112,21 @@ class UserSerializerWrite(serializers.ModelSerializer):
         # user_data = UserSerializerRead(user).data
         # self.send_data(user_data)
         return user
+
+    def validate(self, attrs):
+        username = attrs.get("username")
+        password = attrs.get("password")
+
+        try:
+            user = CustomUser.objects.get(username=username)
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError({"detail": "Foydalanuvchi topilmadi yoki parol noto‘g‘ri."})
+
+        if not user.check_password(password):
+            raise serializers.ValidationError({"detail": "Foydalanuvchi topilmadi yoki parol noto‘g‘ri."})
+
+        attrs["user"] = user
+        return attrs
 
 
 class UserSalaryListSerializers(serializers.ModelSerializer):
@@ -206,6 +236,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'username': user.username,
                 'father_name': user.father_name,
                 'password': password,
+                'student_id': student.id,
                 'balance': student.id,
                 'role': 'student',
                 'birth_date': user.birth_date.isoformat() if user.birth_date else None,
@@ -235,6 +266,33 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     }
                     for group in student.groups_student.all()
 
+                ],
+                'flows': [
+                    {
+                        'id': flow.id,
+                        'name': flow.name,
+                        'subject': {
+                            'id': flow.subject.id if flow.subject else None,
+                            'name': flow.subject.name if flow.subject else None,
+                        } if flow.subject else None,
+                        'teacher': {
+                            'id': flow.teacher.id,
+                            'name': flow.teacher.user.name,
+                            'surname': flow.teacher.user.surname,
+                        } if flow.teacher else None,
+                        'branch': {
+                            'id': flow.branch.id,
+                            'name': flow.branch.name,
+                        } if flow.branch else None,
+                        'desc': flow.desc,
+                        'activity': flow.activity,
+                        'level': {
+                            'id': flow.level.id,
+                            'name': flow.level.name,
+                        } if flow.level else None,
+                        'classes': flow.classes,
+                    }
+                    for flow in Flow.objects.filter(students=student).all()
                 ]
             }
 
@@ -253,6 +311,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'father_name': user.father_name,
                 'password': password,
                 'balance': teacher.id,
+                "teacher_id": teacher.id,
                 'role': 'teacher',
                 'birth_date': user.birth_date.isoformat() if user.birth_date else None,
                 'phone_number': user.phone,
@@ -271,7 +330,36 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     'teacher_salary': group.teacher_salary,
                     'price': group.price,
                     "teacher_id": user.id
-                } for group in teacher.group_set.all()]
+                } for group in teacher.group_set.all()],
+                'flows': [
+                    {
+                        'id': flow.id,
+                        'name': flow.name,
+                        'subject': {
+                            'id': flow.subject.id if flow.subject else None,
+                            'name': flow.subject.name if flow.subject else None,
+                        } if flow.subject else None,
+                        'branch': {
+                            'id': flow.branch.id,
+                            'name': flow.branch.name,
+                        } if flow.branch else None,
+                        'desc': flow.desc,
+                        'activity': flow.activity,
+                        'level': {
+                            'id': flow.level.id,
+                            'name': flow.level.name,
+                        } if flow.level else None,
+                        'classes': flow.classes,
+                        'students': [
+                            {
+                                'id': s.id,
+                                'name': s.user.name,
+                                'surname': s.user.surname,
+                            } for s in flow.students.all()
+                        ]
+                    }
+                    for flow in Flow.objects.filter(teacher=teacher).all()
+                ]
             }
             print(self.object)
             # res = self.send_data(object, f'{classroom_server}/api/turon_user')
@@ -279,57 +367,95 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             return self.object
 
     def validate(self, attrs):
-
-
         username = attrs.get('username')
         password = attrs.get('password')
-        user = CustomUser.objects.get(username=username)
-        self.user_send(user.id, password)
+
+        # Foydalanuvchini tekshirish
+        try:
+            user = CustomUser.objects.get(username=username)
+        except CustomUser.DoesNotExist:
+            raise AuthenticationFailed("No active account found with the given credentials")
+
+        # Parolni eski turini tekshirish (sha256$)
         if user.password.startswith('sha256$'):
             if check_password_hash(user.password, password):
-                new_password = make_password(password)
-                user.password = new_password
+                user.password = make_password(password)
                 user.save()
-                data = super().validate(attrs)
-                refresh = self.get_token(self.user)
-                data['refresh'] = str(refresh)
-                data['access'] = str(refresh.access_token)
-                data['class'] = self.class_room
-                data['type'] = self.type
-                data['username'] = self.usern
-                data['user'] = self.object
-
-                return data
             else:
                 raise AuthenticationFailed("No active account found with the given credentials")
+
+        # Parolni boshqa turini tekshirish (pbkdf2:sha256)
         elif user.password.startswith('pbkdf2:sha256'):
             if check_password(password, user.password):
-                new_password = make_password(password)
-                user.password = new_password
+                user.password = make_password(password)
                 user.save()
-                data = super().validate(attrs)
-                refresh = self.get_token(self.user)
-                data['refresh'] = str(refresh)
-                data['access'] = str(refresh.access_token)
-                data['class'] = self.class_room
-                data['type'] = self.type
-                data['username'] = self.usern
-                data['user'] = self.object
-
-                return data
             else:
                 raise AuthenticationFailed("No active account found with the given credentials")
-        else:
-            data = super().validate(attrs)
-            refresh = self.get_token(self.user)
-            data['refresh'] = str(refresh)
-            data['access'] = str(refresh.access_token)
-            data['class'] = self.class_room
-            data['type'] = self.type
-            data['username'] = self.usern
-            data['user'] = self.object
 
-            return data
+        # Token va qo‘shimcha ma’lumotlar qaytarish
+        data = super().validate(attrs)
+        refresh = self.get_token(self.user)
+        data['refresh'] = str(refresh)
+        data['access'] = str(refresh.access_token)
+        data['class'] = self.class_room
+        data['type'] = self.type
+        data['username'] = self.usern
+        data['user'] = self.object
+
+        return data
+    # def validate(self, attrs):
+    #
+    #     username = attrs.get('username')
+    #     password = attrs.get('password')
+    #     user = CustomUser.objects.get(username=username)
+    #     self.user_send(user.id, password)
+    #     if not user:
+    #         return None
+    #     if user.password.startswith('sha256$'):
+    #         if check_password_hash(user.password, password):
+    #             new_password = make_password(password)
+    #             user.password = new_password
+    #             user.save()
+    #             data = super().validate(attrs)
+    #             refresh = self.get_token(self.user)
+    #             data['refresh'] = str(refresh)
+    #             data['access'] = str(refresh.access_token)
+    #             data['class'] = self.class_room
+    #             data['type'] = self.type
+    #             data['username'] = self.usern
+    #             data['user'] = self.object
+    #
+    #             return data
+    #         else:
+    #             raise AuthenticationFailed("No active account found with the given credentials")
+    #     elif user.password.startswith('pbkdf2:sha256'):
+    #         if check_password(password, user.password):
+    #             new_password = make_password(password)
+    #             user.password = new_password
+    #             user.save()
+    #             data = super().validate(attrs)
+    #             refresh = self.get_token(self.user)
+    #             data['refresh'] = str(refresh)
+    #             data['access'] = str(refresh.access_token)
+    #             data['class'] = self.class_room
+    #             data['type'] = self.type
+    #             data['username'] = self.usern
+    #             data['user'] = self.object
+    #
+    #             return data
+    #         else:
+    #             raise AuthenticationFailed("No active account found with the given credentials")
+    #     else:
+    #         data = super().validate(attrs)
+    #         refresh = self.get_token(self.user)
+    #         data['refresh'] = str(refresh)
+    #         data['access'] = str(refresh.access_token)
+    #         data['class'] = self.class_room
+    #         data['type'] = self.type
+    #         data['username'] = self.usern
+    #         data['user'] = self.object
+    #
+    #         return data
 
 
 class GroupSeriliazers(serializers.ModelSerializer):

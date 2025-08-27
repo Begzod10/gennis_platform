@@ -1,6 +1,5 @@
 from datetime import date, timedelta, datetime
 
-
 from rest_framework import serializers
 
 from branch.models import Branch
@@ -78,8 +77,8 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
         group = validated_data.get('group')
         flow = validated_data.get('flow')
         instance.group = validated_data.get('group', instance.group)
-        # instance.week = validated_data.get('week', instance.week)
-        instance.week = validated_data.get('date', instance.date)
+        instance.week = validated_data.get('week', instance.week)
+        instance.date = validated_data.get('date', instance.date)
         instance.room = validated_data.get('room', instance.room)
         instance.hours = validated_data.get('hours', instance.hours)
         instance.branch = validated_data.get('branch', instance.branch)
@@ -390,6 +389,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
             }
             for hour in hours
         ]
+
 
 class ClassTimeTableForClassSerializer(serializers.Serializer):
     time_tables = serializers.SerializerMethodField()
