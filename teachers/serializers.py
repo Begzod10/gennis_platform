@@ -183,10 +183,11 @@ class TeacherSerializerRead(serializers.ModelSerializer):
             return True
 
     def get_flow(self, obj):
-        flows = Flow.objects.filter(teacher=obj)
+        flows = Flow.objects.filter(teacher=obj).all()
+        from flows.serializers import FlowForTeacherProfile
         if not flows.exists():
             return None
-        return flows
+        return FlowForTeacherProfile(flows, many=True).data
 
 
 class TeacherSalaryReadSerializers(serializers.ModelSerializer):
