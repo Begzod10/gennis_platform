@@ -1,5 +1,5 @@
 from datetime import date, timedelta, datetime
-
+import requests
 from rest_framework import serializers
 
 from branch.models import Branch
@@ -17,6 +17,7 @@ from teachers.models import Teacher
 from teachers.serializers import TeacherSerializer
 from time_table.models import WeekDays
 from time_table.serializers import WeekDaysSerializer
+from gennis_platform.settings import classroom_server
 
 
 # class HoursTypeSerializers(serializers.ModelSerializer):
@@ -87,7 +88,47 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
         instance.flow = validated_data.get('flow', instance.flow)
         instance.name = validated_data.get('name', instance.name)
         instance.save()
+
+        flask_url = f"{classroom_server}/api/time_table/timetable-list-update/{instance.id}"
+        payload = {}
+
+        if instance.group:
+            payload["group"] = instance.group.id
+        if instance.week:
+            payload["week"] = instance.week.id
+        if instance.room:
+            payload["room"] = instance.room.id
+        if instance.hours:
+            payload["hours"] = instance.hours.id
+        if instance.branch:
+            payload["branch"] = instance.branch.id
+        if instance.teacher:
+            payload["teacher"] = instance.teacher.id
+        if instance.subject:
+            payload["subject"] = instance.subject.name
+        if instance.flow:
+            payload["flow"] = instance.flow.id
+        if instance.name:
+            payload["name"] = instance.name
+        if instance.date:
+            payload["date"] = instance.date.isoformat()
+
+        try:
+            response = requests.patch(
+                flask_url,
+                json=payload,
+                headers={"Content-Type": "application/json"}
+            )
+            response.raise_for_status()
+        except Exception as e:
+            print("Flask update error:", e)
+
         return instance
+
+    def delete_from_flask(self, instance):
+        flask_url = f"{classroom_server}/api/time_table/timetable-list-delete/{instance.id}"
+        response = requests.delete(flask_url)
+        return response.json(), response.status_code
 
 
 class ClassTimeTableReadSerializers(serializers.ModelSerializer):
@@ -362,7 +403,8 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                         'room': room.id,
                         'teacher': teacher_info,
                         'subject': subject_info,
-                        'hours': hour.id
+                        'hours': hour.id,
+                        'students': list(lesson.students.values_list('id', flat=True))
                     }
                     info['lessons'].append(lesson_info)
                 else:
@@ -374,6 +416,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                         'subject': {},
                         'room': room.id,
                         'is_flow': False,
+                        'students': []
                     })
             rooms_info.append(info)
         return rooms_info
@@ -434,7 +477,8 @@ class ClassTimeTableForClassSerializer(serializers.Serializer):
                     'teacher': teacher_info,
                     'subject': subject_info,
                     'hours': hour.id,
-                    'date': lesson.date.isoformat() if lesson.date else None
+                    'date': lesson.date.isoformat() if lesson.date else None,
+                    'students': list(lesson.students.values_list('id', flat=True))
                 }
 
                 info['lessons'].append(lesson_info)
@@ -455,7 +499,8 @@ class ClassTimeTableForClassSerializer(serializers.Serializer):
                     'teacher': teacher_info,
                     'subject': subject_info,
                     'hours': hour.id,
-                    'date': lesson.date.isoformat() if lesson.date else None
+                    'date': lesson.date.isoformat() if lesson.date else None,
+                    'students': list(flow_class_time_table.students.values_list('id', flat=True))
                 })
             else:
                 info['lessons'].append({
@@ -466,7 +511,8 @@ class ClassTimeTableForClassSerializer(serializers.Serializer):
                     'subject': {},
                     'room': {},
                     'is_flow': False,
-                    'date': ''
+                    'date': '',
+                    'students': []
                 })
         time_tables.append(info)
         return time_tables

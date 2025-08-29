@@ -8,7 +8,7 @@ from time_table.functions.creatWeekDays import creat_week_days
 
 
 class WeekDaysView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     serializer_class = WeekDaysSerializer
     queryset = WeekDays.objects.all()
@@ -24,3 +24,10 @@ class WeekDaysView(generics.ListAPIView):
             'today': week_day.pk
         }
         return Response(data)
+
+
+class WeekDaysViewClassroom(generics.ListAPIView):
+    # permission_classes = [IsAuthenticated]
+
+    serializer_class = WeekDaysSerializer
+    queryset = WeekDays.objects.all()

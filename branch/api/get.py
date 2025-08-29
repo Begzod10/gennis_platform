@@ -7,7 +7,7 @@ from branch.serializers import BranchListSerializer
 
 
 class BranchListAPIView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     queryset = Branch.objects.filter(location__system__name='school').all()
     serializer_class = BranchListSerializer
@@ -18,6 +18,18 @@ class BranchListAPIView(generics.ListAPIView):
 
         if location_id is not None:
             queryset = queryset.filter(location_id=location_id)
+        serializer = BranchListSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class BranchListAPIViewClassroom(generics.ListAPIView):
+    # permission_classes = [IsAuthenticated]
+
+    queryset = Branch.objects.all()
+    serializer_class = BranchListSerializer
+
+    def get(self, request, *args, **kwargs):
+        queryset = Branch.objects.all()
         serializer = BranchListSerializer(queryset, many=True)
         return Response(serializer.data)
 

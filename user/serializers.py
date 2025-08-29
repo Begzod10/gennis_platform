@@ -13,6 +13,7 @@ from permissions.models import ManySystem, ManyBranch, ManyLocation
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
 from flows.models import Flow
 
+
 class UserSerializerRead(serializers.ModelSerializer):
     branch = BranchSerializer(read_only=True)
     language = LanguageSerializers(read_only=True)
@@ -242,6 +243,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'birth_date': user.birth_date.isoformat() if user.birth_date else None,
                 'phone_number': user.phone,
                 'parent_number': student.parents_number,
+                'branch_id': user.branch_id,
 
                 'groups': [
                     {
@@ -315,10 +317,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'role': 'teacher',
                 'birth_date': user.birth_date.isoformat() if user.birth_date else None,
                 'phone_number': user.phone,
+                'branch_id': user.branch_id,
                 'subjects': [{
                     'id': subject.id,
                     'name': subject.name
                 } for subject in teacher.subject.all()],
+                'color': teacher.color if teacher.color else None,
 
                 'groups': [{
                     'name': group.name if group.name else f'{group.class_number.number}-{group.color.name}',
@@ -370,9 +374,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         username = attrs.get('username')
         password = attrs.get('password')
 
+        print(username, password)
+
         # Foydalanuvchini tekshirish
         try:
+            print('sdvdss')
             user = CustomUser.objects.get(username=username)
+            print(user, 'asdcasc')
         except CustomUser.DoesNotExist:
             raise AuthenticationFailed("No active account found with the given credentials")
 
@@ -401,6 +409,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['type'] = self.type
         data['username'] = self.usern
         data['user'] = self.object
+
+        data['user'] = self.user_send(user.id, password)
 
         return data
     # def validate(self, attrs):

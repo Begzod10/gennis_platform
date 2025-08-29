@@ -1,4 +1,5 @@
 import json
+import requests
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -20,6 +21,7 @@ from teachers.models import Teacher, TeacherSalary
 from classes.models import ClassNumberSubjects
 from rest_framework import status
 from django.db import transaction
+from gennis_platform.settings import classroom_server
 
 
 class CreateClassTimeTable(generics.ListCreateAPIView):
@@ -34,6 +36,21 @@ class CreateClassTimeTable(generics.ListCreateAPIView):
         instance = ClassTimeTable.objects.get(pk=write_serializer.data['id'])
         read_serializer = ClassTimeTableReadSerializers(instance)
 
+        payload = {
+            "id": instance.id,
+            "group": instance.group.id if instance.group else None,
+            "week": instance.week.id if instance.week else None,
+            "room": instance.room.id if instance.room else None,
+            "hours": instance.hours.id if instance.hours else None,
+            "branch": instance.branch.id if instance.branch else None,
+            "teacher": instance.teacher.id if instance.teacher else None,
+            "subject": instance.subject.name if instance.subject else None,
+            "flow": instance.flow.id if instance.flow else None,
+            "name": instance.name,
+            "date": instance.date.isoformat() if instance.date else None,
+        }
+
+        requests.post(f"{classroom_server}/api/time_table/timetable-list-create", json=payload)
         # teacher_salary_school(request)
 
         return Response({'lesson': read_serializer.data, 'msg': 'Dars muvaffaqqiyatli kiritildi'})
@@ -248,6 +265,25 @@ class CopyWeekScheduleAPIView(APIView):
                 old.save()
                 old.students.set(students)
                 new_lessons.append(old.id)
+
+                try:
+                    payload = {
+                        "id": old.id,
+                        "group": old.group.turon_id if old.group else None,
+                        "week": old.week.turon_id if old.week else None,
+                        "room": old.room.turon_id if old.room else None,
+                        "hours": old.hours.turon_id if old.hours else None,
+                        "branch": old.branch.turon_id if old.branch else None,
+                        "teacher": old.teacher.turon_id if old.teacher else None,
+                        "subject": old.subject.name if old.subject else None,
+                        "flow": old.flow.turon_id if old.flow else None,
+                        "name": old.name,
+                        "date": old.date.isoformat(),
+                    }
+                    r = requests.post(f"{classroom_server}/api/time_table/timetable-list-create", json=payload)
+                    print("Flask response:", r.status_code, r.text)
+                except Exception as e:
+                    print("Flask create error:", e)
 
         return Response({
             "message": f"{len(new_lessons)} ta dars nusxalandi",
