@@ -161,6 +161,7 @@ class TeacherSerializerRead(serializers.ModelSerializer):
     group = GroupSerializerTeachers(many=True, source='group_set')
     calculate = serializers.SerializerMethodField(read_only=True, required=False, allow_null=True)
     status = serializers.SerializerMethodField()
+    flow = serializers.SerializerMethodField()
 
     class Meta:
         model = Teacher
@@ -180,6 +181,12 @@ class TeacherSerializerRead(serializers.ModelSerializer):
             return False
         else:
             return True
+
+    def get_flow(self, obj):
+        flows = Flow.objects.filter(teacher=obj)
+        if not flows.exists():
+            return None
+        return flows
 
 
 class TeacherSalaryReadSerializers(serializers.ModelSerializer):
