@@ -46,8 +46,10 @@ class TeacherDestroyView(generics.DestroyAPIView):
 
         from datetime import date
         instance = self.get_object()
-        if instance.group_set.exists():
+        if instance.group_set.filter(deleted=False).exists():
             return Response({"msg": "Bu o'qituvchining sinfi bor!!!", 'status': False}, status=status.HTTP_200_OK)
+        elif instance.flow_set.exists():
+            return Response({"msg": "Bu o'qituvchining patoki bor!!!", 'status': False}, status=status.HTTP_200_OK)
         else:
             instance.deleted = True
             instance.deleted_date = date.today()
