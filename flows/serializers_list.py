@@ -41,23 +41,21 @@ class FlowsSerializerProfile(serializers.ModelSerializer):
                   'classes', 'subject_id']
 
     def get_teacher(self, obj):
-        if not obj.activity:
-            obj.activity = False
-            obj.save()
-            return {
-                "id": obj.teacher.id,
-                'name': obj.teacher.user.name,
-                'surname': obj.teacher.user.surname,
-                'subject': [
-                    {
-                        "id": subject.id,
-                        "name": subject.name
-                    }
-                    for subject in obj.teacher.subject.all()
-                ],
 
-                'photo': obj.teacher.user.profile_img.url if obj.teacher.user.profile_img else None
-            }
+        return {
+            "id":obj.teacher.id,
+            'name': obj.teacher.user.name,
+            'surname': obj.teacher.user.surname,
+            'subject': [
+                {
+                    "id": subject.id,
+                    "name": subject.name
+                }
+                for subject in obj.teacher.subject.all()
+            ],
+
+            'photo': obj.teacher.user.profile_img.url if obj.teacher.user.profile_img else None
+        }
 
     def get_students(self, obj):
         return [
