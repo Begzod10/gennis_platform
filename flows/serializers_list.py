@@ -42,6 +42,8 @@ class FlowsSerializerProfile(serializers.ModelSerializer):
 
     def get_teacher(self, obj):
         if not obj.activity:
+            obj.activity = False
+            obj.save()
             return {
                 "id": obj.teacher.id,
                 'name': obj.teacher.user.name,
