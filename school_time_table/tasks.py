@@ -43,7 +43,7 @@ def update_school_time_table_task():
                 date=new_date,
                 subject=old.subject,
                 teacher=old.teacher,
-                classroom=old.classroom,
+                # classroom=old.classroom,
                 time=old.time
             ).exists()
 

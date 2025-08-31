@@ -145,9 +145,9 @@ CELERY_BEAT_SCHEDULE = {
     # },
     "update-school-time-table": {
         "task": "school_time_table.tasks.update_school_time_table_task",
-        "schedule": crontab(minute=0, hour=0, day_of_week="monday"),
-        # "schedule": crontab(minute="*/1"),
+        "schedule": crontab(minute=15, hour=2, day_of_week="monday"),
     }
+
 }
 
 CELERY_BROKER_URL = "redis://localhost:6379/0"
