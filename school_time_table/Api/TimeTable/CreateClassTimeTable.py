@@ -166,15 +166,14 @@ class CheckClassTimeTable(APIView):
                                                     class_time_table__date=date).all()
             if lesson_students:
                 status = False
-                if group.students.all():
-                    for student in group.students.all():
-                        tm = student.class_time_table.filter(hours_id=hour, date=date).first()
-                        if tm.flow_id == None:
-                            msg.append(
-                                f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.group.class_number.number}-{tm.group.color.name}" sinifida darsi bor')
-                        else:
-                            msg.append(
-                                f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.flow.name}" patokida darsi bor')
+                for student in lesson_students:
+                    tm = student.class_time_table.filter(hours_id=hour, date=date).first()
+                    if tm.flow_id == None:
+                        msg.append(
+                            f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.group.class_number.number}-{tm.group.color.name}" sinifida darsi bor')
+                    else:
+                        msg.append(
+                            f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.flow.name}" patokida darsi bor')
             if lesson_room:
                 msg.append(f'Bu vaqtda {lesson_room.room.name} bosh emas')
                 status = False
