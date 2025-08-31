@@ -10,7 +10,10 @@ def update_school_time_table_task():
     # Monday of the current week
     monday = today - timedelta(days=today.weekday())
     sunday = monday + timedelta(days=6)
-
+    monday = "2025-08-25"
+    sunday = "2025-08-29"
+    monday = datetime.strptime(monday, "%Y-%m-%d").date()
+    sunday = datetime.strptime(sunday, "%Y-%m-%d").date()
     print("========== SCHOOL TIMETABLE UPDATE ==========")
     print("Today:", today.strftime("%A"), today)
     print("This week's Monday:", monday.strftime("%A"), monday)
