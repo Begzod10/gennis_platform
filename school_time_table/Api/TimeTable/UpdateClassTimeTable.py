@@ -228,7 +228,8 @@ class UpdateFlowTimeTable(APIView):
                             f"Bu vaqtda '{lesson_teacher.teacher.user.name} {lesson_teacher.teacher.user.surname}' ustozining  '{lesson_teacher.room.name}' xonada  '{lesson_teacher.flow.name}' patokiga darsi bor")
 
             lesson_students = flow.students.filter(class_time_table__hours_id=hour, class_time_table__date=date,
-                                                   room_id=room).all()
+                                                   class_time_table__room_id=room,
+                                                   class_time_table__branch_id=flow.branch_id).all()
 
             if lesson_students:
                 if flow.students.all():
@@ -271,7 +272,8 @@ class UpdateFlowTimeTable(APIView):
                         f"Bu vaqtda '{lesson_teacher.teacher.user.name} {lesson_teacher.teacher.user.surname}' ustozining  '{lesson_teacher.room.name}' xonada  '{lesson_teacher.flow.name}' patokiga darsi bor")
 
             lesson_students = flow.students.filter(class_time_table__hours_id=hour, class_time_table__date=date,
-                                                   room_id=room).all()
+                                                   class_time_table__room_id=room,
+                                                   class_time_table__branch_id=flow.branch_id).all()
 
             if lesson_students:
                 status = False
