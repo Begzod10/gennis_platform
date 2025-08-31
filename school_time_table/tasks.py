@@ -46,13 +46,15 @@ def update_school_time_table_task():
                 date=new_date,
                 subject=old.subject,
                 teacher=old.teacher,
+                hours_id=old.hours_id,
+                room_id=old.room_id,
                 # classroom=old.classroom,
                 # time=old.time
             ).exists()
 
             if exists:
                 print(f"⚠️ Skipped duplicate for {old.subject} | {old.teacher} "
-                      f"on {new_date} at {old.time}")
+                      f"on {new_date}")
                 skipped_lessons.append(old.id)
                 continue
 
