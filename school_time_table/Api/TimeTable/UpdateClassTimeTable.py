@@ -205,17 +205,17 @@ class UpdateFlowTimeTable(APIView):
         time_table = ClassTimeTable.objects.filter(room_id=room, date=date, hours_id=hour).first()
         if time_table:
             lesson_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
-
+            print('1 logic')
             if lesson_room:
                 if not lesson_room.id == time_table.id:
                     status = False
                     msg.append(f'Bu vaqtda {lesson_room.room.name} bosh emas')
-            print(room)
             lesson_teacher = ClassTimeTable.objects.filter(date=date,
                                                            room_id=room,
                                                            teacher_id=flow.teacher.pk if flow.teacher else None,
                                                            hours_id=hour).first()
             if lesson_teacher:
+
                 if not lesson_teacher.id == time_table.id:
                     status = False
 
@@ -244,6 +244,7 @@ class UpdateFlowTimeTable(APIView):
             if status == True:
                 time_table.delete()
         else:
+            print('2 logic')
             lesson_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
             if lesson_room:
                 status = False
