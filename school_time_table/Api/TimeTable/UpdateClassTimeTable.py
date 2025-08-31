@@ -210,6 +210,7 @@ class UpdateFlowTimeTable(APIView):
                 if not lesson_room.id == time_table.id:
                     status = False
                     msg.append(f'Bu vaqtda {lesson_room.room.name} bosh emas')
+            print(room)
             lesson_teacher = ClassTimeTable.objects.filter(date=date,
                                                            room_id=room,
                                                            teacher_id=flow.teacher.pk if flow.teacher else None,
