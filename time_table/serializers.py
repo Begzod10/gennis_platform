@@ -15,7 +15,7 @@ from .functions.checkTime import check_time
 class WeekDaysSerializer(serializers.ModelSerializer):
     class Meta:
         model = WeekDays
-        fields = ['id', 'name_uz']
+        fields = ['id', 'name_uz', 'name_en', 'order']
 
 
 class TimeTableArchiveListSerializer(serializers.ModelSerializer):

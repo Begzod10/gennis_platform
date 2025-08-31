@@ -1,5 +1,6 @@
 import json
-
+import requests
+from gennis_platform.settings import classroom_server
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -189,6 +190,13 @@ class UpdateClassTimeTableHours(APIView):
                 class_time_table.room_id = dt['room']
                 class_time_table.hours_id = dt['hour']
                 class_time_table.save()
+                requests.patch(
+                    f"{classroom_server}/api/time_table/timetable-update/{dt['id']}",
+                    json={
+                        "room_id": dt['room'],
+                        "hours_id": dt['hour']
+                    }
+                )
         return Response({'status': status, 'msg': msg})
 
 

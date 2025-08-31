@@ -3,10 +3,11 @@ from django.urls import path
 from rooms.Api.createupdatedelete import RoomCreateView, RoomDeleteView, RoomUpdateView, RoomImagesCreateView, \
     RoomImagesUpdateView, RoomImagesDestroyView, RoomSubjectCreateView, RoomSubjectUpdateView, RoomSubjectDestroyView
 from rooms.Api.get import RoomListView, RoomRetrieveView, RoomImagesListView, RoomImagesRetrieveView, RoomSubjectListView, \
-    RoomSubjectRetrieveView
+    RoomSubjectRetrieveView, RoomListViewClassroom
 app_name = 'rooms'
 urlpatterns = [
     path('rooms/', RoomListView.as_view(), name='room-list'),
+    path('rooms-classroom/', RoomListViewClassroom.as_view(), name='room-list'),
     path('rooms_create/', RoomCreateView.as_view(), name='room-create'),
     path('rooms_delete/<int:pk>/', RoomDeleteView.as_view(), name='room-delete'),
     path('rooms_update/<int:pk>/', RoomUpdateView.as_view(), name='room-update'),

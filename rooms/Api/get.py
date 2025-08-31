@@ -9,7 +9,7 @@ from time_table.serializers import GroupTimeTable, GroupTimeTableReadSerializer
 
 
 class RoomListView(QueryParamFilterMixin, generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     filter_mappings = {
         'teacher': 'group__teacher',
@@ -22,6 +22,13 @@ class RoomListView(QueryParamFilterMixin, generics.ListAPIView):
     queryset = Room.objects.all().order_by('id')
     serializer_class = RoomGetSerializer
 
+
+class RoomListViewClassroom(QueryParamFilterMixin, generics.ListAPIView):
+    # permission_classes = [IsAuthenticated]
+
+
+    queryset = Room.objects.all().order_by('id')
+    serializer_class = RoomGetSerializer
 
 class RoomRetrieveView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
