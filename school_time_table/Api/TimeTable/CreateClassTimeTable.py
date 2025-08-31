@@ -145,6 +145,7 @@ class CheckClassTimeTable(APIView):
             group = Group.objects.get(pk=checked_id)
             lesson_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
             lesson_students = group.students.filter(class_time_table__hours_id=hour,
+                                                    class_time_table__room_id=room,
                                                     class_time_table__date=date).all()
             if lesson_students:
                 status = False
