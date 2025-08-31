@@ -49,8 +49,8 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
     room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all(), allow_null=True, required=False)
     hours = serializers.PrimaryKeyRelatedField(queryset=Hours.objects.all())
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
-    teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
-    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())
+    teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all(), required=False, allow_null=True)
+    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), required=False, allow_null=True)
     flow = serializers.PrimaryKeyRelatedField(queryset=Flow.objects.all())
     name = serializers.CharField()
 
