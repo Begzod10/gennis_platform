@@ -265,7 +265,6 @@ class CopyWeekScheduleAPIView(APIView):
                 old.save()
                 old.students.set(students)
                 new_lessons.append(old.id)
-
                 try:
                     payload = {
                         "id": old.id,
@@ -284,7 +283,6 @@ class CopyWeekScheduleAPIView(APIView):
                     print("Flask response:", r.status_code, r.text)
                 except Exception as e:
                     print("Flask create error:", e)
-
         return Response({
             "message": f"{len(new_lessons)} ta dars nusxalandi",
             "new_ids": new_lessons

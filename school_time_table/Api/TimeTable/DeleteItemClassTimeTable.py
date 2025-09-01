@@ -24,4 +24,4 @@ class DeleteItemClassTimeTable(generics.RetrieveDestroyAPIView):
         return Response({
             "msg": "Dars muvvaffaqqiyatli o'chirildi",
             "flask_response": flask_response
-        }, status=status_code)
+        }, status=200)
