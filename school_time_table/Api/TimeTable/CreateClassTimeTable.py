@@ -136,7 +136,7 @@ class ClassTimeTableForClassView(APIView):
         branch = Branch.objects.get(id=branch_id)
         if week_id:
             week = WeekDays.objects.get(id=week_id)
-            date = None
+            # date = None
         else:
             week = None
 
