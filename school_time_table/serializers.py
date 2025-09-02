@@ -18,12 +18,9 @@ from teachers.serializers import TeacherSerializer
 from time_table.models import WeekDays
 from time_table.serializers import WeekDaysSerializer
 from gennis_platform.settings import classroom_server
+from django.db.models import F, Value
+from django.db.models.functions import Coalesce
 
-
-# class HoursTypeSerializers(serializers.ModelSerializer):
-#     class Meta:
-#         model = HoursType
-#         fields = ['id', 'name']
 
 
 class HoursSerializers(serializers.ModelSerializer):
@@ -41,10 +38,6 @@ class HoursSerializers(serializers.ModelSerializer):
 
 
 class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
-    # type = serializers_list.CharField(default=None, allow_blank=True)
-
-    # type = serializer.CharField(default=None, allow_blank=True)
-
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
     week = serializers.PrimaryKeyRelatedField(queryset=WeekDays.objects.all())
     room = serializers.PrimaryKeyRelatedField(queryset=Room.objects.all(), allow_null=True, required=False)
@@ -185,100 +178,6 @@ class ClassTimeTableSerializer(serializers.ModelSerializer):
 from school_time_table.serializers_list import GroupClassSerializerList
 from teachers.serializer.lists import ActiveListTeacherSerializerTime
 
-
-# class ClassTimeTableTest2Serializer(serializers.Serializer):
-#     time_tables = serializers.SerializerMethodField()
-#     hours_list = serializers.SerializerMethodField()
-#
-#     def get_time_tables(self, obj):
-#         date_ls = self.context['date']
-#         branch = self.context['branch']
-#         week = self.context['week']
-#         group_id = self.context.get('group_id')
-#         teacher_id = self.context.get('teacher_id')
-#         student_id = self.context.get('student_id')
-#
-#         rooms = Room.objects.filter(branch=branch, deleted=False).all()
-#         hours = Hours.objects.all().order_by('order')
-#         time_tables = []
-#
-#         for room in rooms:
-#             info = {
-#                 'id': room.id,
-#                 'name': room.name,
-#                 'lessons': []
-#             }
-#             for hour in hours:
-#                 if week and date_ls is None:
-#                     today = date.today()
-#                     today_weekday = today.isoweekday()
-#                     shift_days = week.order - today_weekday
-#                     week_day_date = today + timedelta(days=shift_days)
-#                     qs = room.classtimetable_set.filter(
-#                         date=week_day_date,
-#                         hours=hour,
-#                         branch=branch,
-#                         week=week
-#                     )
-#                 else:
-#                     qs = room.classtimetable_set.filter(
-#                         date=date_ls,
-#                         hours=hour,
-#                         branch=branch
-#                     )
-#
-#                 if group_id:
-#                     qs = qs.filter(group_id=group_id)
-#                 if teacher_id:
-#                     qs = qs.filter(teacher_id=teacher_id)
-#                 if student_id:
-#                     qs = qs.filter(group__students__id=student_id)
-#
-#                 lesson = qs.order_by('hours__order').first()
-#
-#                 if lesson:
-#                     group_info = GroupClassSerializerList(lesson.group).data if lesson.group else None
-#                     flow_info = {'id': lesson.flow.id, 'name': lesson.flow.name,
-#                                  'classes': lesson.flow.classes} if lesson.flow else None
-#                     teacher_info = ActiveListTeacherSerializerTime(lesson.teacher).data if lesson.teacher else None
-#                     subject_info = {'id': lesson.subject.id, 'name': lesson.subject.name} if lesson.subject else None
-#
-#                     lesson_info = {
-#                         'id': lesson.id,
-#                         'status': lesson.hours == hour,
-#                         'is_flow': True if lesson.flow else False,
-#                         'group': flow_info if lesson.group is None else group_info,
-#                         'room': room.id,
-#                         'teacher': teacher_info,
-#                         'subject': subject_info,
-#                         'hours': hour.id
-#                     }
-#
-#                     info['lessons'].append(lesson_info)
-#                 else:
-#                     info['lessons'].append({
-#                         'group': {},
-#                         'status': False,
-#                         'hours': hour.id,
-#                         'teacher': {},
-#                         'subject': {},
-#                         'room': room.id,
-#                         'is_flow': False,
-#                     })
-#             time_tables.append(info)
-#         return time_tables
-#
-#     def get_hours_list(self, obj):
-#         hours = Hours.objects.all().order_by('order')
-#         return [
-#             {
-#                 'id': hour.id,
-#                 'name': hour.name,
-#                 'start_time': hour.start_time.strftime('%H:%M'),
-#                 'end_time': hour.end_time.strftime('%H:%M'),
-#             }
-#             for hour in hours
-#         ]
 class ClassTimeTableTest2Serializer(serializers.Serializer):
     time_tables = serializers.SerializerMethodField()
     hours_list = serializers.SerializerMethodField()
@@ -302,14 +201,24 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
             except ValueError:
                 week = None
 
-        rooms = Room.objects.filter(branch=branch, deleted=False).all()
+        # rooms = Room.objects.filter(branch=branch, deleted=False).all()
+
+        rooms = (
+            Room.objects
+            .filter(branch=branch, deleted=False)
+            .annotate(
+                sort_order=Coalesce('order', F('id'))
+            )
+            .order_by('sort_order')
+        )
+
         hours = Hours.objects.all().order_by('order')
 
         time_tables = []
         week_days = ['Dushanba', 'Seshanba', 'Chorshanba',
                      'Payshanba', 'Juma', 'Shanba', 'Yakshanba']
 
-        # 1) Agar week kelsa va date_ls None bo‘lsa → week bo‘yicha kun
+
         if week and date_ls is None:
             today = date.today()
             today_weekday = today.isoweekday()
@@ -326,7 +235,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                 "rooms": rooms_info
             })
 
-        # 2) Agar date va week ikkalasi ham None bo‘lsa → shu hafta (dushanba → yakshanba)
+
         elif date_ls is None and week is None:
             today = date.today()
             start_week = today - timedelta(days=today.weekday())  # dushanba
@@ -342,7 +251,6 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                     "rooms": rooms_info
                 })
 
-        # 3) Agar date_ls kelsa → o‘sha kun
         elif date_ls:
             weekday_name = week_days[date_ls.weekday()]
             rooms_info = self._build_rooms_info(rooms, hours, date_ls,
