@@ -8,11 +8,12 @@ from .gennis.AddToGroupApi import AddToGroupApi
 from .gennis.TeacherGroupChange import TeacherGroupChange
 from .gennis.MoveToGroupApi import MoveToGroupApi
 from .gennis.DeleteStudentFromGroup import DeleteStudentFromGroup
-from .school.ClassesList import ClassesView, AddClassesList, CreateGroupTeacherListView,ClassesView2
+from .school.ClassesList import ClassesView, AddClassesList, CreateGroupTeacherListView, ClassesView2
 from .gennis.GetChekedStudentsTeachers import GetCheckedStudentsTeachers
 from .gennis.GetGroupsForTeacher import GetGroupsForTeacher
 from .gennis.GetCheckedStudentsForClassTimeTable import GetCheckedStudentsForClassTimeTable, CheckedStudentsMoveToGroup
 from .views import GroupStudentsClassRoom
+
 urlpatterns = [
     path('groups/create/', CreatGroups.as_view(), name='create'),
     path('groups/profile/<int:pk>/', GroupProfile.as_view(), name='profile'),
