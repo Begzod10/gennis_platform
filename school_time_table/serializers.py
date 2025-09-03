@@ -226,12 +226,13 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
         time_tables = []
         week_days = ['Dushanba', 'Seshanba', 'Chorshanba',
                      'Payshanba', 'Juma', 'Shanba', 'Yakshanba']
+        week = WeekDays.objects.get(id=week.id)
         print("week", week)
         # If week (1..7) provided without specific date: compute that weekday in current week
         if week and date_ls is None:
             today = date.today()
             today_weekday = today.isoweekday()  # 1..7
-            shift_days = week - today_weekday
+            shift_days = week.order - today_weekday
             week_day_date = today + timedelta(days=shift_days)
 
             weekday_name = week_days[week_day_date.weekday()]
