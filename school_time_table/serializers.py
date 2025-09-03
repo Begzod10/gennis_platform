@@ -1,7 +1,7 @@
 from datetime import date, timedelta, datetime
 import requests
 from rest_framework import serializers
-
+from django.db.models import F, IntegerField
 from branch.models import Branch
 from branch.serializers import BranchSerializer
 from flows.models import Flow
@@ -20,7 +20,6 @@ from time_table.serializers import WeekDaysSerializer
 from gennis_platform.settings import classroom_server
 from django.db.models import F, Value
 from django.db.models.functions import Coalesce
-
 
 
 class HoursSerializers(serializers.ModelSerializer):
@@ -178,6 +177,7 @@ class ClassTimeTableSerializer(serializers.ModelSerializer):
 from school_time_table.serializers_list import GroupClassSerializerList
 from teachers.serializer.lists import ActiveListTeacherSerializerTime
 
+
 class ClassTimeTableTest2Serializer(serializers.Serializer):
     time_tables = serializers.SerializerMethodField()
     hours_list = serializers.SerializerMethodField()
@@ -207,7 +207,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
             Room.objects
             .filter(branch=branch, deleted=False)
             .annotate(
-                sort_order=Coalesce('order', F('id'))
+                sort_order=Coalesce('order', F('id'), output_field=IntegerField())
             )
             .order_by('sort_order')
         )
@@ -217,7 +217,6 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
         time_tables = []
         week_days = ['Dushanba', 'Seshanba', 'Chorshanba',
                      'Payshanba', 'Juma', 'Shanba', 'Yakshanba']
-
 
         if week and date_ls is None:
             today = date.today()
@@ -271,6 +270,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
             info = {
                 'id': room.id,
                 'name': room.name,
+                'order': room.order,
                 'lessons': []
             }
             for hour in hours:
