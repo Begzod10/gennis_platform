@@ -21,6 +21,8 @@ from gennis_platform.settings import classroom_server
 from django.db.models import F, Value
 from django.db.models.functions import Coalesce
 
+from school_time_table.serializers_list import GroupClassSerializerList
+from teachers.serializer.lists import ActiveListTeacherSerializerTime
 
 
 class HoursSerializers(serializers.ModelSerializer):
@@ -176,9 +178,6 @@ class ClassTimeTableSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'week', 'hours', 'flow', 'room', 'teacher', 'subject']
 
 
-from school_time_table.serializers_list import GroupClassSerializerList
-from teachers.serializer.lists import ActiveListTeacherSerializerTime
-
 class ClassTimeTableTest2Serializer(serializers.Serializer):
     time_tables = serializers.SerializerMethodField()
     hours_list = serializers.SerializerMethodField()
@@ -191,24 +190,31 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
         teacher_id = self.context.get('teacher_id')
         student_id = self.context.get('student_id')
 
-        # agar date string bo‘lsa, date ga aylantiramiz
+        # Convert date string → date
         if date_ls and isinstance(date_ls, str):
             date_ls = datetime.strptime(date_ls, "%Y-%m-%d").date()
 
-        # agar week string bo‘lsa, int ga aylantiramiz
-        if week and isinstance(week, str):
+        # Treat week as integer 1..7 (Mon..Sun). If invalid, set to None.
+        if isinstance(week, str):
             try:
                 week = int(week)
             except ValueError:
                 week = None
+        if isinstance(week, int):
+            if not (1 <= week <= 7):
+                week = None
 
-        # rooms = Room.objects.filter(branch=branch, deleted=False).all()
-
+        # Rooms ordered by 'order' (if present) else by id, with consistent output_field
         rooms = (
             Room.objects
             .filter(branch=branch, deleted=False)
             .annotate(
-                sort_order=Coalesce('order', F('id'))
+                # Upcast both sides to BigInteger for Coalesce to avoid mixed types
+                sort_order=Coalesce(
+                    Cast('order', BigIntegerField()),
+                    F('id'),
+                    output_field=BigIntegerField()
+                )
             )
             .order_by('sort_order')
         )
@@ -219,44 +225,48 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
         week_days = ['Dushanba', 'Seshanba', 'Chorshanba',
                      'Payshanba', 'Juma', 'Shanba', 'Yakshanba']
 
-
+        # If week (1..7) provided without specific date: compute that weekday in current week
         if week and date_ls is None:
             today = date.today()
-            today_weekday = today.isoweekday()
-            shift_days = week.order - today_weekday
+            today_weekday = today.isoweekday()  # 1..7
+            shift_days = week - today_weekday
             week_day_date = today + timedelta(days=shift_days)
 
             weekday_name = week_days[week_day_date.weekday()]
-            rooms_info = self._build_rooms_info(rooms, hours, week_day_date,
-                                                branch, week, group_id,
-                                                teacher_id, student_id)
+            rooms_info = self._build_rooms_info(
+                rooms, hours, week_day_date,
+                branch, week, group_id, teacher_id, student_id
+            )
             time_tables.append({
                 "date": week_day_date.strftime("%Y-%m-%d"),
                 "weekday": weekday_name,
                 "rooms": rooms_info
             })
 
-
+        # No week, no date → full current week (Mon..Sun)
         elif date_ls is None and week is None:
             today = date.today()
-            start_week = today - timedelta(days=today.weekday())  # dushanba
+            start_week = today - timedelta(days=today.weekday())  # Monday
             for i in range(7):
                 day_date = start_week + timedelta(days=i)
                 weekday_name = week_days[day_date.weekday()]
-                rooms_info = self._build_rooms_info(rooms, hours, day_date,
-                                                    branch, None,
-                                                    group_id, teacher_id, student_id)
+                rooms_info = self._build_rooms_info(
+                    rooms, hours, day_date,
+                    branch, None, group_id, teacher_id, student_id
+                )
                 time_tables.append({
                     "date": day_date.strftime("%Y-%m-%d"),
                     "weekday": weekday_name,
                     "rooms": rooms_info
                 })
 
+        # Specific date provided
         elif date_ls:
             weekday_name = week_days[date_ls.weekday()]
-            rooms_info = self._build_rooms_info(rooms, hours, date_ls,
-                                                branch, None,
-                                                group_id, teacher_id, student_id)
+            rooms_info = self._build_rooms_info(
+                rooms, hours, date_ls,
+                branch, None, group_id, teacher_id, student_id
+            )
             time_tables.append({
                 "date": date_ls.strftime("%Y-%m-%d"),
                 "weekday": weekday_name,
@@ -267,6 +277,9 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
 
     def _build_rooms_info(self, rooms, hours, current_date,
                           branch, week, group_id, teacher_id, student_id):
+        """
+        week is expected to be int (1..7) or None.
+        """
         rooms_info = []
         for room in rooms:
             info = {
@@ -281,7 +294,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                     branch=branch
                 )
                 if week:
-                    qs = qs.filter(week=week)
+                    qs = qs.filter(week=week)  # int-based week
                 if group_id:
                     qs = qs.filter(group_id=group_id)
                 if teacher_id:
@@ -297,7 +310,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                         'id': lesson.flow.id,
                         'name': lesson.flow.name,
                         'classes': lesson.flow.classes
-                    } if lesson.flow else None
+                    } if getattr(lesson, 'flow', None) else None
                     teacher_info = ActiveListTeacherSerializerTime(lesson.teacher).data if lesson.teacher else None
                     subject_info = {
                         'id': lesson.subject.id,
@@ -307,7 +320,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                     lesson_info = {
                         'id': lesson.id,
                         'status': lesson.hours == hour,
-                        'is_flow': True if lesson.flow else False,
+                        'is_flow': True if flow_info else False,
                         'group': flow_info if lesson.group is None else group_info,
                         'room': room.id,
                         'teacher': teacher_info,
