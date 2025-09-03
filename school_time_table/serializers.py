@@ -226,7 +226,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
         time_tables = []
         week_days = ['Dushanba', 'Seshanba', 'Chorshanba',
                      'Payshanba', 'Juma', 'Shanba', 'Yakshanba']
-
+        print("week", week)
         # If week (1..7) provided without specific date: compute that weekday in current week
         if week and date_ls is None:
             today = date.today()
