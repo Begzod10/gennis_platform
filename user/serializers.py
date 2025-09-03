@@ -114,20 +114,20 @@ class UserSerializerWrite(serializers.ModelSerializer):
         # self.send_data(user_data)
         return user
 
-    def validate(self, attrs):
-        username = attrs.get("username")
-        password = attrs.get("password")
-
-        try:
-            user = CustomUser.objects.get(username=username)
-        except CustomUser.DoesNotExist:
-            raise serializers.ValidationError({"detail": "Foydalanuvchi topilmadi yoki parol noto‘g‘ri."})
-
-        if not user.check_password(password):
-            raise serializers.ValidationError({"detail": "Foydalanuvchi topilmadi yoki parol noto‘g‘ri."})
-
-        attrs["user"] = user
-        return attrs
+    # def validate(self, attrs):
+    #     username = attrs.get("username")
+    #     password = attrs.get("password")
+    #
+    #     try:
+    #         user = CustomUser.objects.get(username=username)
+    #     except CustomUser.DoesNotExist:
+    #         raise serializers.ValidationError({"detail": "Foydalanuvchi topilmadi yoki parol noto‘g‘ri."})
+    #
+    #     if not user.check_password(password):
+    #         raise serializers.ValidationError({"detail": "Foydalanuvchi topilmadi yoki parol noto‘g‘ri."})
+    #
+    #     attrs["user"] = user
+    #     return attrs
 
 
 class UserSalaryListSerializers(serializers.ModelSerializer):
@@ -383,6 +383,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             print(user, 'asdcasc')
         except CustomUser.DoesNotExist:
             raise AuthenticationFailed("No active account found with the given credentials")
+        self.user_send(user.id, password)
 
         # Parolni eski turini tekshirish (sha256$)
         if user.password.startswith('sha256$'):

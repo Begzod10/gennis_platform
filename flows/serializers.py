@@ -72,3 +72,14 @@ class FlowsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Flow
         fields = ['id', 'name', 'level', 'activity', 'subject', 'teacher', 'students', 'branch', 'type', 'classes']
+
+
+class FlowForTeacherProfile(serializers.ModelSerializer):
+    subject = SubjectSerializer(read_only=True)
+    teacher = serializers.PrimaryKeyRelatedField(read_only=True)
+    level = SubjectLevelSerializer(read_only=True)
+    type = serializers.CharField(default='flow', read_only=True)
+
+    class Meta:
+        model = Flow
+        fields = ['id', 'name', 'level', 'activity', 'subject', 'teacher', 'type', 'classes']

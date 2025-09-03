@@ -213,14 +213,18 @@ class UpdateFlowTimeTable(APIView):
         time_table = ClassTimeTable.objects.filter(room_id=room, date=date, hours_id=hour).first()
         if time_table:
             lesson_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
-
+            print('1 logic')
             if lesson_room:
                 if not lesson_room.id == time_table.id:
                     status = False
                     msg.append(f'Bu vaqtda {lesson_room.room.name} bosh emas')
-            lesson_teacher = ClassTimeTable.objects.filter(date=date, teacher_id=flow.teacher.pk,
+            lesson_teacher = ClassTimeTable.objects.filter(date=date,
+                                                           room_id=room,
+                                                           branch_id=flow.branch.pk,
+                                                           teacher_id=flow.teacher.pk if flow.teacher else None,
                                                            hours_id=hour).first()
             if lesson_teacher:
+
                 if not lesson_teacher.id == time_table.id:
                     status = False
 
@@ -231,33 +235,40 @@ class UpdateFlowTimeTable(APIView):
                         msg.append(
                             f"Bu vaqtda '{lesson_teacher.teacher.user.name} {lesson_teacher.teacher.user.surname}' ustozining  '{lesson_teacher.room.name}' xonada  '{lesson_teacher.flow.name}' patokiga darsi bor")
 
-            lesson_students = flow.students.filter(class_time_table__hours_id=hour, class_time_table__date=date).all()
+            lesson_students = flow.students.filter(class_time_table__hours_id=hour, class_time_table__date=date,
+                                                   class_time_table__room_id=room,
+                                                   class_time_table__branch_id=flow.branch_id).all()
 
             if lesson_students:
-                if flow.students.all():
-                    for student in flow.students.all():
-                        tm = student.class_time_table.filter(hours_id=hour, date=date).first()
-                        if tm:
-                            if not tm.id == time_table.id:
-                                status = False
-                                if tm.flow_id == None:
-                                    msg.append(
-                                        f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.group.class_number.number}-{tm.group.color.name}" sinifida darsi bor')
-                                else:
-                                    msg.append(
-                                        f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.flow.name}" patokida darsi bor')
+                status = False
+                for student in lesson_students:
+                    tm = student.class_time_table.filter(hours_id=hour, date=date).first()
+                    if tm:
+                        if not tm.id == time_table.id:
+                            status = False
+                            if tm.flow_id == None:
+                                msg.append(
+                                    f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.group.class_number.number}-{tm.group.color.name}" sinifida darsi bor')
+                            else:
+                                msg.append(
+                                    f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.flow.name}" patokida darsi bor')
             if status == True:
                 time_table.delete()
         else:
+            print('2 logic')
             lesson_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
             if lesson_room:
                 status = False
                 msg.append(f'Bu vaqtda {lesson_room.room.name} bosh emas')
             if flow.teacher:
                 lesson_teacher = ClassTimeTable.objects.filter(date=date, teacher_id=flow.teacher.pk,
+                                                               room_id=room,
+                                                               branch_id=flow.branch.pk,
                                                                hours_id=hour).first()
             else:
                 lesson_teacher = ClassTimeTable.objects.filter(date=date,
+                                                               branch_id=flow.branch.pk,
+                                                               room_id=room,
                                                                hours_id=hour).first()
             if lesson_teacher:
                 status = False
@@ -268,19 +279,21 @@ class UpdateFlowTimeTable(APIView):
                     msg.append(
                         f"Bu vaqtda '{lesson_teacher.teacher.user.name} {lesson_teacher.teacher.user.surname}' ustozining  '{lesson_teacher.room.name}' xonada  '{lesson_teacher.flow.name}' patokiga darsi bor")
 
-            lesson_students = flow.students.filter(class_time_table__hours_id=hour, class_time_table__date=date).all()
+            lesson_students = flow.students.filter(class_time_table__hours_id=hour, class_time_table__date=date,
+                                                   class_time_table__room_id=room,
+                                                   class_time_table__branch_id=flow.branch_id).all()
 
             if lesson_students:
                 status = False
-                if flow.students.all():
-                    for student in flow.students.all():
-                        tm = student.class_time_table.filter(hours_id=hour, date=date).first()
-                        if tm:
 
-                            if tm.flow_id == None:
-                                msg.append(
-                                    f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.group.class_number.number}-{tm.group.color.name}" sinifida darsi bor')
-                            else:
-                                msg.append(
-                                    f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.flow.name}" patokida darsi bor')
+                for student in lesson_students:
+                    tm = student.class_time_table.filter(hours_id=hour, date=date).first()
+                    if tm:
+
+                        if tm.flow_id == None:
+                            msg.append(
+                                f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.group.class_number.number}-{tm.group.color.name}" sinifida darsi bor')
+                        else:
+                            msg.append(
+                                f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.flow.name}" patokida darsi bor')
         return Response({'status': status, 'msg': msg})

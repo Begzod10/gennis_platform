@@ -10,7 +10,10 @@ def update_school_time_table_task():
     # Monday of the current week
     monday = today - timedelta(days=today.weekday())
     sunday = monday + timedelta(days=6)
-
+    # monday = "2025-08-25"
+    # sunday = "2025-08-29"
+    # monday = datetime.strptime(monday, "%Y-%m-%d").date()
+    # sunday = datetime.strptime(sunday, "%Y-%m-%d").date()
     print("========== SCHOOL TIMETABLE UPDATE ==========")
     print("Today:", today.strftime("%A"), today)
     print("This week's Monday:", monday.strftime("%A"), monday)
@@ -43,13 +46,15 @@ def update_school_time_table_task():
                 date=new_date,
                 subject=old.subject,
                 teacher=old.teacher,
-                classroom=old.classroom,
-                time=old.time
+                hours_id=old.hours_id,
+                room_id=old.room_id,
+                # classroom=old.classroom,
+                # time=old.time
             ).exists()
 
             if exists:
                 print(f"⚠️ Skipped duplicate for {old.subject} | {old.teacher} "
-                      f"on {new_date} at {old.time}")
+                      f"on {new_date}")
                 skipped_lessons.append(old.id)
                 continue
 

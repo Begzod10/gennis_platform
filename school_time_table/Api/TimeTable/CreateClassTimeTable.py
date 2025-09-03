@@ -4,7 +4,8 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from datetime import datetime, timedelta, date
-
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo  # Python 3.9+
 from group.models import Group
 from ...models import ClassTimeTable
 from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTableReadSerializers, \
@@ -134,13 +135,37 @@ class ClassTimeTableForClassView(APIView):
         date = self.request.query_params.get('date')
         branch_id = self.request.query_params.get('branch')
         branch = Branch.objects.get(id=branch_id)
+
         if week_id:
             week = WeekDays.objects.get(id=week_id)
-            date = None
+
+            # current date in Uzbekistan
+            today = datetime.now(ZoneInfo("Asia/Tashkent")).date()
+            monday = today - timedelta(days=today.weekday())  # start of current week (Monday = 0)
+
+            # map name_en to weekday number
+            weekday_map = {
+                "Monday": 0,
+                "Tuesday": 1,
+                "Wednesday": 2,
+                "Thursday": 3,
+                "Friday": 4,
+                "Saturday": 5,
+                "Sunday": 6,
+            }
+            target_weekday = weekday_map.get(week.name_en)
+
+            if target_weekday is not None:
+                # compute the exact date for that weekday
+                date = monday + timedelta(days=target_weekday)
+            else:
+                date = None
         else:
             week = None
 
-        serializer = ClassTimeTableForClassSerializer2(context={'date': date, 'branch': branch, "week": week})
+        serializer = ClassTimeTableForClassSerializer2(
+            context={'date': date, 'branch': branch, "week": week}
+        )
         data = {
             'time_tables': serializer.get_time_tables(None),
             'hours_list': serializer.get_hours_list(None)
@@ -162,18 +187,18 @@ class CheckClassTimeTable(APIView):
             group = Group.objects.get(pk=checked_id)
             lesson_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
             lesson_students = group.students.filter(class_time_table__hours_id=hour,
+                                                    class_time_table__room_id=room,
                                                     class_time_table__date=date).all()
             if lesson_students:
                 status = False
-                if group.students.all():
-                    for student in group.students.all():
-                        tm = student.class_time_table.filter(hours_id=hour, date=date).first()
-                        if tm.flow_id == None:
-                            msg.append(
-                                f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.group.class_number.number}-{tm.group.color.name}" sinifida darsi bor')
-                        else:
-                            msg.append(
-                                f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.flow.name}" patokida darsi bor')
+                for student in lesson_students:
+                    tm = student.class_time_table.filter(hours_id=hour, date=date).first()
+                    if tm.flow_id == None:
+                        msg.append(
+                            f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.group.class_number.number}-{tm.group.color.name}" sinifida darsi bor')
+                    else:
+                        msg.append(
+                            f'Bu vaqtda {student.user.name} {student.user.surname}ning  "{tm.room.name}" xonasida  "{tm.flow.name}" patokida darsi bor')
             if lesson_room:
                 msg.append(f'Bu vaqtda {lesson_room.room.name} bosh emas')
                 status = False
@@ -265,7 +290,6 @@ class CopyWeekScheduleAPIView(APIView):
                 old.save()
                 old.students.set(students)
                 new_lessons.append(old.id)
-
                 try:
                     payload = {
                         "id": old.id,
@@ -284,7 +308,6 @@ class CopyWeekScheduleAPIView(APIView):
                     print("Flask response:", r.status_code, r.text)
                 except Exception as e:
                     print("Flask create error:", e)
-
         return Response({
             "message": f"{len(new_lessons)} ta dars nusxalandi",
             "new_ids": new_lessons

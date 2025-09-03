@@ -16,12 +16,12 @@ class DeleteItemClassTimeTable(generics.RetrieveDestroyAPIView):
         serializer = self.get_serializer(instance)
 
         # Avval flask serverdan o‘chirib tashlaymiz
-        flask_response, status_code = serializer.delete_from_flask(instance)
+        # flask_response, status_code = serializer.delete_from_flask(instance)
 
         # Keyin Django bazadan o‘chirish
         self.perform_destroy(instance)
 
         return Response({
             "msg": "Dars muvvaffaqqiyatli o'chirildi",
-            "flask_response": flask_response
-        }, status=status_code)
+            # "flask_response": flask_response
+        }, status=200)

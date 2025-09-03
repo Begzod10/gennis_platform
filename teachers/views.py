@@ -22,17 +22,10 @@ class GetGroupStudents(APIView):
     def get(self, request, pk):
         teachers = Teacher.objects.get(pk=pk)
         datas = []
-        for group in teachers.group_set.all():
+        for group in teachers.group_set.filter(deleted=False).all():
             for student in group.students.all():
-                debt = 0
-                if student.user.branch.location.system.name == 'school':
-                    debt = get_remaining_debt_for_student(student.id)
-                else:
-                    groups = student.groups_student.all()
-                    for group in groups:
-                        for i in group.teacher.all():
-                            for salary in i.teacher_black_salary.filter(student_id=student.id).all():
-                                debt += salary.black_salary if salary.black_salary else 0
+                debt = get_remaining_debt_for_student(student.id)
+
                 datas.append({
                     'id': student.id,
                     'name': student.user.name,
