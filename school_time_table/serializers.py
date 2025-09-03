@@ -23,6 +23,8 @@ from django.db.models.functions import Coalesce
 
 from school_time_table.serializers_list import GroupClassSerializerList
 from teachers.serializer.lists import ActiveListTeacherSerializerTime
+from django.db.models.functions import Coalesce, Cast
+from django.db.models import F, BigIntegerField, IntegerField
 
 
 class HoursSerializers(serializers.ModelSerializer):
