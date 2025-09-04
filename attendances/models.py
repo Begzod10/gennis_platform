@@ -58,3 +58,48 @@ class GroupAttendancesPerMonth(models.Model):
     remaining_salary = models.IntegerField(null=True)
     taken_salary = models.IntegerField(null=True)
     group = models.ForeignKey(Group, on_delete=models.CASCADE)
+
+
+class StudentMonthlySummary(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+
+    year = models.IntegerField()
+    month = models.IntegerField()
+
+    stats = models.JSONField(default=dict)
+    # {"present": 20, "absent": 3, "total_days": 30}
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('student', 'group', 'year', 'month')
+
+
+class StudentDailyAttendance(models.Model):
+    monthly_summary = models.ForeignKey(
+        StudentMonthlySummary,
+        on_delete=models.CASCADE,
+        related_name="daily_records"
+    )
+
+    day = models.DateField()
+    status = models.BooleanField(default=False)  # True = keldi, False = kelmadi
+    reason = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        unique_together = ('monthly_summary', 'day')
+
+
+class GroupMonthlySummary(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="monthly_summaries")
+    year = models.IntegerField()
+    month = models.IntegerField()
+    stats = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        unique_together = ("group", "year", "month")
+
+    def __str__(self):
+        return f"{self.group.name} - {self.year}/{self.month}"

@@ -6,7 +6,7 @@ from .Api.AttendanceList import AttendanceList, AttendanceListForAllGroups, Atte
 from .Api.ToAttend import ToAttend, ToAttendSchool
 from .Api.attend_dates import WeekdaysInMonthAPIView
 from .views import DeleteAttendanceMonthApiView, AttendanceYearListView, GroupStudentsForChangeDebtView, \
-    AttendanceDayAPIView
+    AttendanceDayAPIView, AttendancePeriodsView, GroupMonthlyAttendanceView, AttendanceCreateView, AttendanceDeleteView
 
 urlpatterns = [
     path('to_attend/<int:group_id>/', ToAttend.as_view(), name='to-attend'),
@@ -27,4 +27,10 @@ urlpatterns = [
          name='attendance_year_list_s'),
     path('attendance-days-mobile/<int:group_id>/', AttendanceDayAPIView.as_view(), name='attendance-days'),
 
+    path("attendance/periods/", AttendancePeriodsView.as_view(), name="attendance-periods"),
+    path("attendance/monthly/", GroupMonthlyAttendanceView.as_view(), name="attendance-monthly"),
+
+    # CRUD for daily attendance
+    path("attendance/create/", AttendanceCreateView.as_view(), name="attendance-create"),
+    path("attendance/<int:id>/delete/", AttendanceDeleteView.as_view(), name="attendance-delete"),
 ]

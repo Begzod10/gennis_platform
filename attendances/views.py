@@ -1,4 +1,3 @@
-import calendar
 from datetime import datetime
 
 from django.db.models.functions import ExtractYear, ExtractMonth
@@ -8,11 +7,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import F
 
-from attendances.models import AttendancePerMonth
+from collections import defaultdict
+import calendar
+from datetime import date, timedelta
+
+from attendances.models import AttendancePerMonth, StudentMonthlySummary
 from attendances.serializers import AttendancePerMonthSerializer
 from students.models import StudentPayment, StudentCharity
 from students.serializers import get_remaining_debt_for_student
 from .models import AttendancePerDay
+from .models import StudentDailyAttendance, GroupMonthlySummary
+from .serializers import StudentDailyAttendanceSerializer
 
 
 # Create your views here.
@@ -134,4 +139,100 @@ class AttendanceDayAPIView(APIView):
                 "months": months_data,
                 "years": sorted(list(years))
             }
+        })
+
+
+class AttendanceCreateView(generics.CreateAPIView):
+    queryset = StudentDailyAttendance.objects.all()
+    serializer_class = StudentDailyAttendanceSerializer
+
+
+
+class AttendanceDeleteView(generics.DestroyAPIView):
+    queryset = StudentDailyAttendance.objects.all()
+    serializer_class = StudentDailyAttendanceSerializer
+    lookup_field = "id"
+
+
+def generate_workdays(year, month):
+    today = date.today()
+    start = date(year, month, 1)
+    end_day = today.day if today.year == year and today.month == month else calendar.monthrange(year, month)[1]
+    end = date(year, month, end_day)
+
+    days = []
+    current = start
+    while current <= end:
+        if current.weekday() < 5:
+            days.append(current.day)
+        current += timedelta(days=1)
+    return days
+
+
+class AttendancePeriodsView(APIView):
+    def get(self, request):
+        group_id = request.query_params.get("group_id")
+
+        summaries = StudentMonthlySummary.objects.filter(group_id=group_id).order_by("year", "month")
+
+        if not summaries.exists():
+            today = date.today()
+            return Response({
+                "group_id": group_id,
+                "periods": [
+                    {
+                        "year": today.year,
+                        "months": [
+                            {
+                                "month": today.month,
+                                "days": generate_workdays(today.year, today.month)
+                            }
+                        ]
+                    }
+                ]
+            })
+
+        periods = {}
+        for s in summaries:
+            if s.year not in periods:
+                periods[s.year] = []
+            periods[s.year].append({
+                "month": s.month,
+                "days": generate_workdays(s.year, s.month)
+            })
+
+        result = {
+            "group_id": group_id,
+            "periods": [
+                {"year": year, "months": months}
+                for year, months in periods.items()
+            ]
+        }
+
+        return Response(result, status=status.HTTP_200_OK)
+
+
+class GroupMonthlyAttendanceView(APIView):
+    def get(self, request, *args, **kwargs):
+        group_id = request.query_params.get("group_id")
+        year = request.query_params.get("year")
+        month = request.query_params.get("month")
+        print(group_id, year, month)
+        if not group_id or not year or not month:
+            return Response({"error": "group_id, year va month kerak"}, status=status.HTTP_400_BAD_REQUEST)
+
+        year, month = int(year), int(month)
+
+        _, days_in_month = calendar.monthrange(year, month)
+        days_list = list(range(1, days_in_month + 1))
+
+        # summaries = StudentMonthlySummary.objects.filter(group_id=group_id, year=year, month=month)
+        # data = [summary.stats for summary in summaries]
+        summaries = GroupMonthlySummary.objects.get(group_id=group_id, year=year, month=month)
+        print(summaries)
+        data = summaries.stats
+
+        return Response({
+            "days": days_list,
+            "students": data
         })

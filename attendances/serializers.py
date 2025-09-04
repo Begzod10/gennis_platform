@@ -249,4 +249,45 @@ class AttendancePerDayCreateUpdateSerializerSchool(serializers.ModelSerializer):
         return created_instances[0] if created_instances else None
 
 
+from .models import StudentDailyAttendance, StudentMonthlySummary
 
+
+class StudentDailyAttendanceSerializer(serializers.ModelSerializer):
+
+    student_id = serializers.IntegerField(write_only=True)
+    group_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = StudentDailyAttendance
+        fields = ["id", "student_id", "group_id", "day", "status", "reason"]
+
+    def create(self, validated_data):
+        student_id = validated_data.pop("student_id")
+        group_id = validated_data.pop("group_id")
+        day = validated_data["day"]
+
+        year = day.year
+        month = day.month
+
+        summary, created = StudentMonthlySummary.objects.get_or_create(
+            student_id=student_id,
+            group_id=group_id,
+            year=year,
+            month=month,
+            defaults={"stats": {}}
+        )
+
+        daily = StudentDailyAttendance.objects.create(
+            monthly_summary=summary,
+            day=day,
+            status=validated_data.get("status", False),
+            reason=validated_data.get("reason", None),
+        )
+
+        return daily
+
+
+class StudentMonthlySummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentMonthlySummary
+        fields = "__all__"

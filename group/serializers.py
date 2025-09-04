@@ -132,9 +132,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                 TeacherHistoryGroups.objects.create(group=instance, teacher=validated_data.get('teacher')[0],
                                                     joined_day=datetime.now())
             if update_method:
-                print('adcaca')
                 if update_method == "add_students":
-                    print('sssvs')
                     for student in students:
                         instance.students.add(student)
                         StudentHistoryGroups.objects.create(group=instance, student=student,
@@ -144,8 +142,6 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                         if instance.classtimetable_set.all():
                             for time_table in instance.classtimetable_set.all():
                                 student.class_time_table.add(time_table)
-                    print(instance, 'asdada')
-                    print(instance, students)
                     create_school_student_debts(instance, students)
                 elif update_method == "remove_students":
 
@@ -201,55 +197,6 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                             if instance.classtimetable_set.all():
                                 for time_table in instance.classtimetable_set.all():
                                     student.class_time_table.remove(time_table)
-        else:
-            if 'teacher' in validated_data:
-                teacher_history_group = TeacherHistoryGroups.objects.filter(group=instance,
-                                                                            teacher=instance.teacher.all()[0]).first()
-                teacher_history_group.left_day = datetime.now()
-                teacher_history_group.save()
-                for time_table in instance.group_time_table.all():
-                    instance.teacher.all()[0].group_time_table.remove(time_table)
-                    validated_data.get('teacher')[0].group_time_table.add(time_table)
-                instance.teacher.remove(instance.teacher.all()[0])
-                instance.teacher.remove(*instance.teacher.all())
-                instance.teacher.add(validated_data.get('teacher')[0])
-                TeacherHistoryGroups.objects.create(group=instance, teacher=validated_data.get('teacher')[0],
-                                                    joined_day=datetime.now())
-
-            if update_method:
-                if update_method == "add_students":
-                    for student in students:
-                        instance.students.add(student)
-                        StudentHistoryGroups.objects.create(group=instance, student=student,
-                                                            teacher=instance.teacher.all()[0],
-                                                            joined_day=datetime.now())
-                        if instance.group_time_table.all():
-                            for time_table in instance.group_time_table.all():
-                                student.group_time_table.add(time_table)
-                elif update_method == "remove_students":
-                    if delete_type == 'new_students':
-                        for student in students:
-                            # request(
-                            #     url=f"{classroom_server}/delete_student_from_group/{student.user_id}/{instance.id}/turon",
-                            #     method='DELETE')
-                            instance.students.remove(student)
-                            # DeletedNewStudent.objects.create(student=student, comment=comment)
-                            if instance.group_time_table.all():
-                                for time_table in instance.group_time_table.all():
-                                    student.group_time_table.remove(time_table)
-                    else:
-                        for student in students:
-                            instance.students.remove(student)
-                            DeletedStudent.objects.create(student=student, group=instance,
-                                                          comment=comment if comment else None,
-                                                          group_reason_id=group_reason if group_reason else None)
-                            if instance.group_time_table.all():
-                                for time_table in instance.group_time_table.all():
-                                    student.group_time_table.remove(time_table)
-                            student_history_group, _ = StudentHistoryGroups.objects.get_or_create(group=instance,
-                                                                                                  student=student, )
-                            student_history_group.left_day = datetime.now()
-                            student_history_group.save()
         instance.color = validated_data.get('color', instance.color)
         instance.save()
         from group.serializers_list.serializers_self import GroupListSerializer
