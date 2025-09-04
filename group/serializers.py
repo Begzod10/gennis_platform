@@ -10,7 +10,7 @@ from classes.models import ClassNumber, ClassColors
 from gennis_platform.settings import classroom_server
 from gennis_platform.uitils import request
 from group.functions.CreateSchoolStudentDebts import create_school_student_debts
-from group.models import Group, GroupReason, CourseTypes
+from group.models import Group, GroupReason, CourseTypes, GroupSubjects
 from language.models import Language
 from language.serializers import LanguageSerializers
 from students.models import DeletedNewStudent
@@ -357,3 +357,36 @@ class GroupClassSerializer(serializers.ModelSerializer):
         class_number = self.get_class_number(obj)
         color = self.get_color(obj)
         return f"{class_number['number']} - {color['name']}"
+
+
+class GroupSubjectSerializer(serializers.ModelSerializer):
+    subject = SubjectSerializer(many=True)
+    group = serializers.SerializerMethodField()
+    class_type = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GroupSubjects
+        fields = ['id', 'subject', 'hours', 'group', 'class_type']
+
+    def get_group(self, obj):
+        return {
+            'id': obj.group_subjects.id,
+            'name': obj.group_subjects.color.name,
+            "class_number": obj.group_subjects.class_number.number
+        }
+
+    def get_class_type(self, obj):
+        return {
+            'id': obj.class_type.id,
+            'name': obj.class_type.name
+        }
+
+
+class GroupListSerializer(serializers.ModelSerializer):
+    class_number = serializers.CharField(required=False, source='class_number.number')
+    color = serializers.CharField(required=False, source='color.name')
+    subjects = GroupSubjectSerializer(required=False, many=True, read_only=True)
+
+    class Meta:
+        model = Group
+        fields = ['id', "class_number", "color", 'price', 'subjects']

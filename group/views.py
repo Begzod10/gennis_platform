@@ -1,7 +1,8 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from .serializers import GroupSubjectSerializer, GroupListSerializer
 from group.models import Group
+from rest_framework import generics
 
 
 class GroupStudentsClassRoom(APIView):
@@ -24,3 +25,13 @@ class GroupStudentsClassRoom(APIView):
         return Response(list)
 
 
+class GroupListView(generics.ListAPIView):
+    queryset = Group.objects.all()
+    serializer_class = GroupListSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = Group.objects.filter(branch_id=self.request.query_params['branch_id']).all()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+# class

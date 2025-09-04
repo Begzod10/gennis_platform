@@ -38,6 +38,14 @@ class Group(models.Model):
         ordering = ['id']
 
 
+class GroupSubjects(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='group_subjects')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    hours = models.IntegerField(null=True)
+    class_type = models.ForeignKey("classes.ClassTypes", on_delete=models.CASCADE, null=True,
+                                   related_name='group_subjects')
+
+
 class GroupReason(models.Model):
     name = models.CharField(max_length=255)
 
