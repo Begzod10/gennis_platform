@@ -18,6 +18,7 @@ from students.serializers import get_remaining_debt_for_student
 from .models import AttendancePerDay
 from .models import StudentDailyAttendance, GroupMonthlySummary
 from .serializers import StudentDailyAttendanceSerializer
+from group.models import Group
 
 
 # Create your views here.
@@ -147,7 +148,6 @@ class AttendanceCreateView(generics.CreateAPIView):
     serializer_class = StudentDailyAttendanceSerializer
 
 
-
 class AttendanceDeleteView(generics.DestroyAPIView):
     queryset = StudentDailyAttendance.objects.all()
     serializer_class = StudentDailyAttendanceSerializer
@@ -236,3 +236,81 @@ class GroupMonthlyAttendanceView(APIView):
             "days": days_list,
             "students": data
         })
+
+
+class AttendanceDatesView(APIView):
+    def get(self, request):
+        start_date = date(2025, 9, 1)
+        today = date.today()
+
+        dates_by_year = defaultdict(lambda: defaultdict(list))
+
+        current = start_date
+        while current <= today:
+            if current.weekday() < 5:
+                dates_by_year[current.year][current.month].append(current.day)
+            current += timedelta(days=1)
+
+        periods = []
+        for year, months in dates_by_year.items():
+            periods.append({
+                "year": year,
+                "months": [
+                    {"month": m, "days": days}
+                    for m, days in sorted(months.items())
+                ]
+            })
+
+        return Response({"periods": periods}, status=status.HTTP_200_OK)
+
+class BranchDailyStatsView(APIView):
+    def get(self, request, branch_id):
+        year = int(request.query_params.get("year"))
+        month = int(request.query_params.get("month"))
+        day = int(request.query_params.get("day"))
+
+        target_date = date(year, month, day)
+        groups = Group.objects.filter(branch_id=branch_id)
+
+        group_list = []
+        for group in groups:
+            students = group.students.all()
+            records = StudentDailyAttendance.objects.filter(
+                monthly_summary__group=group,
+                day=target_date
+            ).select_related("monthly_summary__student__user")
+
+            rec_map = {r.monthly_summary.student_id: r.status for r in records}
+
+            student_data = []
+            present, absent = 0, 0
+            for st in students:
+                status_val = rec_map.get(st.id, None)
+                if status_val is True:
+                    present += 1
+                elif status_val is False:
+                    absent += 1
+
+                student_data.append({
+                    "id": st.id,
+                    "name": st.user.first_name,
+                    "surname": st.user.last_name,
+                    "status": status_val
+                })
+
+            group_list.append({
+                "group_id": group.id,
+                "group_name": group.name,
+                "students": student_data,
+                "summary": {
+                    "present": present,
+                    "absent": absent,
+                    "total": students.count()
+                }
+            })
+
+        return Response({
+            "branch_id": branch_id,
+            "date": str(target_date),
+            "groups": group_list
+        }, status=status.HTTP_200_OK)
