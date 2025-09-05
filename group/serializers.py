@@ -385,8 +385,21 @@ class GroupSubjectSerializer(serializers.ModelSerializer):
 class GroupListSerializer(serializers.ModelSerializer):
     class_number = serializers.CharField(required=False, source='class_number.number')
     color = serializers.CharField(required=False, source='color.name')
-    subjects = GroupSubjectSerializer(required=False, many=True, read_only=True)
+    subjects = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Group
         fields = ['id', "class_number", "color", 'price', 'subjects']
+
+    def get_subjects(self, obj):
+        data = []
+        group_subjects = GroupSubjects.objects.filter(group=obj).order_by("pk").all()
+        for subject in group_subjects:
+            info = {
+                "subject_name": subject.subject.name,
+                "subject_id": subject.subject.pk,
+                "hours": subject.hours,
+                "from_database": True
+            }
+            data.append(info)
+        return data
