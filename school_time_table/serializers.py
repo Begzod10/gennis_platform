@@ -1,7 +1,7 @@
 from datetime import date, timedelta, datetime
 import requests
 from rest_framework import serializers
-
+from django.db.models import F, IntegerField
 from branch.models import Branch
 from branch.serializers import BranchSerializer
 from flows.models import Flow
@@ -25,7 +25,6 @@ from school_time_table.serializers_list import GroupClassSerializerList
 from teachers.serializer.lists import ActiveListTeacherSerializerTime
 from django.db.models.functions import Coalesce, Cast
 from django.db.models import F, BigIntegerField, IntegerField
-
 
 class HoursSerializers(serializers.ModelSerializer):
     can_delete = serializers.SerializerMethodField()
@@ -180,6 +179,12 @@ class ClassTimeTableSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'week', 'hours', 'flow', 'room', 'teacher', 'subject']
 
 
+
+from school_time_table.serializers_list import GroupClassSerializerList
+from teachers.serializer.lists import ActiveListTeacherSerializerTime
+
+
+
 class ClassTimeTableTest2Serializer(serializers.Serializer):
     time_tables = serializers.SerializerMethodField()
     hours_list = serializers.SerializerMethodField()
@@ -211,7 +216,6 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
             Room.objects
             .filter(branch=branch, deleted=False)
             .annotate(
-                # Upcast both sides to BigInteger for Coalesce to avoid mixed types
                 sort_order=Coalesce(
                     Cast('order', BigIntegerField()),
                     F('id'),
@@ -226,6 +230,9 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
         time_tables = []
         week_days = ['Dushanba', 'Seshanba', 'Chorshanba',
                      'Payshanba', 'Juma', 'Shanba', 'Yakshanba']
+
+
+
         # If week (1..7) provided without specific date: compute that weekday in current week
         if week and date_ls is None:
             today = date.today()
@@ -244,10 +251,10 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                 "rooms": rooms_info
             })
 
-        # No week, no date → full current week (Mon..Sun)
+
         elif date_ls is None and week is None:
             today = date.today()
-            start_week = today - timedelta(days=today.weekday())  # Monday
+            start_week = today - timedelta(days=today.weekday())
             for i in range(7):
                 day_date = start_week + timedelta(days=i)
                 weekday_name = week_days[day_date.weekday()]
@@ -261,7 +268,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                     "rooms": rooms_info
                 })
 
-        # Specific date provided
+
         elif date_ls:
             weekday_name = week_days[date_ls.weekday()]
             rooms_info = self._build_rooms_info(
@@ -286,6 +293,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
             info = {
                 'id': room.id,
                 'name': room.name,
+                'order': room.order,
                 'lessons': []
             }
             for hour in hours:

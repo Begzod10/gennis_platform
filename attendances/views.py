@@ -1,4 +1,3 @@
-import calendar
 from datetime import datetime
 
 from django.db.models.functions import ExtractYear, ExtractMonth
@@ -8,11 +7,18 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import F
 
-from attendances.models import AttendancePerMonth
+from collections import defaultdict
+import calendar
+from datetime import date, timedelta
+
+from attendances.models import AttendancePerMonth, StudentMonthlySummary
 from attendances.serializers import AttendancePerMonthSerializer
 from students.models import StudentPayment, StudentCharity
 from students.serializers import get_remaining_debt_for_student
 from .models import AttendancePerDay
+from .models import StudentDailyAttendance, GroupMonthlySummary
+from .serializers import StudentDailyAttendanceSerializer
+from group.models import Group
 
 
 # Create your views here.
@@ -135,3 +141,176 @@ class AttendanceDayAPIView(APIView):
                 "years": sorted(list(years))
             }
         })
+
+
+class AttendanceCreateView(generics.CreateAPIView):
+    queryset = StudentDailyAttendance.objects.all()
+    serializer_class = StudentDailyAttendanceSerializer
+
+
+class AttendanceDeleteView(generics.DestroyAPIView):
+    queryset = StudentDailyAttendance.objects.all()
+    serializer_class = StudentDailyAttendanceSerializer
+    lookup_field = "id"
+
+
+def generate_workdays(year, month):
+    today = date.today()
+    start = date(year, month, 1)
+    end_day = today.day if today.year == year and today.month == month else calendar.monthrange(year, month)[1]
+    end = date(year, month, end_day)
+
+    days = []
+    current = start
+    while current <= end:
+        if current.weekday() < 5:
+            days.append(current.day)
+        current += timedelta(days=1)
+    return days
+
+
+class AttendancePeriodsView(APIView):
+    def get(self, request):
+        group_id = request.query_params.get("group_id")
+
+        summaries = StudentMonthlySummary.objects.filter(group_id=group_id).order_by("year", "month")
+
+        if not summaries.exists():
+            today = date.today()
+            return Response({
+                "group_id": group_id,
+                "periods": [
+                    {
+                        "year": today.year,
+                        "months": [
+                            {
+                                "month": today.month,
+                                "days": generate_workdays(today.year, today.month)
+                            }
+                        ]
+                    }
+                ]
+            })
+
+        periods = {}
+        for s in summaries:
+            if s.year not in periods:
+                periods[s.year] = []
+            periods[s.year].append({
+                "month": s.month,
+                "days": generate_workdays(s.year, s.month)
+            })
+
+        result = {
+            "group_id": group_id,
+            "periods": [
+                {"year": year, "months": months}
+                for year, months in periods.items()
+            ]
+        }
+
+        return Response(result, status=status.HTTP_200_OK)
+
+
+class GroupMonthlyAttendanceView(APIView):
+    def get(self, request, *args, **kwargs):
+        group_id = request.query_params.get("group_id")
+        year = request.query_params.get("year")
+        month = request.query_params.get("month")
+        print(group_id, year, month)
+        if not group_id or not year or not month:
+            return Response({"error": "group_id, year va month kerak"}, status=status.HTTP_400_BAD_REQUEST)
+
+        year, month = int(year), int(month)
+
+        _, days_in_month = calendar.monthrange(year, month)
+        days_list = list(range(1, days_in_month + 1))
+
+        # summaries = StudentMonthlySummary.objects.filter(group_id=group_id, year=year, month=month)
+        # data = [summary.stats for summary in summaries]
+        summaries = GroupMonthlySummary.objects.get(group_id=group_id, year=year, month=month)
+        print(summaries)
+        data = summaries.stats
+
+        return Response({
+            "days": days_list,
+            "students": data
+        })
+
+
+class AttendanceDatesView(APIView):
+    def get(self, request):
+        start_date = date(2025, 9, 1)
+        today = date.today()
+
+        dates_by_year = defaultdict(lambda: defaultdict(list))
+
+        current = start_date
+        while current <= today:
+            if current.weekday() < 5:
+                dates_by_year[current.year][current.month].append(current.day)
+            current += timedelta(days=1)
+
+        periods = []
+        for year, months in dates_by_year.items():
+            periods.append({
+                "year": year,
+                "months": [
+                    {"month": m, "days": days}
+                    for m, days in sorted(months.items())
+                ]
+            })
+
+        return Response({"periods": periods}, status=status.HTTP_200_OK)
+
+class BranchDailyStatsView(APIView):
+    def get(self, request, branch_id):
+        year = int(request.query_params.get("year"))
+        month = int(request.query_params.get("month"))
+        day = int(request.query_params.get("day"))
+
+        target_date = date(year, month, day)
+        groups = Group.objects.filter(branch_id=branch_id)
+
+        group_list = []
+        for group in groups:
+            students = group.students.all()
+            records = StudentDailyAttendance.objects.filter(
+                monthly_summary__group=group,
+                day=target_date
+            ).select_related("monthly_summary__student__user")
+
+            rec_map = {r.monthly_summary.student_id: r.status for r in records}
+
+            student_data = []
+            present, absent = 0, 0
+            for st in students:
+                status_val = rec_map.get(st.id, None)
+                if status_val is True:
+                    present += 1
+                elif status_val is False:
+                    absent += 1
+
+                student_data.append({
+                    "id": st.id,
+                    "name": st.user.first_name,
+                    "surname": st.user.last_name,
+                    "status": status_val
+                })
+
+            group_list.append({
+                "group_id": group.id,
+                "group_name": group.name,
+                "students": student_data,
+                "summary": {
+                    "present": present,
+                    "absent": absent,
+                    "total": students.count()
+                }
+            })
+
+        return Response({
+            "branch_id": branch_id,
+            "date": str(target_date),
+            "groups": group_list
+        }, status=status.HTTP_200_OK)
