@@ -294,8 +294,8 @@ class BranchDailyStatsView(APIView):
 
                 student_data.append({
                     "id": st.id,
-                    "name": st.user.first_name,
-                    "surname": st.user.last_name,
+                    "name": st.user.name,
+                    "surname": st.user.surname,
                     "status": status_val
                 })
 
