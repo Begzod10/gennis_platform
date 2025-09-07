@@ -263,6 +263,7 @@ class AttendanceDatesView(APIView):
 
         return Response({"periods": periods}, status=status.HTTP_200_OK)
 
+
 class BranchDailyStatsView(APIView):
     def get(self, request, branch_id):
         year = int(request.query_params.get("year"))
@@ -270,7 +271,7 @@ class BranchDailyStatsView(APIView):
         day = int(request.query_params.get("day"))
 
         target_date = date(year, month, day)
-        groups = Group.objects.filter(branch_id=branch_id)
+        groups = Group.objects.filter(branch_id=branch_id, deleted=False).all()
 
         group_list = []
         for group in groups:

@@ -1,18 +1,19 @@
 from django.urls import path
 
+from .gennis.AddToGroupApi import AddToGroupApi
 from .gennis.CreatGroups import CreatGroups, CreateGroupReasonList, GroupReasonRetrieveUpdateDestroyAPIView, \
     CreateCourseTypesList, CourseTypesRetrieveUpdateDestroyAPIView
-from .gennis.GroupProfile import GroupProfile
 from .gennis.DeleteGroups import DeleteGroups
-from .gennis.AddToGroupApi import AddToGroupApi
-from .gennis.TeacherGroupChange import TeacherGroupChange
-from .gennis.MoveToGroupApi import MoveToGroupApi
 from .gennis.DeleteStudentFromGroup import DeleteStudentFromGroup
-from .school.ClassesList import ClassesView, AddClassesList, CreateGroupTeacherListView, ClassesView2
+from .gennis.GetCheckedStudentsForClassTimeTable import GetCheckedStudentsForClassTimeTable, CheckedStudentsMoveToGroup
 from .gennis.GetChekedStudentsTeachers import GetCheckedStudentsTeachers
 from .gennis.GetGroupsForTeacher import GetGroupsForTeacher
-from .gennis.GetCheckedStudentsForClassTimeTable import GetCheckedStudentsForClassTimeTable, CheckedStudentsMoveToGroup
-from .views import GroupStudentsClassRoom, GroupListView, GroupSubjectAddView, GroupSubjectRemoveView
+from .gennis.GroupProfile import GroupProfile
+from .gennis.MoveToGroupApi import MoveToGroupApi
+from .gennis.TeacherGroupChange import TeacherGroupChange
+from .school.ClassesList import ClassesView, AddClassesList, CreateGroupTeacherListView, ClassesView2
+from .views import GroupStudentsClassRoom, GroupListView, GroupSubjectAddView, GroupSubjectRemoveView, \
+    AddClassTypeToGroup
 
 urlpatterns = [
     path('groups/create/', CreatGroups.as_view(), name='create'),
@@ -42,5 +43,6 @@ urlpatterns = [
     path('groups_by_class_type/', GroupListView.as_view(), name='groups_by_class_type'),
     path('groups_add_subject/', GroupSubjectAddView.as_view(), name="groups_add_subject"),
     path('groups_remove_subject/', GroupSubjectRemoveView.as_view(), name="groups_add_subject"),
+    path('group_add_class_type/', AddClassTypeToGroup.as_view(), name='groups_by_class_type'),
 
 ]

@@ -33,13 +33,6 @@ class GroupListView(generics.ListAPIView):
     serializer_class = GroupListSerializer
 
     def list(self, request, *args, **kwargs):
-        if 'class_type_id' in request.query_params:
-            queryset = Group.objects.filter(class_type_id=self.request.query_params['class_type_id'],
-                                            branch_id=self.request.query_params['branch_id']).order_by(
-                'class_number_id').all()
-        else:
-            queryset = Group.objects.filter(branch_id=self.request.query_params['branch_id']).order_by(
-                'class_number_id').all()
         class_numbers = ClassNumber.objects.filter(branch_id=self.request.query_params['branch_id']).all()
 
         for class_number in class_numbers:
@@ -52,8 +45,25 @@ class GroupListView(generics.ListAPIView):
                         group_id=group.id,
                         subject_id=class_number_subject.subject_id
                     )
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        if 'class_type_id' in request.query_params:
+            with_class_type = Group.objects.filter(class_type_id=self.request.query_params['class_type_id'],
+                                                   branch_id=self.request.query_params['branch_id']).order_by(
+                'class_number_id').all()
+            without_class_type = Group.objects.filter(class_type_id__isnull=True,
+                                                      branch_id=self.request.query_params['branch_id']).order_by(
+                'class_number_id').all()
+
+            return Response({
+                'with_class_type': GroupListSerializer(with_class_type, many=True).data,
+                'without_class_type': GroupListSerializer(without_class_type, many=True).data
+            })
+
+        else:
+            queryset = Group.objects.filter(branch_id=self.request.query_params['branch_id']).order_by(
+                'class_number_id').all()
+            return Response({
+                "without_class_type": GroupListSerializer(queryset, many=True).data
+            })
 
 
 class GroupSubjectAddView(APIView):
@@ -78,6 +88,16 @@ class GroupSubjectRemoveView(APIView):
         group_subject = GroupSubjects.objects.filter(group_id=group.id, subject_id=subject)
         group_subject.delete()
         data = GroupListSerializer(group).data
+        return Response({
+            "msg": "success"
+        })
+
+
+class AddClassTypeToGroup(APIView):
+    def post(self, request, *args, **kwargs):
+        group = Group.objects.get(pk=request.data['group_id'])
+        group.class_type_id = request.data['class_type_id']
+        group.save()
         return Response({
             "msg": "success"
         })

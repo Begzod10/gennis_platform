@@ -46,6 +46,11 @@ class GroupSubjects(models.Model):
     hours = models.IntegerField(null=True)
 
 
+class GroupSubjectsCount(models.Model):
+    date = models.DateField()
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+
+
 class GroupReason(models.Model):
     name = models.CharField(max_length=255)
 
