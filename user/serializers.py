@@ -370,7 +370,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             # self.usern = res['data']['username']
             return self.object
         else:
-            return UserSerializerRead(user).data
+            self.object = UserSerializerRead(user).data
+            return self.object
 
     def validate(self, attrs):
         username = attrs.get('username')
@@ -413,7 +414,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['username'] = self.usern
         data['user'] = self.object
 
-        self.user_send(user.id, password)
 
         return data
     # def validate(self, attrs):
