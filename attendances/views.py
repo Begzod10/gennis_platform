@@ -301,6 +301,8 @@ class BranchDailyStatsView(APIView):
                     "surname": st.user.surname,
                     "status": status_val
                 })
+            total_students = students.count()
+            branch_total += total_students
 
             group_list.append({
                 "group_id": group.id,
