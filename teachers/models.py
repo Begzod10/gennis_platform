@@ -38,7 +38,8 @@ class Teacher(models.Model):
 class TeacherAttendance(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True,
                                 related_name='teacher_attendance_teacher')
-    day = models.DateTimeField(null=True)
+    entry_time = models.DateTimeField(null=True)
+    leave_time=models.DateTimeField(null=True)
     status = models.BooleanField(null=True)
     system = models.ForeignKey(System, on_delete=models.SET_NULL, null=True, related_name='teacher_attendance_system')
 
