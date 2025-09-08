@@ -9,8 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 from celery.schedules import crontab
 
-# classroom_server = os.getenv('CLASSROOM_SERVER')
-classroom_server = "http://127.0.0.1:5001"
+classroom_server = os.getenv('CLASSROOM_SERVER')
 gennis_server = os.getenv('GENNIS_SERVER')
 
 DEBUG = True
