@@ -228,9 +228,12 @@ class GroupMonthlyAttendanceView(APIView):
 
         # summaries = StudentMonthlySummary.objects.filter(group_id=group_id, year=year, month=month)
         # data = [summary.stats for summary in summaries]
-        summaries = GroupMonthlySummary.objects.get(group_id=group_id, year=year, month=month)
-        print(summaries)
-        data = summaries.stats
+        summaries = GroupMonthlySummary.objects.filter(
+            group_id=group_id,
+            year=year,
+            month=month
+        ).first()
+        data = summaries.stats if summaries else None
 
         return Response({
             "days": days_list,
@@ -262,6 +265,7 @@ class AttendanceDatesView(APIView):
             })
 
         return Response({"periods": periods}, status=status.HTTP_200_OK)
+
 
 class BranchDailyStatsView(APIView):
     def get(self, request, branch_id):
