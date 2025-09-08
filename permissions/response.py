@@ -155,7 +155,7 @@ class GetModelsMixin:
                                                                     deleted=False,student__user__branch_id=branch.id).values_list('student_id', flat=True)
                 deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
                 active_students = Student.objects.exclude(id__in=deleted_student_ids).exclude(
-                    id__in=deleted_new_student_ids).filter(groups_student__isnull=False,student__user__branch_id=branch.id).distinct().order_by(
+                    id__in=deleted_new_student_ids).filter(groups_student__isnull=False,user__branch_id=branch.id).distinct().order_by(
                     'class_number__number')
                 branch_data['count'] = active_students.count()
             elif type_name == 'deleted_students':
