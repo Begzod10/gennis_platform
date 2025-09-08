@@ -46,11 +46,11 @@ class ActiveListSerializer(serializers.ModelSerializer):
     color = serializers.SerializerMethodField(required=False)
     debt = serializers.SerializerMethodField(required=False)
     class_number = serializers.CharField(required=False, source='class_number.number')
-    comment = serializers.CharField(required=False,source="user.comment")
+    comment = serializers.CharField(required=False, source="user.comment")
 
     class Meta:
         model = Student
-        fields = ('id', 'user', "group", "color", "debt", 'class_number','comment')
+        fields = ('id', 'user', "group", "color", "debt", 'class_number', 'comment')
 
     def get_color(self, obj):
         color = ''
@@ -63,15 +63,8 @@ class ActiveListSerializer(serializers.ModelSerializer):
         return color
 
     def get_debt(self, obj):
-        debt = 0
-        if obj.user.branch.location.system.name == 'school':
-            debt = get_remaining_debt_for_student(obj.id)
-        else:
-            groups = obj.groups_student.all()
-            for group in groups:
-                for i in group.teacher.all():
-                    for salary in i.teacher_black_salary.filter(student_id=obj.id).all():
-                        debt += salary.black_salary if salary.black_salary else 0
+       
+        debt = get_remaining_debt_for_student(obj.id)
 
         return debt
 

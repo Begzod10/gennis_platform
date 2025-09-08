@@ -26,9 +26,9 @@ class RoomListView(QueryParamFilterMixin, generics.ListAPIView):
 class RoomListViewClassroom(QueryParamFilterMixin, generics.ListAPIView):
     # permission_classes = [IsAuthenticated]
 
-
     queryset = Room.objects.all().order_by('id')
     serializer_class = RoomGetSerializer
+
 
 class RoomRetrieveView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
