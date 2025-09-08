@@ -33,7 +33,8 @@ def rebuild_group_summary(monthly_summary):
         for rec in daily_records:
             day_map[str(rec.day.day)] = {
                 "id": rec.id,
-                "status": rec.status
+                "status": rec.status,
+                "reason": rec.reason
             }
 
         students_data.append({
