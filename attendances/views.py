@@ -272,6 +272,7 @@ class BranchDailyStatsView(APIView):
         target_date = date(year, month, day)
         groups = Group.objects.filter(branch_id=branch_id)
 
+        branch_present, branch_absent, branch_total = 0, 0, 0
         group_list = []
         for group in groups:
             students = group.students.all()
@@ -288,8 +289,10 @@ class BranchDailyStatsView(APIView):
                 status_val = rec_map.get(st.id, None)
                 if status_val is True:
                     present += 1
+                    branch_present += 1
                 elif status_val is False:
                     absent += 1
+                    branch_absent += 1
 
                 student_data.append({
                     "id": st.id,
@@ -312,5 +315,10 @@ class BranchDailyStatsView(APIView):
         return Response({
             "branch_id": branch_id,
             "date": str(target_date),
-            "groups": group_list
+            "groups": group_list,
+            "overall_summary": {
+                "present": branch_present,
+                "absent": branch_absent,
+                "total": branch_total
+            }
         }, status=status.HTTP_200_OK)
