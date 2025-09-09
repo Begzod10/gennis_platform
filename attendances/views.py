@@ -274,7 +274,8 @@ class BranchDailyStatsView(APIView):
         day = int(request.query_params.get("day"))
 
         target_date = date(year, month, day)
-        groups = Group.objects.filter(branch_id=branch_id)
+        groups = Group.objects.filter(branch_id=branch_id).select_related("class_number").order_by(
+            "class_number__number")
 
         branch_present, branch_absent, branch_total = 0, 0, 0
         group_list = []
