@@ -1,24 +1,20 @@
 from django.db.models.query import QuerySet
-from rest_framework import generics,filters
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+from rest_framework import generics, filters
 from rest_framework import status
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from branch.models import Branch
 from permissions.response import QueryParamFilterMixin
 from teachers.models import TeacherGroupStatistics, Teacher, TeacherSalaryList, TeacherSalary, TeacherAttendance
 from teachers.serializer.lists import ActiveListTeacherSerializer, TeacherSalaryMonthlyListSerializer, \
     TeacherSalaryForOneMonthListSerializer, calc_teacher_salary
-from teachers.serializers import (
-    TeacherSerializerRead, TeacherSalaryListReadSerializers, TeacherGroupStatisticsReadSerializers,
-    TeacherSalaryReadSerializers
-)
-from branch.models import Branch
-from location.models import Location
-from django.utils.dateparse import parse_datetime
-from django.utils import timezone
-from datetime import datetime
+from teachers.serializers import (TeacherSerializerRead, TeacherSalaryListReadSerializers,
+                                  TeacherGroupStatisticsReadSerializers, TeacherSalaryReadSerializers)
 
 
 class TeacherGroupStatisticsListView(generics.ListAPIView):
@@ -39,12 +35,8 @@ class TeacherGroupStatisticsListView(generics.ListAPIView):
 class TeacherListView(QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     app_name = "O'qtuvchilar"
-    filter_mappings = {
-        'branch': "user__branch_id",
-        'age': 'user__birth_date',
-        "subject": 'subject__id',
-        'language': 'user__language_id',
-        'deleted': 'deleted',
+    filter_mappings = {'branch': "user__branch_id", 'age': 'user__birth_date', "subject": 'subject__id',
+        'language': 'user__language_id', 'deleted': 'deleted',
 
     }
     queryset = Teacher.objects.all()
@@ -75,11 +67,7 @@ class TeacherRetrieveView(generics.RetrieveAPIView):
 
 class TeacherSalaryListAPIView(QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated]
-    filter_mappings = {
-        'status': 'deleted',
-        'branch': 'branch',
-        'teacher_salary': 'salary_id',
-    }
+    filter_mappings = {'status': 'deleted', 'branch': 'branch', 'teacher_salary': 'salary_id', }
     serializer_class = TeacherSalaryListReadSerializers
     search_fields = ['teacher__user__name', 'teacher__user__surname', 'teacher__user__username']
     filter_backends = [filters.SearchFilter]
@@ -155,9 +143,7 @@ class TeacherSalaryListView(generics.ListAPIView):
 class TeacherSalaryListDetailView(QueryParamFilterMixin, generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
-    filter_mappings = {
-        'status': 'deleted'
-    }
+    filter_mappings = {'status': 'deleted'}
     queryset = TeacherSalaryList.objects.all()
     serializer_class = TeacherSalaryForOneMonthListSerializer
 
@@ -198,9 +184,7 @@ class GetTeacherBalance(APIView):
 class TeacherSalaryListDetailView2(QueryParamFilterMixin, generics.RetrieveAPIView):
     # permission_classes = [IsAuthenticated]
 
-    filter_mappings = {
-        'status': 'deleted'
-    }
+    filter_mappings = {'status': 'deleted'}
     queryset = TeacherSalaryList.objects.all()
     serializer_class = TeacherSalaryForOneMonthListSerializer
 
@@ -233,24 +217,32 @@ class TeacherSalaryListDetailView2(QueryParamFilterMixin, generics.RetrieveAPIVi
 
 class TeacherFaceIdView(APIView):
     def post(self, request, *args, **kwargs):
-        face_id = request.data['face_id']
-        location_name = request.data['location_name']
-        date_str = request.data['date']  # e.g., "2025-08-15 14:00"
+        print(request.data)
+        face_id = request.data['id']
+        branch_id = request.data['branch_id']
+        entry_time = request.data['entry_time']
+        leave_time = request.data['leave_time']
 
-        # Parse into datetime object
-        date_obj = parse_datetime(date_str)
+        date_obj = parse_datetime(entry_time)
 
         tz = timezone.get_current_timezone()
-
         if timezone.is_naive(date_obj):
-            # No timezone -> assume it's Asia/Tashkent
             date_obj = timezone.make_aware(date_obj, tz)
         else:
-            # Already has timezone -> convert to Asia/Tashkent
             date_obj = date_obj.astimezone(tz)
-        location = Location.objects.get(name=location_name)
-        branch = Branch.objects.get(location=location, name=location_name)
+
+        branch = Branch.objects.get(branch_id=branch_id)
         teacher = Teacher.objects.get(face_id=face_id, user__branch_id=branch.id)
 
-        teacher_attendance, created = TeacherAttendance.objects.get_or_create(teacher=teacher, day=date_obj)
+        teacher_attendance, created = TeacherAttendance.objects.get_or_create(
+            teacher=teacher,
+            entry_time__date=date_obj.date(),
+            defaults={
+                'entry_time': date_obj,
+                'leave_time': parse_datetime(leave_time) if leave_time else None,
+                'status': True,
+                'system': branch.location.system
+            }
+        )
+
         return Response({'face_id': teacher.face_id}, status=status.HTTP_200_OK)

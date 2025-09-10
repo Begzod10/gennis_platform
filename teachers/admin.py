@@ -27,7 +27,7 @@ class TeacherAdmin(admin.ModelAdmin):
 # Register the TeacherAttendance model
 @admin.register(TeacherAttendance)
 class TeacherAttendanceAdmin(admin.ModelAdmin):
-    list_display = ('teacher', 'day', 'status', 'system')
+    list_display = ('teacher', 'status', 'system')
     search_fields = ('teacher__user__username', 'system__name')
     list_filter = ('status', 'system')
 

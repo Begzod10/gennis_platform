@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "mobile.apps.MobileConfig",
     'django_filters',
     'ui',
+    'terms',
 ]
 
 MIDDLEWARE = [
