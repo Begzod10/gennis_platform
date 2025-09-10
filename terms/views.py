@@ -4,7 +4,7 @@ from rest_framework import generics, views, response, status
 from group.models import Group, GroupSubjects
 from .models import Assignment
 from .serializers import TestCreateUpdateSerializer, Test, TermSerializer, Term
-
+from .functions import create_multiple_years
 
 class CreateTest(generics.CreateAPIView):
     queryset = Test.objects.all()
@@ -30,6 +30,7 @@ class ListTerm(generics.ListAPIView):
     serializer_class = TermSerializer
 
     def get_queryset(self):
+        create_multiple_years(2025)
         academic_year = self.kwargs.get('academic_year')
         return self.queryset.filter(academic_year=academic_year)
 

@@ -24,7 +24,7 @@ def create_terms_for_year(start_year: int):
     return created_terms
 
 
-def create_multiple_years(start_year: int, count: int = 2):
+def create_multiple_years(start_year: int, count: int = 4):
     """
     Bir nechta o'quv yilini ketma-ket yaratadi.
     start_year: boshlang'ich yil
