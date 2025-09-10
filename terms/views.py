@@ -1,10 +1,11 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, views, response, status
 
-from group.models import Group, GroupSubjects
+from group.models import Group, GroupSubjects, Student
+from .functions import create_multiple_years
 from .models import Assignment
 from .serializers import TestCreateUpdateSerializer, Test, TermSerializer, Term
-from .functions import create_multiple_years
+
 
 class CreateTest(generics.CreateAPIView):
     queryset = Test.objects.all()
@@ -58,49 +59,24 @@ class ListTest(views.APIView):
         for group in groups:
             group_data = {
                 "title": group.name if group.name else f"{group.class_number.number} {group.class_number.class_types.name}",
-                "id": group.id,
-                "type": "group",
-                "children": []
-            }
+                "id": group.id, "type": "group", "children": []}
 
-            group_subjects = (
-                GroupSubjects.objects
-                .filter(group=group)
-                .select_related('subject')
-                .distinct('subject')
-            )
+            group_subjects = (GroupSubjects.objects.filter(group=group).select_related('subject').distinct('subject'))
 
             for group_subject in group_subjects:
                 subject = group_subject.subject
 
-                tests = Test.objects.filter(
-                    group=group,
-                    subject=subject,
-                    term=term,
-                    deleted=False
-                )
+                tests = Test.objects.filter(group=group, subject=subject, term=term, deleted=False)
 
-                table_data = [
-                    {
-                        "id": test.id,
-                        "name": test.name,
-                        "weight": test.weight,
-                        "date": test.date
-                    }
-                    for test in tests
-                ]
+                table_data = [{"id": test.id, "name": test.name, "weight": test.weight, "date": test.date} for test in
+                              tests]
 
-                group_data["children"].append({
-                    "title": subject.name,
-                    "id": subject.id,
-                    "type": "subject",
-                    "tableData": table_data
-                })
+                group_data["children"].append(
+                    {"title": subject.name, "id": subject.id, "type": "subject", "tableData": table_data})
 
             result.append(group_data)
 
         return response.Response(result, status=status.HTTP_200_OK)
-
 
 
 class StudentAssignmentView(views.APIView):
@@ -150,5 +126,74 @@ class AssignmentCreateView(views.APIView):
             results.append({"student_id": student_id, "assignment_id": assignment.id, "created": created})
 
         response_data = {"success": results, "errors": errors}
+
+        return response.Response(response_data, status=status.HTTP_200_OK)
+
+
+class TermsByGroup(views.APIView):
+    def get(self, request, *args, **kwargs):
+        group_id = kwargs.get('group_id')
+        term_id = kwargs.get('term_id')
+
+        group = Group.objects.get(id=group_id)
+        students = group.students.all()
+
+        response_data = []
+
+        for student in students:
+            assignments = Assignment.objects.filter(student=student, test__term_id=term_id).select_related(
+                'test__subject')
+
+            student_data = {"id": student.id, "first_name": student.user.name, "last_name": student.user.surname,
+                "assignments": [], "average_result": 0}
+
+            total_result = 0
+            count = 0
+
+            for assignment in assignments:
+                result = (assignment.test.weight * assignment.percentage) / 100
+
+                student_data["assignments"].append(
+                    {"subject_name": assignment.test.subject.name, "test_name": assignment.test.name,
+                        "percentage": assignment.percentage, "calculated_result": round(result, 2)})
+
+                total_result += result
+                count += 1
+
+            if count > 0:
+                student_data["average_result"] = round(total_result / count, 2)
+
+            response_data.append(student_data)
+
+        return response.Response(response_data, status=status.HTTP_200_OK)
+
+
+class TermsByStudent(views.APIView):
+    def get(self, request, *args, **kwargs):
+        student_id = kwargs.get('student_id')
+        term_id = kwargs.get('term_id')
+
+        student = Student.objects.get(id=student_id)
+        assignments = Assignment.objects.filter(student=student, test__term_id=term_id).select_related('test__subject')
+
+        response_data = {"student": {"first_name": student.user.first_name, "last_name": student.user.last_name, },
+            "assignments": [], "total_result": 0, "average_result": 0}
+
+        total_result = 0
+        count = 0
+
+        for assignment in assignments:
+            result = (assignment.test.weight * assignment.percentage) / 100
+
+            response_data["assignments"].append(
+                {"subject_name": assignment.test.subject.name, "test_name": assignment.test.name,
+                    "percentage": assignment.percentage, "calculated_result": round(result, 2)})
+
+            total_result += result
+            count += 1
+
+        if count > 0:
+            response_data["total_result"] = round(total_result, 2)
+            response_data["average_result"] = round(total_result / count, 2)
 
         return response.Response(response_data, status=status.HTTP_200_OK)
