@@ -5,9 +5,9 @@ from .models import Term, Test, Assignment
 
 @admin.register(Term)
 class TermAdmin(admin.ModelAdmin):
-    list_display = ('id', 'quarter', 'start_date', 'end_date')
-    search_fields = ('quarter',)
-    list_filter = ('start_date', 'end_date')
+    list_display = ('id', 'quarter', 'start_date', 'end_date','academic_year')
+    search_fields = ('quarter','academic_year')
+    list_filter = ('start_date', 'end_date','academic_year')
 
 
 @admin.register(Test)
