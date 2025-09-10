@@ -13,31 +13,27 @@ class Term(models.Model):
 
     def save(self, *args, **kwargs):
         """
-        O‘zbekiston ta'lim yili qoidalariga ko‘ra chorak va o‘quv yilini aniqlaydi.
+        O‘zbekiston maktab o‘quv yiliga mos ravishda chorak va o‘quv yilini aniqlash.
         """
-        month = self.start_date.month
-        day = self.start_date.day
+        year = self.start_date.year
 
-        if date(self.start_date.year, 9, 2) <= self.start_date <= date(self.start_date.year, 10, 26):
+        if self.start_date.month < 9:
+            year -= 1
+
+        if date(year, 9, 2) <= self.start_date <= date(year, 10, 26):
             self.quarter = 1
-        elif date(self.start_date.year, 11, 4) <= self.start_date <= date(self.start_date.year, 12, 28):
+        elif date(year, 11, 4) <= self.start_date <= date(year, 12, 28):
             self.quarter = 2
-        elif date(self.start_date.year + 1, 1, 13) <= self.start_date <= date(self.start_date.year + 1, 3, 22):
+        elif date(year + 1, 1, 13) <= self.start_date <= date(year + 1, 3, 22):
             self.quarter = 3
-        elif date(self.start_date.year + 1, 3, 31) <= self.start_date <= date(self.start_date.year + 1, 6, 2):
+        elif date(year + 1, 3, 31) <= self.start_date <= date(year + 1, 6, 2):
             self.quarter = 4
         else:
-            raise ValueError("Sana o‘quv yilidagi hech bir chorakka to‘g‘ri kelmadi.")
+            raise ValueError(f"Berilgan sana ({self.start_date}) hech bir chorakka to‘g‘ri kelmadi!")
 
-        if self.quarter in [1, 2]:
-            self.academic_year = f"{self.start_date.year}-{self.start_date.year + 1}"
-        else:
-            self.academic_year = f"{self.start_date.year - 1}-{self.start_date.year}"
+        self.academic_year = f"{year}-{year + 1}"
 
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.get_quarter_display()} ({self.academic_year})"
 
 
 class Test(models.Model):
