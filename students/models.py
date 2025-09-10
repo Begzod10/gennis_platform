@@ -109,3 +109,20 @@ class ContractStudent(models.Model):
     contract = models.FileField(upload_to='contracts')
     old_id = models.IntegerField(unique=True, null=True)
     year = models.DateField(null=True)  # Add this field
+
+
+class StudentSubject(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='student_subjects')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='student_subjects')
+    hours = models.IntegerField(null=True, default=0)
+    count = models.IntegerField(null=True, default=0)
+    group_subjects = models.ForeignKey('group.GroupSubjects', on_delete=models.CASCADE, null=True,
+                                       related_name='student_subjects')
+
+
+class StudentSubjectCount(models.Model):
+    student_subjects = models.ForeignKey(StudentSubject, on_delete=models.CASCADE, null=True,
+                                         related_name='student_subject_count')
+    class_time_table = models.ForeignKey('school_time_table.ClassTimeTable', on_delete=models.CASCADE, null=True,
+                                         related_name='student_subject_count')
+    date = models.DateField()

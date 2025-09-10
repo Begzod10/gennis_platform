@@ -44,11 +44,15 @@ class GroupSubjects(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='group_subjects')
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     hours = models.IntegerField(null=True)
+    count = models.IntegerField(null=True)
 
 
 class GroupSubjectsCount(models.Model):
     date = models.DateField()
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    group_subjects = models.ForeignKey(GroupSubjects, on_delete=models.CASCADE, null=True,
+                                       related_name='group_subjects_count')
+    class_time_table = models.ForeignKey('school_time_table.ClassTimeTable', on_delete=models.CASCADE, null=True,
+                                         related_name='group_subjects_count')
 
 
 class GroupReason(models.Model):

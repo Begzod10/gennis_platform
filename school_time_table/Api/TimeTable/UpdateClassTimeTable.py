@@ -22,7 +22,6 @@ class UpdateClassTimeTable(generics.RetrieveUpdateDestroyAPIView):
         self.perform_update(write_serializer)
 
         read_serializer = ClassTimeTableReadSerializers(instance)
-        print(request)
         salary_id = request.data.get("salary_id")
         worked_hours = request.data.get("worked_hours", 0)
         class_salary = request.data.get("class_salary")

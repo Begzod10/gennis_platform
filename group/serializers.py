@@ -310,46 +310,49 @@ class GroupClassSerializer(serializers.ModelSerializer):
 
 
 class GroupSubjectSerializer(serializers.ModelSerializer):
-    subject = SubjectSerializer(many=True)
-    group = serializers.SerializerMethodField()
-    class_type = serializers.SerializerMethodField()
+    subject_name = serializers.CharField(source="subject.name", read_only=True)
+    from_database = serializers.BooleanField(read_only=True, default=True)
+    can_delete = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = GroupSubjects
-        fields = ['id', 'subject', 'hours', 'group', 'class_type']
+        fields = ["id", "subject_id", "subject_name", "hours", "from_database", "can_delete"]
 
-    def get_group(self, obj):
-        return {
-            'id': obj.group_subjects.id,
-            'name': obj.group_subjects.color.name,
-            "class_number": obj.group_subjects.class_number.number
-        }
-
-    def get_class_type(self, obj):
-        return {
-            'id': obj.class_type.id,
-            'name': obj.class_type.name
-        }
+    def get_can_delete(self, obj):
+        if obj.group_subjects_count.count() > 0:
+            return False
+        return True
 
 
 class GroupListSerializer(serializers.ModelSerializer):
-    class_number = serializers.CharField(required=False, source='class_number.number')
-    color = serializers.CharField(required=False, source='color.name')
-    subjects = serializers.SerializerMethodField(required=False)
+    class_number = serializers.CharField(source="class_number.number", read_only=True)
+    color = serializers.CharField(source="color.name", read_only=True)
+    class_type = serializers.CharField(source="class_type.name", read_only=True, allow_null=True)
+    subjects = GroupSubjectSerializer(source="group_subjects", many=True, read_only=True)
+    status_class_type = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Group
-        fields = ['id', "class_number", "color", 'price', 'subjects']
+        fields = ["id", "class_number", "color", "class_type", "price", "subjects", "status_class_type"]
 
-    def get_subjects(self, obj):
-        data = []
-        group_subjects = GroupSubjects.objects.filter(group=obj).order_by("pk").all()
-        for subject in group_subjects:
-            info = {
-                "subject_name": subject.subject.name,
-                "subject_id": subject.subject.pk,
-                "hours": subject.hours,
-                "from_database": True
-            }
-            data.append(info)
-        return data
+# class GroupListSerializer(serializers.ModelSerializer):
+#     class_number = serializers.CharField(required=False, source='class_number.number')
+#     color = serializers.CharField(required=False, source='color.name')
+#     subjects = serializers.SerializerMethodField(required=False)
+#
+#     class Meta:
+#         model = Group
+#         fields = ['id', "class_number", "color", 'price', 'subjects']
+#
+#     def get_subjects(self, obj):
+#         data = []
+#         group_subjects = GroupSubjects.objects.filter(group=obj).order_by("pk").all()
+#         for subject in group_subjects:
+#             info = {
+#                 "subject_name": subject.subject.name,
+#                 "subject_id": subject.subject.pk,
+#                 "hours": subject.hours,
+#                 "from_database": True
+#             }
+#             data.append(info)
+#         return data

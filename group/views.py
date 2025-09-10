@@ -6,6 +6,9 @@ from .serializers import GroupSubjectSerializer, GroupListSerializer
 from group.models import Group, GroupSubjects
 from rest_framework import generics
 from classes.models import ClassNumber, ClassNumberSubjects
+from students.models import StudentSubject
+from django.db.models import Q, Case, When, Value, BooleanField
+from rest_framework.exceptions import ValidationError
 
 
 class GroupStudentsClassRoom(APIView):
@@ -29,53 +32,74 @@ class GroupStudentsClassRoom(APIView):
 
 
 class GroupListView(generics.ListAPIView):
-    queryset = Group.objects.all()
     serializer_class = GroupListSerializer
 
-    def list(self, request, *args, **kwargs):
-        class_numbers = ClassNumber.objects.filter(branch_id=self.request.query_params['branch_id']).all()
+    def get_queryset(self):
+        branch_id = self.request.query_params.get("branch_id")
+        if not branch_id:
+            raise ValidationError({"branch_id": "This query param is required."})
 
-        for class_number in class_numbers:
-            class_number_subjects = ClassNumberSubjects.objects.filter(class_number=class_number).all()
-            for class_number_subject in class_number_subjects:
-                groups = Group.objects.filter(class_number_id=class_number.id).all()
-                for group in groups:
-                    GroupSubjects.objects.get_or_create(
-                        hours=class_number_subject.hours,
-                        group_id=group.id,
-                        subject_id=class_number_subject.subject_id
-                    )
-        if 'class_type_id' in request.query_params:
-            with_class_type = Group.objects.filter(class_type_id=self.request.query_params['class_type_id'],
-                                                   branch_id=self.request.query_params['branch_id']).order_by(
-                'class_number_id').all()
-            without_class_type = Group.objects.filter(class_type_id__isnull=True,
-                                                      branch_id=self.request.query_params['branch_id']).order_by(
-                'class_number_id').all()
+        class_type_id = self.request.query_params.get("class_type_id")
 
-            return Response({
-                'with_class_type': GroupListSerializer(with_class_type, many=True).data,
-                'without_class_type': GroupListSerializer(without_class_type, many=True).data
-            })
+        base = (
+            Group.objects.filter(branch_id=branch_id)
+            .select_related("class_number", "color", "class_type")
+            .prefetch_related("group_subjects__subject")
+        )
 
+        if class_type_id:
+            qs = base.filter(
+                Q(class_type_id=class_type_id) | Q(class_type_id__isnull=True)
+            ).annotate(
+                status_class_type=Case(
+                    When(class_type_id=class_type_id, then=Value(True)),
+                    default=Value(False),
+                    output_field=BooleanField(),
+                )
+            )
         else:
-            queryset = Group.objects.filter(branch_id=self.request.query_params['branch_id']).order_by(
-                'class_number_id').all()
-            return Response({
-                "without_class_type": GroupListSerializer(queryset, many=True).data
-            })
+            qs = base.filter(class_type_id__isnull=True).annotate(
+                status_class_type=Value(False, output_field=BooleanField())
+            )
+
+        return qs.order_by("class_number_id")
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"data": serializer.data})
 
 
 class GroupSubjectAddView(APIView):
     def post(self, request, *args, **kwargs):
-        subjects = request.data['subjects']
-        group = Group.objects.get(pk=request.query_params.get('group_id'))
+        subjects = request.data.get('subjects', [])
+        group_id = request.query_params.get('group_id')
+        group = Group.objects.get(pk=group_id)
+
         for subject in subjects:
-            GroupSubjects.objects.get_or_create(
+            subject_id = subject['value']
+            hours = subject.get('hours', 0)
+
+            group_subject, created = GroupSubjects.objects.get_or_create(
                 group=group,
-                subject_id=subject['value'],
-                hours=subject.get('hours', 0)
+                subject_id=subject_id,
+                defaults={'hours': hours}
             )
+            if not created:
+                group_subject.hours = hours
+                group_subject.save()
+
+            for st in group.students.all():
+                student_subject, st_created = StudentSubject.objects.get_or_create(
+                    student=st,
+                    group_subjects=group_subject,
+                    subject_id=subject_id,
+                    defaults={'hours': hours}
+                )
+                if not st_created:
+                    student_subject.hours = hours
+                    student_subject.save()
+
         data = GroupListSerializer(group).data
         return Response(data)
 
@@ -84,19 +108,21 @@ class GroupSubjectRemoveView(APIView):
     def post(self, request, *args, **kwargs):
         subject = request.data['subject_id']
         group = Group.objects.get(pk=request.data['group_id'])
-        pprint.pprint(request.data)
         group_subject = GroupSubjects.objects.filter(group_id=group.id, subject_id=subject)
         group_subject.delete()
         data = GroupListSerializer(group).data
         return Response({
-            "msg": "success"
+            "msg": "O'zgartirildi",
         })
 
 
 class AddClassTypeToGroup(APIView):
     def post(self, request, *args, **kwargs):
         group = Group.objects.get(pk=request.data['group_id'])
-        group.class_type_id = request.data['class_type_id']
+        if group.class_type_id:
+            group.class_type_id = None
+        else:
+            group.class_type_id = request.data['class_type_id']
         group.save()
         return Response({
             "msg": "success"
