@@ -5,8 +5,8 @@ from .models import Term, Test, Assignment
 
 @admin.register(Term)
 class TermAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'start_date', 'end_date')
-    search_fields = ('name',)
+    list_display = ('id', 'quarter', 'start_date', 'end_date')
+    search_fields = ('quarter',)
     list_filter = ('start_date', 'end_date')
 
 
