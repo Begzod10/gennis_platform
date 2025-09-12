@@ -161,7 +161,7 @@ class GroupAttendanceView(APIView):
         month = day.month if isinstance(day, date) else date.fromisoformat(day).month
         day = day if isinstance(day, date) else date.fromisoformat(day)
 
-        # absent_studentsni dict -> {student_id: reason} qilib olish
+
         absent_dict = {s["id"]: s.get("reason") for s in absent_students}
 
         results = []
@@ -174,7 +174,7 @@ class GroupAttendanceView(APIView):
                 defaults={"stats": {}}
             )
 
-            reason = absent_dict.get(student.id)  # agar mavjud bo‘lsa reason chiqadi
+            reason = absent_dict.get(student.id)
             status_present = student.id not in absent_dict
 
             daily, created = StudentDailyAttendance.objects.get_or_create(
