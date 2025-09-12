@@ -10,7 +10,7 @@ from classes.models import ClassNumber, ClassCoin, CoinInfo, StudentCoin, ClassN
 
 from classes.serializers import (ClassCoinListSerializers, CoinInfoListSerializers, StudentCoinListSerializers,
                                  ClassNumberListSerializers, ClassColorsSerializers, ClassNumberForSubjectsSerializer)
-from group.models import Group, GroupSubjects
+from group.models import Group, GroupSubjects, GroupSubjectsCount
 from permissions.response import QueryParamFilterMixin
 from subjects.serializers import SubjectSerializer
 
@@ -203,12 +203,16 @@ class ClassSubjects(APIView):
     def get(self, request):
         group = Group.objects.filter(pk=request.query_params.get('group')).first()
         today = datetime.today()
+        month = today.month
+        year = today.year
+        month_date = datetime(year, month, 1)
         start_week = today - timedelta(days=today.weekday())
         week_dates = [(start_week + timedelta(days=i)).date() for i in range(7)]
         class_subjects = ClassNumberSubjects.objects.filter(class_number=group.class_number).all()
+        group_subjects = GroupSubjects.objects.filter(group=group).all()
         list = []
-        for subject in class_subjects:
-            lessons = group.classtimetable_set.filter(date__in=week_dates, subject_id=subject.subject.id).count()
+        for subject in group_subjects:
+            lessons = GroupSubjectsCount.objects.filter(group_subjects=subject, date=month_date).count()
             info = {
                 'id': subject.subject.id,
                 'name': subject.subject.name,
@@ -245,9 +249,4 @@ class ClassNumberForSubjects(APIView):
         return Response(list)
 
 
-class AddSubjectGroup(APIView):
-    def get(self, request):
-        group = Group.objects.filter(pk=request.post.get('group')).first()
-        subjects = request.post.get('subjects')
-        for subject in subjects:
-            GroupSubjects.objects.create(group=group, subject_id=subject['subject'], hours=subject['hours'])
+

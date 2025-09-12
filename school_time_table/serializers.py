@@ -6,7 +6,8 @@ from branch.models import Branch
 from branch.serializers import BranchSerializer
 from flows.models import Flow
 from flows.serializers import FlowsSerializer
-from group.models import Group
+from group.models import Group, GroupSubjects, GroupSubjectsCount
+from students.models import Student, StudentSubject, StudentSubjectCount
 from group.serializers import GroupSerializer, GroupClassSerializer
 from rooms.models import Room
 from rooms.serializers import RoomCreateSerializer
@@ -25,6 +26,7 @@ from school_time_table.serializers_list import GroupClassSerializerList
 from teachers.serializer.lists import ActiveListTeacherSerializerTime
 from django.db.models.functions import Coalesce, Cast
 from django.db.models import F, BigIntegerField, IntegerField
+
 
 class HoursSerializers(serializers.ModelSerializer):
     can_delete = serializers.SerializerMethodField()
@@ -65,9 +67,44 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
     def create(self, validated_data):
         group = validated_data.get('group')
         flow = validated_data.get('flow')
+        date = validated_data.get('date')
+        subject = validated_data.get('subject')
+
         students = group.students.all() if group else flow.students.all() if flow else None
+        subject = subject if subject else flow.subject
         class_time_table = ClassTimeTable.objects.create(**validated_data)
         class_time_table.students.add(*students)
+        month_date = datetime(date.year, date.month, 1)
+        if group:
+            group_subjects = GroupSubjects.objects.filter(group=group, subject=subject).first()
+            group_subjects_count = GroupSubjectsCount.objects.filter(class_time_table=class_time_table,
+                                                                     group_subjects=group_subjects).first()
+            if not group_subjects_count:
+                GroupSubjectsCount.objects.create(class_time_table=class_time_table,
+                                                  group_subjects=group_subjects,
+                                                  date=month_date)
+
+            group_subjects_counts = GroupSubjectsCount.objects.filter(group_subjects=group_subjects,
+                                                                      date=month_date).count()
+            if group_subjects.count != group_subjects_counts:
+                group_subjects.count = group_subjects_counts
+                group_subjects.save()
+        print(subject)
+        if subject:
+            for student in students:
+                student_subject = StudentSubject.objects.filter(student=student, subject=subject).first()
+                student_subject_count = StudentSubjectCount.objects.filter(class_time_table=class_time_table,
+                                                                           student_subjects=student_subject).first()
+                if not student_subject_count:
+                    StudentSubjectCount.objects.create(class_time_table=class_time_table,
+                                                       student_subjects=student_subject,
+                                                       date=month_date)
+                student_subject_counts = StudentSubjectCount.objects.filter(student_subjects=student_subject,
+                                                                            date=month_date).count()
+                if student_subject.count != student_subject_counts:
+                    student_subject.count = student_subject_counts
+                    student_subject.save()
+
         return class_time_table
 
     def update(self, instance, validated_data):
@@ -85,7 +122,7 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
         instance.name = validated_data.get('name', instance.name)
         instance.save()
 
-        flask_url = f"{classroom_server}/api/time_table/timetable-list-update/{instance.id}"
+        # flask_url = f"{classroom_server}/api/time_table/timetable-list-update/{instance.id}"
         payload = {}
 
         if instance.group:
@@ -109,16 +146,15 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
         if instance.date:
             payload["date"] = instance.date.isoformat()
 
-        try:
-            response = requests.patch(
-                flask_url,
-                json=payload,
-                headers={"Content-Type": "application/json"}
-            )
-            response.raise_for_status()
-        except Exception as e:
-            print("Flask update error:", e)
-
+        # try:
+        #     response = requests.patch(
+        #         flask_url,
+        #         json=payload,
+        #         headers={"Content-Type": "application/json"}
+        #     )
+        #     response.raise_for_status()
+        # except Exception as e:
+        #     print("Flask update error:", e)
         return instance
 
     def delete_from_flask(self, instance):
@@ -179,10 +215,8 @@ class ClassTimeTableSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'week', 'hours', 'flow', 'room', 'teacher', 'subject']
 
 
-
 from school_time_table.serializers_list import GroupClassSerializerList
 from teachers.serializer.lists import ActiveListTeacherSerializerTime
-
 
 
 class ClassTimeTableTest2Serializer(serializers.Serializer):
@@ -230,8 +264,6 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
         time_tables = []
         week_days = ['Dushanba', 'Seshanba', 'Chorshanba',
                      'Payshanba', 'Juma', 'Shanba', 'Yakshanba']
-
-
 
         # If week (1..7) provided without specific date: compute that weekday in current week
         if week and date_ls is None:
