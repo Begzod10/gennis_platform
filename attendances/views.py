@@ -143,6 +143,63 @@ class AttendanceDayAPIView(APIView):
         })
 
 
+class GroupAttendanceView(APIView):
+    def post(self, request, *args, **kwargs):
+        group_id = request.data.get("group_id")
+        absent_students = request.data.get("absent_students", [])
+        day = request.data.get("day")
+
+        if not group_id:
+            return Response({"error": "group_id kerak"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            group = Group.objects.get(id=group_id)
+        except Group.DoesNotExist:
+            return Response({"error": "Bunday group mavjud emas"}, status=status.HTTP_404_NOT_FOUND)
+
+        year = day.year if isinstance(day, date) else date.fromisoformat(day).year
+        month = day.month if isinstance(day, date) else date.fromisoformat(day).month
+        day = day if isinstance(day, date) else date.fromisoformat(day)
+
+
+        absent_dict = {s["id"]: s.get("reason") for s in absent_students}
+
+        results = []
+        for student in group.students.all():
+            summary, created = StudentMonthlySummary.objects.get_or_create(
+                student=student,
+                group=group,
+                year=year,
+                month=month,
+                defaults={"stats": {}}
+            )
+
+            reason = absent_dict.get(student.id)
+            status_present = student.id not in absent_dict
+
+            daily, created = StudentDailyAttendance.objects.get_or_create(
+                monthly_summary=summary,
+                day=day,
+                defaults={
+                    "status": status_present,
+                    "reason": reason
+                }
+            )
+
+            if not created:
+                daily.status = status_present
+                daily.reason = reason
+                daily.save()
+
+            results.append({
+                "student_id": student.id,
+                "status": daily.status,
+                "reason": daily.reason
+            })
+
+        return Response({"group_id": group_id, "date": str(day), "attendance": results}, status=status.HTTP_200_OK)
+
+
 class AttendanceCreateView(generics.CreateAPIView):
     queryset = StudentDailyAttendance.objects.all()
     serializer_class = StudentDailyAttendanceSerializer
@@ -274,7 +331,10 @@ class BranchDailyStatsView(APIView):
         day = int(request.query_params.get("day"))
 
         target_date = date(year, month, day)
-        groups = Group.objects.filter(branch_id=branch_id, deleted=False).all()
+
+        groups = Group.objects.filter(branch_id=branch_id).select_related("class_number").order_by(
+            "class_number__number")
+
 
         branch_present, branch_absent, branch_total = 0, 0, 0
         group_list = []
