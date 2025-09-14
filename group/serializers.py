@@ -79,11 +79,14 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
 
         for student in students_data:
             if not active_groups.filter(students__id=student.id).exists():
+
                 group.students.set(students_data)
         group.teacher.set(teacher_data)
         for student in students_data:
             StudentHistoryGroups.objects.create(group=group, student=student, teacher=teacher_data[0],
                                                 joined_day=today)
+            student.joined_group = today
+            student.save()
         TeacherHistoryGroups.objects.create(group=group, teacher=teacher_data[0], joined_day=today)
         create_school_student_debts(group, group.students.all())
 
@@ -134,6 +137,8 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
             if update_method:
                 if update_method == "add_students":
                     for student in students:
+                        student.joined_group = datetime.now()
+                        student.save()
                         instance.students.add(student)
                         StudentHistoryGroups.objects.create(group=instance, student=student,
                                                             teacher=instance.teacher.all()[

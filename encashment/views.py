@@ -1,10 +1,17 @@
 from datetime import datetime
 
+from django.db.models import Q
 from django.db.models import Sum
 from django.db.models.functions import ExtractMonth, ExtractYear
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.db.models import Q
+from django.core.exceptions import ValidationError
+from datetime import datetime
 
 from attendances.models import AttendancePerMonth
 from books.models import BranchPayment
@@ -13,10 +20,11 @@ from capital.models import Capital
 from capital.serializer.old_capital import OldCapitalsListSerializers
 from capital.serializers import OldCapital
 from classes.models import ClassNumber
+from group.models import Group
 from overhead.models import Overhead
 from overhead.serializers import OverheadSerializerGet
 from payments.models import PaymentTypes
-from students.models import Student
+from students.models import Student, DeletedStudent, DeletedNewStudent
 from students.models import StudentPayment
 from students.serializers import StudentPaymentSerializer
 from teachers.models import TeacherSalaryList, TeacherSalary
@@ -24,7 +32,7 @@ from teachers.serializers import TeacherSalaryListCreateSerializers
 from user.models import UserSalaryList, UserSalary
 from user.serializers import UserSalaryListSerializers
 from .models import Encashment
-
+from lead.models import Lead
 
 class Encashments(APIView):
     permission_classes = [IsAuthenticated]
@@ -784,3 +792,248 @@ class EncashmentsSchool(APIView):
             'overall_total': overall_total,
             'dates': [{'year': year, 'months': months} for year, months in year_month_dict.items()],
         })
+
+
+
+
+
+class OneDayReportView(APIView):
+
+
+    def post(self, request, *args, **kwargs):
+        try:
+            validated_data = self._validate_request_data(request.data)
+
+            report_data = self._generate_report_data(
+                from_date=validated_data['from_date'],
+                to_date=validated_data['to_date'],
+                branch_id=validated_data['branch']
+            )
+
+            return Response(report_data, status=status.HTTP_200_OK)
+
+        except ValidationError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {'error': 'Internal server error'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def _validate_request_data(self, data):
+        from_date = data.get('from_date')
+        to_date = data.get('to_date')
+        branch = data.get('branch')
+
+        if not all([from_date, to_date, branch]):
+            raise ValidationError("from_date, to_date, and branch are required")
+
+        return {
+            'from_date': from_date,
+            'to_date': to_date,
+            'branch': branch
+        }
+
+    def _generate_report_data(self, from_date, to_date, branch_id):
+        return {
+            "student_payments": self._get_student_payments_data(from_date, to_date, branch_id),
+            "teacher_salaries": self._get_teacher_salaries_data(from_date, to_date, branch_id),
+            "user_salaries": self._get_user_salaries_data(from_date, to_date, branch_id),
+            "overhead_payments": self._get_overhead_payments_data(from_date, to_date, branch_id),
+            "new_students": self._get_new_students_data(from_date, to_date, branch_id),
+            "new_groups": self._get_new_groups_data(from_date, to_date, branch_id),
+            "new_studying_students": self._get_new_studying_students_data(from_date, to_date, branch_id),
+            "new_leads": self._get_new_leads_data(from_date, to_date, branch_id),
+        }
+
+    def _get_student_payments_data(self, from_date, to_date, branch_id):
+        student_payments = StudentPayment.objects.filter(
+            added_data__gte=from_date,
+            added_data__lte=to_date,
+            branch_id=branch_id,
+            deleted=False
+        ).select_related(
+            'student__user',
+            'payment_type'
+        )
+
+        data = [
+            {
+                "name": payment.student.user.name,
+                "surname": payment.student.user.surname,
+                "payment": payment.payment_type.name,
+                "payment_sum": payment.payment_sum
+            }
+            for payment in student_payments
+        ]
+
+        return {"count": student_payments.count(), "data": data}
+
+    def _get_teacher_salaries_data(self, from_date, to_date, branch_id):
+        teacher_salaries = TeacherSalaryList.objects.filter(
+            date__gte=from_date,
+            date__lte=to_date,
+            branch_id=branch_id,
+            deleted=False
+        ).select_related(
+            'teacher__user',
+            'payment'
+        )
+
+        data = [
+            {
+                "name": salary.teacher.user.name,
+                "surname": salary.teacher.user.surname,
+                "salary": salary.salary,
+                "payment": salary.payment.name,
+                "comment": salary.comment,
+            }
+            for salary in teacher_salaries
+        ]
+
+        return {"count": teacher_salaries.count(), "data": data}
+
+    def _get_user_salaries_data(self, from_date, to_date, branch_id):
+        user_salaries = UserSalaryList.objects.filter(
+            date__gte=from_date,
+            date__lte=to_date,
+            branch_id=branch_id,
+            deleted=False
+        ).select_related(
+            'user',
+            'payment_types'
+        )
+
+        data = [
+            {
+                "name": salary.user.name,
+                "surname": salary.user.surname,
+                "salary": salary.salary,
+                "payment": salary.payment_types.name,
+                "comment": salary.comment,
+            }
+            for salary in user_salaries
+        ]
+
+        return {"count": user_salaries.count(), "data": data}
+
+    def _get_overhead_payments_data(self, from_date, to_date, branch_id):
+        overhead_payments = Overhead.objects.filter(
+            created__gte=from_date,
+            created__lte=to_date,
+            branch_id=branch_id,
+            deleted=False
+        ).select_related( 'type', 'payment')
+
+        data = [
+            {
+                "name": (overhead.name
+                         if overhead.name
+                         else overhead.type.name),
+                "payment": overhead.payment.name,
+                "payment_sum": overhead.price,
+            }
+            for overhead in overhead_payments
+        ]
+
+        return {"count": overhead_payments.count(), "data": data}
+
+    def _get_excluded_student_ids(self):
+        deleted_student_ids = list(
+            DeletedStudent.objects.filter(deleted=False)
+            .values_list('student_id', flat=True)
+        )
+        deleted_new_student_ids = list(
+            DeletedNewStudent.objects.values_list('student_id', flat=True)
+        )
+
+        return deleted_student_ids + deleted_new_student_ids
+
+    def _get_new_students_data(self, from_date, to_date, branch_id):
+        excluded_ids = self._get_excluded_student_ids()
+
+        new_students = Student.objects.filter(
+            ~Q(id__in=excluded_ids),
+            user__branch_id=branch_id,
+            user__registered_date__range=(from_date, to_date),
+            groups_student__isnull=True
+        ).select_related('user').distinct().order_by('-pk')
+
+        data = [
+            {
+                "name": student.user.name,
+                "surname": student.user.surname,
+            }
+            for student in new_students
+        ]
+
+        return {"count": new_students.count(), "data": data}
+
+    def _get_new_groups_data(self, from_date, to_date, branch_id):
+        new_groups = Group.objects.filter(
+            branch_id=branch_id,
+            created__range=(from_date, to_date),
+            deleted=False
+        )
+
+        data = [
+            {
+                "name": group.name,
+                "price": group.price,
+            }
+            for group in new_groups
+        ]
+
+        return {"count": new_groups.count(), "data": data}
+
+    def _get_new_studying_students_data(self, from_date, to_date, branch_id):
+        deleted_student_ids = DeletedStudent.objects.filter(
+            student__groups_student__isnull=True,
+            deleted=False
+        ).values_list('student_id', flat=True)
+
+        deleted_new_student_ids = DeletedNewStudent.objects.values_list(
+            'student_id', flat=True
+        )
+
+        new_studying_students = Student.objects.exclude(
+            id__in=deleted_student_ids
+        ).exclude(
+            id__in=deleted_new_student_ids
+        ).filter(
+            groups_student__isnull=False,
+            joined_group__range=(from_date, to_date)
+        ).select_related(
+            'user', 'class_number'
+        ).distinct().order_by('class_number__number')
+
+        data = [
+            {
+                "name": student.user.name,
+                "surname": student.user.surname,
+            }
+            for student in new_studying_students
+        ]
+
+        return {"count": new_studying_students.count(), "data": data}
+
+    def _get_new_leads_data(self, from_date, to_date, branch_id):
+        new_leads = Lead.objects.filter(
+            created__range=(from_date, to_date),
+            branch_id=branch_id,
+            deleted=False
+        )
+
+        data = [
+            {
+                "name": lead.name,
+                "surname": lead.surname,
+                "phone": lead.phone,
+            }
+            for lead in new_leads
+        ]
+
+        return {"count": new_leads.count(), "data": data}

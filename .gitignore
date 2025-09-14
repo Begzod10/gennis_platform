@@ -10,3 +10,4 @@ auto_git_pull.log
 transfer/
 .env
 logs/
+staticfiles
