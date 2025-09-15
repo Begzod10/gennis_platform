@@ -35,6 +35,7 @@ class Group(models.Model):
     turon_old_id = models.IntegerField(null=True, unique=True)
     class_type = models.ForeignKey("classes.ClassTypes", on_delete=models.CASCADE, null=True,
                                    related_name='group_subjects')
+    created = models.DateField(auto_now_add=True, null=True)
 
     class Meta:
         ordering = ['id']

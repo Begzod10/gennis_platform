@@ -40,6 +40,7 @@ class Student(models.Model):
     group_time_table = models.ManyToManyField('time_table.GroupTimeTable', blank=True)
     system = models.ForeignKey('system.System', on_delete=models.SET_NULL, null=True)
     class_number = models.ForeignKey('classes.ClassNumber', on_delete=models.SET_NULL, null=True)
+    joined_group = models.DateField(null=True)
 
 
 class StudentCharity(models.Model):
@@ -70,8 +71,7 @@ class StudentPayment(models.Model):
 class DeletedNewStudent(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='deleted_student_student_new')
     created = models.DateField(auto_now_add=True)
-    comment = models.CharField(null=True)
-    # old_id = models.IntegerField(unique=True, null=True)
+    comment = models.CharField(null=True)  # old_id = models.IntegerField(unique=True, null=True)
 
 
 class StudentHistoryGroups(models.Model):
