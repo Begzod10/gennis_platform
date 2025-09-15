@@ -12,7 +12,6 @@ from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from permissions.models import ManySystem, ManyBranch, ManyLocation
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
 from flows.models import Flow
-from group.models import GroupSubjects
 
 class UserSerializerRead(serializers.ModelSerializer):
     branch = BranchSerializer(read_only=True)
@@ -224,7 +223,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def user_send(self, user, password):
         user = CustomUser.objects.get(id=user)
         from students.models import Student, Teacher
-        from classes.models import ClassNumberSubjects
+        from group.models import GroupSubjects
         student = Student.objects.filter(user=user).first()
         teacher = Teacher.objects.filter(user=user).first()
 
