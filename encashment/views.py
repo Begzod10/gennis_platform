@@ -844,7 +844,7 @@ class OneDayReportView(APIView):
             "user_salaries": self._get_user_salaries_data(from_date, to_date, branch_id),
             "overhead_payments": self._get_overhead_payments_data(from_date, to_date, branch_id),
             "new_students": self._get_new_students_data(from_date, to_date, branch_id),
-            "new_groups": self._get_new_groups_data(from_date, to_date, branch_id),
+            # "new_groups": self._get_new_groups_data(from_date, to_date, branch_id),
             "new_studying_students": self._get_new_studying_students_data(from_date, to_date, branch_id),
             "new_leads": self._get_new_leads_data(from_date, to_date, branch_id),
         }
@@ -972,22 +972,22 @@ class OneDayReportView(APIView):
 
         return {"count": new_students.count(), "data": data}
 
-    def _get_new_groups_data(self, from_date, to_date, branch_id):
-        new_groups = Group.objects.filter(
-            branch_id=branch_id,
-            created__range=(from_date, to_date),
-            deleted=False
-        )
-
-        data = [
-            {
-                "name": group.name,
-                "price": group.price,
-            }
-            for group in new_groups
-        ]
-
-        return {"count": new_groups.count(), "data": data}
+    # def _get_new_groups_data(self, from_date, to_date, branch_id):
+    #     new_groups = Group.objects.filter(
+    #         branch_id=branch_id,
+    #         created__range=(from_date, to_date),
+    #         deleted=False
+    #     )
+    #
+    #     data = [
+    #         {
+    #             "name": group.name,
+    #             "price": group.price,
+    #         }
+    #         for group in new_groups
+    #     ]
+    #
+    #     return {"count": new_groups.count(), "data": data}
 
     def _get_new_studying_students_data(self, from_date, to_date, branch_id):
         deleted_student_ids = DeletedStudent.objects.filter(
