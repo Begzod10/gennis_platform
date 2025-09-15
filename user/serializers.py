@@ -12,7 +12,7 @@ from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from permissions.models import ManySystem, ManyBranch, ManyLocation
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
 from flows.models import Flow
-
+from group.models import GroupSubjects
 
 class UserSerializerRead(serializers.ModelSerializer):
     branch = BranchSerializer(read_only=True)
@@ -251,7 +251,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                         'id': group.id,
                         'subjects': [
                             {'id': subject.subject.id, 'name': subject.subject.name} for subject in
-                            ClassNumberSubjects.objects.filter(class_number_id=group.class_number.id).all()
+                            GroupSubjects.objects.filter(group=group).all()
                         ],
                         'teacher_salary': group.teacher_salary,
                         'price': group.price,
@@ -329,7 +329,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     'id': group.id,
                     'subjects': [
                         {'id': subject.subject.id, 'name': subject.subject.name} for subject in
-                        ClassNumberSubjects.objects.filter(class_number_id=group.class_number.id).all()
+                        GroupSubjects.objects.filter(group=group).all()
                     ],
                     'teacher_salary': group.teacher_salary,
                     'price': group.price,
