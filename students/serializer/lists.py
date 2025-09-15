@@ -63,7 +63,7 @@ class ActiveListSerializer(serializers.ModelSerializer):
         return color
 
     def get_debt(self, obj):
-       
+
         debt = get_remaining_debt_for_student(obj.id)
 
         return debt
