@@ -76,7 +76,7 @@ class DeletedGroupStudents(QueryParamFilterMixin, ListAPIView):
             deleted=False
         ).exclude(
             student__id__in=deleted_new_student_ids
-        )
+        ).order_by('-deleted_date')
 
         return queryset
 

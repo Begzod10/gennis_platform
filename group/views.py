@@ -42,7 +42,7 @@ class GroupListView(generics.ListAPIView):
         class_type_id = self.request.query_params.get("class_type_id")
 
         base = (
-            Group.objects.filter(branch_id=branch_id)
+            Group.objects.filter(branch_id=branch_id, deleted=False)
             .select_related("class_number", "color", "class_type")
             .prefetch_related("group_subjects__subject")
         )
