@@ -161,7 +161,6 @@ class GroupAttendanceView(APIView):
         month = day.month if isinstance(day, date) else date.fromisoformat(day).month
         day = day if isinstance(day, date) else date.fromisoformat(day)
 
-
         absent_dict = {s["id"]: s.get("reason") for s in absent_students}
 
         results = []
@@ -331,7 +330,7 @@ class BranchDailyStatsView(APIView):
         day = int(request.query_params.get("day"))
 
         target_date = date(year, month, day)
-        groups = Group.objects.filter(branch_id=branch_id).select_related("class_number").order_by(
+        groups = Group.objects.filter(branch_id=branch_id, deleted=False).select_related("class_number").order_by(
             "class_number__number")
 
         branch_present, branch_absent, branch_total = 0, 0, 0
