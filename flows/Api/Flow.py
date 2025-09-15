@@ -44,7 +44,7 @@ class FlowListView(QueryParamFilterMixin, generics.ListCreateAPIView):
     }
     permission_classes = [IsAuthenticated]
 
-    queryset = Flow.objects.all()
+    queryset = Flow.objects.all().order_by('order')
     serializer_class = FlowsSerializerTest
 
     # def get_queryset(self):

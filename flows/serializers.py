@@ -20,11 +20,12 @@ class FlowCreateUpdateSerializer(serializers.ModelSerializer):
     students = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), many=True)
     level = serializers.PrimaryKeyRelatedField(queryset=SubjectLevel.objects.all(), allow_null=True, required=False)
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
+    order_by = serializers.IntegerField(source='order', required=False)
 
     class Meta:
         model = Flow
         fields = ['id', 'name', 'level', 'activity', 'subject', 'teacher', 'students', 'update_type', 'branch',
-                  'classes']
+                  'classes',"order_by"]
 
     def create(self, validated_data):
         students = validated_data.pop('students')
@@ -36,11 +37,15 @@ class FlowCreateUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         update_type = validated_data.get('update_type', None)
+        order_by = validated_data.get('order', instance.order)
         instance.name = validated_data.get('name', instance.name)
         instance.level = validated_data.get('level', instance.level) if validated_data.get('level') else None
         instance.activity = validated_data.get('activity', instance.activity)
         instance.subject = validated_data.get('subject', instance.subject)
         instance.teacher = validated_data.get('teacher', instance.teacher)
+        Flow.objects.filter(order=order_by).update(order=instance.order)
+        instance.order = order_by
+
 
         if update_type:
             if update_type == 'add_students':
