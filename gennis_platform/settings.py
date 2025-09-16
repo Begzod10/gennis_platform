@@ -11,7 +11,6 @@ from celery.schedules import crontab
 
 classroom_server = os.getenv('CLASSROOM_SERVER')
 gennis_server = os.getenv('GENNIS_SERVER')
-allowed_hosts = os.getenv('ALLOWED_HOSTS')
 
 DEBUG = os.getenv('DEBUG')
 
