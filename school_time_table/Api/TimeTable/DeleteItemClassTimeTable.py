@@ -38,6 +38,7 @@ class DeleteItemClassTimeTable(generics.RetrieveDestroyAPIView):
 
                 if student_subject_count:
                     student_subject_count.delete()
+                print("student_subject", student_subject)
                 student_subject.count = other_student_subjects
                 student_subject.save()
 
