@@ -103,24 +103,42 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
             .order_by('-pk')  # or 'id'
         )
 
+
+from silk.profiling.profiler import silk_profile
+
+
 class ActiveStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ActiveListSerializer
-    filter_mappings = {'branch': 'user__branch_id', 'subject': 'subject__id', 'age': 'user__birth_date',
-                       'language': 'user__language_id', }
+    filter_mappings = {
+        'branch': 'user__branch_id',
+        'subject': 'subject__id',
+        'age': 'user__birth_date',
+        'language': 'user__language_id',
+    }
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__name', 'user__surname', 'user__username']
 
-    @silk_profile
     def get_queryset(self, *args, **kwargs):
-        deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True,
-                                                            deleted=False).values_list('student_id', flat=True)
-        deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
-        active_students = Student.objects.exclude(id__in=deleted_student_ids).exclude(
-            id__in=deleted_new_student_ids).filter(groups_student__isnull=False).distinct().order_by(
-            'class_number__number')
-        return active_students
+        with silk_profile(name='ActiveStudents.get_queryset'):
+            deleted_student_ids = DeletedStudent.objects.filter(
+                student__groups_student__isnull=True,
+                deleted=False
+            ).values_list('student_id', flat=True)
 
+            deleted_new_student_ids = DeletedNewStudent.objects.values_list(
+                'student_id', flat=True
+            )
+
+            active_students = Student.objects.exclude(
+                id__in=deleted_student_ids
+            ).exclude(
+                id__in=deleted_new_student_ids
+            ).filter(
+                groups_student__isnull=False
+            ).distinct().order_by('class_number__number')
+
+            return active_students
 
 class CreateContractView(APIView):
     permission_classes = [IsAuthenticated]
