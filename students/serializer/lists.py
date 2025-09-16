@@ -2,9 +2,8 @@ from rest_framework import serializers
 
 from group.models import Group, GroupReason
 from students.models import Student, DeletedStudent
-from students.serializers import get_remaining_debt_for_student
 from user.models import CustomUser
-
+from students.serializers import get_remaining_debt_for_student
 
 class UserSerializer(serializers.ModelSerializer):
     age = serializers.SerializerMethodField(required=False)
@@ -19,7 +18,6 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.calculate_age()
 
     def get_language(self, obj):
-        # select_related('user__language') tufayli endi extra query yo'q
         if obj.language:
             return obj.language.name
         return None
@@ -59,25 +57,17 @@ class ActiveListSerializer(serializers.ModelSerializer):
         return ''
 
     def get_debt(self, obj):
-        # debt = get_remaining_debt_for_student(obj.id)
-        return 0
+        debt = get_remaining_debt_for_student(obj.id)
+        return debt
 
     def get_group(self, obj):
-        # prefetch_related ishlagani uchun endi extra query yo'q
         groups = obj.groups_student.first()
         if groups:
-            return {
-                "id": groups.id,
-                "name": groups.name,
-                "class_number": groups.class_number.number,
-                "color": groups.color.name
-            }
-        return {
-            "id": None,
-            "name": None,
-            "class_number": None,
-            "color": None
-        }
+            return {"id": groups.id, "name": groups.name, "class_number": groups.class_number.number,
+                "color": groups.color.name}
+        return {"id": None, "name": None, "class_number": None, "color": None}
+
+
 class ActiveListDeletedSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField(required=False)
     surname = serializers.SerializerMethodField(required=False)

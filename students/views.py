@@ -131,11 +131,11 @@ class ActiveStudents(QueryParamFilterMixin, ListAPIView):
             )
 
             active_students = Student.objects.select_related(
-                'user',                    # UserSerializer uchun
-                'user__language',          # get_language() uchun
+                'user',
+                'user__language',
                 'class_number'
             ).prefetch_related(
-                'user__student_user',      # get_id() uchun
+                'user__student_user',
                 'groups_student',
                 'groups_student__class_number',
                 'groups_student__color'
