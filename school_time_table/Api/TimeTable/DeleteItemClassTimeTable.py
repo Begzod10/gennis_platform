@@ -69,11 +69,6 @@ class DeleteItemClassTimeTable(generics.RetrieveDestroyAPIView):
                         ).first()
                         if ss_count_row:
                             ss_count_row.delete()
-
-                # If you also maintain a cached weekly total per student somewhere (e.g., a field),
-                # you can recalc it here similarly using date__gte=monday/date__lte=friday.
-
-            # Actually delete the ClassTimeTable record
             self.perform_destroy(instance)
 
         return Response({
