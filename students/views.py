@@ -29,6 +29,7 @@ from .serializers import StudentCharity
 from silk.profiling.profiler import silk_profile
 from .serializers import (StudentListSerializer,
                           DeletedNewStudentListSerializer, StudentPaymentListSerializer, StudentClassNumberSerializer)
+from django.utils.decorators import method_decorator
 
 from .serializers import (StudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
 
@@ -103,7 +104,7 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
             .order_by('-pk')  # or 'id'
         )
 
-@silk_profile
+@method_decorator(silk_profile(name='ActiveStudents profiling'), name='dispatch')
 class ActiveStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ActiveListSerializer
