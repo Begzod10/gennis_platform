@@ -26,7 +26,7 @@ from students.serializer.lists import ActiveListSerializer, ActiveListDeletedStu
     get_remaining_debt_for_student
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
 from .serializers import StudentCharity
-
+from silk.profiling.profiler import silk_profile
 from .serializers import (StudentListSerializer,
                           DeletedNewStudentListSerializer, StudentPaymentListSerializer, StudentClassNumberSerializer)
 
@@ -103,7 +103,7 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
             .order_by('-pk')  # or 'id'
         )
 
-
+@silk_profile
 class ActiveStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ActiveListSerializer
