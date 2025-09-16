@@ -20,6 +20,7 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 
 
 INSTALLED_APPS = [
+    "silk",
     'unfold',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -60,7 +61,6 @@ INSTALLED_APPS = [
     'django_filters',
     'ui',
     'terms',
-    "silk"
 ]
 
 MIDDLEWARE = [
@@ -174,5 +174,4 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-SILKY_PYTHON_PROFILER = True  # Python kod profiling yoqiladi
-SILKY_PYTHON_PROFILER_BINARY = True
+SILKY_PYTHON_PROFILER  = True
