@@ -13,6 +13,6 @@ urlpatterns = [
     path('terms-by-group/<int:group_id>/<int:term_id>/', TermsByGroup.as_view(), name='terms-by-group'),
     path('terms-by-group/<int:group_id>/<int:term_id>/<int:subject_id>/', TermsByGroup.as_view(), name='terms-by-group'),
     path('terms-by-student/<int:student_id>/<int:term_id>/', TermsByStudent.as_view(), name='terms-by-student'),
-    path('terms-by-student/<int:student_id>/<int:term_id>/<int:subject_id>', TermsByStudent.as_view(), name='terms-by-student'),
+    path('terms-by-student/<int:student_id>/<int:term_id>/<int:subject_id>/', TermsByStudent.as_view(), name='terms-by-student'),
     path('group-subjects/<int:group_id>/', GroupSubjectsApiView.as_view(), name='group-subjects'),
 ]
