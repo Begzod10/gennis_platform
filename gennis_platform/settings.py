@@ -14,7 +14,9 @@ gennis_server = os.getenv('GENNIS_SERVER')
 
 DEBUG = os.getenv('DEBUG')
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS')
+
+
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 
 
 INSTALLED_APPS = [
