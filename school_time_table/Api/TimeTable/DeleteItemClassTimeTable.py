@@ -54,7 +54,6 @@ class DeleteItemClassTimeTable(generics.RetrieveDestroyAPIView):
             # --- STUDENT-LEVEL COUNTS ---
             # Determine the subject (group subject or flow subject)
             subject = instance.subject if instance.subject else (instance.flow.subject if instance.flow else None)
-
             if subject:
                 # For each student in this class, remove the per-lesson count row
                 for student in instance.students.all():
@@ -69,11 +68,6 @@ class DeleteItemClassTimeTable(generics.RetrieveDestroyAPIView):
                         ).first()
                         if ss_count_row:
                             ss_count_row.delete()
-
-                # If you also maintain a cached weekly total per student somewhere (e.g., a field),
-                # you can recalc it here similarly using date__gte=monday/date__lte=friday.
-
-            # Actually delete the ClassTimeTable record
             self.perform_destroy(instance)
 
         return Response({
