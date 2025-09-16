@@ -34,11 +34,12 @@ class FlowsSerializerProfile(serializers.ModelSerializer):
     students = serializers.SerializerMethodField()
     level_name = serializers.CharField(source='level.name', read_only=True)
     type = serializers.CharField(default='flow', read_only=True)
+    order_by=serializers.CharField(source='order', read_only=True)
 
     class Meta:
         model = Flow
         fields = ['id', 'name', 'level_name', 'activity', 'subject_name', 'teacher', 'students', 'type',
-                  'classes', 'subject_id']
+                  'classes', 'subject_id','order_by']
 
     def get_teacher(self, obj):
         if not obj.teacher:
