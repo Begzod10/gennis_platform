@@ -93,7 +93,7 @@ class TimeTableDataView(APIView):
         # always calculate Monday → Friday from ref_date
         monday = ref_date - timedelta(days=ref_date.weekday())
         friday = monday + timedelta(days=4)
-
+        print(monday, friday)
         info = {"students": []}
         if group:
             group_subjects = GroupSubjects.objects.filter(group=group, subject_id=subject_id).first()
