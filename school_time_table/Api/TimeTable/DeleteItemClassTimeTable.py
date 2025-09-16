@@ -54,7 +54,6 @@ class DeleteItemClassTimeTable(generics.RetrieveDestroyAPIView):
             # --- STUDENT-LEVEL COUNTS ---
             # Determine the subject (group subject or flow subject)
             subject = instance.subject if instance.subject else (instance.flow.subject if instance.flow else None)
-
             if subject:
                 # For each student in this class, remove the per-lesson count row
                 for student in instance.students.all():
