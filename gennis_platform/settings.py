@@ -174,3 +174,5 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+SILKY_PYTHON_PROFILER = True  # Python kod profiling yoqiladi
+SILKY_PYTHON_PROFILER_BINARY = True
