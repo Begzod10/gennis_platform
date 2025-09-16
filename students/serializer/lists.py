@@ -19,20 +19,16 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.calculate_age()
 
     def get_language(self, obj):
+        # select_related('user__language') tufayli endi extra query yo'q
         if obj.language:
             return obj.language.name
-        else:
-            return None
+        return None
 
     def get_id(self, obj):
-        # Access related Student objects
-        students = obj.student_user.all()  # `student_user` is the related name in the `ForeignKey`
-        if not students.exists():
-            return "No student ID"
-
-        # If there are multiple students, return their IDs as a list
-        student_id = [student.id for student in students if student.id is not None]
-        return [student.id for student in students if student.id is not None][0]
+        students = obj.student_user.all()
+        if students:
+            return students[0].id
+        return "No student ID"
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -54,29 +50,34 @@ class ActiveListSerializer(serializers.ModelSerializer):
         fields = ('id', 'user', "group", "color", "debt", 'class_number', 'comment')
 
     def get_color(self, obj):
-        color = ''
         if obj.debt_status == 1:
-            color = '#FACC15'
+            return '#FACC15'
         elif obj.debt_status == 2:
-            color = '#FF3130'
+            return '#FF3130'
         elif obj.debt_status == 0:
-            color = '24FF00'
-        return color
+            return '#24FF00'
+        return ''
 
     def get_debt(self, obj):
-
         # debt = get_remaining_debt_for_student(obj.id)
-
         return 0
 
     def get_group(self, obj):
+        # prefetch_related ishlagani uchun endi extra query yo'q
         groups = obj.groups_student.first()
-        group = {"id": groups.id if groups else None, "name": groups.name if groups else None,
-            "class_number": groups.class_number.number if groups else None,
-            "color": groups.color.name if groups else None}
-        return group
-
-
+        if groups:
+            return {
+                "id": groups.id,
+                "name": groups.name,
+                "class_number": groups.class_number.number,
+                "color": groups.color.name
+            }
+        return {
+            "id": None,
+            "name": None,
+            "class_number": None,
+            "color": None
+        }
 class ActiveListDeletedSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField(required=False)
     surname = serializers.SerializerMethodField(required=False)

@@ -119,26 +119,47 @@ class ActiveStudents(QueryParamFilterMixin, ListAPIView):
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__name', 'user__surname', 'user__username']
 
-    def get_queryset(self, *args, **kwargs):
-        with silk_profile(name='ActiveStudents.get_queryset'):
-            deleted_student_ids = DeletedStudent.objects.filter(
-                student__groups_student__isnull=True,
-                deleted=False
-            ).values_list('student_id', flat=True)
+    class ActiveStudents(QueryParamFilterMixin, ListAPIView):
+        permission_classes = [IsAuthenticated]
+        serializer_class = ActiveListSerializer
+        filter_mappings = {
+            'branch': 'user__branch_id',
+            'subject': 'subject__id',
+            'age': 'user__birth_date',
+            'language': 'user__language_id',
+        }
+        filter_backends = [filters.SearchFilter]
+        search_fields = ['user__name', 'user__surname', 'user__username']
 
-            deleted_new_student_ids = DeletedNewStudent.objects.values_list(
-                'student_id', flat=True
-            )
+        def get_queryset(self, *args, **kwargs):
+            with silk_profile(name='ActiveStudents.get_queryset'):
+                deleted_student_ids = DeletedStudent.objects.filter(
+                    student__groups_student__isnull=True,
+                    deleted=False
+                ).values_list('student_id', flat=True)
 
-            active_students = Student.objects.exclude(
-                id__in=deleted_student_ids
-            ).exclude(
-                id__in=deleted_new_student_ids
-            ).filter(
-                groups_student__isnull=False
-            ).distinct().order_by('class_number__number')
+                deleted_new_student_ids = DeletedNewStudent.objects.values_list(
+                    'student_id', flat=True
+                )
 
-            return active_students
+                active_students = Student.objects.select_related(
+                    'user',  # UserSerializer uchun
+                    'user__language',  # get_language() uchun
+                    'class_number'
+                ).prefetch_related(
+                    'user__student_user',  # get_id() uchun
+                    'groups_student',
+                    'groups_student__class_number',
+                    'groups_student__color'
+                ).exclude(
+                    id__in=deleted_student_ids
+                ).exclude(
+                    id__in=deleted_new_student_ids
+                ).filter(
+                    groups_student__isnull=False
+                ).distinct().order_by('class_number__number')
+
+                return active_students
 
 class CreateContractView(APIView):
     permission_classes = [IsAuthenticated]
