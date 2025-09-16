@@ -71,7 +71,7 @@ class ContractStudentAdmin(admin.ModelAdmin):
 
 @admin.register(StudentSubject)
 class StudentSubjectAdmin(admin.ModelAdmin):
-    list_display = ('student', 'subject', 'subject_count', 'old_id')
+    list_display = ('student', 'subject', 'count')
     search_fields = ('student__user__username', 'subject__name')
-    list_filter = ('subject', 'subject_count')
-    filter_horizontal = ('subject', 'subject_count')
+    list_filter = ('subject', 'count')
+    filter_horizontal = ('subject', 'count')
