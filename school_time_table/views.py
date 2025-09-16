@@ -105,7 +105,7 @@ class TimeTableDataView(APIView):
                 info['students'].append({
                     'student': student.user.name + ' ' + student.user.surname,
                     'hours': student_subject_count if student_subject_count else 0,
-                    "total_hours": student_subject.hours
+                    "total_hours": student_subject.hours if student_subject else 0
                 })
 
         return Response(info)
