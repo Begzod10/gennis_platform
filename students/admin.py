@@ -3,7 +3,7 @@ from django.contrib import admin
 from .models import (
     Student, StudentCharity, StudentPayment,
     DeletedNewStudent, StudentHistoryGroups,
-    DeletedStudent, ContractStudent
+    DeletedStudent, ContractStudent, StudentSubject, StudentSubjectCount
 )
 
 
@@ -67,3 +67,11 @@ class ContractStudentAdmin(admin.ModelAdmin):
     search_fields = ('student__user__username', 'father_name', 'passport_series', 'place')
     list_filter = ('created_date', 'expire_date')
     date_hierarchy = 'created_date'
+
+
+@admin.register(StudentSubject)
+class StudentSubjectAdmin(admin.ModelAdmin):
+    list_display = ('student', 'subject', 'count')
+    search_fields = ('student__user__username', 'subject__name')
+    list_filter = ('subject', 'count')
+

@@ -27,7 +27,6 @@ class DeleteItemClassTimeTable(generics.RetrieveDestroyAPIView):
         subject = instance.subject if instance.subject else instance.flow.subject
         if subject:
             for student in instance.students.all():
-                print(student, subject)
                 student_subject = StudentSubject.objects.filter(student=student,
                                                                 subject=subject).first()
                 student_subject_count = StudentSubjectCount.objects.filter(class_time_table=instance,
@@ -38,8 +37,9 @@ class DeleteItemClassTimeTable(generics.RetrieveDestroyAPIView):
 
                 if student_subject_count:
                     student_subject_count.delete()
-                student_subject.count = other_student_subjects
-                student_subject.save()
+                if student_subject:
+                    student_subject.count = other_student_subjects
+                    student_subject.save()
 
         serializer = self.get_serializer(instance)
 

@@ -67,9 +67,8 @@ class TimeTableDataView(APIView):
         type_list = self.request.query_params.get('type')
         date = self.request.query_params.get('date')
         time_table_id = self.request.query_params.get('time_table_id')
-        class_time_table = ClassTimeTable.objects.get(id=time_table_id)
 
-        if not class_time_table:
+        if not time_table_id:
             group = None
             flow = None
             if type_list == 'group':
@@ -83,6 +82,8 @@ class TimeTableDataView(APIView):
             month_date = date.strftime('%Y-%m')
             month_date = datetime.strptime(month_date, '%Y-%m')
         else:
+
+            class_time_table = ClassTimeTable.objects.get(id=time_table_id)
             group = class_time_table.group
             subject_id = class_time_table.subject_id if not subject_id else subject_id
             students = class_time_table.students.all()
@@ -104,7 +105,7 @@ class TimeTableDataView(APIView):
                 info['students'].append({
                     'student': student.user.name + ' ' + student.user.surname,
                     'hours': student_subject_count if student_subject_count else 0,
-                    "total_hours": student_subject.hours
+                    "total_hours": student_subject.hours if student_subject else 0
                 })
 
         return Response(info)
