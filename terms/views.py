@@ -202,7 +202,8 @@ class TermsByStudent(views.APIView):
 
             assignments = Assignment.objects.filter(
                 student=student,
-                test__term_id=term_id
+                test__term_id=term_id,
+                test__subject_id=subject_id
             ).select_related('test__subject')
         else:
             assignments = Assignment.objects.filter(
