@@ -164,8 +164,8 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-STATIC_URL = '/static_admin/'
-STATIC_ROOT = BASE_DIR / 'static_admin'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'static'
 STATICFILES_DIRS = [BASE_DIR / "staticfiles"]
 
 MEDIA_URL = '/media/'
