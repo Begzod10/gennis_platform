@@ -280,10 +280,12 @@ class GroupMonthlyAttendanceView(APIView):
         year, month = int(year), int(month)
 
         _, days_in_month = calendar.monthrange(year, month)
-        days_list = list(range(1, days_in_month + 1))
 
-        # summaries = StudentMonthlySummary.objects.filter(group_id=group_id, year=year, month=month)
-        # data = [summary.stats for summary in summaries]
+        days_list = [
+            day for day in range(1, days_in_month + 1)
+            if calendar.weekday(year, month, day) != 6
+        ]
+
         summaries = GroupMonthlySummary.objects.filter(
             group_id=group_id,
             year=year,
