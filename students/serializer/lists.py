@@ -1,8 +1,9 @@
 from rest_framework import serializers
-from students.models import Student, DeletedStudent
+
 from group.models import Group, GroupReason
-from user.models import CustomUser
+from students.models import Student, DeletedStudent
 from students.serializers import get_remaining_debt_for_student
+from user.models import CustomUser
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -64,18 +65,15 @@ class ActiveListSerializer(serializers.ModelSerializer):
 
     def get_debt(self, obj):
 
-        debt = get_remaining_debt_for_student(obj.id)
+        # debt = get_remaining_debt_for_student(obj.id)
 
-        return debt
+        return 0
 
     def get_group(self, obj):
         groups = obj.groups_student.first()
-        group = {
-            "id": groups.id if groups else None,
-            "name": groups.name if groups else None,
+        group = {"id": groups.id if groups else None, "name": groups.name if groups else None,
             "class_number": groups.class_number.number if groups else None,
-            "color": groups.color.name if groups else None
-        }
+            "color": groups.color.name if groups else None}
         return group
 
 
