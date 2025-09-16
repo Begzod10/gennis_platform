@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, views, response, status
 
@@ -5,7 +7,7 @@ from group.models import Group, GroupSubjects, Student
 from .functions import create_multiple_years
 from .models import Assignment
 from .serializers import TestCreateUpdateSerializer, Test, TermSerializer, Term
-
+from django.db.models import Case, When, Value, IntegerField
 
 class CreateTest(generics.CreateAPIView):
     queryset = Test.objects.all()
@@ -22,9 +24,23 @@ class EducationYears(generics.ListAPIView):
     serializer_class = TermSerializer
 
     def get(self, request, *args, **kwargs):
-        result = Term.objects.values('academic_year').distinct()
-        return response.Response(result, status=status.HTTP_200_OK)
+        current_year = "2025-2026"
 
+        result = (
+            Term.objects
+            .values('academic_year')
+            .distinct()
+            .annotate(
+                custom_order=Case(
+                    When(academic_year=current_year, then=Value(0)),
+                    default=Value(1),
+                    output_field=IntegerField()
+                )
+            )
+            .order_by('custom_order', '-academic_year')
+        )
+
+        return response.Response(result, status=status.HTTP_200_OK)
 
 class ListTerm(generics.ListAPIView):
     queryset = Term.objects.all()
@@ -123,7 +139,7 @@ class AssignmentCreateView(views.APIView):
             assignment, created = Assignment.objects.update_or_create(test_id=test_id, student_id=student_id,
                                                                       defaults={"percentage": percentage, })
 
-            results.append({"student_id": student_id, "assignment_id": assignment.id, "created": created})
+            results.append({"student_id": student_id, "assignment_id": assignment.id, "created": created,"result":percentage*assignment.test.weight/100})
 
         response_data = {"success": results, "errors": errors}
 
@@ -141,29 +157,36 @@ class TermsByGroup(views.APIView):
         response_data = []
 
         for student in students:
-            assignments = Assignment.objects.filter(student=student, test__term_id=term_id).select_related(
-                'test__subject')
+            subject_id = kwargs.get('subject_id', None)
+            if subject_id:
+                assignments = Assignment.objects.filter(student=student, test__term_id=term_id,test__subject_id=subject_id).select_related(
+                    'test__subject')
+            else:
+                assignments = Assignment.objects.filter(student=student, test__term_id=term_id).select_related(
+                    'test__subject')
 
-            student_data = {"id": student.id, "first_name": student.user.name, "last_name": student.user.surname,
-                "assignments": [], "average_result": 0}
-
-            total_result = 0
-            count = 0
+            subjects_data = defaultdict(
+                lambda: {"subject_name": "", "assignments": [], "total_result": 0, "count": 0, "average_result": 0})
 
             for assignment in assignments:
-                result = (assignment.test.weight * assignment.percentage) / 100
+                subject_id = assignment.test.subject.id
+                calculated_result = (assignment.test.weight * assignment.percentage) / 100
 
-                student_data["assignments"].append(
-                    {"subject_name": assignment.test.subject.name, "test_name": assignment.test.name,
-                        "percentage": assignment.percentage, "calculated_result": round(result, 2)})
+                subjects_data[subject_id]["subject_name"] = assignment.test.subject.name
+                subjects_data[subject_id]["assignments"].append(
+                    {"test_name": assignment.test.name, "percentage": assignment.percentage,
+                        "calculated_result": round(calculated_result, 2)})
+                subjects_data[subject_id]["total_result"] += calculated_result
+                subjects_data[subject_id]["count"] += 1
 
-                total_result += result
-                count += 1
+            for subj_id, subj_data in subjects_data.items():
+                if subj_data["count"] > 0:
+                    subj_data["average_result"] = round(subj_data["total_result"] / subj_data["count"], 2)
+                del subj_data["total_result"]
+                del subj_data["count"]
 
-            if count > 0:
-                student_data["average_result"] = round(total_result / count, 2)
-
-            response_data.append(student_data)
+            response_data.append({"id": student.id, "first_name": student.user.name, "last_name": student.user.surname,
+                "subjects": list(subjects_data.values())})
 
         return response.Response(response_data, status=status.HTTP_200_OK)
 
@@ -172,28 +195,83 @@ class TermsByStudent(views.APIView):
     def get(self, request, *args, **kwargs):
         student_id = kwargs.get('student_id')
         term_id = kwargs.get('term_id')
+        subject_id = kwargs.get('subject_id', None)
 
         student = Student.objects.get(id=student_id)
-        assignments = Assignment.objects.filter(student=student, test__term_id=term_id).select_related('test__subject')
+        if subject_id:
 
-        response_data = {"student": {"first_name": student.user.first_name, "last_name": student.user.last_name, },
-            "assignments": [], "total_result": 0, "average_result": 0}
+            assignments = Assignment.objects.filter(
+                student=student,
+                test__term_id=term_id,
+                test__subject_id=subject_id
+            ).select_related('test__subject')
+        else:
+            assignments = Assignment.objects.filter(
+                student=student,
+                test__term_id=term_id
+            ).select_related('test__subject')
 
-        total_result = 0
-        count = 0
+        response_data = {
+            "student": {
+                "first_name": student.user.first_name,
+                "last_name": student.user.last_name,
+            },
+            "subjects": [],
+            "total_result": 0,
+            "average_result": 0
+        }
+
+        subjects_data = defaultdict(lambda: {
+            "subject_name": "",
+            "assignments": [],
+            "total_result": 0,
+            "count": 0,
+            "average_result": 0
+        })
+
+        total_result_all = 0
+        count_all = 0
 
         for assignment in assignments:
-            result = (assignment.test.weight * assignment.percentage) / 100
+            subject_id = assignment.test.subject.id
+            calculated_result = (assignment.test.weight * assignment.percentage) / 100
 
-            response_data["assignments"].append(
-                {"subject_name": assignment.test.subject.name, "test_name": assignment.test.name,
-                    "percentage": assignment.percentage, "calculated_result": round(result, 2)})
+            subjects_data[subject_id]["subject_name"] = assignment.test.subject.name
+            subjects_data[subject_id]["assignments"].append({
+                "test_name": assignment.test.name,
+                "percentage": assignment.percentage,
+                "calculated_result": round(calculated_result, 2)
+            })
+            subjects_data[subject_id]["total_result"] += calculated_result
+            subjects_data[subject_id]["count"] += 1
 
-            total_result += result
-            count += 1
+            total_result_all += calculated_result
+            count_all += 1
 
-        if count > 0:
-            response_data["total_result"] = round(total_result, 2)
-            response_data["average_result"] = round(total_result / count, 2)
+        for subject_id, subj_data in subjects_data.items():
+            if subj_data["count"] > 0:
+                subj_data["average_result"] = round(subj_data["total_result"] / subj_data["count"], 2)
+            del subj_data["count"]
+            del subj_data["total_result"]
+            response_data["subjects"].append(subj_data)
+
+        if count_all > 0:
+            response_data["total_result"] = round(total_result_all, 2)
+            response_data["average_result"] = round(total_result_all / count_all, 2)
 
         return response.Response(response_data, status=status.HTTP_200_OK)
+
+class GroupSubjectsApiView(views.APIView):
+    def get(self, request, *args, **kwargs):
+        group_id = kwargs.get('group_id')
+        group = Group.objects.get(id=group_id)
+
+        subjects = GroupSubjects.objects.filter(group=group).select_related('subject').values(
+            'subject__id', 'subject__name'
+        )
+
+        subjects_data = [
+            {"id": subj["subject__id"], "name": subj["subject__name"]} for subj in subjects
+        ]
+
+        return response.Response(subjects_data, status=status.HTTP_200_OK)
