@@ -60,6 +60,7 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
     def validate(self, attrs):
         attrs = super().validate(attrs)
         room = attrs.get('room')
+        # If your client sometimes posts 0 instead of null for room:
         if room == 0:
             attrs['room'] = None
         return attrs
@@ -67,43 +68,87 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
     def create(self, validated_data):
         group = validated_data.get('group')
         flow = validated_data.get('flow')
-        date = validated_data.get('date')
+        lesson_date = validated_data.get('date')  # expected to be a date/datetime
         subject = validated_data.get('subject')
 
-        students = group.students.all() if group else flow.students.all() if flow else None
-        subject = subject if subject else flow.subject
-        class_time_table = ClassTimeTable.objects.create(**validated_data)
-        class_time_table.students.add(*students)
-        month_date = datetime(date.year, date.month, 1)
-        if group:
-            group_subjects = GroupSubjects.objects.filter(group=group, subject=subject).first()
-            group_subjects_count = GroupSubjectsCount.objects.filter(class_time_table=class_time_table,
-                                                                     group_subjects=group_subjects).first()
-            if not group_subjects_count:
-                GroupSubjectsCount.objects.create(class_time_table=class_time_table,
-                                                  group_subjects=group_subjects,
-                                                  date=month_date)
+        # Resolve students & subject
+        students = group.students.all() if group else (flow.students.all() if flow else [])
+        subject = subject or (flow.subject if flow else None)
 
-            group_subjects_counts = GroupSubjectsCount.objects.filter(group_subjects=group_subjects,
-                                                                      date=month_date).count()
-            if group_subjects.count != group_subjects_counts:
-                group_subjects.count = group_subjects_counts
-                group_subjects.save()
-        print(subject)
+        # Create timetable record
+        class_time_table = ClassTimeTable.objects.create(**validated_data)
+        if students:
+            class_time_table.students.add(*students)
+
+        # Compute Mon→Fri range for this lesson's week
+        ref_date = lesson_date.date() if hasattr(lesson_date, "date") else lesson_date
+        monday = ref_date - timedelta(days=ref_date.weekday())
+        friday = monday + timedelta(days=4)
+
+        # IMPORTANT: Write per-lesson aggregates with the ACTUAL lesson date
+        # so later queries can aggregate by a week range using date__gte/lte.
+
+        # =============== GROUP-LEVEL ===============
+        if group and subject:
+            group_subjects = GroupSubjects.objects.filter(group=group, subject=subject).first()
+            if group_subjects:
+                # Ensure a per-lesson GroupSubjectsCount row exists
+                gsc = GroupSubjectsCount.objects.filter(
+                    class_time_table=class_time_table,
+                    group_subjects=group_subjects
+                ).first()
+                if not gsc:
+                    GroupSubjectsCount.objects.create(
+                        class_time_table=class_time_table,
+                        group_subjects=group_subjects,
+                        date=ref_date,  # store actual lesson date
+                    )
+
+                # Recalculate the weekly total (Mon→Fri) and store it on GroupSubjects.count
+                weekly_group_total = GroupSubjectsCount.objects.filter(
+                    group_subjects=group_subjects,
+                    date__gte=monday,
+                    date__lte=friday,
+                ).count()
+
+                if getattr(group_subjects, "count", None) != weekly_group_total:
+                    group_subjects.count = weekly_group_total
+                    group_subjects.save(update_fields=["count"])
+
+        # =============== STUDENT-LEVEL ===============
         if subject:
             for student in students:
-                student_subject = StudentSubject.objects.filter(student=student, subject=subject).first()
-                student_subject_count = StudentSubjectCount.objects.filter(class_time_table=class_time_table,
-                                                                           student_subjects=student_subject).first()
-                if not student_subject_count:
-                    StudentSubjectCount.objects.create(class_time_table=class_time_table,
-                                                       student_subjects=student_subject,
-                                                       date=month_date)
-                student_subject_counts = StudentSubjectCount.objects.filter(student_subjects=student_subject,
-                                                                            date=month_date).count()
-                if student_subject.count != student_subject_counts:
-                    student_subject.count = student_subject_counts
-                    student_subject.save()
+                student_subject = StudentSubject.objects.filter(
+                    student=student,
+                    subject=subject
+                ).first()
+
+                # Only track counts if the StudentSubject link exists
+                if not student_subject:
+                    continue
+
+                # Ensure a per-lesson StudentSubjectCount row exists
+                ssc = StudentSubjectCount.objects.filter(
+                    class_time_table=class_time_table,
+                    student_subjects=student_subject
+                ).first()
+                if not ssc:
+                    StudentSubjectCount.objects.create(
+                        class_time_table=class_time_table,
+                        student_subjects=student_subject,
+                        date=ref_date,  # store actual lesson date
+                    )
+
+                # Recalculate the student's weekly total (Mon→Fri) and store on StudentSubject.count
+                weekly_student_total = StudentSubjectCount.objects.filter(
+                    student_subjects=student_subject,
+                    date__gte=monday,
+                    date__lte=friday,
+                ).count()
+
+                if getattr(student_subject, "count", None) != weekly_student_total:
+                    student_subject.count = weekly_student_total
+                    student_subject.save(update_fields=["count"])
 
         return class_time_table
 
