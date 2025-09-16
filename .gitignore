@@ -11,3 +11,4 @@ transfer/
 .env
 logs/
 staticfiles
+nohup.out
