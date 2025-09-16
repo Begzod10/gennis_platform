@@ -74,4 +74,4 @@ class StudentSubjectAdmin(admin.ModelAdmin):
     list_display = ('student', 'subject', 'count')
     search_fields = ('student__user__username', 'subject__name')
     list_filter = ('subject', 'count')
-    filter_horizontal = ('subject', 'count')
+
