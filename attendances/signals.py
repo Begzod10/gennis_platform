@@ -14,7 +14,10 @@ def rebuild_group_summary(monthly_summary):
     )
 
     days_in_month = calendar.monthrange(year, month)[1]
-    all_days = [i for i in range(1, days_in_month + 1)]
+    all_days = [
+        i for i in range(1, days_in_month + 1)
+        if calendar.weekday(year, month, i) != 6
+    ]
 
     students_data = []
     students = group.students.all()
