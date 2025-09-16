@@ -65,7 +65,7 @@ class TimeTableDataView(APIView):
         subject_id = self.request.query_params.get('subject_id')
         group_id = self.request.query_params.get('group_flow')
         type_list = self.request.query_params.get('type')
-        date = self.request.query_params.get('date')
+        date_str = self.request.query_params.get('date')
         time_table_id = self.request.query_params.get('time_table_id')
 
         if not time_table_id:
@@ -78,34 +78,47 @@ class TimeTableDataView(APIView):
 
             subject_id = flow.subject_id if not subject_id else subject_id
             students = group.students.all() if group else flow.students.all()
-            date = datetime.strptime(date, '%Y-%m-%d')
-            month_date = date.strftime('%Y-%m')
-            month_date = datetime.strptime(month_date, '%Y-%m')
-        else:
 
+            # parse date from query
+            ref_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+
+        else:
             class_time_table = ClassTimeTable.objects.get(id=time_table_id)
             group = class_time_table.group
             subject_id = class_time_table.subject_id if not subject_id else subject_id
             students = class_time_table.students.all()
-            month = class_time_table.date.month
-            year = class_time_table.date.year
-            month_date = datetime(year, month, 1)
+
+            ref_date = class_time_table.date
+
+        # always calculate Monday → Friday from ref_date
+        monday = ref_date - timedelta(days=ref_date.weekday())
+        friday = monday + timedelta(days=4)
+
         info = {"students": []}
         if group:
             group_subjects = GroupSubjects.objects.filter(group=group, subject_id=subject_id).first()
-            group_subjects = GroupSubjectsCount.objects.filter(group_subjects=group_subjects,
-                                                               date=month_date).count()
-            info['group_subjects'] = group_subjects if group_subjects else 0
+            group_subjects_count = GroupSubjectsCount.objects.filter(
+                group_subjects=group_subjects,
+                date__gte=monday,
+                date__lte=friday
+            ).count()
+            info['group_subjects'] = group_subjects_count if group_subjects_count else 0
+
         if subject_id:
             for student in students:
-                student_subject = StudentSubject.objects.filter(student=student,
-                                                                subject_id=subject_id).first()
-                student_subject_count = StudentSubjectCount.objects.filter(date=month_date,
-                                                                           student_subjects=student_subject).count()
+                student_subject = StudentSubject.objects.filter(
+                    student=student,
+                    subject_id=subject_id
+                ).first()
+                student_subject_count = StudentSubjectCount.objects.filter(
+                    date__gte=monday,
+                    date__lte=friday,
+                    student_subjects=student_subject
+                ).count()
                 info['students'].append({
-                    'student': student.user.name + ' ' + student.user.surname,
+                    'student': f"{student.user.name} {student.user.surname}",
                     'hours': student_subject_count if student_subject_count else 0,
-                    "total_hours": student_subject.hours if student_subject else 0
+                    'total_hours': student_subject.hours if student_subject else 0
                 })
 
         return Response(info)
