@@ -106,6 +106,9 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
 from silk.profiling.profiler import silk_profile
 
 
+from django.db.models import Prefetch
+from silk.profiling.profiler import silk_profile
+from group.models import Group
 class ActiveStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ActiveListSerializer
@@ -135,9 +138,11 @@ class ActiveStudents(QueryParamFilterMixin, ListAPIView):
                 'class_number'
             ).prefetch_related(
                 'user__student_user',
-                'groups_student',
-                'groups_student__class_number',
-                'groups_student__color'
+                Prefetch(
+                    'groups_student',
+                    queryset=Group.objects.select_related('class_number', 'color').order_by('id'),
+                    to_attr='prefetched_groups'
+                )
             ).exclude(
                 id__in=deleted_student_ids
             ).exclude(
