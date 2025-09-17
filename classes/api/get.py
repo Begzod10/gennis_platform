@@ -205,6 +205,7 @@ class ClassSubjects(APIView):
         today = datetime.today()
         month = today.month
         year = today.year
+
         month_date = datetime(year, month, 1)
         start_week = today - timedelta(days=today.weekday())
         week_dates = [(start_week + timedelta(days=i)).date() for i in range(7)]
@@ -212,11 +213,10 @@ class ClassSubjects(APIView):
         group_subjects = GroupSubjects.objects.filter(group=group).all()
         list = []
         for subject in group_subjects:
-            lessons = GroupSubjectsCount.objects.filter(group_subjects=subject, date=month_date).count()
             info = {
                 'id': subject.subject.id,
                 'name': subject.subject.name,
-                'hours': f'{lessons}/{subject.hours}'
+                'hours': f'{subject.count}/{subject.hours}'
             }
             list.append(info)
         return Response(list)
@@ -247,6 +247,3 @@ class ClassNumberForSubjects(APIView):
             }
             list.append(info)
         return Response(list)
-
-
-
