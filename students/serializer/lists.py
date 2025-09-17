@@ -57,8 +57,8 @@ class ActiveListSerializer(serializers.ModelSerializer):
         return ''
 
     def get_debt(self, obj):
-        debt = get_remaining_debt_for_student(obj.id)
-        return debt
+
+        return obj.user.balance
 
     def get_group(self, obj):
         groups = obj.groups_student.first()
