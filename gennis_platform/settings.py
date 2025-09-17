@@ -179,3 +179,5 @@ MEDIA_ROOT = BASE_DIR / 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SILKY_PYTHON_PROFILER  = True
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "http://127.0.0.1:8000","https://school.gennis.uz","http://localhost:3000"]
+CORS_ALLOW_CREDENTIALS=True
