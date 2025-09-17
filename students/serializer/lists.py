@@ -3,7 +3,6 @@ from rest_framework import serializers
 from group.models import Group, GroupReason
 from students.models import Student, DeletedStudent
 from user.models import CustomUser
-from students.serializers import get_remaining_debt_for_student
 
 class UserSerializer(serializers.ModelSerializer):
     age = serializers.SerializerMethodField(required=False)

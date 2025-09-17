@@ -22,10 +22,9 @@ from classes.models import ClassNumber
 from attendances.models import AttendancePerMonth
 from branch.models import Branch
 from permissions.response import QueryParamFilterMixin
-from students.serializer.lists import ActiveListSerializer, ActiveListDeletedStudentSerializer, \
-    get_remaining_debt_for_student
+from students.serializer.lists import ActiveListSerializer, ActiveListDeletedStudentSerializer
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
-from .serializers import StudentCharity
+from .serializers import StudentCharity,get_remaining_debt_for_student
 from silk.profiling.profiler import silk_profile
 from .serializers import (StudentListSerializer,
                           DeletedNewStudentListSerializer, StudentPaymentListSerializer, StudentClassNumberSerializer)
@@ -372,6 +371,7 @@ class GetMonth(APIView):
         attendance_per_month.save()
 
         from attendances.serializers import AttendancePerMonthSerializer
+        get_remaining_debt_for_student(student_id)
 
         return Response(AttendancePerMonthSerializer(attendance_per_month).data)
 
@@ -558,9 +558,12 @@ class StudentCharityModelView(APIView):
         month = data.pop('date')
         month_number = list(calendar.month_name).index(month.capitalize())
         old_months = [9, 10, 11, 12]
+        new_months = [1, 2, 3, 4, 5, 6,7]
         current_year = int(data['year'])
         if month_number in old_months:
             current_year -= 1
+        if month_number in new_months:
+            current_year += 1
         date = datetime(year=current_year, month=int(month_number), day=int(datetime.now().day)).date()
         student_id = self.kwargs['student_id']
         student = get_object_or_404(Student, id=student_id)
@@ -591,6 +594,7 @@ class StudentCharityModelView(APIView):
                 attendance_per_month.status = True
 
         attendance_per_month.save()
+        get_remaining_debt_for_student(student_id)
 
         return Response({"msg": "Chegirma muvaffaqiyatli yaratildi"})
 
@@ -606,6 +610,7 @@ class StudentCharityModelView(APIView):
         payment.payment_sum = sum
         payment.reason = request.data.get('reason', None)
         payment.save()
+        get_remaining_debt_for_student(payment.student.id)
         return Response({"msg": "Chegirma muvaffaqiyatli o'zgartirildi"})
 
 

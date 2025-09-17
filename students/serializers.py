@@ -126,10 +126,12 @@ def get_remaining_debt_for_student(student_id):
                 month_date__gte=current_date
             ).aggregate(total_remaining_debt=Sum('payment'))
             student.user.balance = remaining_debt_sum['total_remaining_debt']
+            student.user.save()
 
             return remaining_debt_sum['total_remaining_debt'] or 0
         else:
             student.user.balance = f"-{total_remaining_debt}"
+            student.user.save()
 
             return f"-{total_remaining_debt}"
 

@@ -9,7 +9,7 @@ from permissions.response import CustomResponseMixin
 from students.models import DeletedStudent, StudentPayment, StudentCharity, StudentHistoryGroups, DeletedNewStudent, \
     Student
 from students.serializers import DeletedStudentSerializer, StudentPaymentSerializer, StudentCharitySerializer, \
-    StudentHistoryGroupsSerializer, StudentSerializer, StudentListSerializer
+    StudentHistoryGroupsSerializer, StudentSerializer, StudentListSerializer,get_remaining_debt_for_student
 
 
 class StudentCreateView(CustomResponseMixin, generics.CreateAPIView):
@@ -131,6 +131,7 @@ class StudentPaymentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
             attendance_per_month.payment -= student_payment.payment_sum
             student_payment.deleted = True
             student_payment.save()
+            get_remaining_debt_for_student(student_payment.student.id)
 
             if attendance_per_month.remaining_debt != 0:
                 attendance_per_month.status = False
@@ -191,5 +192,6 @@ class CreateDiscountForSchool(generics.GenericAPIView):
                 "branch": student.user.branch
             }
         )
+        get_remaining_debt_for_student(student_id)
 
         return Response({"msg": "Chegirma muvaffaqiyatli yaratildi!"}, status=status.HTTP_200_OK)
