@@ -21,7 +21,7 @@ from time_table.serializers import WeekDaysSerializer
 from gennis_platform.settings import classroom_server
 from django.db.models import F, Value
 from django.db.models.functions import Coalesce
-
+from school_time_table.functions.check_student_subject import all_weekly_counts_equal, weekly_mismatch_details
 from school_time_table.serializers_list import GroupClassSerializerList
 from teachers.serializer.lists import ActiveListTeacherSerializerTime
 from django.db.models.functions import Coalesce, Cast
@@ -71,24 +71,18 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
         lesson_date = validated_data.get('date')  # expected to be a date/datetime
         subject = validated_data.get('subject')
 
-        # Resolve students & subject
         students = group.students.all() if group else (flow.students.all() if flow else [])
         subject = subject or (flow.subject if flow else None)
 
-        # Create timetable record
         class_time_table = ClassTimeTable.objects.create(**validated_data)
         if students:
             class_time_table.students.add(*students)
 
-        # Compute Mon→Fri range for this lesson's week
         ref_date = lesson_date.date() if hasattr(lesson_date, "date") else lesson_date
         monday = ref_date - timedelta(days=ref_date.weekday())
         friday = monday + timedelta(days=4)
+        group_subjects_set = set()
 
-        # IMPORTANT: Write per-lesson aggregates with the ACTUAL lesson date
-        # so later queries can aggregate by a week range using date__gte/lte.
-
-        # =============== GROUP-LEVEL ===============
         if group and subject:
             group_subjects = GroupSubjects.objects.filter(group=group, subject=subject).first()
             if group_subjects:
@@ -103,7 +97,6 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
                         group_subjects=group_subjects,
                         date=ref_date,  # store actual lesson date
                     )
-
                 # Recalculate the weekly total (Mon→Fri) and store it on GroupSubjects.count
                 weekly_group_total = GroupSubjectsCount.objects.filter(
                     group_subjects=group_subjects,
@@ -114,20 +107,17 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
                 if getattr(group_subjects, "count", None) != weekly_group_total:
                     group_subjects.count = weekly_group_total
                     group_subjects.save(update_fields=["count"])
-
-        # =============== STUDENT-LEVEL ===============
         if subject:
             for student in students:
                 student_subject = StudentSubject.objects.filter(
                     student=student,
                     subject=subject
                 ).first()
-
-                # Only track counts if the StudentSubject link exists
+                if student_subject:
+                    if student_subject.group_subjects:
+                        group_subjects_set.add(student_subject.group_subjects)
                 if not student_subject:
                     continue
-
-                # Ensure a per-lesson StudentSubjectCount row exists
                 ssc = StudentSubjectCount.objects.filter(
                     class_time_table=class_time_table,
                     student_subjects=student_subject
@@ -138,8 +128,6 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
                         student_subjects=student_subject,
                         date=ref_date,  # store actual lesson date
                     )
-
-                # Recalculate the student's weekly total (Mon→Fri) and store on StudentSubject.count
                 weekly_student_total = StudentSubjectCount.objects.filter(
                     student_subjects=student_subject,
                     date__gte=monday,
@@ -149,7 +137,14 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
                 if getattr(student_subject, "count", None) != weekly_student_total:
                     student_subject.count = weekly_student_total
                     student_subject.save(update_fields=["count"])
-
+        for gs in group_subjects_set:
+            status, agg = all_weekly_counts_equal(gs, monday, friday)  # or the Min/Max on `count`
+            if not status:
+                details = weekly_mismatch_details(gs, monday, friday)
+            else:
+                gs = GroupSubjects.objects.get(id=gs.id)
+                gs.count = agg['min_w']
+                gs.save(update_fields=["count"])
         return class_time_table
 
     def update(self, instance, validated_data):
