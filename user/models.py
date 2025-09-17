@@ -37,7 +37,7 @@ class CustomUser(AbstractUser):
     language = models.ForeignKey(Language, on_delete=models.SET_NULL, null=True)
     old_id = models.IntegerField(null=True, unique=True)
     uuid = models.CharField(max_length=200, blank=True, null=True)
-    balance = models.BigIntegerField(null=True)
+    balance = models.CharField(null=True)
     # test_text = models.CharField(null=True, blank=True)
     # turon_old_id = models.IntegerField(null=True, unique=True)
 
