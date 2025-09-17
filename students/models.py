@@ -41,6 +41,8 @@ class Student(models.Model):
     system = models.ForeignKey('system.System', on_delete=models.SET_NULL, null=True)
     class_number = models.ForeignKey('classes.ClassNumber', on_delete=models.SET_NULL, null=True)
     joined_group = models.DateField(null=True)
+    def __str__(self):
+        return f"{self.user.name} {self.user.surname} {self.user.id}"
 
 
 class StudentCharity(models.Model):
