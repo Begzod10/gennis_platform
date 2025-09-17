@@ -103,7 +103,7 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
                     date__gte=monday,
                     date__lte=friday,
                 ).count()
-
+                print(weekly_group_total)
                 if getattr(group_subjects, "count", None) != weekly_group_total:
                     group_subjects.count = weekly_group_total
                     group_subjects.save(update_fields=["count"])
