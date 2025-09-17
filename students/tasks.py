@@ -2,7 +2,7 @@ from celery import shared_task
 from datetime import datetime
 from .models import Student, DeletedStudent, DeletedNewStudent
 from attendances.models import AttendancePerMonth
-
+from students.serializers import get_remaining_debt_for_student
 
 @shared_task
 def update_debts_task():
@@ -53,3 +53,32 @@ def update_debts_task():
 
     print("\n🎉 Debt update task completed.")
 
+@shared_task
+def update_student_debt():
+    deleted_student_ids = DeletedStudent.objects.filter(
+        student__groups_student__isnull=True,
+        deleted=False
+    ).values_list('student_id', flat=True)
+
+    deleted_new_student_ids = DeletedNewStudent.objects.values_list(
+        'student_id', flat=True
+    )
+
+    active_students = Student.objects.select_related(
+        'user',
+        'user__language',
+        'class_number'
+    ).prefetch_related(
+        'user__student_user',
+        'groups_student',
+        'groups_student__class_number',
+        'groups_student__color'
+    ).exclude(
+        id__in=deleted_student_ids
+    ).exclude(
+        id__in=deleted_new_student_ids
+    ).filter(
+        groups_student__isnull=False
+    ).distinct().order_by('class_number__number')
+    for student in active_students:
+        get_remaining_debt_for_student(student.id)

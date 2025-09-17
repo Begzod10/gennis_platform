@@ -152,6 +152,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "school_time_table.tasks.update_school_time_table_task",
         "schedule": crontab(minute=0, hour=0, day_of_week="saturday"),
         # "schedule": crontab(minute="*/1"),
+    },
+    "update-students-debts": {
+        "task": "students.tasks.update_student_debt",
+        "schedule": crontab(minute="*/1"),
     }
 
 }
