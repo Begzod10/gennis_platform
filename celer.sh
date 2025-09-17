@@ -1,5 +1,5 @@
 #!/bin/bash
-source /home/ubuntu/gennis_website/venv/bin/activate
+source /home/turon/venv/bin/activate
 
 echo "⏱️ Celery Beat ishga tushdi..."
 celery -A gennis_platform  beat --loglevel=info &
