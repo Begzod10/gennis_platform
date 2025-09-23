@@ -8,19 +8,20 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from gennis_platform import settings
 from gennis_platform.settings import classroom_server
 from permissions.response import IsAdminOrIsSelf
 from permissions.response import QueryParamFilterMixin
 from subjects.serializers import SubjectSerializer, Subject
 from user.models import CustomUser, UserSalaryList
-from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalary, CustomAutoGroup
+from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalary, CustomAutoGroup,UserSalaryListSerializersTotal
 from user.seriliazer.employer import EmployerSerializer
 from user.seriliazer.employer import UserForOneMonthListSerializer, EmployerSalaryMonths
 from ..serialziers_list import UsersWithJobSerializers
-from user.cron import create_user_salary
-
+from django_filters.rest_framework import DjangoFilterBackend
+from user.filters import UserSalaryListFilter
+from django.db.models import Sum
+from permissions.response import CustomPagination
 
 class UserListCreateView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
@@ -52,10 +53,58 @@ class UserSalaryListListView(QueryParamFilterMixin, generics.ListAPIView):
     }
     permission_classes = [IsAuthenticated]
     search_fields = ['user__name', 'user__surname', 'user__username']
-    filter_backends = [filters.SearchFilter]
 
     queryset = UserSalaryList.objects.filter(deleted=False).all()
-    serializer_class = UserSalaryListSerializersRead
+    serializer_class = UserSalaryListSerializersTotal
+    filterset_class = UserSalaryListFilter
+    pagination_class = CustomPagination
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(page, many=True)
+
+        data = [
+            {
+                "name": "Total Amount",
+                "totalPayment": queryset.aggregate(total_sum=Sum('salary'))['total_sum'] or 0,
+                "totalPaymentCount": queryset.count(),
+                "type": "amount"
+            },
+            {
+                "name": "Cash Payments",
+                "totalPayment":
+                    queryset.filter(payment_types__name__iexact='Cash').aggregate(total_sum=Sum('salary'))[
+                        'total_sum'] or 0,
+                "totalPaymentCount": queryset.filter(payment_types__name__iexact='Cash').count(),
+                "type": "cash"
+            },
+            {
+                "name": "Click Payments",
+                "totalPayment":
+                    queryset.filter(payment_types__name__iexact="Click").aggregate(total_sum=Sum('salary'))[
+                        'total_sum'] or 0,
+                "totalPaymentCount": queryset.filter(payment_types__name__iexact="Click").count(),
+                "type": "click"
+            },
+            {
+                "name": "Bank Transfers",
+                "totalPayment":
+                    queryset.filter(payment_types__name__iexact="Bank").aggregate(total_sum=Sum('salary'))[
+                        'total_sum'] or 0,
+                "totalPaymentCount": queryset.filter(payment_types__name__iexact="Bank").count(),
+                "type": "bank"
+            },
+        ]
+
+        return self.get_paginated_response({
+            'data': serializer.data,
+            'totalCount': data
+        })
 
 
 class DeletedUserSalaryListListView(QueryParamFilterMixin, generics.ListAPIView):

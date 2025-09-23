@@ -80,7 +80,7 @@ class GetModelsMixin:
               {'name': 'Teacher', 'value': ['teachers']}, {'name': 'Users', 'value': ['worker']},
               {'name': 'Rooms', 'value': ['rooms']}, {'name': 'Accounting',
                                                       'value': ['studentsPayments', 'teachersSalary', 'employeesSalary',
-                                                          'overhead', 'capital']}]
+                                                                'overhead', 'capital']}]
 
     def get_models(self, query_type):
         response = []
@@ -151,11 +151,13 @@ class GetModelsMixin:
                     groups_student__isnull=True).count()
                 branch_data['deleted_count'] = deleted_new_student_ids.count()
             elif type_name == 'studying_students':
-                deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True,
-                                                                    deleted=False,student__user__branch_id=branch.id).values_list('student_id', flat=True)
+                deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True, deleted=False,
+                                                                    student__user__branch_id=branch.id).values_list(
+                    'student_id', flat=True)
                 deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
                 active_students = Student.objects.exclude(id__in=deleted_student_ids).exclude(
-                    id__in=deleted_new_student_ids).filter(groups_student__isnull=False,user__branch_id=branch.id).distinct().order_by(
+                    id__in=deleted_new_student_ids).filter(groups_student__isnull=False,
+                                                           user__branch_id=branch.id).distinct().order_by(
                     'class_number__number')
                 branch_data['count'] = active_students.count()
             elif type_name == 'deleted_students':
@@ -195,32 +197,33 @@ class GetModelsMixin:
             if type_name == 'capital':
                 branch_data['count'] = OldCapital.objects.filter(branch_id=branch.id, deleted=False).count()
                 branch_data['summa'] = \
-                OldCapital.objects.filter(branch_id=branch.id, deleted=False).aggregate(total=Sum('price'))[
-                    'total'] or 0
+                    OldCapital.objects.filter(branch_id=branch.id, deleted=False).aggregate(total=Sum('price'))[
+                        'total'] or 0
 
             if type_name == 'overhead':
                 branch_data['count'] = Overhead.objects.filter(branch_id=branch.id, deleted=False).count()
                 branch_data['summa'] = \
-                Overhead.objects.filter(branch_id=branch.id, deleted=False).aggregate(total=Sum('price'))['total'] or 0
+                    Overhead.objects.filter(branch_id=branch.id, deleted=False).aggregate(total=Sum('price'))[
+                        'total'] or 0
 
             if type_name == 'employeesSalary':
                 branch_data['count'] = UserSalaryList.objects.filter(branch_id=branch.id, deleted=False).count()
                 branch_data['summa'] = \
-                UserSalaryList.objects.filter(branch_id=branch.id, deleted=False).aggregate(total=Sum('salary'))[
-                    'total'] or 0
+                    UserSalaryList.objects.filter(branch_id=branch.id, deleted=False).aggregate(total=Sum('salary'))[
+                        'total'] or 0
 
             if type_name == 'studentsPayments':
                 branch_data['count'] = StudentPayment.objects.filter(branch_id=branch.id, deleted=False,
                                                                      status=False).count()
                 branch_data['summa'] = \
-                StudentPayment.objects.filter(branch_id=branch.id, deleted=False, status=False).aggregate(
-                    total=Sum('payment_sum'))['total'] or 0
+                    StudentPayment.objects.filter(branch_id=branch.id, deleted=False, status=False).aggregate(
+                        total=Sum('payment_sum'))['total'] or 0
 
             if type_name == 'teachersSalary':
                 branch_data['count'] = TeacherSalaryList.objects.filter(branch_id=branch.id, deleted=False).count()
                 branch_data['summa'] = \
-                TeacherSalaryList.objects.filter(branch_id=branch.id, deleted=False).aggregate(total=Sum('salary'))[
-                    'total'] or 0
+                    TeacherSalaryList.objects.filter(branch_id=branch.id, deleted=False).aggregate(total=Sum('salary'))[
+                        'total'] or 0
 
 
 class IsAdminOrIsSelf(permissions.BasePermission):
@@ -250,3 +253,22 @@ class IsSmm(permissions.BasePermission):
             return True
 
         return False
+
+
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
+
+
+class CustomPagination(LimitOffsetPagination):
+    default_limit = 10
+    limit_query_param = 'limit'
+    offset_query_param = 'offset'
+    max_limit = 100
+
+    def get_paginated_response(self, data):
+        return Response({'count': self.count,
+            'next': self.get_next_link(),
+            'previous': self.get_previous_link(),
+            'limit': self.limit,
+            'offset': self.offset,
+            'results': data })

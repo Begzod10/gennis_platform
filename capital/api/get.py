@@ -6,8 +6,12 @@ from capital.functions.creat_capital_term import creat_capital_term
 from capital.models import Capital, OldCapital
 from capital.serializers import (CapitalListSerializers, OldCapitalListSerializers)
 from permissions.response import QueryParamFilterMixin
-from capital.serializer.old_capital import OldCapitalsListSerializers
-
+from capital.serializer.old_capital import OldCapitalsListSerializersTotal
+from django.db.models import Sum
+from capital.filters import OldCapitalFilter
+from rest_framework.pagination import PageNumberPagination
+from django_filters.rest_framework import DjangoFilterBackend
+from permissions.response import CustomPagination
 
 class OldCapitalRetrieveAPIView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
@@ -29,8 +33,56 @@ class OldCapitalListView(QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     queryset = OldCapital.objects.all()
-    serializer_class = OldCapitalsListSerializers
+    serializer_class = OldCapitalsListSerializersTotal
+    pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = OldCapitalFilter
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(page, many=True)
+
+        data = [
+            {
+                "name": "Total Amount",
+                "totalPayment": queryset.aggregate(total_sum=Sum('price'))['total_sum'] or 0,
+                "totalPaymentCount": queryset.count(),
+                "type": "amount"
+            },
+            {
+                "name": "Cash Payments",
+                "totalPayment":
+                    queryset.filter(payment_type__name__iexact='Cash').aggregate(total_sum=Sum('price'))[
+                        'total_sum'] or 0,
+                "totalPaymentCount": queryset.filter(payment_type__name__iexact='Cash').count(),
+                "type": "cash"
+            },
+            {
+                "name": "Click Payments",
+                "totalPayment":
+                    queryset.filter(payment_type__name__iexact="Click").aggregate(total_sum=Sum('price'))[
+                        'total_sum'] or 0,
+                "totalPaymentCount": queryset.filter(payment_type__name__iexact="Click").count(),
+                "type": "click"
+            },
+            {
+                "name": "Bank Transfers",
+                "totalPayment":
+                    queryset.filter(payment_type__name__iexact="Bank").aggregate(total_sum=Sum('price'))[
+                        'total_sum'] or 0,
+                "totalPaymentCount": queryset.filter(payment_type__name__iexact="Bank").count(),
+                "type": "bank"
+            },
+        ]
+
+        return self.get_paginated_response({
+            'data': serializer.data,
+            'totalCount': data
+        })
 
 class CapitalRetrieveAPIView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]

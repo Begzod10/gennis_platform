@@ -7,16 +7,18 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from django_filters.rest_framework import DjangoFilterBackend
+from teachers.filters import TeacherFilter
 from branch.models import Branch
 from permissions.response import QueryParamFilterMixin
 from teachers.models import TeacherGroupStatistics, Teacher, TeacherSalaryList, TeacherSalary, TeacherAttendance
 from teachers.serializer.lists import ActiveListTeacherSerializer, TeacherSalaryMonthlyListSerializer, \
     TeacherSalaryForOneMonthListSerializer, calc_teacher_salary
-from teachers.serializers import (TeacherSerializerRead, TeacherSalaryListReadSerializers,
+from teachers.serializers import (TeacherSerializerRead, TeacherSalaryListForAccounting,
                                   TeacherGroupStatisticsReadSerializers, TeacherSalaryReadSerializers)
 
-
+from django.db.models import Sum
+from permissions.response import CustomPagination
 class TeacherGroupStatisticsListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     # http://ip_adress:8000/Teachers/teacher-statistics-view/?branch_id=3
@@ -68,14 +70,44 @@ class TeacherRetrieveView(generics.RetrieveAPIView):
 class TeacherSalaryListAPIView(QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     filter_mappings = {'status': 'deleted', 'branch': 'branch', 'teacher_salary': 'salary_id', }
-    serializer_class = TeacherSalaryListReadSerializers
+    serializer_class = TeacherSalaryListForAccounting
     search_fields = ['teacher__user__name', 'teacher__user__surname', 'teacher__user__username']
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    filterset_class = TeacherFilter
+    pagination_class = CustomPagination
 
     def get_queryset(self):
         queryset = TeacherSalaryList.objects.all()
         return self.filter_queryset(queryset)
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)
+
+
+        page = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(page, many=True)
+
+        data = [
+            {"name": "Total Amount", "totalPayment": queryset.aggregate(total_sum=Sum('salary'))['total_sum'],
+             "totalPaymentCount": queryset.count(), "type": "amount"},
+            {"name": "Cash Payments",
+             "totalPayment": queryset.filter(payment__name='Cash').aggregate(total_sum=Sum('salary'))[
+                 'total_sum'], "totalPaymentCount": queryset.filter(payment__name='cash').count(), "type": "cash"},
+            {"name": "Click Payments",
+             "totalPayment": queryset.filter(payment__name="Click").aggregate(total_sum=Sum('salary'))[
+                 'total_sum'], "totalPaymentCount": queryset.filter(payment__name="Click").count(),
+             "type": "click"},
+            {"name": "Bank Transfers",
+             "totalPayment": queryset.filter(payment__name="Bank").aggregate(total_sum=Sum('salary'))[
+                 'total_sum'], "totalPaymentCount": queryset.filter(payment__name="Bank").count(), "type": "bank"},
+
+        ]
+
+        return self.get_paginated_response({
+            'data': serializer.data,
+            'totalCount': data
+        })
 
 class TeacherSalaryDetailAPIView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]

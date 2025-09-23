@@ -10,8 +10,10 @@ from overhead.models import Overhead, OverheadType
 from overhead.serializer.lists import ActiveListTeacherSerializer
 from overhead.serializers import OverheadSerializerGet, OverheadSerializerGetTYpe, MonthDaysSerializer
 from permissions.response import QueryParamFilterMixin
-
-
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Sum
+from permissions.response import CustomPagination
+from overhead.filters import OverheadFilter
 class OverheadListView(QueryParamFilterMixin, generics.ListAPIView):
     filter_mappings = {
         'status': 'deleted',
@@ -23,7 +25,48 @@ class OverheadListView(QueryParamFilterMixin, generics.ListAPIView):
 
     queryset = Overhead.objects.all().order_by('-created')
     serializer_class = ActiveListTeacherSerializer
+    pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class=OverheadFilter
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
 
+        queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(page, many=True)
+
+        data = [
+            {
+                "name": "Total Amount",
+                "totalPayment": queryset.aggregate(total_sum=Sum('price'))['total_sum'] or 0,
+                "totalPaymentCount": queryset.count(),
+                "type": "amount"
+            },
+            {
+                "name": "Cash Payments",
+                "totalPayment": queryset.filter(payment__name__iexact='Cash').aggregate(total_sum=Sum('price'))['total_sum'] or 0,
+                "totalPaymentCount": queryset.filter(payment__name__iexact='Cash').count(),
+                "type": "cash"
+            },
+            {
+                "name": "Click Payments",
+                "totalPayment": queryset.filter(payment__name__iexact="Click").aggregate(total_sum=Sum('price'))['total_sum'] or 0,
+                "totalPaymentCount": queryset.filter(payment__name__iexact="Click").count(),
+                "type": "click"
+            },
+            {
+                "name": "Bank Transfers",
+                "totalPayment": queryset.filter(payment__name__iexact="Bank").aggregate(total_sum=Sum('price'))['total_sum'] or 0,
+                "totalPaymentCount": queryset.filter(payment__name__iexact="Bank").count(),
+                "type": "bank"
+            },
+        ]
+
+        return self.get_paginated_response({
+            'data': serializer.data,
+            'totalCount': data
+        })
 
 class OverheadTYpeListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
