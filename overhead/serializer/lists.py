@@ -26,7 +26,7 @@ class ActiveListTeacherSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='type.name', read_only=True)
     payment_type_name = serializers.CharField(source='payment.name', read_only=True)
     payment_sum = serializers.IntegerField(source='price', required=False)
-    status = serializers.BooleanField(required=False, default=False)
+    status = serializers.BooleanField(required=False, default=False,source='deleted')
     date = serializers.DateField(source='created', required=False)
 
     class Meta:
@@ -42,7 +42,6 @@ class ActiveListTeacherSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        print(ret)
         if not ret['name'] and instance.type or ret['name'] != "Boshqa":
             ret['name'] = instance.type.name
         else:
