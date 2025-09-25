@@ -209,11 +209,11 @@ class CheckClassTimeTable(APIView):
             start_week = today - timedelta(days=today.weekday())
             week_dates = [(start_week + timedelta(days=i)).date() for i in range(7)]
             class_subject = GroupSubjects.objects.get(subject_id=checked_id, group_id=group_id)
-            lessons = group.classtimetable_set.filter(date__in=week_dates, subject_id=checked_id).count()
-            if int(lessons) >= int(class_subject.hours):
-                status = False
-                msg.append(
-                    f"{group.class_number.number}-{group.color.name} sinifining {class_subject.subject.name} fanining haftalik dars soati to'lgan")
+            # lessons = group.classtimetable_set.filter(date__in=week_dates, subject_id=checked_id).count()
+            # if int(lessons) >= int(class_subject.hours):
+            #     status = False
+            #     msg.append(
+            #         f"{group.class_number.number}-{group.color.name} sinifining {class_subject.subject.name} fanining haftalik dars soati to'lgan")
         elif type == 'teacher':
             lesson = ClassTimeTable.objects.filter(date=date, teacher_id=checked_id, hours_id=hour).first()
             if lesson:
