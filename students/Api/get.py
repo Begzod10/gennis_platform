@@ -6,7 +6,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from permissions.response import CustomPagination
 from rooms.models import Room
 from students.models import StudentPayment, StudentHistoryGroups, StudentCharity, Student, DeletedStudent
 from students.serializers import StudentPaymentListSerializer, StudentHistoryGroupsListSerializer, \
@@ -16,8 +16,9 @@ from teachers.models import Teacher
 from teachers.serializers import TeacherSerializerRead
 from time_table.models import GroupTimeTable
 from ..serializers_list import StudentPaymentListSerializerTest
-
-
+from django.db.models import Sum
+from django_filters.rest_framework import DjangoFilterBackend
+from students.filters import StudentPaymentsFilter
 class StudentRetrieveAPIView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -99,10 +100,13 @@ class StudentHistoryGroupsAPIView(generics.RetrieveAPIView):
 
 
 class StudentPaymentListAPIView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
     serializer_class = StudentPaymentListSerializerTest
     search_fields = ['student__user__name', 'student__user__surname', 'student__user__username']
-    filter_backends = [filters.SearchFilter]
+    filterset_class = StudentPaymentsFilter
+
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    pagination_class = CustomPagination
 
     def get_queryset(self):
         branch_id = self.request.query_params.get('branch')
@@ -110,13 +114,51 @@ class StudentPaymentListAPIView(generics.ListAPIView):
         if branch_id in ['null', 'undefined', None, '']:
             branch_id = self.request.user.branch.id
 
-        queryset = StudentPayment.objects.filter(
+        return StudentPayment.objects.filter(
             deleted=False,
             status=False,
             branch=branch_id
         ).order_by("-date")
 
-        return queryset
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(page, many=True)
+
+        data = [
+            {
+                "name": "Total Amount",
+                "totalPayment": queryset.aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
+                "totalPaymentCount": queryset.count(),
+                "type": "amount"
+            },
+            {
+                "name": "Cash Payments",
+                "totalPayment": queryset.filter(payment_type__name__iexact='Cash').aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
+                "totalPaymentCount": queryset.filter(payment_type__name__iexact='Cash').count(),
+                "type": "cash"
+            },
+            {
+                "name": "Click Payments",
+                "totalPayment": queryset.filter(payment_type__name__iexact="Click").aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
+                "totalPaymentCount": queryset.filter(payment_type__name__iexact="Click").count(),
+                "type": "click"
+            },
+            {
+                "name": "Bank Transfers",
+                "totalPayment": queryset.filter(payment_type__name__iexact="Bank").aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
+                "totalPaymentCount": queryset.filter(payment_type__name__iexact="Bank").count(),
+                "type": "bank"
+            },
+        ]
+
+        return self.get_paginated_response({
+            'data': serializer.data,
+            'totalCount': data
+        })
 
 class StudentDeletedPaymentListAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]

@@ -12,7 +12,7 @@ from celery.schedules import crontab
 classroom_server = os.getenv('CLASSROOM_SERVER')
 gennis_server = os.getenv('GENNIS_SERVER')
 
-DEBUG = os.getenv('DEBUG')
+DEBUG = os.getenv('DEBUG',False)
 
 
 

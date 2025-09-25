@@ -13,6 +13,11 @@ class OldCapitalCreateView(CustomResponseMixin, generics.CreateAPIView):
 
     queryset = OldCapital.objects.all()
     serializer_class = OldCapitalSerializers
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        instance = OldCapital.objects.get(pk=response.data['id'])
+        from capital.serializer.old_capital import OldCapitalsListSerializersTotal
+        return Response(OldCapitalsListSerializersTotal(instance).data)
 
 
 class OldCapitalUpdateView(CustomResponseMixin, generics.UpdateAPIView):
@@ -20,6 +25,13 @@ class OldCapitalUpdateView(CustomResponseMixin, generics.UpdateAPIView):
 
     queryset = OldCapital.objects.all()
     serializer_class = OldCapitalSerializers
+    def update(self, request, *args, **kwargs):
+        response = super().update(request, *args, **kwargs)
+
+        instance = self.get_object()
+
+        from capital.serializer.old_capital import OldCapitalsListSerializersTotal
+        return Response(OldCapitalsListSerializersTotal(instance).data)
 
 
 class OldCapitalDestroyView(CustomResponseMixin, generics.DestroyAPIView):

@@ -6,7 +6,7 @@ from user.models import CustomUser
 
 class UserSerializer(serializers.ModelSerializer):
     age = serializers.SerializerMethodField(required=False)
-    language = serializers.SerializerMethodField(required=False)
+    language = serializers.CharField(source='language.name', read_only=True)
     id = serializers.SerializerMethodField(required=False)
 
     class Meta:
@@ -15,11 +15,6 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_age(self, obj):
         return obj.calculate_age()
-
-    def get_language(self, obj):
-        if obj.language:
-            return obj.language.name
-        return None
 
     def get_id(self, obj):
         students = obj.student_user.all()
@@ -38,7 +33,7 @@ class ActiveListSerializer(serializers.ModelSerializer):
     user = UserSerializer(required=False)
     group = serializers.SerializerMethodField(required=False)
     color = serializers.SerializerMethodField(required=False)
-    debt = serializers.SerializerMethodField(required=False)
+    debt = serializers.CharField(source='user.balance', read_only=True)
     class_number = serializers.CharField(required=False, source='class_number.number')
     comment = serializers.CharField(required=False, source="user.comment")
 
@@ -47,23 +42,18 @@ class ActiveListSerializer(serializers.ModelSerializer):
         fields = ('id', 'user', "group", "color", "debt", 'class_number', 'comment')
 
     def get_color(self, obj):
-        if obj.debt_status == 1:
-            return '#FACC15'
-        elif obj.debt_status == 2:
-            return '#FF3130'
-        elif obj.debt_status == 0:
-            return '#24FF00'
-        return ''
-
-    def get_debt(self, obj):
-
-        return obj.user.balance
+        color_map = {1: '#FACC15', 2: '#FF3130', 0: '#24FF00'}
+        return color_map.get(obj.debt_status, '')
 
     def get_group(self, obj):
-        groups = obj.groups_student.first()
-        if groups:
-            return {"id": groups.id, "name": groups.name, "class_number": groups.class_number.number,
-                "color": groups.color.name}
+        if hasattr(obj, 'prefetched_groups') and obj.prefetched_groups:
+            groups = obj.prefetched_groups[0]
+            return {
+                "id": groups.id,
+                "name": groups.name,
+                "class_number": groups.class_number.number,
+                "color": groups.color.name
+            }
         return {"id": None, "name": None, "class_number": None, "color": None}
 
 

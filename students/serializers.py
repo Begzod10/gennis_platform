@@ -353,7 +353,7 @@ class StudentPaymentListSerializer(serializers.ModelSerializer):
     student = StudentSerializer(required=True)
     payment_type = PaymentTypesSerializers(required=True)
     payment_sum = serializers.IntegerField(required=False)
-    status = serializers.BooleanField(required=False)
+    status = serializers.BooleanField(required=False,source='deleted')
 
     class Meta:
         model = StudentPayment

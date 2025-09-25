@@ -192,6 +192,23 @@ class UserSalarySerializers(serializers.ModelSerializer):
         model = UserSalary
         fields = '__all__'
 
+class UserSalaryListSerializersTotal(serializers.ModelSerializer):
+    student_id = serializers.CharField(source='user.id',
+                                       read_only=True)
+    name = serializers.CharField(source='user.name',
+                                 read_only=True)
+    surname = serializers.CharField(source='user.surname',
+                                    read_only=True)
+    payment_type_name = serializers.CharField(source='payment_types.name',
+                                              read_only=True)
+    payment_sum = serializers.IntegerField(required=False,source='salary')
+    status = serializers.BooleanField(required=False)
+
+    class Meta:
+        model = UserSalary
+        fields = ['id', 'name', 'surname', 'payment_type_name', 'payment_sum', 'status',
+                  'date', "student_id"]
+
 
 class UserSalaryListSerializersRead(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)

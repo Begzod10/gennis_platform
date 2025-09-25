@@ -70,7 +70,7 @@ class ListTest(views.APIView):
 
         result = []
 
-        groups = Group.objects.filter(deleted=False, branch=branch).all()
+        groups = Group.objects.filter(deleted=False, branch=branch).all().order_by('class_number__number')
 
         for group in groups:
             group_data = {
