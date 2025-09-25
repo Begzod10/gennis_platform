@@ -560,10 +560,10 @@ class StudentCharityModelView(APIView):
         old_months = [9, 10, 11, 12]
         new_months = [1, 2, 3, 4, 5, 6,7]
         current_year = int(data['year'])
-        if month_number in old_months:
-            current_year -= 1
-        if month_number in new_months:
-            current_year += 1
+        # if month_number in old_months:
+        #     current_year -= 1
+        # if month_number in new_months:
+        #     current_year += 1
         date = datetime(year=current_year, month=int(month_number), day=int(datetime.now().day)).date()
         student_id = self.kwargs['student_id']
         student = get_object_or_404(Student, id=student_id)
