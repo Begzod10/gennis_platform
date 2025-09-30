@@ -15,7 +15,7 @@ def _month_bounds():
 
 def _compute_totals(start, nxt, branch_id=None):
     # Lazy get models to avoid import cycles; adjust app labels if needed.
-    StudentPayment = django_apps.get_model('payments', 'StudentPayment')
+    StudentPayment = django_apps.get_model('students', 'StudentPayment')
     TeacherSalaryList = django_apps.get_model('teachers', 'TeacherSalaryList')
     UserSalaryList = django_apps.get_model('user', 'UserSalaryList')  # <- if different, change app label
     Overhead = django_apps.get_model('overhead', 'Overhead')
