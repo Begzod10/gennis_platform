@@ -101,10 +101,10 @@ class UserSerializerWrite(serializers.ModelSerializer):
             instance.groups.clear()
             instance.groups.add(profession)
             CustomAutoGroup.objects.filter(user=instance).update(group=profession)
-        if 'money' not in validated_data:
-            share = validated_data.pop('share', None)
-            if share is not None:
-                CustomAutoGroup.objects.filter(user=instance).update(share=share)
+
+        share = validated_data.pop('share', None)
+        if share is not None:
+            CustomAutoGroup.objects.filter(user=instance).update(share=share)
         salary = validated_data.pop('money', None)
         if salary is not None:
             CustomAutoGroup.objects.filter(user=instance).update(salary=salary)
