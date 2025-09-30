@@ -57,8 +57,7 @@ class CustomTokenRefreshView(TokenRefreshView):
             "access": str(serializer.validated_data.get('access')),
             "refresh_token": str(RefreshToken.for_user(user)),
         })
-        return Response({"data": response_data, "access": str(serializer.validated_data.get('access')),
-                         "refresh_token": str(RefreshToken.for_user(user)), },
+        return Response({"user": response_data},
                         status=status.HTTP_200_OK)
 
 
