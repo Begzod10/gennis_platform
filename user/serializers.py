@@ -56,12 +56,13 @@ class UserSerializerWrite(serializers.ModelSerializer):
     language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all())
     profession = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), required=False, allow_null=True)
     money = serializers.CharField(required=False, allow_null=True)
+    share = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
                   'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff', 'old_id', 'profession', 'money']
+                  'branch', 'is_superuser', 'is_staff', 'old_id', 'profession', 'money', "share"]
         extra_kwargs = {
             'password': {'write_only': True, 'required': True},
             'birth_date': {'required': False},
