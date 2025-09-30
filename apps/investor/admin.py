@@ -4,7 +4,7 @@ from .models import InvestorMonthlyReport
 
 # Register your models here.
 
-
+@admin.register(InvestorMonthlyReport)
 class InvestorMonthlyReportAdmin(admin.ModelAdmin):
     list_display = (
         'month',
