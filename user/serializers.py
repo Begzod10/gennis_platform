@@ -105,9 +105,11 @@ class UserSerializerWrite(serializers.ModelSerializer):
         share = validated_data.pop('share', None)
         if share is not None:
             CustomAutoGroup.objects.filter(user=instance).update(share=share)
+            CustomAutoGroup.objects.filter(user=instance).update(salary=0)
         salary = validated_data.pop('money', None)
         if salary is not None:
             CustomAutoGroup.objects.filter(user=instance).update(salary=salary)
+            CustomAutoGroup.objects.filter(user=instance).update(share=0)
         user = super().update(instance, validated_data)
         if 'password' in validated_data:
             user.set_password(validated_data['password'])
