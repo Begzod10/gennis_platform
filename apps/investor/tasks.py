@@ -5,6 +5,8 @@ from django.db.models import Sum, F, IntegerField, ExpressionWrapper
 from django.db.models.functions import Coalesce
 from celery import shared_task
 from django.apps import apps as django_apps
+from branch.models import Location
+from system.models import System
 
 
 def _month_bounds():
@@ -86,7 +88,8 @@ def snapshot_investor_month():
     Branch = django_apps.get_model('branch', 'Branch')
 
     start, nxt = _month_bounds()
-
+    get_system = System.objects.filter(name="school").first()
+    get_location = Location.objects.filter(system=get_system).all()
     with transaction.atomic():
         # Global (all branches)
         totals_global = _compute_totals(start, nxt, branch_id=None)
@@ -95,7 +98,7 @@ def snapshot_investor_month():
         )
 
         # Per-branch
-        for b in Branch.objects.all().only("id"):
+        for b in Branch.objects.filter(location__in=get_location).all().only("id"):
             totals = _compute_totals(start, nxt, branch_id=b.id)
             InvestorMonthlyReport.objects.update_or_create(
                 month=start, branch_id=b.id, defaults=totals
