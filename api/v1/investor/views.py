@@ -58,7 +58,7 @@ class InvestorView(APIView):
 
         # ---- StudentPayment (by date) ----
         sp_qs = StudentPayment.objects.filter(
-            deleted=False, date__gte=start, date__lt=nxt, **branch_filter
+            deleted=False, date__gte=start, date__lt=nxt, **branch_filter, status=False
         )
         sp_total_expr = ExpressionWrapper(
             Coalesce(F("payment_sum"), 0) + Coalesce(F("extra_payment"), 0),
