@@ -67,7 +67,7 @@ class Jobs(APIView):
 
         group, created = Group.objects.get_or_create(name=data['name'])
         system = System.objects.filter(name="school").first()
-        AuthGroupSystem.objects.create(group_id=group.pk, system_id=system.pk)
+        AuthGroupSystem.objects.create(group_id=group.pk, system_id=system)
         serializers = GroupSerializer(group)
         return Response({'job': serializers.data})
 
@@ -89,7 +89,7 @@ class EditJob(APIView):
         group.save()
         gr = AuthGroupSystem.objects.get(group_id=group.pk)
         system_get = System.objects.filter(name="school").first()
-        gr.system_id_id = system_get
+        gr.system_id_id = system_get.id
         gr.save()
 
         return Response({'job': group.name})
