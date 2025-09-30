@@ -88,7 +88,8 @@ class EditJob(APIView):
         group.name = data['name']
         group.save()
         gr = AuthGroupSystem.objects.get(group_id=group.pk)
-        gr.system_id_id = data['system_id']
+        system_get = System.objects.filter(name="school").first()
+        gr.system_id_id = system_get
         gr.save()
 
         return Response({'job': group.name})
