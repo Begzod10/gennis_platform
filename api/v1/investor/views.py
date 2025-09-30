@@ -39,12 +39,13 @@ class InvestorView(APIView):
         # Current month only (as in your code). If you later want a ?month=YYYY-MM param, read it here.
         month_str = datetime.now().strftime("%Y-%m")
         start, nxt = self._month_bounds(month_str)
+
         if not start:
             return Response({"detail": "Invalid month format. Use YYYY-MM."},
                             status=status.HTTP_400_BAD_REQUEST)
 
         branch_id = request.query_params.get("branch")  # optional
-
+        branch_id = 8
         # Fetch snapshot row (global when branch is not provided)
         if branch_id:
             row = InvestorMonthlyReport.objects.filter(month=start, branch_id=branch_id).first()
