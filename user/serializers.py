@@ -13,6 +13,7 @@ from permissions.models import ManySystem, ManyBranch, ManyLocation
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
 from flows.models import Flow
 
+
 class UserSerializerRead(serializers.ModelSerializer):
     branch = BranchSerializer(read_only=True)
     language = LanguageSerializers(read_only=True)
@@ -100,7 +101,10 @@ class UserSerializerWrite(serializers.ModelSerializer):
             instance.groups.clear()
             instance.groups.add(profession)
             CustomAutoGroup.objects.filter(user=instance).update(group=profession)
-
+        if 'money' not in validated_data:
+            share = validated_data.pop('share', None)
+            if share is not None:
+                CustomAutoGroup.objects.filter(user=instance).update(share=share)
         salary = validated_data.pop('money', None)
         if salary is not None:
             CustomAutoGroup.objects.filter(user=instance).update(salary=salary)
@@ -192,6 +196,7 @@ class UserSalarySerializers(serializers.ModelSerializer):
         model = UserSalary
         fields = '__all__'
 
+
 class UserSalaryListSerializersTotal(serializers.ModelSerializer):
     student_id = serializers.CharField(source='user.id',
                                        read_only=True)
@@ -201,7 +206,7 @@ class UserSalaryListSerializersTotal(serializers.ModelSerializer):
                                     read_only=True)
     payment_type_name = serializers.CharField(source='payment_types.name',
                                               read_only=True)
-    payment_sum = serializers.IntegerField(required=False,source='salary')
+    payment_sum = serializers.IntegerField(required=False, source='salary')
     status = serializers.BooleanField(required=False)
 
     class Meta:
@@ -429,7 +434,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['type'] = self.type
         data['username'] = self.usern
         data['user'] = self.object
-
 
         return data
     # def validate(self, attrs):
