@@ -262,7 +262,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'surname': user.surname,
                 'username': user.username,
                 'father_name': user.father_name,
-                'password': password,
                 'student_id': student.id,
                 'balance': student.id,
                 'role': 'student',
@@ -391,7 +390,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     for flow in Flow.objects.filter(teacher=teacher).all()
                 ]
             }
-            print(self.object)
             # res = self.send_data(object, f'{classroom_server}/api/turon_user')
             # self.usern = res['data']['username']
             return self.object
@@ -407,9 +405,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # Foydalanuvchini tekshirish
         try:
-            print('sdvdss')
             user = CustomUser.objects.get(username=username)
-            print(user, 'asdcasc')
         except CustomUser.DoesNotExist:
             raise AuthenticationFailed("No active account found with the given credentials")
         self.user_send(user.id, password)
@@ -533,7 +529,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'surname', 'name', 'id', 'groups', 'profile_photo', 'location_id')
+        fields = ('username', 'surname', 'name', 'id', 'groups', 'profile_photo', 'location_id',)
 
 
 class UserSalaryUpdateSerializers(serializers.ModelSerializer):
