@@ -16,6 +16,7 @@ class CustomAutoGroup(models.Model):
     old_id = models.IntegerField(blank=True, null=True, unique=True)
     user = models.ForeignKey('user.CustomUser', blank=True, null=True, on_delete=models.CASCADE)
     deleted = models.BooleanField(default=False, null=True)
+    share = models.IntegerField(default=0, null=True)
 
     def __str__(self):
         return f"{self.group.name} - Salary: {self.salary}"
