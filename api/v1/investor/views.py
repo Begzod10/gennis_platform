@@ -45,7 +45,7 @@ class InvestorView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         branch_id = request.query_params.get("branch")  # optional
-        branch_id = 8
+
         # Fetch snapshot row (global when branch is not provided)
         if branch_id:
             row = InvestorMonthlyReport.objects.filter(month=start, branch_id=branch_id).first()
