@@ -156,11 +156,11 @@ CELERY_BEAT_SCHEDULE = {
     #     "task": "students.tasks.update_student_debt",
     #     "schedule": crontab(minute="*/1"),
     # }
+
     "investor_report_daily": {
         "task": "apps.investor.tasks.snapshot_investor_month",
-        "schedule": crontab(minute="*/1"),
+        "schedule": crontab(minute=0, hour=21),  # 21:00 every day
     },
-
 }
 
 CELERY_BROKER_URL = "redis://localhost:6379/0"
