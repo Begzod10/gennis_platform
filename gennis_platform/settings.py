@@ -12,9 +12,7 @@ from celery.schedules import crontab
 classroom_server = os.getenv('CLASSROOM_SERVER')
 gennis_server = os.getenv('GENNIS_SERVER')
 
-DEBUG = os.getenv('DEBUG',False)
-
-
+DEBUG = os.getenv('DEBUG', False)
 
 # ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 ALLOWED_HOSTS = ['*']
@@ -61,6 +59,7 @@ INSTALLED_APPS = [
     'django_filters',
     'ui',
     'terms',
+    'apps.investor.apps.InvestorConfig',
 ]
 
 MIDDLEWARE = [
@@ -157,6 +156,10 @@ CELERY_BEAT_SCHEDULE = {
     #     "task": "students.tasks.update_student_debt",
     #     "schedule": crontab(minute="*/1"),
     # }
+    "investor_report_daily": {
+        "task": "apps.investor.tasks.snapshot_investor_month",
+        "schedule": crontab(minute="*/1"),
+    },
 
 }
 
@@ -178,6 +181,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-SILKY_PYTHON_PROFILER  = True
-CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "http://127.0.0.1:8000","https://school.gennis.uz","http://localhost:3000"]
-CORS_ALLOW_CREDENTIALS=True
+SILKY_PYTHON_PROFILER = True
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "http://127.0.0.1:8000", "https://school.gennis.uz",
+                        "http://localhost:3000"]
+CORS_ALLOW_CREDENTIALS = True

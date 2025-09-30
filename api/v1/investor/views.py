@@ -11,24 +11,19 @@ from django.db.models.functions import Coalesce
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from apps.investor.models import InvestorMonthlyReport
 
 
 class InvestorView(APIView):
     """
-    GET /api/investor-report?month=2025-09&branch=3
+    GET /api/investor-report?branch=3
 
-    Returns totals for the selected month (default: current month):
-      - StudentPayment (by `date`): payment_sum, extra_payment, and grand_total
-      - TeacherSalaryList (by `date`): total salaries
-      - UserSalaryList (by `date`): total user salaries
-      - Overhead (by `created`): total overhead
-      - Capital (by `added_date`): price + total_down_cost
-      - New students count (by `joined_group`)
-    All queries ignore deleted=True and can be filtered by branch.
+    Reads precomputed monthly totals from InvestorMonthlyReport.
+    Default month = current month (first day).
     """
 
     def _month_bounds(self, month_str: str):
-        # month_str like "YYYY-MM"
+        # month_str like "YYYY-MM" (we use current month below)
         if month_str:
             try:
                 dt = datetime.strptime(month_str, "%Y-%m").date()
@@ -41,89 +36,77 @@ class InvestorView(APIView):
         return start, next_start
 
     def get(self, request):
-        month_str = request.query_params.get("month")  # e.g. 2025-09
-        branch_id = request.query_params.get("branch")  # e.g. 3
-        month_str = "2025-09"
-        branch_id = 8
+        # Current month only (as in your code). If you later want a ?month=YYYY-MM param, read it here.
+        month_str = datetime.now().strftime("%Y-%m")
         start, nxt = self._month_bounds(month_str)
         if not start:
-            return Response(
-                {"detail": "Invalid month format. Use YYYY-MM."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": "Invalid month format. Use YYYY-MM."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        branch_filter = {}
+        branch_id = request.query_params.get("branch")  # optional
+
+        # Fetch snapshot row (global when branch is not provided)
         if branch_id:
-            branch_filter = {"branch_id": branch_id}
+            row = InvestorMonthlyReport.objects.filter(month=start, branch_id=branch_id).first()
+        else:
+            row = InvestorMonthlyReport.objects.filter(month=start, branch__isnull=True).first()
 
-        # ---- StudentPayment (by date) ----
-        sp_qs = StudentPayment.objects.filter(
-            deleted=False, date__gte=start, date__lt=nxt, **branch_filter, status=False
-        )
-        sp_qs_discount = StudentPayment.objects.filter(
-            deleted=False, date__gte=start, date__lt=nxt, **branch_filter, status=True
-        )
-        sp_total_expr = ExpressionWrapper(
-            Coalesce(F("payment_sum"), 0) + Coalesce(F("extra_payment"), 0),
-            output_field=IntegerField()
-        )
-        student_payments = sp_qs.aggregate(
-            total_payment_sum=Coalesce(Sum("payment_sum"), 0),
-            total_extra_payment=Coalesce(Sum("extra_payment"), 0),
-            grand_total=Coalesce(Sum(sp_total_expr), 0),
-        )
-        student_discounts = sp_qs_discount.aggregate(
-            total_discount=Coalesce(Sum("payment_sum"), 0),
-            total_extra_payment=Coalesce(Sum("extra_payment"), 0),
-            grand_total=Coalesce(Sum(sp_total_expr), 0),
-        )
-        # ---- TeacherSalaryList (by date) ----
-        tsl_qs = TeacherSalaryList.objects.filter(
-            deleted=False, date__gte=start, date__lt=nxt, **branch_filter
-        )
-        teacher_salaries = tsl_qs.aggregate(
-            total_salary=Coalesce(Sum("salary"), 0)
-        )
+        snapshot_available = row is not None
 
-        # ---- UserSalaryList (by date) ----
-        usl_qs = UserSalaryList.objects.filter(
-            deleted=False, date__gte=start, date__lt=nxt, **branch_filter
-        )
-        user_salaries = usl_qs.aggregate(
-            total_user_salary=Coalesce(Sum("salary"), 0)
-        )
+        # If no snapshot yet, return zeros (frontend keeps same shape)
+        if not snapshot_available:
+            data = {
+                "period": {"from": start.isoformat(), "to_lt": nxt.isoformat()},
+                "filters": {"branch": branch_id},
+                "snapshot_available": False,
+                "student_payments": {
+                    "total_payment_sum": 0,
+                    "total_extra_payment": 0,
+                    "grand_total": 0,
+                },
+                # Discount block is not stored in the model; return zeros to keep response stable.
+                "student_per_month_discount": {
+                    "total_discount": 0,
+                    "total_extra_payment": 0,
+                    "grand_total": 0,
+                },
+                "teacher_salaries": {"total_salary": 0},
+                "user_salaries": {"total_user_salary": 0},
+                "overheads": {"total_overhead": 0},
+                "capital": {
+                    "total_capital_price": 0,
+                    "total_capital_down_cost": 0,
+                },
+                "new_students_count": 0,
+            }
+            return Response(data, status=status.HTTP_200_OK)
 
-        # ---- Overhead (by created) ----
-        oh_qs = Overhead.objects.filter(
-            deleted=False, created__gte=start, created__lt=nxt, **branch_filter
-        )
-        overheads = oh_qs.aggregate(
-            total_overhead=Coalesce(Sum("price"), 0)
-        )
-
-        # ---- Capital (by added_date) ----
-        cap_qs = Capital.objects.filter(
-            deleted=False, added_date__gte=start, added_date__lt=nxt, **branch_filter
-        )
-        capital = cap_qs.aggregate(
-            total_capital_price=Coalesce(Sum("price"), 0),
-            total_capital_down_cost=Coalesce(Sum("total_down_cost"), 0),
-        )
-
-        # ---- Students joined this month (by joined_group) ----
-        new_students_count = Student.objects.filter(
-            joined_group__gte=start, joined_group__lt=nxt
-        ).count()
-
+        # Map stored fields → your existing response shape
         data = {
             "period": {"from": start.isoformat(), "to_lt": nxt.isoformat()},
             "filters": {"branch": branch_id},
-            "student_payments": student_payments,
-            "student_per_month_discount": student_discounts,
-            "teacher_salaries": teacher_salaries,
-            "user_salaries": user_salaries,
-            "overheads": overheads,
-            "capital": capital,
-            "new_students_count": new_students_count,
+            "snapshot_available": True,
+
+            "student_payments": {
+                "total_payment_sum": row.student_payment_sum,
+                "total_extra_payment": row.student_extra_payment_sum,
+                "grand_total": row.student_payment_grand_total,
+            },
+
+            # Not tracked in the model; returning zeros to preserve API keys.
+            "student_per_month_discount": {
+                "total_discount": 0,
+                "total_extra_payment": 0,
+                "grand_total": 0,
+            },
+
+            "teacher_salaries": {"total_salary": row.teacher_salaries_total},
+            "user_salaries": {"total_user_salary": row.user_salaries_total},
+            "overheads": {"total_overhead": row.overhead_total},
+            "capital": {
+                "total_capital_price": row.capital_price_total,
+                "total_capital_down_cost": row.capital_down_cost_total,
+            },
+            "new_students_count": row.new_students_count,
         }
         return Response(data, status=status.HTTP_200_OK)
