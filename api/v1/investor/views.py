@@ -60,6 +60,9 @@ class InvestorView(APIView):
         sp_qs = StudentPayment.objects.filter(
             deleted=False, date__gte=start, date__lt=nxt, **branch_filter, status=False
         )
+        sp_qs_discount = StudentPayment.objects.filter(
+            deleted=False, date__gte=start, date__lt=nxt, **branch_filter, status=True
+        )
         sp_total_expr = ExpressionWrapper(
             Coalesce(F("payment_sum"), 0) + Coalesce(F("extra_payment"), 0),
             output_field=IntegerField()
@@ -69,7 +72,11 @@ class InvestorView(APIView):
             total_extra_payment=Coalesce(Sum("extra_payment"), 0),
             grand_total=Coalesce(Sum(sp_total_expr), 0),
         )
-
+        student_discounts = sp_qs_discount.aggregate(
+            total_discount=Coalesce(Sum("payment_sum"), 0),
+            total_extra_payment=Coalesce(Sum("extra_payment"), 0),
+            grand_total=Coalesce(Sum(sp_total_expr), 0),
+        )
         # ---- TeacherSalaryList (by date) ----
         tsl_qs = TeacherSalaryList.objects.filter(
             deleted=False, date__gte=start, date__lt=nxt, **branch_filter
@@ -112,6 +119,7 @@ class InvestorView(APIView):
             "period": {"from": start.isoformat(), "to_lt": nxt.isoformat()},
             "filters": {"branch": branch_id},
             "student_payments": student_payments,
+            "student_per_month_discount": student_discounts,
             "teacher_salaries": teacher_salaries,
             "user_salaries": user_salaries,
             "overheads": overheads,
