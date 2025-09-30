@@ -1,3 +1,5 @@
+import pprint
+
 import requests
 from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth.models import Group
@@ -101,7 +103,7 @@ class UserSerializerWrite(serializers.ModelSerializer):
             instance.groups.clear()
             instance.groups.add(profession)
             CustomAutoGroup.objects.filter(user=instance).update(group=profession)
-
+        pprint.pprint(validated_data)
         share = validated_data.pop('share', None)
         if share is not None:
             CustomAutoGroup.objects.filter(user=instance).update(share=share)
