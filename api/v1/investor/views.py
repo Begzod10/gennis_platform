@@ -43,7 +43,8 @@ class InvestorView(APIView):
     def get(self, request):
         month_str = request.query_params.get("month")  # e.g. 2025-09
         branch_id = request.query_params.get("branch")  # e.g. 3
-
+        month_str = "2025-09"
+        branch_id = 8
         start, nxt = self._month_bounds(month_str)
         if not start:
             return Response(
