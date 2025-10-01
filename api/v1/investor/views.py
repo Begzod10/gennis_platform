@@ -12,6 +12,21 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from apps.investor.models import InvestorMonthlyReport
+from user.models import CustomUser, CustomAutoGroup
+
+
+class BranchInfoView(APIView):
+    def get(self, request):
+        branch = request.user.branch
+        group_get = CustomAutoGroup.objects.get(user=branch)
+        info = {
+            "id": branch.id,
+            "name": branch.name,
+            "group": group_get.group,
+            "share": group_get.share
+        }
+
+        return Response(info, status=status.HTTP_200_OK)
 
 
 class InvestorView(APIView):
@@ -50,6 +65,7 @@ class InvestorView(APIView):
 
         snapshot_available = row is not None
         branch_id = 8
+
         def zero_payload():
             return {
                 "period": {"from": start.isoformat(), "to_lt": nxt.isoformat()},
