@@ -18,7 +18,6 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 class BranchInfoView(APIView):
-    authentication_classes = [JWTAuthentication]  # or your project default
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
