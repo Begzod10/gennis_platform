@@ -3,7 +3,7 @@ from django.urls import path
 from .views import (ObservationInfoList, ObservationOptionsList, ObservationInfoRetrieveUpdateAPIView,
                     ObservationOptionsRetrieveUpdateAPIView)
 from .api.get import ObservationDayRetrieveAPIView, ObservationDayListView, ObservationStatisticsRetrieveAPIView, \
-    ObservationStatisticsListView
+    ObservationStatisticsListView, TeacherObserveView
 from .api.createdeleteupdate import ObservationDayCreateView, ObservationDayUpdateView, ObservationDayDestroyView, \
     ObservationStatisticsCreateView, ObservationStatisticsUpdateView, ObservationStatisticsDestroyView
 
@@ -28,4 +28,6 @@ urlpatterns = [
     path('observation_options/', ObservationOptionsList.as_view(), name='observation-options-list'),
     path('observation_options/<int:pk>/', ObservationOptionsRetrieveUpdateAPIView.as_view(),
          name='observation-options-detail'),
+    path('teacher_observe/<int:group_id>/', TeacherObserveView.as_view(), name='teacher_observe'),
+
 ]
