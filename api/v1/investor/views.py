@@ -22,31 +22,26 @@ class BranchInfoView(APIView):
 
     def get(self, request):
         user = request.user
-
-        # user must be authenticated
-        if not user.is_authenticated:
-            return Response({"detail": "Authentication credentials were not provided."},
-                            status=status.HTTP_401_UNAUTHORIZED)
-
-        # user must have a branch assigned
         branch = getattr(user, "branch", None)
+
         if branch is None:
             return Response({"detail": "User has no branch assigned."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        # Get CustomAutoGroup safely.
-        # If your model relates to Branch:
-        group_row = (CustomAutoGroup.objects
-                     .filter(branch=branch, user=user)  # <-- use .filter(user=user) if your FK is to User
-                     .values("group", "share")
-                     .first())
+        # Get the row that belongs to THIS user.
+        # If you want to ensure it also matches the same branch: add .filter(user__branch=branch)
+        row = (CustomAutoGroup.objects
+               .select_related("group")
+               .filter(user=user)               # <-- was .filter(branch=branch, user=user) (invalid)
+               .values("group_id", "group__name", "share")
+               .first())
 
-        data = {
+        info = {
             "branch": [{"id": branch.id, "name": branch.name}],
-            "group": group_row["group"] if group_row else None,
-            "share": group_row["share"] if group_row else None,
+            "group": {"id": row["group_id"], "name": row["group__name"]} if row else None,
+            "share": row["share"] if row else None,
         }
-        return Response(data, status=status.HTTP_200_OK)
+        return Response(info, status=status.HTTP_200_OK)
 
 
 class InvestorView(APIView):
