@@ -159,8 +159,8 @@ CELERY_BEAT_SCHEDULE = {
 
     "investor_report_daily": {
         "task": "apps.investor.tasks.snapshot_investor_month",
-        # "schedule": crontab(minute=0, hour=21),  # 21:00 every day
-        "schedule": crontab(minute="*/1"),  # 21:00 every day
+        "schedule": crontab(minute=0, hour=21),  # 21:00 every day
+        # "schedule": crontab(minute="*/1"),  # 21:00 every day
     },
 }
 
