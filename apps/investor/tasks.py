@@ -120,7 +120,10 @@ def _compute_totals(start, nxt, branch_id=None):
     ).filter(
         groups_student__isnull=False,
         user__student_user__branch_id=branch_id
-    ).distinct().order_by('class_number__number').count()
+    )
+    if branch_id:
+        active_students = active_students.filter(groups_student__branch_id=branch_id)
+    active_students = active_students.distinct().order_by('class_number__number').count()
 
     # ---- AttendancePerMonth (by month_date; branch via Group)
     att_branch_filter = {}
