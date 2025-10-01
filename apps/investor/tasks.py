@@ -119,7 +119,6 @@ def _compute_totals(start, nxt, branch_id=None):
         id__in=deleted_new_student_ids
     ).filter(
         groups_student__isnull=False,
-        user__student_user__branch_id=branch_id
     )
     if branch_id:
         active_students = active_students.filter(user__branch_id=branch_id)
