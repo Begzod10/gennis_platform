@@ -50,6 +50,7 @@ class BranchInfoView(APIView):
 
 
 class InvestorView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     GET /api/investor-report?branch=3
 

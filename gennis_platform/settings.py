@@ -132,7 +132,7 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
-    'AUTH_HEADER_TYPES': ('JWT',),
+    'AUTH_HEADER_TYPES': ('JWT', "Bearer"),
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
 }
