@@ -118,7 +118,8 @@ def _compute_totals(start, nxt, branch_id=None):
     ).exclude(
         id__in=deleted_new_student_ids
     ).filter(
-        groups_student__isnull=False
+        groups_student__isnull=False,
+        user__student_user__branch_id=branch_id
     ).distinct().order_by('class_number__number').count()
 
     # ---- AttendancePerMonth (by month_date; branch via Group)
