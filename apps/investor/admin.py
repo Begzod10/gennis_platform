@@ -25,6 +25,10 @@ class InvestorMonthlyReportAdmin(admin.ModelAdmin):
         'overhead_arenda_total', 'overhead_oshxona_total',
         'overhead_reklama_total', 'overhead_boshqa_total',
         "total_students",
+        "attendance_total_debt",
+        "attendance_remaining_debt",
+        "attendance_discount_sum",
+        "attendance_discount_pct",
     )
 
     list_filter = ('branch', 'month')
