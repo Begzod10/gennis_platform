@@ -111,3 +111,32 @@ class TeacherHistoryGroups(models.Model):
     reason = models.CharField(max_length=50, null=True)
     joined_day = models.DateField()
     left_day = models.DateField(null=True)
+
+
+class TeacherRequest(models.Model):
+    STATUS_CHOICES = (
+        ('sent', 'Yuborildi'),
+        ('review', 'Ko‘rib chiqilmoqda'),
+        ('accepted', 'Qabul qilindi'),
+        ('canceled', 'Bekor qilindi'),
+    )
+
+    teacher = models.ForeignKey(
+        'Teacher',
+        on_delete=models.CASCADE,
+        related_name='requests'
+    )
+    branch = models.ForeignKey(
+        'branch.Branch',
+        on_delete=models.CASCADE,
+        related_name='teacher_requests'
+    )
+    text = models.TextField()
+    comment = models.TextField(null=True, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='sent'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

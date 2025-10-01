@@ -9,7 +9,7 @@ from gennis_platform.uitils import request
 from group.models import Group
 from payments.serializers import PaymentTypesSerializers
 from subjects.models import Subject
-from teachers.models import Teacher, TeacherSalary, TeacherSalaryList
+from teachers.models import Teacher, TeacherSalary, TeacherSalaryList, TeacherRequest
 
 
 class ActiveSubjectSerializerSerializer(serializers.ModelSerializer):
@@ -89,3 +89,20 @@ class TeacherSalaryForOneMonthListSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherSalaryList
         fields = ['id', 'payment', 'comment', 'deleted', 'salary', 'date']
+
+
+class TeacherRequestSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.CharField(source='teacher.user.username', read_only=True)
+    branch_name = serializers.CharField(source='branch.name', read_only=True)
+    created_at = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
+    updated_at = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
+
+    class Meta:
+        model = TeacherRequest
+        fields = [
+            'id', 'teacher', 'teacher_name',
+            'branch', 'branch_name',
+            'text', 'comment', 'status',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'teacher_name', 'branch_name']
