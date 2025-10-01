@@ -21,7 +21,7 @@ class InvestorView(APIView):
     Reads precomputed monthly totals from InvestorMonthlyReport (current month).
     """
 
-    def _month_bounds(self, month_str: str | None):
+    def _month_bounds(self, month_str: str):
         if month_str:
             try:
                 dt = datetime.strptime(month_str, "%Y-%m").date()
