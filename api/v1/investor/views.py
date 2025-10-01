@@ -13,25 +13,41 @@ from rest_framework.response import Response
 from rest_framework import status
 from apps.investor.models import InvestorMonthlyReport
 from user.models import CustomUser, CustomAutoGroup
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 class BranchInfoView(APIView):
+    authentication_classes = [JWTAuthentication]  # or your project default
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        branch = request.user.branch
-        group_get = CustomAutoGroup.objects.get(user=branch)
-        info = {
-            "branch": [
-                {
-                    "id": branch.id,
-                    "name": branch.name
-                }
-            ],
+        user = request.user
 
-            "group": group_get.group,
-            "share": group_get.share
+        # user must be authenticated
+        if not user.is_authenticated:
+            return Response({"detail": "Authentication credentials were not provided."},
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        # user must have a branch assigned
+        branch = getattr(user, "branch", None)
+        if branch is None:
+            return Response({"detail": "User has no branch assigned."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Get CustomAutoGroup safely.
+        # If your model relates to Branch:
+        group_row = (CustomAutoGroup.objects
+                     .filter(branch=branch, user=user)  # <-- use .filter(user=user) if your FK is to User
+                     .values("group", "share")
+                     .first())
+
+        data = {
+            "branch": [{"id": branch.id, "name": branch.name}],
+            "group": group_row["group"] if group_row else None,
+            "share": group_row["share"] if group_row else None,
         }
-
-        return Response(info, status=status.HTTP_200_OK)
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class InvestorView(APIView):
