@@ -86,31 +86,18 @@ class InvestorView(APIView):
             "filters": {"branch": branch_id},
             "snapshot_available": True,
 
-            "student_payments": {
-                "total_payment_sum": row.student_payment_sum,
-                "total_extra_payment": row.student_extra_payment_sum,
-                "grand_total": row.student_payment_grand_total,
-                "total_debt": getattr(row, "attendance_total_debt", 0),
-                "remaining_debt": getattr(row, "attendance_remaining_debt", 0),
-                # "discount_sum": getattr(row, "attendance_discount_sum", 0),
-                # "discount_pct": getattr(row, "attendance_discount_pct", 0),
+            "payments": {
+                "due_this_month": getattr(row, "attendance_total_debt", 0),
+                "due_this_day": row.student_payment_sum,
+                "outstanding": getattr(row, "attendance_remaining_debt", 0),
             },
-
-            # Still returning zeros unless you add discount fields to the model.
-            "student_per_month_discount": {
-                "total_discount": 0,
-                "total_extra_payment": 0,
-                "grand_total": 0,
+            "expenses": {
+                "salaries": row.teacher_salaries_total + row.user_salaries_total,
+                "additional": row.overhead_total - row.overhead_oshxona_total,
+                "cafeteria": row.overhead_oshxona_total,
+                "capital": row.capital_price_total,
             },
-
-            "teacher_salaries": {"total_salary": row.teacher_salaries_total},
-            "user_salaries": {"total_user_salary": row.user_salaries_total},
-            "overheads": {"total_overhead": row.overhead_total},
-            "capital": {
-                "total_capital_price": row.capital_price_total,
-                "total_capital_down_cost": row.capital_down_cost_total,
-            },
-            "new_students_count": row.new_students_count,
-            # NEW: attendance aggregates (must exist in your model/migrations)
+            "students": row.total_students,
+            "new_students": row.new_students_count,
         }
         return Response(data, status=status.HTTP_200_OK)

@@ -7,6 +7,9 @@ from celery import shared_task
 from django.apps import apps as django_apps
 from branch.models import Location
 from system.models import System
+from students.models import DeletedStudent, DeletedNewStudent
+from group.models import Group
+from django.db.models import Prefetch
 
 
 def _month_bounds():
@@ -16,12 +19,13 @@ def _month_bounds():
 
 
 def _compute_totals(start, nxt, branch_id=None):
-    StudentPayment    = django_apps.get_model('students', 'StudentPayment')
+    StudentPayment = django_apps.get_model('students', 'StudentPayment')
     TeacherSalaryList = django_apps.get_model('teachers', 'TeacherSalaryList')
-    UserSalaryList    = django_apps.get_model('user', 'UserSalaryList')  # adjust if different
-    Overhead          = django_apps.get_model('overhead', 'Overhead')
-    Capital           = django_apps.get_model('capital', 'Capital')
-    Student           = django_apps.get_model('students', 'Student')
+    UserSalaryList = django_apps.get_model('user', 'UserSalaryList')  # adjust if different
+    Overhead = django_apps.get_model('overhead', 'Overhead')
+    OverheadType = django_apps.get_model('overhead', 'OverheadType')
+    Capital = django_apps.get_model('capital', 'Capital')
+    Student = django_apps.get_model('students', 'Student')
     AttendancePerMonth = django_apps.get_model('attendances', 'AttendancePerMonth')
 
     branch_filter = {"branch_id": branch_id} if branch_id else {}
@@ -48,9 +52,36 @@ def _compute_totals(start, nxt, branch_id=None):
         deleted=False, date__gte=start, date__lt=nxt, **branch_filter
     ).aggregate(total_user_salary=Coalesce(Sum("salary"), 0))
 
-    overheads = Overhead.objects.filter(
+    # ---- Overhead (overall)
+    overhead_qs = Overhead.objects.filter(
         deleted=False, created__gte=start, created__lt=nxt, **branch_filter
-    ).aggregate(total_overhead=Coalesce(Sum("price"), 0))
+    )
+    overheads = overhead_qs.aggregate(total_overhead=Coalesce(Sum("price"), 0))
+
+    # ---- NEW: Overhead per type (IDs from your table)
+    TYPE_IDS = {
+        "gaz": 5,
+        "svet": 6,
+        "suv": 7,
+        "arenda": 8,
+        "oshxona": 12,
+        "reklama": 13,
+        "boshqa": 9,
+    }
+    rows = (
+        overhead_qs
+        .values("type_id")
+        .annotate(total=Coalesce(Sum("price"), 0))
+    )
+    by_id = {r["type_id"]: int(r["total"] or 0) for r in rows}
+
+    gaz_total     = by_id.get(TYPE_IDS["gaz"], 0)
+    svet_total    = by_id.get(TYPE_IDS["svet"], 0)
+    suv_total     = by_id.get(TYPE_IDS["suv"], 0)
+    arenda_total  = by_id.get(TYPE_IDS["arenda"], 0)
+    oshxona_total = by_id.get(TYPE_IDS["oshxona"], 0)
+    reklama_total = by_id.get(TYPE_IDS["reklama"], 0)
+    boshqa_total  = by_id.get(TYPE_IDS["boshqa"], 0)
 
     capital = Capital.objects.filter(
         deleted=False, added_date__gte=start, added_date__lt=nxt, **branch_filter
@@ -62,6 +93,33 @@ def _compute_totals(start, nxt, branch_id=None):
     new_students_count = Student.objects.filter(
         joined_group__gte=start, joined_group__lt=nxt
     ).count()
+    deleted_student_ids = DeletedStudent.objects.filter(
+        student__groups_student__isnull=True,
+        deleted=False
+    ).values_list('student_id', flat=True)
+
+    deleted_new_student_ids = DeletedNewStudent.objects.values_list(
+        'student_id', flat=True
+    )
+
+    active_students = Student.objects.select_related(
+        'user',
+        'user__language',
+        'class_number'
+    ).prefetch_related(
+        'user__student_user',
+        Prefetch(
+            'groups_student',
+            queryset=Group.objects.select_related('class_number', 'color').order_by('id'),
+            to_attr='prefetched_groups'
+        )
+    ).exclude(
+        id__in=deleted_student_ids
+    ).exclude(
+        id__in=deleted_new_student_ids
+    ).filter(
+        groups_student__isnull=False
+    ).distinct().order_by('class_number__number').count()
 
     # ---- AttendancePerMonth (by month_date; branch via Group)
     att_branch_filter = {}
@@ -94,17 +152,28 @@ def _compute_totals(start, nxt, branch_id=None):
 
         "overhead_total": int(overheads["total_overhead"] or 0),
 
+        # NEW per-type overhead totals
+        "overhead_gaz_total": gaz_total,
+        "overhead_svet_total": svet_total,
+        "overhead_suv_total": suv_total,
+        "overhead_arenda_total": arenda_total,
+        "overhead_oshxona_total": oshxona_total,
+        "overhead_reklama_total": reklama_total,
+        "overhead_boshqa_total": boshqa_total,
+
         "capital_price_total": int(capital["total_capital_price"] or 0),
         "capital_down_cost_total": int(capital["total_capital_down_cost"] or 0),
 
         "new_students_count": int(new_students_count or 0),
+        "total_students": int(active_students or 0),
 
-        # NEW attendance totals
+        # Attendance totals
         "attendance_total_debt": total_debt,
         "attendance_remaining_debt": remaining_debt,
         "attendance_discount_sum": discount_sum,
         "attendance_discount_pct": discount_pct,
     }
+
 
 
 @shared_task(name="apps.investor.tasks.snapshot_investor_month")

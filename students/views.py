@@ -24,12 +24,16 @@ from branch.models import Branch
 from permissions.response import QueryParamFilterMixin
 from students.serializer.lists import ActiveListSerializer, ActiveListDeletedStudentSerializer
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
-from .serializers import StudentCharity,get_remaining_debt_for_student
-from silk.profiling.profiler import silk_profile
+from .serializers import StudentCharity, get_remaining_debt_for_student
+
 from .serializers import (StudentListSerializer,
                           DeletedNewStudentListSerializer, StudentPaymentListSerializer, StudentClassNumberSerializer)
 
 from .serializers import (StudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
+
+from django.db.models import Prefetch
+
+from group.models import Group
 
 
 class StudentListView(ListAPIView):
@@ -103,12 +107,6 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
         )
 
 
-from silk.profiling.profiler import silk_profile
-
-
-from django.db.models import Prefetch
-from silk.profiling.profiler import silk_profile
-from group.models import Group
 class ActiveStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ActiveListSerializer
@@ -152,6 +150,7 @@ class ActiveStudents(QueryParamFilterMixin, ListAPIView):
         ).distinct().order_by('class_number__number')
 
         return active_students
+
 
 class CreateContractView(APIView):
     permission_classes = [IsAuthenticated]
@@ -563,7 +562,7 @@ class StudentCharityModelView(APIView):
         month = data.pop('date')
         month_number = list(calendar.month_name).index(month.capitalize())
         old_months = [9, 10, 11, 12]
-        new_months = [1, 2, 3, 4, 5, 6,7]
+        new_months = [1, 2, 3, 4, 5, 6, 7]
         current_year = int(data['year'])
         # if month_number in old_months:
         #     current_year -= 1
