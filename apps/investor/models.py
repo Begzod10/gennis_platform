@@ -15,6 +15,11 @@ class InvestorMonthlyReport(models.Model):
         related_name='investor_reports'
     )
 
+    attendance_total_debt = models.BigIntegerField(default=0)
+    attendance_remaining_debt = models.BigIntegerField(default=0)
+    attendance_discount_sum = models.BigIntegerField(default=0)
+    attendance_discount_pct = models.IntegerField(default=0)  # 0..10
+
     # ---- Totals (integers like your source models) ----
     student_payment_sum = models.BigIntegerField(default=0)  # Sum of StudentPayment.payment_sum
     student_extra_payment_sum = models.BigIntegerField(default=0)  # Sum of StudentPayment.extra_payment

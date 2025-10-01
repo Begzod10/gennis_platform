@@ -11,8 +11,7 @@ from .models import InvestorMonthlyReport
 @admin.register(InvestorMonthlyReport)
 class InvestorMonthlyReportAdmin(admin.ModelAdmin):
     list_display = (
-        'month',
-        'branch',
+        'month', 'branch',
         'student_payment_sum_display',
         'student_extra_payment_sum_display',
         'student_payment_grand_total_display',
@@ -21,6 +20,10 @@ class InvestorMonthlyReportAdmin(admin.ModelAdmin):
         'overhead_total_display',
         'capital_totals',
         'new_students_count',
+        'attendance_total_debt',
+        'attendance_remaining_debt',
+        'attendance_discount_sum',
+        'attendance_discount_pct',
     )
 
     list_filter = ('branch', 'month')

@@ -18,12 +18,10 @@ class InvestorView(APIView):
     """
     GET /api/investor-report?branch=3
 
-    Reads precomputed monthly totals from InvestorMonthlyReport.
-    Default month = current month (first day).
+    Reads precomputed monthly totals from InvestorMonthlyReport (current month).
     """
 
-    def _month_bounds(self, month_str: str):
-        # month_str like "YYYY-MM" (we use current month below)
+    def _month_bounds(self, month_str: str | None):
         if month_str:
             try:
                 dt = datetime.strptime(month_str, "%Y-%m").date()
@@ -36,10 +34,8 @@ class InvestorView(APIView):
         return start, next_start
 
     def get(self, request):
-        # Current month only (as in your code). If you later want a ?month=YYYY-MM param, read it here.
-        month_str = datetime.now().strftime("%Y-%m")
+        month_str = datetime.now().strftime("%Y-%m")  # current month
         start, nxt = self._month_bounds(month_str)
-
         if not start:
             return Response({"detail": "Invalid month format. Use YYYY-MM."},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -54,9 +50,8 @@ class InvestorView(APIView):
 
         snapshot_available = row is not None
 
-        # If no snapshot yet, return zeros (frontend keeps same shape)
-        if not snapshot_available:
-            data = {
+        def zero_payload():
+            return {
                 "period": {"from": start.isoformat(), "to_lt": nxt.isoformat()},
                 "filters": {"branch": branch_id},
                 "snapshot_available": False,
@@ -65,7 +60,7 @@ class InvestorView(APIView):
                     "total_extra_payment": 0,
                     "grand_total": 0,
                 },
-                # Discount block is not stored in the model; return zeros to keep response stable.
+                # Not tracked in the model (unless you add fields for it):
                 "student_per_month_discount": {
                     "total_discount": 0,
                     "total_extra_payment": 0,
@@ -79,10 +74,17 @@ class InvestorView(APIView):
                     "total_capital_down_cost": 0,
                 },
                 "new_students_count": 0,
+                "attendance": {
+                    "total_debt": 0,
+                    "remaining_debt": 0,
+                    "discount_sum": 0,
+                    "discount_pct": 0,  # 0..100
+                },
             }
-            return Response(data, status=status.HTTP_200_OK)
 
-        # Map stored fields → your existing response shape
+        if not snapshot_available:
+            return Response(zero_payload(), status=status.HTTP_200_OK)
+
         data = {
             "period": {"from": start.isoformat(), "to_lt": nxt.isoformat()},
             "filters": {"branch": branch_id},
@@ -92,9 +94,13 @@ class InvestorView(APIView):
                 "total_payment_sum": row.student_payment_sum,
                 "total_extra_payment": row.student_extra_payment_sum,
                 "grand_total": row.student_payment_grand_total,
+                "total_debt": getattr(row, "attendance_total_debt", 0),
+                "remaining_debt": getattr(row, "attendance_remaining_debt", 0),
+                "discount_sum": getattr(row, "attendance_discount_sum", 0),
+                "discount_pct": getattr(row, "attendance_discount_pct", 0),
             },
 
-            # Not tracked in the model; returning zeros to preserve API keys.
+            # Still returning zeros unless you add discount fields to the model.
             "student_per_month_discount": {
                 "total_discount": 0,
                 "total_extra_payment": 0,
@@ -109,5 +115,6 @@ class InvestorView(APIView):
                 "total_capital_down_cost": row.capital_down_cost_total,
             },
             "new_students_count": row.new_students_count,
+            # NEW: attendance aggregates (must exist in your model/migrations)
         }
         return Response(data, status=status.HTTP_200_OK)
