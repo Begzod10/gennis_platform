@@ -49,7 +49,7 @@ class InvestorView(APIView):
             row = InvestorMonthlyReport.objects.filter(month=start, branch__isnull=True).first()
 
         snapshot_available = row is not None
-
+        branch_id = 8
         def zero_payload():
             return {
                 "period": {"from": start.isoformat(), "to_lt": nxt.isoformat()},
