@@ -20,8 +20,13 @@ class BranchInfoView(APIView):
         branch = request.user.branch
         group_get = CustomAutoGroup.objects.get(user=branch)
         info = {
-            "id": branch.id,
-            "name": branch.name,
+            "branch": [
+                {
+                    "id": branch.id,
+                    "name": branch.name
+                }
+            ],
+
             "group": group_get.group,
             "share": group_get.share
         }
