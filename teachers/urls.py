@@ -1,5 +1,5 @@
 from django.urls import path
-
+from rest_framework.routers import DefaultRouter
 from teachers.Api.read import (
     TeacherGroupStatisticsListView,
     TeacherListView,
@@ -15,12 +15,25 @@ from teachers.Api.write import (
     TeacherSalaryCreateAPIView, TeacherSalaryDeleteAPIView, TeacherSalaryUpdateAPIView, TeacherSalaryUpdateAPIViewPatch,
     UploadFile, SalaryTypeUpdate
 )
+from .Api.requests.crud import TeacherRequestViewSet
 from .Api.createdeleteupdate import TeacherAttendanceCreateView, TeacherAttendanceDestroyView
 from .Api.get import TeacherAttendanceListView, TeacherAttendanceRetrieveView, TeachersForBranches, TeachersForSubject, \
     SalaryType, TeachersForSubjectForTimeTable
 from .views import GetGroupStudents
 
 app_name = 'Teachers'
+
+teacher_request_list = TeacherRequestViewSet.as_view({
+    'get': 'list',
+    'post': 'create'
+})
+
+teacher_request_detail = TeacherRequestViewSet.as_view({
+    'get': 'retrieve',
+    'patch': 'partial_update',
+    'put': 'update',
+    'delete': 'destroy'
+})
 
 urlpatterns = [
     path('teacher_attendance_create/', TeacherAttendanceCreateView.as_view(), name='teacher-attendance-create'),
@@ -62,5 +75,7 @@ urlpatterns = [
     path('group-student/<int:pk>/', GetGroupStudents.as_view(),
          name='group-student'),
     path('get_balance/<int:user_id>/', GetTeacherBalance.as_view()),
-    path('teacher_face_id/', TeacherFaceIdView.as_view())
+    path('teacher_face_id/', TeacherFaceIdView.as_view()),
+    path('teacher-requests/', teacher_request_list, name='teacher-request-list'),
+    path('teacher-requests/<int:pk>/', teacher_request_detail, name='teacher-request-detail'),
 ]
