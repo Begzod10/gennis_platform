@@ -175,5 +175,4 @@ class InvestorReportView(APIView):
                 "new_students": row.last().new_students_count,
             }
             return Response(data, status=status.HTTP_200_OK)
-        else:
-            return Response({"detail": "Invalid type."}, status=status.HTTP_400_BAD_REQUEST)
+
