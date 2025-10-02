@@ -1,20 +1,14 @@
-from rest_framework.views import APIView
-from students.models import StudentPayment, Student
-from overhead.models import Overhead
-from capital.models import Capital
-from teachers.models import TeacherSalaryList
-from user.models import UserSalaryList
+
 from datetime import timedelta, datetime
 from django.utils import timezone
-from django.db.models import Sum, F, IntegerField, ExpressionWrapper
-from django.db.models.functions import Coalesce
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from apps.investor.models import InvestorMonthlyReport
 from user.models import CustomUser, CustomAutoGroup
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
+
 
 
 class BranchInfoView(APIView):
@@ -116,8 +110,6 @@ class InvestorView(APIView):
         data = {
             "period": {"from": start.isoformat(), "to_lt": nxt.isoformat()},
             "filters": {"branch": branch_id},
-            "snapshot_available": True,
-
             "payments": {
                 "due_this_month": getattr(row, "attendance_total_debt", 0),
                 "due_this_day": row.student_payment_sum,
@@ -133,3 +125,55 @@ class InvestorView(APIView):
             "new_students": row.new_students_count,
         }
         return Response(data, status=status.HTTP_200_OK)
+
+
+
+class InvestorReportView(APIView):
+    permission_classes = [IsAuthenticated]
+    """
+    GET /api/investor-report?branch=3
+
+    Reads precomputed monthly totals from InvestorMonthlyReport (current month).
+    """
+
+    def get(self, request):
+        type_data = request.query_params.get("type")
+        branch_id = request.query_params.get("branch")  # optional
+
+        # Fetch snapshot row (global when branch is not provided)
+        if branch_id:
+            row = InvestorMonthlyReport.objects.filter(branch_id=branch_id).order_by("-month").all()
+        else:
+            row = InvestorMonthlyReport.objects.filter(branch__isnull=True).order_by("-month").all()
+
+        if type_data == "payments":
+            data = {
+                "period": {"from": row.first().month, "to": row.last().month},
+                "filters": {"branch": branch_id},
+                "payments": {
+                    "due_this_month": row.last().attendance_total_debt,
+                    "due_this_day": row.last().student_payment_sum,
+                    "outstanding": row.last().attendance_remaining_debt,
+                }}
+            return Response(data, status=status.HTTP_200_OK)
+        elif type_data == "expenses":
+            data = {
+                "period": {"from": row.first().month, "to": row.last().month},
+                "filters": {"branch": branch_id},
+                "expenses": {
+                    "salaries": row.last().teacher_salaries_total + row.last().user_salaries_total,
+                    "additional": row.last().overhead_total - row.last().overhead_oshxona_total,
+                    "cafeteria": row.last().overhead_oshxona_total,
+                    "capital": row.last().capital_price_total,
+                }}
+            return Response(data, status=status.HTTP_200_OK)
+        elif type_data == "students":
+            data = {
+                "period": {"from": row.first().month, "to": row.last().month},
+                "filters": {"branch": branch_id},
+                "students": row.last().total_students,
+                "new_students": row.last().new_students_count,
+            }
+            return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response({"detail": "Invalid type."}, status=status.HTTP_400_BAD_REQUEST)
