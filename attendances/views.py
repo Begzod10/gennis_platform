@@ -264,11 +264,14 @@ def normalize_periods_ensure_current_and_prev(
         if m not in ymap:
             ymap[m] = set(generate_workdays(y, m))
 
-    # ⛔ Trim future days for the *current* month of the *current* year
     if cur_year in folded and cur_month in folded[cur_year]:
-        folded[cur_year][cur_month] = {
-            d for d in folded[cur_year][cur_month] if d <= cur_day
-        }
+
+        current_days = {int(d) for d in folded[cur_year][cur_month]}
+        folded[cur_year][cur_month] = current_days & set(range(1, cur_day + 1))
+    else:
+        # if you add the current month here, cap it immediately too
+        folded.setdefault(cur_year, {})
+        folded[cur_year][cur_month] = set(generate_workdays(cur_year, cur_month)) & set(range(1, cur_day + 1))
 
     # Back to the target structure (sorted)
     normalized: Dict[int, List[dict]] = {}
