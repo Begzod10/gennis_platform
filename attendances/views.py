@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import F
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from collections import defaultdict
 import calendar
 from datetime import date, timedelta
@@ -225,47 +225,54 @@ def generate_workdays(year, month):
     return days
 
 
-def normalize_periods_and_add_current(
+def normalize_periods_ensure_current_and_prev(
         existing_periods: Dict[int, List[dict]],
         generate_workdays,
         now: datetime,
 ) -> Dict[int, List[dict]]:
     """
-    - Keeps all existing months and days
-    - De-dups duplicate months (merging days)
-    - Ensures current month of current year is present
+    - Preserves all existing months & days.
+    - Merges duplicate entries for the same month (union of days).
+    - Ensures both the *current* and *previous* month are present
+      in the correct year, adding them if missing.
     """
     if now is None:
         now = datetime.now()
-    CUR_YEAR, CUR_MONTH = now.year, now.month
+    cur_year, cur_month = now.year, now.month
+
+    # compute previous month/year
+    if cur_month == 1:
+        prev_month, prev_year = 12, cur_year - 1
+    else:
+        prev_month, prev_year = cur_month - 1, cur_year
+
+    # months we must ensure exist
+    must_have: List[Tuple[int, int]] = [(cur_year, cur_month), (prev_year, prev_month)]
 
     normalized: Dict[int, List[dict]] = {}
+    # 1) fold all existing months, merging duplicates
+    folded: Dict[int, Dict[int, set[int]]] = {}  # year -> month -> days(set)
 
     for raw_year, months in (existing_periods or {}).items():
-        # make sure year is int even if source is str
         year = int(raw_year)
-
-        by_month: Dict[int, set[int]] = {}
+        ymap = folded.setdefault(year, {})
         for item in months or []:
             m = int(item["month"])
-            days = set(item.get("days", []))
-            by_month[m] = by_month.get(m, set()).union(days)
+            days = set(map(int, item.get("days", [])))
+            ymap[m] = ymap.get(m, set()).union(days)
 
-        # only add current month if this is the current year and it's missing
-        if year == CUR_YEAR and CUR_MONTH not in by_month:
-            by_month[CUR_MONTH] = set(generate_workdays(CUR_YEAR, CUR_MONTH))
+    # 2) ensure required months exist (add if missing)
+    for y, m in must_have:
+        ymap = folded.setdefault(y, {})
+        if m not in ymap:
+            ymap[m] = set(generate_workdays(y, m))
 
-        normalized[year] = [
+    # 3) convert back to the target structure (sorted)
+    for y, ymap in folded.items():
+        normalized[y] = [
             {"month": m, "days": sorted(days)}
-            for m, days in sorted(by_month.items(), key=lambda kv: kv[0])
+            for m, days in sorted(ymap.items(), key=lambda kv: kv[0])
         ]
-
-    # if the current year was entirely absent, add it with the current month only
-    if CUR_YEAR not in normalized:
-        normalized[CUR_YEAR] = [{
-            "month": CUR_MONTH,
-            "days": sorted(generate_workdays(CUR_YEAR, CUR_MONTH))
-        }]
 
     return normalized
 
@@ -295,7 +302,7 @@ class AttendancePeriodsView(APIView):
 
         periods = {}
         now = datetime.now()
-        normalized = normalize_periods_and_add_current(periods, generate_workdays, now)
+        normalized = normalize_periods_ensure_current_and_prev(periods, generate_workdays, now)
 
         result = {
             "group_id": group_id,
