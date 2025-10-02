@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import F
-
+from typing import Dict, List
 from collections import defaultdict
 import calendar
 from datetime import date, timedelta
@@ -225,6 +225,51 @@ def generate_workdays(year, month):
     return days
 
 
+def normalize_periods_and_add_current(
+        existing_periods: Dict[int, List[dict]],
+        generate_workdays,
+        now: datetime,
+) -> Dict[int, List[dict]]:
+    """
+    - Keeps all existing months and days
+    - De-dups duplicate months (merging days)
+    - Ensures current month of current year is present
+    """
+    if now is None:
+        now = datetime.now()
+    CUR_YEAR, CUR_MONTH = now.year, now.month
+
+    normalized: Dict[int, List[dict]] = {}
+
+    for raw_year, months in (existing_periods or {}).items():
+        # make sure year is int even if source is str
+        year = int(raw_year)
+
+        by_month: Dict[int, set[int]] = {}
+        for item in months or []:
+            m = int(item["month"])
+            days = set(item.get("days", []))
+            by_month[m] = by_month.get(m, set()).union(days)
+
+        # only add current month if this is the current year and it's missing
+        if year == CUR_YEAR and CUR_MONTH not in by_month:
+            by_month[CUR_MONTH] = set(generate_workdays(CUR_YEAR, CUR_MONTH))
+
+        normalized[year] = [
+            {"month": m, "days": sorted(days)}
+            for m, days in sorted(by_month.items(), key=lambda kv: kv[0])
+        ]
+
+    # if the current year was entirely absent, add it with the current month only
+    if CUR_YEAR not in normalized:
+        normalized[CUR_YEAR] = [{
+            "month": CUR_MONTH,
+            "days": sorted(generate_workdays(CUR_YEAR, CUR_MONTH))
+        }]
+
+    return normalized
+
+
 class AttendancePeriodsView(APIView):
     def get(self, request):
         group_id = request.query_params.get("group_id")
@@ -250,35 +295,10 @@ class AttendancePeriodsView(APIView):
 
         periods = {}
         now = datetime.now()
-        CUR_YEAR = now.year
-        CUR_MONTH = now.month
-
-        # 1) de-dup months per year (merge days)
-        normalized: dict[int, list[dict]] = {}
-        for year, months in periods.items():
-            by_month: dict[int, set[int]] = {}
-            for item in months or []:
-                m = int(item["month"])
-                days = set(item.get("days", []))
-                by_month[m] = by_month.get(m, set()) | days
-
-            if year == CUR_YEAR:
-                if CUR_MONTH not in by_month:
-                    by_month[CUR_MONTH] = set(generate_workdays(CUR_YEAR, CUR_MONTH))
-
-            normalized[year] = [
-                {"month": m, "days": sorted(days)}
-                for m, days in sorted(by_month.items(), key=lambda kv: kv[0])
-            ]
-
-        if CUR_YEAR not in normalized:
-            normalized[CUR_YEAR] = [{
-                "month": CUR_MONTH,
-                "days": sorted(generate_workdays(CUR_YEAR, CUR_MONTH))
-            }]
+        normalized = normalize_periods_and_add_current(periods, generate_workdays, now)
 
         result = {
-            "group_id": group_id,  # keep your original "167" string if that's what you pass in
+            "group_id": group_id,
             "periods": [
                 {"year": y, "months": normalized[y]}
                 for y in sorted(normalized.keys())
