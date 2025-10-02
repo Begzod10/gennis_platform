@@ -4,7 +4,7 @@ from django.db import models
 from group.models import Group
 from teachers.models import Teacher
 from user.models import CustomUser
-
+from school_time_table.models import ClassTimeTable
 
 class ObservationInfo(models.Model):
     title = models.CharField(max_length=100)
@@ -49,7 +49,7 @@ class ObservationStatistics(models.Model):
 
 class TeacherObservationDay(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    time_table = models.ForeignKey(ClassTimeTable, on_delete=models.CASCADE)
     date = models.DateField()
 
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)

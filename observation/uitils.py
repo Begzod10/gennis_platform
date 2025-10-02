@@ -49,3 +49,14 @@ def old_current_dates(group_id=0, observation=False):
             }
         ]
     return data
+from datetime import datetime
+
+def find_calendar_date(date_day=None, date_month=None, date_year=None):
+    """
+    Flaskdagi Calendar* modellarsiz variant.
+    Agar argumentlar berilsa - o'sha sanani qaytaradi,
+    bo'lmasa bugungi sanani qaytaradi.
+    """
+    if date_day and date_month and date_year:
+        return datetime(year=date_year, month=date_month, day=date_day)
+    return datetime.now()

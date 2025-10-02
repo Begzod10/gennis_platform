@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from group.models import Group
+from group.models import Group, GroupSubjects
+from students.models import Student, StudentSubject
 from teachers.models import Teacher
 
 
@@ -97,5 +98,11 @@ class GroupListSerialize2r(serializers.ModelSerializer):
     def get_students(self, obj):
         students = obj.students.all()
         from students.serializer.lists import ActiveListSerializer
+        group_subjects = GroupSubjects.objects.filter(group=obj).all()
+        for st in students:
+            for group_subject in group_subjects:
+                StudentSubject.objects.get_or_create(student=st,
+                                                     group_subjects=group_subject,
+                                                     hours=group_subject.hours)
 
         return ActiveListSerializer(students, many=True).data

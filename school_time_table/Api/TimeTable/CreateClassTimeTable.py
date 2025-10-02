@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from datetime import datetime, timedelta, date
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo  # Python 3.9+
-from group.models import Group
+from group.models import Group, GroupSubjects, GroupSubjectsCount
 from ...models import ClassTimeTable
 from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTableReadSerializers, \
     ClassTimeTableTest2Serializer, ClassTimeTableForClassSerializer2
@@ -208,12 +208,12 @@ class CheckClassTimeTable(APIView):
             today = datetime.today()
             start_week = today - timedelta(days=today.weekday())
             week_dates = [(start_week + timedelta(days=i)).date() for i in range(7)]
-            class_subject = ClassNumberSubjects.objects.get(subject_id=checked_id, class_number=group.class_number)
-            lessons = group.classtimetable_set.filter(date__in=week_dates, subject_id=checked_id).count()
-            if int(lessons) >= int(class_subject.hours):
-                status = False
-                msg.append(
-                    f"{group.class_number.number}-{group.color.name} sinifining {class_subject.subject.name} fanining haftalik dars soati to'lgan")
+            class_subject = GroupSubjects.objects.get(subject_id=checked_id, group_id=group_id)
+            # lessons = group.classtimetable_set.filter(date__in=week_dates, subject_id=checked_id).count()
+            # if int(lessons) >= int(class_subject.hours):
+            #     status = False
+            #     msg.append(
+            #         f"{group.class_number.number}-{group.color.name} sinifining {class_subject.subject.name} fanining haftalik dars soati to'lgan")
         elif type == 'teacher':
             lesson = ClassTimeTable.objects.filter(date=date, teacher_id=checked_id, hours_id=hour).first()
             if lesson:

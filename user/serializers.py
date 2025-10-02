@@ -1,3 +1,5 @@
+import pprint
+
 import requests
 from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth.models import Group
@@ -12,6 +14,7 @@ from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from permissions.models import ManySystem, ManyBranch, ManyLocation
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
 from flows.models import Flow
+
 
 class UserSerializerRead(serializers.ModelSerializer):
     branch = BranchSerializer(read_only=True)
@@ -53,12 +56,13 @@ class UserSerializerWrite(serializers.ModelSerializer):
     language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all())
     profession = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), required=False, allow_null=True)
     money = serializers.CharField(required=False, allow_null=True)
+    share = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
                   'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff', 'old_id', 'profession', 'money']
+                  'branch', 'is_superuser', 'is_staff', 'old_id', 'profession', 'money', "share"]
         extra_kwargs = {
             'password': {'write_only': True, 'required': True},
             'birth_date': {'required': False},
@@ -100,10 +104,15 @@ class UserSerializerWrite(serializers.ModelSerializer):
             instance.groups.clear()
             instance.groups.add(profession)
             CustomAutoGroup.objects.filter(user=instance).update(group=profession)
-
+        pprint.pprint(validated_data)
+        share = validated_data.pop('share', None)
+        if share is not None:
+            CustomAutoGroup.objects.filter(user=instance).update(share=share)
+            CustomAutoGroup.objects.filter(user=instance).update(salary=0)
         salary = validated_data.pop('money', None)
         if salary is not None:
             CustomAutoGroup.objects.filter(user=instance).update(salary=salary)
+            CustomAutoGroup.objects.filter(user=instance).update(share=0)
         user = super().update(instance, validated_data)
         if 'password' in validated_data:
             user.set_password(validated_data['password'])
@@ -192,6 +201,7 @@ class UserSalarySerializers(serializers.ModelSerializer):
         model = UserSalary
         fields = '__all__'
 
+
 class UserSalaryListSerializersTotal(serializers.ModelSerializer):
     student_id = serializers.CharField(source='user.id',
                                        read_only=True)
@@ -201,7 +211,7 @@ class UserSalaryListSerializersTotal(serializers.ModelSerializer):
                                     read_only=True)
     payment_type_name = serializers.CharField(source='payment_types.name',
                                               read_only=True)
-    payment_sum = serializers.IntegerField(required=False,source='salary')
+    payment_sum = serializers.IntegerField(required=False, source='salary')
     status = serializers.BooleanField(required=False)
 
     class Meta:
@@ -252,7 +262,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'surname': user.surname,
                 'username': user.username,
                 'father_name': user.father_name,
-                'password': password,
                 'student_id': student.id,
                 'balance': student.id,
                 'role': 'student',
@@ -381,7 +390,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                     for flow in Flow.objects.filter(teacher=teacher).all()
                 ]
             }
-            print(self.object)
             # res = self.send_data(object, f'{classroom_server}/api/turon_user')
             # self.usern = res['data']['username']
             return self.object
@@ -397,9 +405,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # Foydalanuvchini tekshirish
         try:
-            print('sdvdss')
             user = CustomUser.objects.get(username=username)
-            print(user, 'asdcasc')
         except CustomUser.DoesNotExist:
             raise AuthenticationFailed("No active account found with the given credentials")
         self.user_send(user.id, password)
@@ -429,7 +435,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['type'] = self.type
         data['username'] = self.usern
         data['user'] = self.object
-
 
         return data
     # def validate(self, attrs):
@@ -524,7 +529,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'surname', 'name', 'id', 'groups', 'profile_photo', 'location_id')
+        fields = ('username', 'surname', 'name', 'id', 'groups', 'profile_photo', 'location_id',)
 
 
 class UserSalaryUpdateSerializers(serializers.ModelSerializer):

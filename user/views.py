@@ -53,11 +53,13 @@ class CustomTokenRefreshView(TokenRefreshView):
 
         user_serializer = CustomUserSerializer(user)
         response_data = user_serializer.data
-        response_data.update({
-            "access": str(serializer.validated_data.get('access')),
-            "refresh_token": str(RefreshToken.for_user(user)),
-        })
-        return Response(response_data, status=status.HTTP_200_OK)
+        # response_data.update({
+        #     "access": str(serializer.validated_data.get('access')),
+        #     "refresh_token": str(RefreshToken.for_user(user)),
+        # })
+        return Response({"user": response_data, "access": str(serializer.validated_data.get('access')),
+                         "refresh_token": str(RefreshToken.for_user(user)), },
+                        status=status.HTTP_200_OK)
 
 
 class UserSalaryUpdateView(generics.UpdateAPIView):

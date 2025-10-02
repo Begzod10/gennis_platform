@@ -797,31 +797,34 @@ class EncashmentsSchool(APIView):
 
 
 
-class OneDayReportView(APIView):
+from django.db.models import Sum, Prefetch, Q
 
+from django.db.models import Sum, F, Q
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.exceptions import ValidationError
+
+class OneDayReportView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
             validated_data = self._validate_request_data(request.data)
+            payment_type = request.query_params.get("payment_type")
 
             report_data = self._generate_report_data(
                 from_date=validated_data['from_date'],
                 to_date=validated_data['to_date'],
-                branch_id=validated_data['branch']
+                branch_id=validated_data['branch'],
+                payment_type=payment_type
             )
 
             return Response(report_data, status=status.HTTP_200_OK)
 
         except ValidationError as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        except Exception as e:
-            return Response(
-                {'error': 'Internal server error'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # except Exception:
+        #     return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def _validate_request_data(self, data):
         from_date = data.get('from_date')
@@ -837,109 +840,109 @@ class OneDayReportView(APIView):
             'branch': branch
         }
 
-    def _generate_report_data(self, from_date, to_date, branch_id):
+    def _generate_report_data(self, from_date, to_date, branch_id, payment_type=None):
         return {
-            "student_payments": self._get_student_payments_data(from_date, to_date, branch_id),
-            "teacher_salaries": self._get_teacher_salaries_data(from_date, to_date, branch_id),
-            "user_salaries": self._get_user_salaries_data(from_date, to_date, branch_id),
-            "overhead_payments": self._get_overhead_payments_data(from_date, to_date, branch_id),
+            "student_payments": self._get_student_payments_data(from_date, to_date, branch_id, payment_type),
+            "teacher_salaries": self._get_teacher_salaries_data(from_date, to_date, branch_id, payment_type),
+            "user_salaries": self._get_user_salaries_data(from_date, to_date, branch_id, payment_type),
+            "overhead_payments": self._get_overhead_payments_data(from_date, to_date, branch_id, payment_type),
             "new_students": self._get_new_students_data(from_date, to_date, branch_id),
-            # "new_groups": self._get_new_groups_data(from_date, to_date, branch_id),
             "new_studying_students": self._get_new_studying_students_data(from_date, to_date, branch_id),
             "new_leads": self._get_new_leads_data(from_date, to_date, branch_id),
         }
 
-    def _get_student_payments_data(self, from_date, to_date, branch_id):
-        student_payments = StudentPayment.objects.filter(
-            added_data__gte=from_date,
-            added_data__lte=to_date,
+    def _get_report_data(self, qs, fields, sum_field):
+        """
+        qs -> QuerySet
+        fields -> dict {alias: field_lookup}
+        sum_field -> str (umumiy summani olish uchun)
+        """
+        total = qs.aggregate(total=Sum(sum_field))["total"] or 0
+        data = list(qs.values(**fields))
+        return {"count": qs.count(), "total": total, "data": data}
+
+    def _get_student_payments_data(self, from_date, to_date, branch_id, payment_type=None):
+        qs = StudentPayment.objects.filter(
+            added_data__range=(from_date, to_date),
             branch_id=branch_id,
             deleted=False
-        ).select_related(
-            'student__user',
-            'payment_type'
-        )
+        ).select_related("student__user", "payment_type")
 
-        data = [
-            {
-                "name": payment.student.user.name,
-                "surname": payment.student.user.surname,
-                "payment": payment.payment_type.name,
-                "payment_sum": payment.payment_sum
-            }
-            for payment in student_payments
-        ]
+        if payment_type:
+            qs = qs.filter(payment_type__name=payment_type)
 
-        return {"count": student_payments.count(), "data": data}
+        fields = {
+            "name": F("student__user__name"),
+            "surname": F("student__user__surname"),
+            "payment": F("payment_type__name"),
+            "payment_sum1": F("payment_sum"),
+        }
+        return self._get_report_data(qs, fields, "payment_sum")
 
-    def _get_teacher_salaries_data(self, from_date, to_date, branch_id):
-        teacher_salaries = TeacherSalaryList.objects.filter(
-            date__gte=from_date,
-            date__lte=to_date,
+    def _get_teacher_salaries_data(self, from_date, to_date, branch_id, payment_type=None):
+        qs = TeacherSalaryList.objects.filter(
+            date__range=(from_date, to_date),
             branch_id=branch_id,
             deleted=False
-        ).select_related(
-            'teacher__user',
-            'payment'
-        )
+        ).select_related("teacher__user", "payment")
 
-        data = [
-            {
-                "name": salary.teacher.user.name,
-                "surname": salary.teacher.user.surname,
-                "salary": salary.salary,
-                "payment": salary.payment.name,
-                "comment": salary.comment,
-            }
-            for salary in teacher_salaries
-        ]
+        if payment_type:
+            qs = qs.filter(payment__name=payment_type)
 
-        return {"count": teacher_salaries.count(), "data": data}
+        fields = {
+            "name": F("teacher__user__name"),
+            "surname": F("teacher__user__surname"),
+            "salary1": F("salary"),
+            "payment1": F("payment__name"),
+            "comment1": F("comment"),
+        }
+        return self._get_report_data(qs, fields, "salary")
 
-    def _get_user_salaries_data(self, from_date, to_date, branch_id):
-        user_salaries = UserSalaryList.objects.filter(
-            date__gte=from_date,
-            date__lte=to_date,
+    def _get_user_salaries_data(self, from_date, to_date, branch_id, payment_type=None):
+        qs = UserSalaryList.objects.filter(
+            date__range=(from_date, to_date),
             branch_id=branch_id,
             deleted=False
-        ).select_related(
-            'user',
-            'payment_types'
-        )
+        ).select_related("user", "payment_types")
 
-        data = [
-            {
-                "name": salary.user.name,
-                "surname": salary.user.surname,
-                "salary": salary.salary,
-                "payment": salary.payment_types.name,
-                "comment": salary.comment,
-            }
-            for salary in user_salaries
-        ]
+        if payment_type:
+            qs = qs.filter(payment_types__name=payment_type)
 
-        return {"count": user_salaries.count(), "data": data}
+        fields = {
+            "name": F("user__name"),
+            "surname": F("user__surname"),
+            "salary1": F("salary"),
+            "payment": F("payment_types__name"),
+            "comment1": F("comment"),
+        }
+        return self._get_report_data(qs, fields, "salary")
 
-    def _get_overhead_payments_data(self, from_date, to_date, branch_id):
-        overhead_payments = Overhead.objects.filter(
-            created__gte=from_date,
-            created__lte=to_date,
+    def _get_overhead_payments_data(self, from_date, to_date, branch_id, payment_type=None):
+        qs = Overhead.objects.filter(
+            created__range=(from_date, to_date),
             branch_id=branch_id,
             deleted=False
-        ).select_related( 'type', 'payment')
+        ).select_related("type", "payment")
 
+        if payment_type:
+            qs = qs.filter(payment__name=payment_type)
+
+        fields = {
+            "name1": F("name"),
+            "payment1": F("payment__name"),
+            "payment_sum": F("price"),
+        }
         data = [
             {
-                "name": (overhead.name
-                         if overhead.name
-                         else overhead.type.name),
-                "payment": overhead.payment.name,
-                "payment_sum": overhead.price,
+                "name": item["name1"] if item["name1"] else o.type.name,
+                "payment": item["payment1"],
+                "payment_sum": item["payment_sum"]
             }
-            for overhead in overhead_payments
+            for o, item in zip(qs, qs.values(**fields))
         ]
 
-        return {"count": overhead_payments.count(), "data": data}
+        total = qs.aggregate(total=Sum("price"))["total"] or 0
+        return {"count": qs.count(), "total": total, "data": data}
 
     def _get_excluded_student_ids(self):
         deleted_student_ids = list(
@@ -949,91 +952,45 @@ class OneDayReportView(APIView):
         deleted_new_student_ids = list(
             DeletedNewStudent.objects.values_list('student_id', flat=True)
         )
-
         return deleted_student_ids + deleted_new_student_ids
 
     def _get_new_students_data(self, from_date, to_date, branch_id):
         excluded_ids = self._get_excluded_student_ids()
 
-        new_students = Student.objects.filter(
+        qs = Student.objects.filter(
             ~Q(id__in=excluded_ids),
             user__branch_id=branch_id,
             user__registered_date__range=(from_date, to_date),
             groups_student__isnull=True
-        ).select_related('user').distinct().order_by('-pk')
+        ).select_related('user').distinct()
 
-        data = [
-            {
-                "name": student.user.name,
-                "surname": student.user.surname,
-            }
-            for student in new_students
-        ]
-
-        return {"count": new_students.count(), "data": data}
-
-    # def _get_new_groups_data(self, from_date, to_date, branch_id):
-    #     new_groups = Group.objects.filter(
-    #         branch_id=branch_id,
-    #         created__range=(from_date, to_date),
-    #         deleted=False
-    #     )
-    #
-    #     data = [
-    #         {
-    #             "name": group.name,
-    #             "price": group.price,
-    #         }
-    #         for group in new_groups
-    #     ]
-    #
-    #     return {"count": new_groups.count(), "data": data}
+        data = list(qs.values(name=F("user__name"), surname=F("user__surname")))
+        return {"count": qs.count(), "data": data}
 
     def _get_new_studying_students_data(self, from_date, to_date, branch_id):
         deleted_student_ids = DeletedStudent.objects.filter(
-            student__groups_student__isnull=True,
-            deleted=False
+            student__groups_student__isnull=True, deleted=False
         ).values_list('student_id', flat=True)
 
-        deleted_new_student_ids = DeletedNewStudent.objects.values_list(
-            'student_id', flat=True
-        )
+        deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
 
-        new_studying_students = Student.objects.exclude(
+        qs = Student.objects.exclude(
             id__in=deleted_student_ids
         ).exclude(
             id__in=deleted_new_student_ids
         ).filter(
             groups_student__isnull=False,
             joined_group__range=(from_date, to_date)
-        ).select_related(
-            'user', 'class_number'
-        ).distinct().order_by('class_number__number')
+        ).select_related('user', 'class_number').distinct()
 
-        data = [
-            {
-                "name": student.user.name,
-                "surname": student.user.surname,
-            }
-            for student in new_studying_students
-        ]
-
-        return {"count": new_studying_students.count(), "data": data}
+        data = list(qs.values(name=F("user__name"), surname=F("user__surname")))
+        return {"count": qs.count(), "data": data}
 
     def _get_new_leads_data(self, from_date, to_date, branch_id):
-        new_leads = Lead.objects.filter(
+        qs = Lead.objects.filter(
             created__range=(from_date, to_date),
             branch_id=branch_id,
             deleted=False
         )
-
-        data = [
-            {
-                "name": lead.name,
-                "surname": lead.surname,
-                "phone": lead.phone,
-            }
-            for lead in new_leads
-        ]
-
-        return {"count": new_leads.count(), "data": data}
+        data = list(qs.values("name", "surname", "phone"))
+        return {"count": qs.count(), "data": data}

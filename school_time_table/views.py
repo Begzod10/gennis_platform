@@ -116,6 +116,7 @@ class TimeTableDataView(APIView):
                     student=student,
                     subject_id=subject_id
                 ).first()
+
                 student_subject_count = StudentSubjectCount.objects.filter(
                     date__gte=monday,
                     date__lte=friday,
