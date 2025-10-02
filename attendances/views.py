@@ -238,36 +238,40 @@ def normalize_periods_ensure_current_and_prev(
     """
     if now is None:
         now = datetime.now()
-    cur_year, cur_month = now.year, now.month
+    cur_year, cur_month, cur_day = now.year, now.month, now.day
 
-    # compute previous month/year
+    # previous month/year
     if cur_month == 1:
         prev_month, prev_year = 12, cur_year - 1
     else:
         prev_month, prev_year = cur_month - 1, cur_year
 
-    # months we must ensure exist
     must_have: List[Tuple[int, int]] = [(cur_year, cur_month), (prev_year, prev_month)]
 
-    normalized: Dict[int, List[dict]] = {}
-    # 1) fold all existing months, merging duplicates
+    # Fold all existing months, merging duplicates
     folded: Dict[int, Dict[int, set[int]]] = {}  # year -> month -> days(set)
-
     for raw_year, months in (existing_periods or {}).items():
         year = int(raw_year)
         ymap = folded.setdefault(year, {})
         for item in months or []:
             m = int(item["month"])
-            days = set(map(int, item.get("days", [])))
+            days = set(int(d) for d in item.get("days", []))
             ymap[m] = ymap.get(m, set()).union(days)
 
-    # 2) ensure required months exist (add if missing)
+    # Ensure required months exist
     for y, m in must_have:
         ymap = folded.setdefault(y, {})
         if m not in ymap:
             ymap[m] = set(generate_workdays(y, m))
 
-    # 3) convert back to the target structure (sorted)
+    # ⛔ Trim future days for the *current* month of the *current* year
+    if cur_year in folded and cur_month in folded[cur_year]:
+        folded[cur_year][cur_month] = {
+            d for d in folded[cur_year][cur_month] if d <= cur_day
+        }
+
+    # Back to the target structure (sorted)
+    normalized: Dict[int, List[dict]] = {}
     for y, ymap in folded.items():
         normalized[y] = [
             {"month": m, "days": sorted(days)}
