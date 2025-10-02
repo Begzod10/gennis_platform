@@ -249,22 +249,41 @@ class AttendancePeriodsView(APIView):
             })
 
         periods = {}
-        for s in summaries:
-            if s.year not in periods:
-                periods[s.year] = []
-            periods[s.year].append({
-                "month": s.month,
-                "days": generate_workdays(s.year, s.month)
-            })
+        now = datetime.now()
+        CUR_YEAR = now.year
+        CUR_MONTH = now.month
+
+        # 1) de-dup months per year (merge days)
+        normalized: dict[int, list[dict]] = {}
+        for year, months in periods.items():
+            by_month: dict[int, set[int]] = {}
+            for item in months or []:
+                m = int(item["month"])
+                days = set(item.get("days", []))
+                by_month[m] = by_month.get(m, set()) | days
+
+            if year == CUR_YEAR:
+                if CUR_MONTH not in by_month:
+                    by_month[CUR_MONTH] = set(generate_workdays(CUR_YEAR, CUR_MONTH))
+
+            normalized[year] = [
+                {"month": m, "days": sorted(days)}
+                for m, days in sorted(by_month.items(), key=lambda kv: kv[0])
+            ]
+
+        if CUR_YEAR not in normalized:
+            normalized[CUR_YEAR] = [{
+                "month": CUR_MONTH,
+                "days": sorted(generate_workdays(CUR_YEAR, CUR_MONTH))
+            }]
 
         result = {
-            "group_id": group_id,
+            "group_id": group_id,  # keep your original "167" string if that's what you pass in
             "periods": [
-                {"year": year, "months": months}
-                for year, months in periods.items()
+                {"year": y, "months": normalized[y]}
+                for y in sorted(normalized.keys())
             ]
         }
-
         return Response(result, status=status.HTTP_200_OK)
 
 
