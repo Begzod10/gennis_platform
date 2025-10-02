@@ -1,4 +1,3 @@
-
 from datetime import timedelta, datetime
 from django.utils import timezone
 
@@ -8,7 +7,6 @@ from rest_framework import status
 from apps.investor.models import InvestorMonthlyReport
 from user.models import CustomUser, CustomAutoGroup
 from rest_framework.permissions import IsAuthenticated
-
 
 
 class BranchInfoView(APIView):
@@ -126,7 +124,6 @@ class InvestorView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
-
 class InvestorReportView(APIView):
     permission_classes = [IsAuthenticated]
     """
@@ -144,8 +141,6 @@ class InvestorReportView(APIView):
             row = InvestorMonthlyReport.objects.filter(branch_id=branch_id).order_by("-month").all()
         else:
             row = InvestorMonthlyReport.objects.filter(branch__isnull=True).order_by("-month").all()
-        print(branch_id)
-        print(type_data)
         if type_data == "payments":
             data = {
                 "period": {"from": row.first().month, "to": row.last().month},
@@ -175,4 +170,3 @@ class InvestorReportView(APIView):
                 "new_students": row.last().new_students_count,
             }
             return Response(data, status=status.HTTP_200_OK)
-
