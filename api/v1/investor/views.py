@@ -74,7 +74,6 @@ class InvestorView(APIView):
             row = InvestorMonthlyReport.objects.filter(month=start, branch__isnull=True).first()
 
         snapshot_available = row is not None
-        branch_id = 8
 
         def zero_payload():
             return {
@@ -145,7 +144,8 @@ class InvestorReportView(APIView):
             row = InvestorMonthlyReport.objects.filter(branch_id=branch_id).order_by("-month").all()
         else:
             row = InvestorMonthlyReport.objects.filter(branch__isnull=True).order_by("-month").all()
-
+        print(branch_id)
+        print(type_data)
         if type_data == "payments":
             data = {
                 "period": {"from": row.first().month, "to": row.last().month},
