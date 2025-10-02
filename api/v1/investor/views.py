@@ -32,14 +32,14 @@ class BranchInfoView(APIView):
         # If you want to ensure it also matches the same branch: add .filter(user__branch=branch)
         row = (CustomAutoGroup.objects
                .select_related("group")
-               .filter(user=user)               # <-- was .filter(branch=branch, user=user) (invalid)
+               .filter(user=user)  # <-- was .filter(branch=branch, user=user) (invalid)
                .values("group_id", "group__name", "share")
                .first())
 
         info = {
-            "branch": [{"id": branch.id, "name": branch.name}],
+            "branch": [{"id": branch.id, "name": branch.name, "share": row["share"] if row else None}],
             "group": {"id": row["group_id"], "name": row["group__name"]} if row else None,
-            "share": row["share"] if row else None,
+
         }
         return Response(info, status=status.HTTP_200_OK)
 
