@@ -229,7 +229,7 @@ class AttendancePeriodsView(APIView):
     def get(self, request):
         group_id = request.query_params.get("group_id")
 
-        summaries = StudentMonthlySummary.objects.filter(group_id=group_id).order_by("year", "month")
+        summaries = StudentMonthlySummary.objects.filter(group_id=group_id).order_by("year", "month").distinct()
 
         if not summaries.exists():
             today = date.today()
