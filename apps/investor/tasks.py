@@ -1,5 +1,3 @@
-from datetime import timedelta
-from django.utils import timezone
 from django.db import transaction
 from django.db.models import Sum, F, IntegerField, ExpressionWrapper
 from django.db.models.functions import Coalesce
@@ -10,12 +8,33 @@ from system.models import System
 from students.models import DeletedStudent, DeletedNewStudent
 from group.models import Group
 from django.db.models import Prefetch
+from datetime import date, timedelta
+from typing import Optional, Tuple
+from django.utils import timezone
 
 
-def _month_bounds():
-    start = timezone.localdate().replace(day=1)
-    nxt = (start + timedelta(days=32)).replace(day=1)
-    return start, nxt
+def month_bounds(
+        target: Optional[date] = None,
+        months_ago: int = 1,
+        inclusive_end: bool = True,
+) -> Tuple[date, date]:
+    if target is None:
+        target = timezone.localdate()
+
+    first_of_month = target.replace(day=1)
+
+    y = first_of_month.year
+    m = first_of_month.month - months_ago
+    while m <= 0:
+        y -= 1
+        m += 12
+
+    month_start = date(y, m, 1)
+    next_month_start = (month_start + timedelta(days=32)).replace(day=1)
+
+    if inclusive_end:
+        return month_start, next_month_start - timedelta(days=1)
+    return month_start, next_month_start
 
 
 def _compute_totals(start, nxt, branch_id=None):
@@ -75,13 +94,13 @@ def _compute_totals(start, nxt, branch_id=None):
     )
     by_id = {r["type_id"]: int(r["total"] or 0) for r in rows}
 
-    gaz_total     = by_id.get(TYPE_IDS["gaz"], 0)
-    svet_total    = by_id.get(TYPE_IDS["svet"], 0)
-    suv_total     = by_id.get(TYPE_IDS["suv"], 0)
-    arenda_total  = by_id.get(TYPE_IDS["arenda"], 0)
+    gaz_total = by_id.get(TYPE_IDS["gaz"], 0)
+    svet_total = by_id.get(TYPE_IDS["svet"], 0)
+    suv_total = by_id.get(TYPE_IDS["suv"], 0)
+    arenda_total = by_id.get(TYPE_IDS["arenda"], 0)
     oshxona_total = by_id.get(TYPE_IDS["oshxona"], 0)
     reklama_total = by_id.get(TYPE_IDS["reklama"], 0)
-    boshqa_total  = by_id.get(TYPE_IDS["boshqa"], 0)
+    boshqa_total = by_id.get(TYPE_IDS["boshqa"], 0)
 
     capital = Capital.objects.filter(
         deleted=False, added_date__gte=start, added_date__lt=nxt, **branch_filter
@@ -178,7 +197,6 @@ def _compute_totals(start, nxt, branch_id=None):
     }
 
 
-
 @shared_task(name="apps.investor.tasks.snapshot_investor_month")
 def snapshot_investor_month():
     """
@@ -190,19 +208,19 @@ def snapshot_investor_month():
     InvestorMonthlyReport = django_apps.get_model('investor', 'InvestorMonthlyReport')
     Branch = django_apps.get_model('branch', 'Branch')
 
-    start, nxt = _month_bounds()
+    start, end = month_bounds()
     get_system = System.objects.filter(name="school").first()
     get_location = Location.objects.filter(system=get_system).all()
     with transaction.atomic():
         # Global (all branches)
-        totals_global = _compute_totals(start, nxt, branch_id=None)
+        totals_global = _compute_totals(start, end, branch_id=None)
         InvestorMonthlyReport.objects.update_or_create(
             month=start, branch=None, defaults=totals_global
         )
 
         # Per-branch
         for b in Branch.objects.filter(location__in=get_location).all().only("id"):
-            totals = _compute_totals(start, nxt, branch_id=b.id)
+            totals = _compute_totals(start, end, branch_id=b.id)
             InvestorMonthlyReport.objects.update_or_create(
                 month=start, branch_id=b.id, defaults=totals
             )
