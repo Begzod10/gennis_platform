@@ -586,16 +586,20 @@ class StudentCharityModelView(APIView):
 
         if attendance_per_month.remaining_debt >= payment_sum:
             attendance_per_month.remaining_debt -= payment_sum
-            attendance_per_month.payment += payment_sum
-            attendance_per_month.discount = 0
-            existing_payment = StudentPayment.objects.filter(attendance=attendance_per_month, student_id=student_id,
-                                                             branch_id=branch, deleted=False,
-                                                             status=True).all()
+
+            discounts = StudentPayment.objects.filter(attendance=attendance_per_month, student_id=student_id,
+                                                      branch_id=branch, deleted=False,
+                                                      status=True).all()
+            student_payments = StudentPayment.objects.filter(attendance=attendance_per_month, student_id=student_id,
+                                                             deleted=False).all()
+            total_payments = 0
             total_discount = 0
-            for payment in existing_payment:
+            for payment in discounts:
                 total_discount += payment.payment_sum
 
-            # if not existing_payment:
+            for payment in student_payments:
+                total_payments += payment.payment_sum
+
             student_payment = StudentPayment.objects.create(student_id=student_id, payment_sum=payment_sum,
                                                             branch_id=branch, status=request.data['status'],
                                                             payment_type_id=request.data['payment_type'], date=date,
@@ -604,10 +608,10 @@ class StudentCharityModelView(APIView):
             student_payment.save()
             total_discount += payment_sum
             attendance_per_month.discount = total_discount
+            attendance_per_month.payment = total_payments
+            attendance_per_month.remaining_debt = attendance_per_month.total_debt - total_payments
             attendance_per_month.save()
-            # else:
-            #     existing_payment.payment_sum += payment_sum
-            #     existing_payment.save()
+
             if attendance_per_month.remaining_debt == 0:
                 attendance_per_month.status = True
 
