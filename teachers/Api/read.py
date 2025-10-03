@@ -37,7 +37,7 @@ class TeacherGroupStatisticsListView(generics.ListAPIView):
 class TeacherListView(QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     app_name = "O'qtuvchilar"
-    filter_mappings = {'branch': "user__branch_id", 'age': 'user__birth_date', "subject": 'subject__id',
+    filter_mappings = {'branch': "branches__in", 'age': 'user__birth_date', "subject": 'subject__id',
         'language': 'user__language_id', 'deleted': 'deleted',
 
     }
