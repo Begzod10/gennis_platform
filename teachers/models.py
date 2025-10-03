@@ -133,6 +133,8 @@ class TeacherRequest(models.Model):
         related_name='teacher_requests'
     )
     text = models.TextField()
+    address = models.TextField(null=True)
+    price = models.IntegerField(null=True)
     comment = models.TextField(null=True, blank=True)
     status = models.CharField(
         max_length=20,
