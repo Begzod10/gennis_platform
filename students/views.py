@@ -24,12 +24,16 @@ from branch.models import Branch
 from permissions.response import QueryParamFilterMixin
 from students.serializer.lists import ActiveListSerializer, ActiveListDeletedStudentSerializer
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
-from .serializers import StudentCharity,get_remaining_debt_for_student
-from silk.profiling.profiler import silk_profile
+from .serializers import StudentCharity, get_remaining_debt_for_student
+
 from .serializers import (StudentListSerializer,
                           DeletedNewStudentListSerializer, StudentPaymentListSerializer, StudentClassNumberSerializer)
 
 from .serializers import (StudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
+
+from django.db.models import Prefetch
+
+from group.models import Group
 
 
 class StudentListView(ListAPIView):
@@ -103,12 +107,6 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
         )
 
 
-from silk.profiling.profiler import silk_profile
-
-
-from django.db.models import Prefetch
-from silk.profiling.profiler import silk_profile
-from group.models import Group
 class ActiveStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ActiveListSerializer
@@ -152,6 +150,7 @@ class ActiveStudents(QueryParamFilterMixin, ListAPIView):
         ).distinct().order_by('class_number__number')
 
         return active_students
+
 
 class CreateContractView(APIView):
     permission_classes = [IsAuthenticated]
@@ -563,7 +562,7 @@ class StudentCharityModelView(APIView):
         month = data.pop('date')
         month_number = list(calendar.month_name).index(month.capitalize())
         old_months = [9, 10, 11, 12]
-        new_months = [1, 2, 3, 4, 5, 6,7]
+        new_months = [1, 2, 3, 4, 5, 6, 7]
         current_year = int(data['year'])
         # if month_number in old_months:
         #     current_year -= 1
@@ -587,13 +586,31 @@ class StudentCharityModelView(APIView):
 
         if attendance_per_month.remaining_debt >= payment_sum:
             attendance_per_month.remaining_debt -= payment_sum
-            attendance_per_month.payment += payment_sum
+
+            discounts = StudentPayment.objects.filter(attendance=attendance_per_month, student_id=student_id,
+                                                      branch_id=branch, deleted=False,
+                                                      status=True).all()
+            student_payments = StudentPayment.objects.filter(attendance=attendance_per_month, student_id=student_id,
+                                                             deleted=False).all()
+            total_payments = 0
+            total_discount = 0
+            for payment in discounts:
+                total_discount += payment.payment_sum
+
+            for payment in student_payments:
+                total_payments += payment.payment_sum
+
             student_payment = StudentPayment.objects.create(student_id=student_id, payment_sum=payment_sum,
                                                             branch_id=branch, status=request.data['status'],
                                                             payment_type_id=request.data['payment_type'], date=date,
                                                             attendance=attendance_per_month,
                                                             reason=request.data['reason'])
             student_payment.save()
+            total_discount += payment_sum
+            attendance_per_month.discount = total_discount
+            attendance_per_month.payment = total_payments
+            attendance_per_month.remaining_debt = attendance_per_month.total_debt - total_payments
+            attendance_per_month.save()
 
             if attendance_per_month.remaining_debt == 0:
                 attendance_per_month.status = True

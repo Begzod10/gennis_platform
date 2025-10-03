@@ -19,6 +19,7 @@ class InvestorMonthlyReport(models.Model):
     attendance_remaining_debt = models.BigIntegerField(default=0)
     attendance_discount_sum = models.BigIntegerField(default=0)
     attendance_discount_pct = models.IntegerField(default=0)  # 0..10
+    total_students = models.IntegerField(default=0)
 
     # ---- Totals (integers like your source models) ----
     student_payment_sum = models.BigIntegerField(default=0)  # Sum of StudentPayment.payment_sum
@@ -34,6 +35,13 @@ class InvestorMonthlyReport(models.Model):
     capital_down_cost_total = models.BigIntegerField(default=0)  # Sum of Capital.total_down_cost
 
     new_students_count = models.IntegerField(default=0)  # Count of Student joined in month
+    overhead_gaz_total = models.BigIntegerField(default=0)
+    overhead_svet_total = models.BigIntegerField(default=0)
+    overhead_suv_total = models.BigIntegerField(default=0)
+    overhead_arenda_total = models.BigIntegerField(default=0)
+    overhead_oshxona_total = models.BigIntegerField(default=0)
+    overhead_reklama_total = models.BigIntegerField(default=0)
+    overhead_boshqa_total = models.BigIntegerField(default=0)
 
     # ---- Metadata ----
     created_at = models.DateTimeField(auto_now_add=True)

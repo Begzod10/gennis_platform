@@ -1,20 +1,43 @@
-from rest_framework.views import APIView
-from students.models import StudentPayment, Student
-from overhead.models import Overhead
-from capital.models import Capital
-from teachers.models import TeacherSalaryList
-from user.models import UserSalaryList
 from datetime import timedelta, datetime
 from django.utils import timezone
-from django.db.models import Sum, F, IntegerField, ExpressionWrapper
-from django.db.models.functions import Coalesce
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from apps.investor.models import InvestorMonthlyReport
+from user.models import CustomUser, CustomAutoGroup
+from rest_framework.permissions import IsAuthenticated
+
+
+class BranchInfoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        branch = getattr(user, "branch", None)
+
+        if branch is None:
+            return Response({"detail": "User has no branch assigned."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Get the row that belongs to THIS user.
+        # If you want to ensure it also matches the same branch: add .filter(user__branch=branch)
+        row = (CustomAutoGroup.objects
+               .select_related("group")
+               .filter(user=user)  # <-- was .filter(branch=branch, user=user) (invalid)
+               .values("group_id", "group__name", "share")
+               .first())
+
+        info = {
+            "branch": [{"id": branch.id, "name": branch.name, "share": row["share"] if row else None}],
+            "group": {"id": row["group_id"], "name": row["group__name"]} if row else None,
+
+        }
+        return Response(info, status=status.HTTP_200_OK)
 
 
 class InvestorView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     GET /api/investor-report?branch=3
 
@@ -65,6 +88,8 @@ class InvestorView(APIView):
                     "total_discount": 0,
                     "total_extra_payment": 0,
                     "grand_total": 0,
+                    "total_debt": 0,
+                    "remaining_debt": 0,
                 },
                 "teacher_salaries": {"total_salary": 0},
                 "user_salaries": {"total_user_salary": 0},
@@ -74,12 +99,6 @@ class InvestorView(APIView):
                     "total_capital_down_cost": 0,
                 },
                 "new_students_count": 0,
-                "attendance": {
-                    "total_debt": 0,
-                    "remaining_debt": 0,
-                    "discount_sum": 0,
-                    "discount_pct": 0,  # 0..100
-                },
             }
 
         if not snapshot_available:
@@ -88,33 +107,73 @@ class InvestorView(APIView):
         data = {
             "period": {"from": start.isoformat(), "to_lt": nxt.isoformat()},
             "filters": {"branch": branch_id},
-            "snapshot_available": True,
-
-            "student_payments": {
-                "total_payment_sum": row.student_payment_sum,
-                "total_extra_payment": row.student_extra_payment_sum,
-                "grand_total": row.student_payment_grand_total,
-                "total_debt": getattr(row, "attendance_total_debt", 0),
-                "remaining_debt": getattr(row, "attendance_remaining_debt", 0),
-                "discount_sum": getattr(row, "attendance_discount_sum", 0),
-                "discount_pct": getattr(row, "attendance_discount_pct", 0),
+            "payments": {
+                "due_this_month": getattr(row, "attendance_total_debt", 0),
+                "due_this_day": row.student_payment_sum,
+                "outstanding": getattr(row, "attendance_remaining_debt", 0),
             },
-
-            # Still returning zeros unless you add discount fields to the model.
-            "student_per_month_discount": {
-                "total_discount": 0,
-                "total_extra_payment": 0,
-                "grand_total": 0,
+            "expenses": {
+                "salaries": row.teacher_salaries_total + row.user_salaries_total,
+                "additional": row.overhead_total - row.overhead_oshxona_total,
+                "cafeteria": row.overhead_oshxona_total,
+                "capital": row.capital_price_total,
             },
-
-            "teacher_salaries": {"total_salary": row.teacher_salaries_total},
-            "user_salaries": {"total_user_salary": row.user_salaries_total},
-            "overheads": {"total_overhead": row.overhead_total},
-            "capital": {
-                "total_capital_price": row.capital_price_total,
-                "total_capital_down_cost": row.capital_down_cost_total,
-            },
-            "new_students_count": row.new_students_count,
-            # NEW: attendance aggregates (must exist in your model/migrations)
+            "students": row.total_students,
+            "new_students": row.new_students_count,
         }
         return Response(data, status=status.HTTP_200_OK)
+
+
+class InvestorReportView(APIView):
+    permission_classes = [IsAuthenticated]
+    """
+    GET /api/investor-report?branch=3
+
+    Reads precomputed monthly totals from InvestorMonthlyReport (current month).
+    """
+
+    def get(self, request):
+        type_data = request.query_params.get("type")
+        branch_id = request.query_params.get("branch")  # optional
+
+        # Fetch snapshot row (global when branch is not provided)
+        if branch_id:
+            row = InvestorMonthlyReport.objects.filter(branch_id=branch_id).order_by("-month").all()
+        else:
+            row = InvestorMonthlyReport.objects.filter(branch__isnull=True).order_by("-month").all()
+        datas = []
+        if type_data == "payments":
+            for r in row:
+                data = {
+                    "month": r.month,
+                    "filters": {"branch": branch_id},
+                    "payments": {
+                        "due_this_month": r.attendance_total_debt,
+                        "due_this_day": r.student_payment_sum,
+                        "outstanding": r.attendance_remaining_debt,
+                    }}
+                datas.append(data)
+            return Response(datas, status=status.HTTP_200_OK)
+        elif type_data == "expenses":
+            for r in row:
+                data = {
+                    "month": r.month,
+                    "filters": {"branch": branch_id},
+                    "expenses": {
+                        "salaries": r.teacher_salaries_total + r.user_salaries_total,
+                        "additional": r.overhead_total - r.overhead_oshxona_total,
+                        "cafeteria": r.overhead_oshxona_total,
+                        "capital": r.capital_price_total,
+                    }}
+                datas.append(data)
+            return Response(datas, status=status.HTTP_200_OK)
+        elif type_data == "students":
+            for r in row:
+                data = {
+                    "month": r.month,
+                    "filters": {"branch": branch_id},
+                    "students": r.total_students,
+                    "new_students": r.new_students_count,
+                }
+                datas.append(data)
+            return Response(datas, status=status.HTTP_200_OK)

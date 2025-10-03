@@ -8,7 +8,6 @@ from payments.models import PaymentTypes
 class OverheadType(models.Model):
     name = models.CharField(null=True, blank=True)
     order = models.IntegerField(null=True, blank=True)
-    test = models.CharField(null=True, blank=True)
 
 
 @receiver(post_migrate)
