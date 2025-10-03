@@ -103,6 +103,6 @@ class TeacherRequestSerializer(serializers.ModelSerializer):
             'id', 'teacher', 'teacher_name',
             'branch', 'branch_name',
             'text', 'comment', 'status',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at', 'price', 'address'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'teacher_name', 'branch_name']
