@@ -589,6 +589,7 @@ class StudentCharityModelView(APIView):
             attendance_per_month.payment += payment_sum
             attendance_per_month.discount = 0
             existing_payment = StudentPayment.objects.filter(attendance=attendance_per_month, student_id=student_id,
+                                                             branch_id=branch, deleted=False,
                                                              status=True).first()
             if not existing_payment:
                 student_payment = StudentPayment.objects.create(student_id=student_id, payment_sum=payment_sum,
