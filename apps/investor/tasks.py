@@ -208,7 +208,7 @@ def snapshot_investor_month():
     InvestorMonthlyReport = django_apps.get_model('investor', 'InvestorMonthlyReport')
     Branch = django_apps.get_model('branch', 'Branch')
 
-    start, end = month_bounds()
+    start, end = month_bounds(months_ago=0, inclusive_end=True)
     get_system = System.objects.filter(name="school").first()
     get_location = Location.objects.filter(system=get_system).all()
     with transaction.atomic():
