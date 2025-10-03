@@ -152,10 +152,10 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute=0, hour=0, day_of_week="saturday"),
         # "schedule": crontab(minute="*/1"),
     },
-    # "update-students-debts": {
-    #     "task": "students.tasks.update_student_debt",
-    #     "schedule": crontab(minute="*/1"),
-    # }
+    "update-students-debts": {
+        "task": "students.tasks.update_student_debt",
+        "schedule": crontab(minute="*/1"),
+    },
 
     "investor_report_daily": {
         "task": "apps.investor.tasks.snapshot_investor_month",
