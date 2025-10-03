@@ -141,32 +141,39 @@ class InvestorReportView(APIView):
             row = InvestorMonthlyReport.objects.filter(branch_id=branch_id).order_by("-month").all()
         else:
             row = InvestorMonthlyReport.objects.filter(branch__isnull=True).order_by("-month").all()
+        datas = []
         if type_data == "payments":
-            data = {
-                "period": {"from": row.first().month, "to": row.last().month},
-                "filters": {"branch": branch_id},
-                "payments": {
-                    "due_this_month": row.last().attendance_total_debt,
-                    "due_this_day": row.last().student_payment_sum,
-                    "outstanding": row.last().attendance_remaining_debt,
-                }}
-            return Response(data, status=status.HTTP_200_OK)
+            for r in row:
+                data = {
+                    "month": r.month,
+                    "filters": {"branch": branch_id},
+                    "payments": {
+                        "due_this_month": r.attendance_total_debt,
+                        "due_this_day": r.student_payment_sum,
+                        "outstanding": r.attendance_remaining_debt,
+                    }}
+                datas.append(data)
+            return Response(datas, status=status.HTTP_200_OK)
         elif type_data == "expenses":
-            data = {
-                "period": {"from": row.first().month, "to": row.last().month},
-                "filters": {"branch": branch_id},
-                "expenses": {
-                    "salaries": row.last().teacher_salaries_total + row.last().user_salaries_total,
-                    "additional": row.last().overhead_total - row.last().overhead_oshxona_total,
-                    "cafeteria": row.last().overhead_oshxona_total,
-                    "capital": row.last().capital_price_total,
-                }}
-            return Response(data, status=status.HTTP_200_OK)
+            for r in row:
+                data = {
+                    "month": r.month,
+                    "filters": {"branch": branch_id},
+                    "expenses": {
+                        "salaries": r.teacher_salaries_total + r.user_salaries_total,
+                        "additional": r.overhead_total - r.overhead_oshxona_total,
+                        "cafeteria": r.overhead_oshxona_total,
+                        "capital": r.capital_price_total,
+                    }}
+                datas.append(data)
+            return Response(datas, status=status.HTTP_200_OK)
         elif type_data == "students":
-            data = {
-                "period": {"from": row.first().month, "to": row.last().month},
-                "filters": {"branch": branch_id},
-                "students": row.last().total_students,
-                "new_students": row.last().new_students_count,
-            }
-            return Response(data, status=status.HTTP_200_OK)
+            for r in row:
+                data = {
+                    "month": r.month,
+                    "filters": {"branch": branch_id},
+                    "students": r.total_students,
+                    "new_students": r.new_students_count,
+                }
+                datas.append(data)
+            return Response(datas, status=status.HTTP_200_OK)
