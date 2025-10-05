@@ -154,7 +154,8 @@ CELERY_BEAT_SCHEDULE = {
     },
     "update-students-debts": {
         "task": "students.tasks.update_student_debt",
-        "schedule": crontab(minute=0, hour=0, day_of_month=1),
+
+        "schedule": crontab(minute=0, hour=0, day_of_month="1", month_of_year="*"),
     },
 
     "investor_report_daily": {
