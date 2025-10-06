@@ -259,6 +259,57 @@ class StudentHistoryGroupsListSerializer(serializers.ModelSerializer):
         fields = ['id', 'student', 'group', 'teacher', 'reason', 'joined_day', 'left_day']
 
 
+class StudentHistoryGroupsListSerializer2(serializers.ModelSerializer):
+    student = serializers.SerializerMethodField()
+    group = serializers.SerializerMethodField()
+    teacher = serializers.SerializerMethodField()
+    reason = serializers.CharField(required=False)
+
+    class Meta:
+        model = StudentHistoryGroups
+        fields = [
+            'id',
+            'student',
+            'group',
+            'teacher',
+            'reason',
+            'joined_day',
+            'left_day',
+        ]
+
+    def get_student(self, obj):
+        student = getattr(obj, 'student', None)
+        if not student:
+            return None
+        user = getattr(student, 'user', None)
+        return {
+            "id": student.id,
+            "name": getattr(user, 'name', None),
+            "surname": getattr(user, 'surname', None)
+        }
+
+    def get_group(self, obj):
+        group = getattr(obj, 'group', None)
+        if not group:
+            return None
+        return {
+            "id": group.id,
+            "name": group.name,
+            "price": group.price
+        }
+
+    def get_teacher(self, obj):
+        teacher = getattr(obj, 'teacher', None)
+        if not teacher:
+            return None
+        user = getattr(teacher, 'user', None)
+        return {
+            "id": teacher.id,
+            "name": getattr(user, 'name', None),
+            "surname": getattr(user, 'surname', None)
+        }
+
+
 class StudentCharitySerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
