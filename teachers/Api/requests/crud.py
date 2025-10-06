@@ -14,11 +14,19 @@ class TeacherRequestViewSet(viewsets.ModelViewSet):
         teacher_id = self.request.query_params.get('turon_id')
         # turon_old_id = self.request.query_params.get('turon_old_id')
         status = self.request.query_params.get('status')
+        deleted = self.request.query_params.get('deleted')
+
         if branch_id:
             queryset = queryset.filter(branch_id=branch_id)
 
         if teacher_id:
             queryset = queryset.filter(teacher_id=teacher_id)
+        if deleted is not None:
+            # deleted query param true/false bo‘lishi mumkin
+            if deleted.lower() in ['true', '1', 'yes']:
+                queryset = queryset.filter(deleted=True)
+            elif deleted.lower() in ['false', '0', 'no']:
+                queryset = queryset.filter(deleted=False)
 
         # if turon_old_id:
         #     try:
