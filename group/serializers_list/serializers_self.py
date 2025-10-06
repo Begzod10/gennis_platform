@@ -101,8 +101,9 @@ class GroupListSerialize2r(serializers.ModelSerializer):
         group_subjects = GroupSubjects.objects.filter(group=obj).all()
         for st in students:
             for group_subject in group_subjects:
-                StudentSubject.objects.get_or_create(student=st,
-                                                     group_subjects=group_subject,
-                                                     hours=group_subject.hours)
+                if group_subject.subject:
+                    StudentSubject.objects.get_or_create(student=st,
+                                                         group_subjects=group_subject,
+                                                         hours=group_subject.hours)
 
         return ActiveListSerializer(students, many=True).data
