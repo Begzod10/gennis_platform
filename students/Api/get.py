@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 
 from rooms.models import Room
 from students.models import StudentPayment, StudentHistoryGroups, StudentCharity, Student, DeletedStudent
-from students.serializers import StudentPaymentListSerializer, StudentHistoryGroupsListSerializer, \
+from students.serializers import StudentPaymentListSerializer, StudentHistoryGroupsListSerializer,StudentHistoryGroupsListSerializer2, \
     StudentCharityListSerializer, StudentListSerializer
 from subjects.models import Subject
 from teachers.models import Teacher
@@ -84,7 +84,7 @@ class StudentHistoryGroupsAPIView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     queryset = StudentHistoryGroups.objects.all()
-    serializer_class = StudentHistoryGroupsListSerializer
+    serializer_class = StudentHistoryGroupsListSerializer2
 
     def retrieve(self, request, *args, **kwargs):
         student_history_groups = self.get_object()
