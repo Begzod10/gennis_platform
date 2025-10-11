@@ -3,6 +3,7 @@ from rest_framework import serializers
 from group.models import Group, GroupSubjects
 from students.models import Student, StudentSubject
 from teachers.models import Teacher
+from django.db import transaction
 
 
 class AddClassesSerializers(serializers.ModelSerializer):
@@ -98,11 +99,24 @@ class GroupListSerialize2r(serializers.ModelSerializer):
     def get_students(self, obj):
         students = obj.students.all()
         from students.serializer.lists import ActiveListSerializer
-        group_subjects = GroupSubjects.objects.filter(group=obj).all()
-        for st in students:
-            for group_subject in group_subjects:
-                StudentSubject.objects.get_or_create(student=st,
-                                                     group_subjects=group_subject,
-                                                     hours=group_subject.hours)
+
+        group_subjects = (
+            GroupSubjects.objects
+            .filter(group=obj)
+            .select_related("subject")  # FK prefetch; hours is int -> don't select_related
+        )
+
+        with transaction.atomic():
+            for st in students:
+                for gs in group_subjects:
+                    # gs.subject is REQUIRED for StudentSubject; set it via defaults
+                    StudentSubject.objects.get_or_create(
+                        student=st,
+                        group_subjects=gs,  # lookup fields
+                        defaults={
+                            "subject": gs.subject,  # ✅ prevents NULL subject_id
+                            "hours": gs.hours or 0,
+                        },
+                    )
 
         return ActiveListSerializer(students, many=True).data

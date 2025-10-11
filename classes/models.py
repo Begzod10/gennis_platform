@@ -49,9 +49,9 @@ class ClassNumberSubjects(models.Model):
 def create_default_overhead_types(sender, **kwargs):
     from branch.models import Branch
     branches = Branch.objects.filter(location__system__name='school')
-    # for branch in branches:
-    #     for i in range(1, 12):
-    #         ClassNumber.objects.get_or_create(number=i, branch=branch)
+    for branch in branches:
+        for i in range(1, 12):
+            ClassNumber.objects.get_or_create(number=i, branch=branch)
 
 
 class ClassCoin(models.Model):
@@ -60,6 +60,7 @@ class ClassCoin(models.Model):
     remaining_coin = models.IntegerField()
     month_date = models.DateField()
     group = models.ForeignKey(Group, on_delete=models.SET_NULL, null=True)
+    test_for_number = models.IntegerField(null=True)
 
     class Meta:
         ordering = ['id']
