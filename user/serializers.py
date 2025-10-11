@@ -343,6 +343,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'birth_date': user.birth_date.isoformat() if user.birth_date else None,
                 'phone_number': user.phone,
                 'branch_id': user.branch_id,
+                'observer': user.observer,
                 'subjects': [{
                     'id': subject.id,
                     'name': subject.name

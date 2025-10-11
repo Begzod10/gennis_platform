@@ -36,17 +36,25 @@ class DeleteAttendanceMonthApiView(generics.RetrieveUpdateDestroyAPIView):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         data = request.data
-        attendance = AttendancePerMonth.objects.filter(id=instance.id).first()
-        attendance.old_money = attendance.total_debt
-        attendance.total_debt = data['total_debt']
-        attendance.save()
-        sum = get_remaining_debt_for_student(attendance.student_id)
-        attendances = AttendancePerMonth.objects.filter(id=instance.id).first()
+
+        total_debt = data.get('total_debt')
+        if total_debt is None:
+            return Response({'error': 'total_debt kiritilishi kerak'}, status=status.HTTP_400_BAD_REQUEST)
+
+        instance.old_money = instance.total_debt
+        instance.total_debt = total_debt
+        instance.save()
+
+        remaining_debt = get_remaining_debt_for_student(instance.student_id)
 
         return Response(
-            {'msg': 'Muvaffaqiyatli o\'zgartirildi', 'total_debt': data['total_debt'],
-             'remaining_debt': attendances.payment},
-            status=status.HTTP_200_OK)
+            {
+                'msg': "Muvaffaqiyatli o'zgartirildi",
+                'total_debt': instance.total_debt,
+                'remaining_debt':int( instance.total_debt)-int(instance.payment)-int(instance.discount),
+            },
+            status=status.HTTP_200_OK
+        )
 
 
 class AttendanceYearListView(APIView):

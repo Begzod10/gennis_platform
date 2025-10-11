@@ -251,3 +251,57 @@ class ObservedGroupInfoAPIView(APIView):
             "average": average,
             "observer": observer
         })
+
+class ObservedGroupClassroomAPIView(APIView):
+    def get(self, request, group_id, date=None):
+        group = get_object_or_404(Group, id=group_id)
+
+        days_list = []
+        month_list = []
+        years_list = []
+
+        if date and date != "None":
+            try:
+                calendar_month = datetime.strptime(date, "%Y-%m")
+            except ValueError:
+                return Response({"error": "Invalid date format, expected YYYY-MM"}, status=400)
+        else:
+            calendar_month = datetime.today()
+
+        teacher_observation_all = TeacherObservationDay.objects.filter(
+            teacher=group.teacher,
+            time_table__group=group
+        ).order_by("id")
+
+        teacher_observation = teacher_observation_all.filter(
+            date__year=calendar_month.year,
+            date__month=calendar_month.month
+        )
+
+        for data in teacher_observation:
+            days_list.append(data.date.strftime("%d"))
+        days_list.sort()
+
+        for plan in teacher_observation_all:
+            month_list.append(plan.date.strftime("%m"))
+            years_list.append(plan.date.strftime("%Y"))
+
+        month_list = sorted(list(dict.fromkeys(month_list)))
+        years_list = sorted(list(dict.fromkeys(years_list)))
+
+        if len(month_list) != 0:
+            month = (
+                calendar_month.strftime("%m")
+                if month_list[-1] == calendar_month.strftime("%m")
+                else month_list[-1]
+            )
+        else:
+            month = calendar_month.strftime("%m")
+
+        return Response({
+            "month_list": month_list,
+            "years_list": years_list,
+            "month": month,
+            "year": calendar_month.strftime("%Y"),
+            "days": days_list
+        })
