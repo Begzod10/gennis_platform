@@ -9,7 +9,7 @@ from permissions.response import CustomResponseMixin
 from students.models import DeletedStudent, StudentPayment, StudentCharity, StudentHistoryGroups, DeletedNewStudent, \
     Student
 from students.serializers import DeletedStudentSerializer, StudentPaymentSerializer, StudentCharitySerializer, \
-    StudentHistoryGroupsSerializer, StudentSerializer, StudentListSerializer,get_remaining_debt_for_student
+    StudentHistoryGroupsSerializer, StudentSerializer, StudentListSerializer, get_remaining_debt_for_student
 
 
 class StudentCreateView(CustomResponseMixin, generics.CreateAPIView):
@@ -126,18 +126,17 @@ class StudentPaymentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
             from django.shortcuts import get_object_or_404
             from attendances.models import AttendancePerMonth
             student_payment = get_object_or_404(StudentPayment, id=instance.id)
-            attendance_per_month = get_object_or_404(AttendancePerMonth, id=student_payment.attendance.id)
-            attendance_per_month.remaining_debt += student_payment.payment_sum
-            attendance_per_month.payment -= student_payment.payment_sum
-            student_payment.deleted = True
-            student_payment.save()
+            if student_payment.attendance:
+                attendance_per_month = get_object_or_404(AttendancePerMonth, id=student_payment.attendance.id)
+                attendance_per_month.remaining_debt += student_payment.payment_sum
+                attendance_per_month.payment -= student_payment.payment_sum
+                student_payment.deleted = True
+                student_payment.save()
+                if attendance_per_month.remaining_debt != 0:
+                    attendance_per_month.status = False
+
+                attendance_per_month.save()
             get_remaining_debt_for_student(student_payment.student.id)
-
-            if attendance_per_month.remaining_debt != 0:
-                attendance_per_month.status = False
-
-            attendance_per_month.save()
-
             return Response({'msg': 'Payment record successfully deleted.'}, status=status.HTTP_200_OK)
 
         elif instance.branch.location.system.name == 'center':
