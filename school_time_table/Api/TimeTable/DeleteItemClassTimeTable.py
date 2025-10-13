@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from ...models import ClassTimeTable
 
 from ...serializers import ClassTimeTableCreateUpdateSerializers
+import requests
+from gennis_platform.settings import classroom_server
 
 
 class DeleteItemClassTimeTable(generics.RetrieveDestroyAPIView):
@@ -11,12 +13,11 @@ class DeleteItemClassTimeTable(generics.RetrieveDestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
-
         # Serializerga instance berish kerak
         serializer = self.get_serializer(instance)
 
         # Avval flask serverdan o‘chirib tashlaymiz
-        # flask_response, status_code = serializer.delete_from_flask(instance)
+        flask_response, status_code = serializer.delete_from_flask(instance)
 
         # Keyin Django bazadan o‘chirish
         self.perform_destroy(instance)
