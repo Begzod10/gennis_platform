@@ -4,8 +4,13 @@ from ...models import ClassTimeTable
 from group.models import Group, GroupSubjects, GroupSubjectsCount
 from students.models import Student, StudentSubject, StudentSubjectCount
 from ...serializers import ClassTimeTableCreateUpdateSerializers
+
 from datetime import timedelta
 from django.db import transaction
+
+import requests
+from gennis_platform.settings import classroom_server
+
 
 
 class DeleteItemClassTimeTable(generics.RetrieveDestroyAPIView):
@@ -15,6 +20,7 @@ class DeleteItemClassTimeTable(generics.RetrieveDestroyAPIView):
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
 
+
         # Anchor week by the instance date
         ref_date = instance.date if hasattr(instance, "date") else None
         if ref_date is None:
@@ -22,6 +28,13 @@ class DeleteItemClassTimeTable(generics.RetrieveDestroyAPIView):
 
         monday = ref_date - timedelta(days=ref_date.weekday())  # start of week (Mon)
         friday = monday + timedelta(days=4)  # end of week (Fri)
+
+        # Serializerga instance berish kerak
+        serializer = self.get_serializer(instance)
+
+        # Avval flask serverdan o‘chirib tashlaymiz
+        flask_response, status_code = serializer.delete_from_flask(instance)
+
 
         with transaction.atomic():
             # --- GROUP-LEVEL COUNTS (only if lesson is for a group) ---
