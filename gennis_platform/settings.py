@@ -18,7 +18,7 @@ DEBUG = os.getenv('DEBUG', False)
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
-    "silk",
+    # "silk",
     'unfold',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -63,7 +63,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'silk.middleware.SilkyMiddleware',
+    # 'silk.middleware.SilkyMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -183,7 +183,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-SILKY_PYTHON_PROFILER = True
+# SILKY_PYTHON_PROFILER = True
 CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "http://127.0.0.1:8000", "https://school.gennis.uz",
                         "http://localhost:3000"]
 CORS_ALLOW_CREDENTIALS = True

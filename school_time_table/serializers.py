@@ -26,6 +26,7 @@ from school_time_table.serializers_list import GroupClassSerializerList
 from teachers.serializer.lists import ActiveListTeacherSerializerTime
 from django.db.models.functions import Coalesce, Cast
 from django.db.models import F, BigIntegerField, IntegerField
+import requests
 
 
 class HoursSerializers(serializers.ModelSerializer):
@@ -199,9 +200,14 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
 
     def delete_from_flask(self, instance):
         flask_url = f"{classroom_server}/api/time_table/timetable-list-delete/{instance.id}"
+
         if flask_url:
-            requests.delete(flask_url)
-            # return response.json(), response.status_code
+            response = requests.delete(flask_url)
+            try:
+                data = response.json()
+            except ValueError:
+                data = {"message": "No JSON response"}
+            return data, response.status_code
 
 
 class ClassTimeTableReadSerializers(serializers.ModelSerializer):
