@@ -237,7 +237,7 @@ class UserSalaryMonthView(generics.RetrieveAPIView):
 
     def get_object(self):
         user_id = self.kwargs.get('pk')
-        print(user_id, "user_id")
+        print(user_id, "user_id salary oladigan joy")
         try:
             return UserSalary.objects.filter(user_id=user_id).all()
         except UserSalary.DoesNotExist:
