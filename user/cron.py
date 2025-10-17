@@ -48,6 +48,7 @@ def create_user_salary(user_id):
             current_month_old = 12
         user_salary_old = UserSalary.objects.filter(date__year=current_year_old, date__month=current_month_old,
                                                     user=user_1)
+        print(user_salary_old, "user_salary_old")
         if not user_salary_old:
             UserSalary.objects.create(
                 user=user_1,
