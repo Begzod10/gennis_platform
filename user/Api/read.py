@@ -225,7 +225,7 @@ class UserSalaryMonthView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
 
         user_salary_list = self.get_object()
-
+        print(user_salary_list, "user_salary_list")
         for user_salary in user_salary_list:
             user_salary.remaining_salary = user_salary.total_salary - user_salary.taken_salary
             user_salary.save()

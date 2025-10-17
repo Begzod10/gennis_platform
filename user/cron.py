@@ -38,8 +38,6 @@ from .models import CustomUser, UserSalary
 
 def create_user_salary(user_id):
     user_1 = CustomUser.objects.get(id=user_id)
-    print("salary")
-    print(user_1.customautogroup_set.all())
     for permission in user_1.customautogroup_set.all():
         current_year_old = now().year
         current_month_old = now().month - 1
@@ -48,9 +46,6 @@ def create_user_salary(user_id):
             current_month_old = 12
         user_salary_old = UserSalary.objects.filter(date__year=current_year_old, date__month=current_month_old,
                                                     user=user_1)
-        print(user_salary_old, "user_salary_old")
-        get = user_salary_old.first()
-        print(get.date, "get.date", get.total_salary, "get.total_salary")
         if not user_salary_old:
             UserSalary.objects.create(
                 user=user_1,
