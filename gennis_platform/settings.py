@@ -163,6 +163,13 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute=0, hour=21),  # 21:00 every day
         # "schedule": crontab(minute="*/1"),  # 21:00 every day
     },
+    "lesson_plan": {
+        "task": "lesson_plan.tasks.create_lesson_plans",
+        "schedule": crontab(minute=0, hour=0),
+        # "schedule": crontab(minute="*/1"),  # 21:00 every day
+
+    }
+
 }
 
 CELERY_BROKER_URL = "redis://localhost:6379/0"

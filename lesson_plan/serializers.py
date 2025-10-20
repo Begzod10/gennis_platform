@@ -20,10 +20,25 @@ class LessonPlanSerializer(serializers.ModelSerializer):
 class LessonPlanGetSerializer(serializers.ModelSerializer):
     teacher = TeacherSerializer(read_only=True)
     group = GroupSerializer(read_only=True)
+    students =serializers.SerializerMethodField()
 
     class Meta:
         model = LessonPlan
         fields = '__all__'
+    def get_students(self, obj):
+        data =[]
+        for i in obj.group.students.all():
+            comment = LessonPlanStudents.objects.filter(lesson_plan_id=obj.id, student_id=i.id).first()
+            data.append({
+                "comment": comment.comment if comment else "",
+                "student": {
+                    "id": i.id,
+                    "name": i.user.name,
+                    "surname": i.user.surname
+                }
+
+            })
+        return data
 
 
 class LessonPlanStudentSerializer(serializers.ModelSerializer):

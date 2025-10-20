@@ -1,4 +1,4 @@
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -254,7 +254,7 @@ class ObservedGroupInfoAPIView(APIView):
 
 class ObservedGroupClassroomAPIView(APIView):
     def get(self, request, group_id, date=None):
-        group = get_object_or_404(Group, id=group_id)
+        group = get_object_or_404(ClassTimeTable, id=group_id)
 
         days_list = []
         month_list = []
@@ -270,7 +270,7 @@ class ObservedGroupClassroomAPIView(APIView):
 
         teacher_observation_all = TeacherObservationDay.objects.filter(
             teacher=group.teacher,
-            time_table__group=group
+            time_table__group=group.group,
         ).order_by("id")
 
         teacher_observation = teacher_observation_all.filter(
@@ -304,4 +304,78 @@ class ObservedGroupClassroomAPIView(APIView):
             "month": month,
             "year": calendar_month.strftime("%Y"),
             "days": days_list
+        })
+class ObservedGroupInfoClassroomAPIView(APIView):
+
+
+    def post(self, request, time_table_id):
+        day = request.data.get('day')
+        month = request.data.get('month')
+        year = request.data.get('year')
+
+        if not (day and month and year):
+            return Response(
+                {"error": "day, month, and year are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            date = datetime.strptime(f"{year}-{month}-{day}", "%Y-%m-%d").date()
+        except ValueError:
+            return Response(
+                {"error": "Invalid date format."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        observation_options = ObservationOptions.objects.order_by("id").all()
+        observation_infos = ObservationInfo.objects.order_by("id").all()
+
+        observation_list = []
+        average = 0
+        observer = {"name": "", "surname": ""}
+
+        teacher_observation_day = TeacherObservationDay.objects.filter(
+            date=date,
+            time_table_id=time_table_id
+        ).select_related("user").first()
+
+        if teacher_observation_day:
+            average = teacher_observation_day.average
+            observer["name"] = teacher_observation_day.user.name if teacher_observation_day.user else ""
+            observer["surname"] = teacher_observation_day.user.surname if teacher_observation_day.user else ""
+
+            for info_item in observation_infos:
+                teacher_observation_comment = TeacherObservation.objects.filter(
+                    observation_day=teacher_observation_day,
+                    observation_info=info_item
+                ).first()
+
+                info_data = {
+                    "title": info_item.title,
+                    "values": [],
+                    "comment": teacher_observation_comment.comment if teacher_observation_comment else "",
+                }
+
+                for option in observation_options:
+                    teacher_obs = TeacherObservation.objects.filter(
+                        observation_day=teacher_observation_day,
+                        observation_info=info_item,
+                        observation_options=option
+                    ).first()
+
+                    info_data["values"].append({
+                        "name": option.name,
+                        "value": teacher_obs.observation_options.value if teacher_obs and teacher_obs.observation_options else "",
+                    })
+
+                observation_list.append(info_data)
+
+        return Response({
+            "info": observation_list,
+            "observation_options": [
+                {"id": opt.id, "name": opt.name, "value": opt.value}
+                for opt in observation_options
+            ],
+            "average": average,
+            "observer": observer
         })
