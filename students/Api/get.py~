@@ -188,7 +188,7 @@ class StudentPaymentAPIView(generics.RetrieveAPIView):
     def get_object(self):
         user_id = self.kwargs.get('pk')
         try:
-            return StudentPayment.objects.filter(student_id=user_id, deleted=False).all()
+            return StudentPayment.objects.filter(student_id=user_id).all()
         except StudentPayment.DoesNotExist:
             raise NotFound('Student payment not found for the given student_id')
 
