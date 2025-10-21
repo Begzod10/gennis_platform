@@ -28,6 +28,11 @@ class StudentRetrieveAPIView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         student = self.get_object()
         student_data = self.get_serializer(student).data
+        from attendances.models import AttendancePerMonth
+        attendance_permonth = AttendancePerMonth.objects.filter(id=14490).first()
+        attendance_permonth.payment = 1000000
+        attendance_permonth.remaining_debt = 1090000
+        attendance_permonth.save()
         return Response(student_data)
 
 
