@@ -21,7 +21,10 @@ def update_school_time_table_task():
     today = timezone.localdate()
     monday = today - timedelta(days=today.weekday())
     sunday = monday + timedelta(days=6)
-
+    monday = "2025-09-29"
+    sunday = "2025-10-04"
+    monday = datetime.strptime(monday, "%Y-%m-%d").date()
+    sunday = datetime.strptime(sunday, "%Y-%m-%d").date()
     print("========== SCHOOL TIMETABLE UPDATE (Next 6 Days) ==========")
     print("Today:", today.strftime("%A"), today)
     print("This week's Monday:", monday.strftime("%A"), monday)
