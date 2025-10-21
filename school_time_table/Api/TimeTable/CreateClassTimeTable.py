@@ -104,8 +104,10 @@ class ClassTimeTableLessonsView(APIView):
         group_id = self.request.query_params.get('group')
         teacher_id = self.request.query_params.get('teacher')
         student_id = self.request.query_params.get('student')
-
-        branch = Branch.objects.get(id=branch_id)
+        if branch_id:
+            branch = Branch.objects.get(id=branch_id)
+        else:
+            return Response({'lesson': None, 'msg': 'Branch not found'})
         if week_id:
             week = WeekDays.objects.get(id=week_id)
             date = None

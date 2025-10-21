@@ -162,6 +162,13 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.investor.tasks.snapshot_investor_month",
         "schedule": crontab(minute=0, hour=21),
     },
+    "lesson_plan": {
+        "task": "lesson_plan.tasks.create_lesson_plans",
+        "schedule": crontab(minute=0, hour=0),
+        # "schedule": crontab(minute="*/1"),  # 21:00 every day
+
+    }
+
 }
 
 

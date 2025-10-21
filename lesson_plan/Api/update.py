@@ -9,10 +9,10 @@ from lesson_plan.serializers import LessonPlanSerializer
 class ChangeLessonPlanView(generics.UpdateAPIView):
     queryset = LessonPlan.objects.all()
     serializer_class = LessonPlanSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def update(self, request, *args, **kwargs):
-        plan_id = kwargs.get('plan_id')
+        plan_id = kwargs.get('pk')
         lesson_plan = self.get_object()
 
         data = request.data
