@@ -133,7 +133,8 @@ class StudentPaymentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
                 attendance_per_month = get_object_or_404(AttendancePerMonth, id=student_payment.attendance.id)
                 attendance_per_month.remaining_debt += student_payment.payment_sum
                 attendance_per_month.payment -= student_payment.payment_sum
-
+                if student_payment.status:
+                    attendance_per_month.discount -= student_payment.payment_sum
                 if attendance_per_month.remaining_debt != 0:
                     attendance_per_month.status = False
 
