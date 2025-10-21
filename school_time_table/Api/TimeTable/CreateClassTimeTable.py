@@ -97,39 +97,64 @@ class ClassesFlows(generics.ListAPIView):
 class ClassTimeTableLessonsView(APIView):
     def get(self, request):
         creat_week_days()
-        week_id = self.request.query_params.get('week')
-        date = self.request.query_params.get('date')
-        branch_id = self.request.query_params.get('branch')
+        week_id = request.query_params.get('week')
+        date_str = request.query_params.get('date')
+        branch_id = request.query_params.get('branch')
+        group_id = request.query_params.get('group')
+        teacher_id = request.query_params.get('teacher')
+        student_id = request.query_params.get('student')
+        which_week = request.query_params.get('which_week')
 
-        group_id = self.request.query_params.get('group')
-        teacher_id = self.request.query_params.get('teacher')
-        student_id = self.request.query_params.get('student')
-        if branch_id:
-            branch = Branch.objects.get(id=branch_id)
-        else:
+        if not branch_id:
             return Response({'lesson': None, 'msg': 'Branch not found'})
-        if week_id:
+        branch = Branch.objects.get(id=branch_id)
+
+        week = None
+        today = date.today()
+
+        if which_week:
+
+            start_of_week = today - timedelta(days=today.weekday())
+            end_of_week = start_of_week + timedelta(days=6)
+
+            if which_week == 'prev':
+                start_of_week -= timedelta(days=7)
+                end_of_week -= timedelta(days=7)
+            elif which_week == 'next':
+                start_of_week += timedelta(days=7)
+                end_of_week += timedelta(days=7)
+            elif which_week.isdigit():
+                week_num = int(which_week)
+                year = today.year
+                start_of_week = date.fromisocalendar(year, week_num, 1)
+                end_of_week = date.fromisocalendar(year, week_num, 7)
+
+            week = WeekDays.objects.filter(order__in=[1, 2, 3, 4, 5, 6, 7])
+
+            date_str = start_of_week.isoformat()
+
+        elif week_id:
             week = WeekDays.objects.get(id=week_id)
-            date = None
+            date_str = None
         else:
             week = None
 
         serializer = ClassTimeTableTest2Serializer(
             context={
-                'date': date,
+                'date': date_str,
                 'branch': branch,
-                "week": week,
-                "group_id": group_id,
-                "teacher_id": teacher_id,
-                "student_id": student_id,
+                'week': week,
+                'group_id': group_id,
+                'teacher_id': teacher_id,
+                'student_id': student_id,
             }
         )
+
         data = {
             'time_tables': serializer.get_time_tables(None),
             'hours_list': serializer.get_hours_list(None)
         }
         return Response(data)
-
 
 class ClassTimeTableForClassView(APIView):
     def get(self, request):
