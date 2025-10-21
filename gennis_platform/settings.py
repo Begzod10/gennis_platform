@@ -142,28 +142,28 @@ CELERY_BEAT_SCHEDULE = {
         "task": "group.tasks.update_class_task",
         "schedule": crontab(minute=0, hour=0, day_of_month="10", month_of_year="8"),
     },
-    # "update-students-debts": {
-    #     "task": "students.tasks.update_debts_task",
-    #     # "schedule": crontab(minute=0, hour=0, day_of_month="20", month_of_year="8"),
-    #     "schedule": crontab(minute="*/1"),
-    # },
+
+    # Run every 1st day of every month at 00:00
+    "update-students-debts": {
+        "task": "students.tasks.update_student_debt",
+        "schedule": crontab(minute=0, hour=0, day_of_month="1"),  # month_of_year="*" is optional
+        # If you really want “every 2 months” etc, use:
+        # "schedule": crontab(minute=0, hour=0, day_of_month="1", month_of_year="*/2"),
+    },
+
+    # Every Saturday at 00:00
     "update-school-time-table": {
         "task": "school_time_table.tasks.update_school_time_table_task",
         "schedule": crontab(minute=0, hour=0, day_of_week="saturday"),
-        # "schedule": crontab(minute="*/1"),
-    },
-    "update-students-debts": {
-        "task": "students.tasks.update_student_debt",
-
-        "schedule": crontab(minute=0, hour=0, day_of_month="1", month_of_year="*"),
     },
 
+    # Daily at 21:00
     "investor_report_daily": {
         "task": "apps.investor.tasks.snapshot_investor_month",
-        "schedule": crontab(minute=0, hour=21),  # 21:00 every day
-        # "schedule": crontab(minute="*/1"),  # 21:00 every day
+        "schedule": crontab(minute=0, hour=21),
     },
 }
+
 
 CELERY_BROKER_URL = "redis://localhost:6379/0"
 CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
