@@ -81,14 +81,21 @@ class TeacherObserveView(APIView):
     def post(self, request, group_id):
         user = request.user
         group = get_object_or_404(ClassTimeTable, id=group_id)
+        day = request.data.get('day', None)
+        month = request.data.get('month', None)
+        year = request.data.get('year', datetime.now().year)  # Agar yil berilmasa, hozirgi yilni oladi
 
+        if day and month:
+            date = datetime.strptime(f"{year}-{month}-{day}", '%Y-%m-%d').date()
+        else:
+            date = None
         today = now().date()
         print(request.data)
 
         teacher_observation_day, created = TeacherObservationDay.objects.get_or_create(
             teacher=group.teacher,
             time_table=group,
-            date=today,
+            date=date,
             defaults={"user": user}
         )
 
