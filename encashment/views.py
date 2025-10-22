@@ -283,7 +283,8 @@ class GetSchoolStudents(APIView):
         attendance_data = AttendancePerMonth.objects.filter(
             student__in=all_students,
             month_date__year=current_year,
-            month_date__month=current_month
+            month_date__month=current_month,
+            group__deleted=False
         ).select_related('student')
 
         attendance_map = {att.student.id: att for att in attendance_data}

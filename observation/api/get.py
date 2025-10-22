@@ -89,8 +89,7 @@ class TeacherObserveView(APIView):
             date = datetime.strptime(f"{year}-{month}-{day}", '%Y-%m-%d').date()
         else:
             date = None
-        today = now().date()
-        print(request.data)
+
 
         teacher_observation_day, created = TeacherObservationDay.objects.get_or_create(
             teacher=group.teacher,
