@@ -25,7 +25,8 @@ from permissions.response import QueryParamFilterMixin
 from students.serializer.lists import ActiveListSerializer, ActiveListDeletedStudentSerializer
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
 from .serializers import StudentCharity, get_remaining_debt_for_student
-
+from datetime import date
+from django.utils import timezone
 from .serializers import (StudentListSerializer,
                           DeletedNewStudentListSerializer, StudentPaymentListSerializer, StudentClassNumberSerializer)
 
@@ -428,9 +429,54 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
         group = student.groups_student.first()
         if not group:
             return AttendancePerMonth.objects.none()
-        return AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id,
-                                                 month_date__month__in=[9, 10, 11, 12, 1, 2, 3, 4, 5, 6]).annotate(
-            month_number=ExtractMonth('month_date'))
+
+        # Determine academic year window (September -> next June)
+        today = timezone.localdate()
+        academic_start_year = today.year if today.month >= 9 else (today.year - 1)
+
+        # Optional explicit academic start: ?ay=YYYY
+        ay_param = self.request.query_params.get("ay")
+        if ay_param and ay_param.isdigit():
+            academic_start_year = int(ay_param)
+
+        start_date = date(academic_start_year, 9, 1)  # inclusive
+        end_date = date(academic_start_year + 1, 7, 1)  # exclusive
+
+        qs = (
+            AttendancePerMonth.objects
+            .filter(
+                student_id=student_id,
+                group_id=group.id,
+                month_date__gte=start_date,
+                month_date__lt=end_date,
+            )
+            .annotate(
+                month_number=ExtractMonth('month_date'),
+                year_number=ExtractYear('month_date'),
+            )
+            .order_by('month_date')
+        )
+
+        # Optional: ?month=1..12 mapped to the correct year in this academic window
+        month_str = self.request.query_params.get("month")
+        if month_str and month_str.isdigit():
+            m = int(month_str)
+            if 1 <= m <= 12:
+                year_for_month = academic_start_year if m in (9, 10, 11, 12) else academic_start_year + 1
+                qs = qs.filter(month_date__year=year_for_month, month_date__month=m)
+
+        # ✅ Return queryset of model instances (with annotations)
+        return qs
+
+    # def get_queryset(self):
+    #     student_id = self.kwargs.get('student_id')
+    #     student = Student.objects.get(pk=student_id)
+    #     group = student.groups_student.first()
+    #     if not group:
+    #         return AttendancePerMonth.objects.none()
+    #     return AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id,
+    #                                              month_date__month__in=[9, 10, 11, 12, 1, 2, 3, 4, 5, 6]).annotate(
+    #         month_number=ExtractMonth('month_date'))
 
     def retrieve(self, request, *args, **kwargs):
         queryset = self.get_queryset()
