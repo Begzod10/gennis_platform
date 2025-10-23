@@ -350,7 +350,7 @@ class GetSchoolStudents(APIView):
                     'click': click_payment,
                     "total_dis": discount,
                     "total_discount": paid_amount,
-                    "month_id": attendance.id
+                    "month_id": attendance.id if attendance else None,
                 })
 
         unique_dates = AttendancePerMonth.objects.annotate(
