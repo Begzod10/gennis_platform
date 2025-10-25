@@ -333,7 +333,7 @@ class GetSchoolStudents(APIView):
         # payment_map = defaultdict(dict)
         # for payment in payment_data:
         #     payment_map[payment['student_id']][payment['payment_type__name']] = payment['total_sum']
-
+        print("classes", classes)
         for _class in classes:
             class_data = {
                 'class_number': _class.class_number.number,
@@ -352,8 +352,6 @@ class GetSchoolStudents(APIView):
                     )
                     .first()
                 )
-
-
                 student_payments = StudentPayment.objects.filter(
                     student=student,
                     attendance=attendance_data,
@@ -473,7 +471,7 @@ class GetSchoolStudents(APIView):
 
                 # Q(is_active=True)
                 # |
-            Q(was_deleted=True)
+                Q(was_deleted=True)
 
             )
             .distinct()
