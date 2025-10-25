@@ -302,7 +302,6 @@ class GetSchoolStudents(APIView):
                 'id'
             )
         )
-        print("classes", classes)
         for _class in classes:
             class_data = {
                 'class_number': _class.class_number.number,
@@ -416,8 +415,6 @@ class GetSchoolStudents(APIView):
 
         start = date(year, month, 1)
         end = date(year + (month == 12), (month % 12) + 1, 1)  # first day of next month
-        print(start)
-        print(end)
         # 1) rows that are ACTIVE now in this branch
         active_in_branch = Group.objects.filter(
             students=OuterRef('pk'),
@@ -425,18 +422,17 @@ class GetSchoolStudents(APIView):
             branch_id=branch_id,
         )
 
-        deleted_in_period = DeletedStudent.objects.filter(
+        deleted_on_or_before_start = DeletedStudent.objects.filter(
             student=OuterRef('pk'),
             group__branch_id=branch_id,
-            deleted_date__gte=start,
-            deleted_date__lt=end,
+            deleted_date__lte=end,  # <= 2025-10-01
         )
 
         students_list = (
             Student.objects
             .annotate(
                 is_active=Exists(active_in_branch),
-                was_deleted=Exists(deleted_in_period),
+                was_deleted=Exists(deleted_on_or_before_start),
             )
             .filter(
 
@@ -447,8 +443,6 @@ class GetSchoolStudents(APIView):
             )
             .distinct()
         )
-
-        print("students", students_list)
         data = self.get_class_data(students_list, year=year, month=month)
         return Response(data)
 
