@@ -454,17 +454,14 @@ class GetSchoolStudents(APIView):
             group__branch_id=branch,
             deleted_date__gte=start,
             deleted_date__lt=end,
-            # deleted=True,  # include if you actually toggle this flag
+            # deleted=True,
         )
 
         students_list = (
             Student.objects
-            .filter(user__branch_id=branch)  # keep branch filter
+            .filter(user__branch_id=branch)  # keep this only if you truly need it
             .annotate(has_del_month=Exists(deletions_in_period))
-            .filter(
-                Q(has_del_month=True)  # deleted in the month
-                # | Q(groups_student__deleted=False)  # OR currently active
-            )
+            .filter(Q(has_del_month=True) | Q(groups_student__deleted=False))
             .distinct()
         )
         print("students", students_list)
