@@ -467,7 +467,7 @@ class GetSchoolStudents(APIView):
             Student.objects
             .filter(
                 user__branch_id=branch,
-                # groups_student__deleted=False,  # must be currently active somewhere
+                groups_student__deleted=False,  # must be currently active somewhere
             )
             .annotate(
                 has_any_del=Exists(any_deletions),
