@@ -458,7 +458,8 @@ class GetSchoolStudents(APIView):
         )
 
         students_list = (
-            Student.objects  # scope students to this branch
+            Student.objects
+            .filter(user__branch_id=branch_id)  # scope students to this branch
             .annotate(has_del_month=Exists(deletions_in_period))
             .filter(
                 Q(groups_student__deleted=False) |  # active now (in any non-deleted group)
