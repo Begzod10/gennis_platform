@@ -37,7 +37,7 @@ from lead.models import Lead
 from django.db.models import Exists, OuterRef, Subquery
 from django.db.models import Case, When, IntegerField, F
 from django.db.models.functions import Cast
-
+from datetime import date
 
 class Encashments(APIView):
     permission_classes = [IsAuthenticated]
