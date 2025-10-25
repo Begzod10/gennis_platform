@@ -476,7 +476,7 @@ class GetSchoolStudents(APIView):
             # Keep students who either:
             # 1) have a deletion in the target month (for relevant groups), OR
             # 2) have no deletion records at all (fallback to base filter)
-            .filter(Q(has_del_month=True) | Q(deleted_student_student__isnull=True))
+            .filter(Q(has_del_month=True))
             .distinct()
         )
         print("students", students_list)
