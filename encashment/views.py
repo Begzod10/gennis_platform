@@ -448,17 +448,24 @@ class GetSchoolStudents(APIView):
         month = request.data.get('month')
         year = request.data.get('year')
         branch = request.query_params.get('branch')
-        deleted_qs = DeletedStudent.objects.filter(
-            student_id=OuterRef('pk'),
-            deleted_date__year=year,
-            deleted_date__month=month,
-        )
-
         students_list = (
             Student.objects
-            .filter(user__branch_id=branch, groups_student__deleted=False)
-            .annotate(deleted_in_period=Exists(deleted_qs))
-            .filter(deleted_in_period=True)  # ensures a deletion record exists
+            .filter(
+                user__branch_id=branch,
+                groups_student__deleted=False,
+            )
+            .filter(
+                Q(  # has deletion in the target month/year
+                    deleted_student_student__deleted=True,
+                    deleted_student_student__deleted_date__year=year,
+                    deleted_student_student__deleted_date__month=month,
+                )
+                |
+                Q(  # OR has no deletion records at all
+                    deleted_student_student__isnull=True
+                )
+            )
+            .distinct()
         )
         print("students", students_list)
         classes = ClassNumber.objects.filter(
