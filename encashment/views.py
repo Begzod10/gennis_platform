@@ -434,7 +434,8 @@ class GetSchoolStudents(APIView):
         students_list = Student.objects.filter(user__branch_id=branch, groups_student__deleted=False,
                                                # groups_student__price__isnull=False,
                                                deleted_student_student_new__isnull=True,
-                                               deleted_student_student__isnull=True).all()
+                                               # deleted_student_student__isnull=True
+                                               ).all()
         classes = ClassNumber.objects.filter(
             price__isnull=False,
             branch_id=branch
