@@ -330,20 +330,21 @@ class GetSchoolStudents(APIView):
                     )
                     .first()
                 )
-                student_payments = StudentPayment.objects.filter(
-                    student=student,
-                    attendance=attendance_data,
-                )
                 cash_payment = 0
                 bank_payment = 0
                 click_payment = 0
-                for payment in student_payments:
-                    if payment.payment_type.name == 'cash':
-                        cash_payment += payment.payment_sum
-                    elif payment.payment_type.name == 'bank':
-                        bank_payment += payment.payment_sum
-                    elif payment.payment_type.name == 'click':
-                        click_payment += payment.payment_sum
+                if attendance_data:
+                    student_payments = StudentPayment.objects.filter(
+                        student=student,
+                        attendance=attendance_data,
+                    )
+                    for payment in student_payments:
+                        if payment.payment_type.name == 'cash':
+                            cash_payment += payment.payment_sum
+                        elif payment.payment_type.name == 'bank':
+                            bank_payment += payment.payment_sum
+                        elif payment.payment_type.name == 'click':
+                            click_payment += payment.payment_sum
                 total_debt_student = attendance_data.total_debt if attendance_data else 0
                 remaining_debt_student = attendance_data.remaining_debt if attendance_data else 0
                 discount = getattr(attendance_data, 'discount', 0)

@@ -70,13 +70,10 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         create_type = validated_data.pop('create_type')
         students_data = validated_data.pop('students', [])
         teacher_data = validated_data.pop('teacher', [])
-
         today = datetime.now()
-
         active_groups = Group.objects.filter(Q(deleted=False),
                                              system_id=validated_data.get('branch').location.system_id)
         group = Group.objects.create(**validated_data, system_id=validated_data.get('branch').location.system_id)
-
         for student in students_data:
             if not active_groups.filter(students__id=student.id).exists():
 
@@ -155,12 +152,12 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                             today = datetime.now()
                             date = datetime(today.year, today.month, 1)
                             month_date = date.strftime("%Y-%m-%d")
-                            attendances_per_month = student.attendancepermonth_set.filter(group=instance,
-                                                                                          student=student,
-                                                                                          month_date__gte=month_date,
-                                                                                          payment=0)
-                            for attendance in attendances_per_month:
-                                attendance.delete()
+                            # attendances_per_month = student.attendancepermonth_set.filter(group=instance,
+                            #                                                               student=student,
+                            #                                                               month_date__gte=month_date,
+                            #                                                               payment=0)
+                            # for attendance in attendances_per_month:
+                            #     attendance.delete()
                             instance.students.remove(student)
                             student_history_group = StudentHistoryGroups.objects.get(group=instance,
                                                                                      teacher=instance.teacher.all()[
@@ -176,19 +173,19 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                             today = datetime.now()
                             date = datetime(today.year, today.month, 1)
                             month_date = date.strftime("%Y-%m-%d")
-                            attendances_per_month = student.attendancepermonth_set.filter(group=instance,
-                                                                                          student=student,
-                                                                                          month_date__gte=month_date,
-                                                                                          payment=0)
-                            for attendance in attendances_per_month:
-                                attendance.delete()
-                            attendances_per_month2 = student.attendancepermonth_set.filter(
-                                student=student,
-                                month_date__lte=month_date,
-                                payment=0)
-                            for attendance in attendances_per_month2:
-                                if attendance.group == instance:
-                                    attendance.delete()
+                            # attendances_per_month = student.attendancepermonth_set.filter(group=instance,
+                            #                                                               student=student,
+                            #                                                               month_date__gte=month_date,
+                            #                                                               payment=0)
+                            # for attendance in attendances_per_month:
+                            #     attendance.delete()
+                            # attendances_per_month2 = student.attendancepermonth_set.filter(
+                            #     student=student,
+                            #     month_date__lte=month_date,
+                            #     payment=0)
+                            # for attendance in attendances_per_month2:
+                            #     if attendance.group == instance:
+                            #         attendance.delete()
                             instance.students.remove(student)
                             DeletedStudent.objects.create(student=student, group=instance,
                                                           comment=comment if comment else None,

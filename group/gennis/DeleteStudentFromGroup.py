@@ -6,6 +6,8 @@ from group.serializers import GroupSerializer
 from students.models import Student
 
 from rest_framework.permissions import IsAuthenticated
+
+
 class DeleteStudentFromGroup(APIView):
     permission_classes = [IsAuthenticated]
 
