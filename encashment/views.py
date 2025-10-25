@@ -449,22 +449,21 @@ class GetSchoolStudents(APIView):
         end = date(year + (month == 12), (month % 12) + 1, 1)  # first day of next month
         print(start)
         print(end)
+        # 1) Active now in this branch (via Group)
         active_now = Student.objects.filter(
             groups_student__deleted=False,
-            groups_student__branch_id=branch_id,  # scope by the group's branch (safer than user__branch_id)
+            groups_student__branch_id=branch_id,
         )
 
-        # 2) DELETED THIS MONTH (by deletion record’s group branch)
+        # 2) Deleted this month in this branch (via reverse FK)
         deleted_this_month = Student.objects.filter(
-            id__in=DeletedStudent.objects.filter(
-                group__branch_id=branch_id,
-                deleted_date__gte=start,
-                deleted_date__lt=end,
-                # deleted=True,  # add only if you truly set this flag
-            ).values('student_id')
-        )
+            deleted_student_student__group__branch_id=branch_id,
+            deleted_student_student__deleted_date__gte=start,
+            deleted_student_student__deleted_date__lt=end,
+            # deleted_student_student__deleted=True,  # only if you really set this flag
+        ).distinct()
 
-        # UNION the two querysets
+        # UNION
         students_list = (active_now | deleted_this_month).distinct()
 
         print("students", students_list)
