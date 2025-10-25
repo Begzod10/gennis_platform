@@ -452,13 +452,13 @@ class GetSchoolStudents(APIView):
             student=OuterRef('pk'),
             deleted=True,
         )
-        print("any_deletions", any_deletions)
+
         # Subquery: deletion in the target month/year
         deletions_in_period = any_deletions.filter(
             deleted_date__year=year,
             deleted_date__month=month,
         )
-        print("deletions_in_period", deletions_in_period)
+
         students_list = (
             Student.objects
             .filter(
