@@ -39,6 +39,7 @@ from django.db.models import Case, When, IntegerField, F
 from django.db.models.functions import Cast
 from datetime import date
 
+
 class Encashments(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -469,7 +470,13 @@ class GetSchoolStudents(APIView):
                 is_active=Exists(active_in_branch),
                 was_deleted=Exists(deleted_in_period),
             )
-            .filter(Q(is_active=True) | Q(was_deleted=True))
+            .filter(
+
+                # Q(is_active=True)
+
+            Q(was_deleted=True)
+
+            )
             .distinct()
         )
 
