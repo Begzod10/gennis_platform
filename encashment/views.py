@@ -441,41 +441,42 @@ class GetSchoolStudents(APIView):
         return Response(data)
 
     def post(self, request, *args, **kwargs):
-        month = request.data.get('month')
-        year = request.data.get('year')
+        month = int(request.data.get('month'))  # e.g. 10
+        year = int(request.data.get('year'))  # e.g. 2025
         branch = request.query_params.get('branch')
+
+        start = date(year, month, 1)
+        end = date(year + (month == 12), (month % 12) + 1, 1)  # first day of next month
+
+        # (optional) only consider deletions tied to student's active groups
         active_groups_subq = (
             Group.objects
             .filter(students=OuterRef('pk'), deleted=False)
             .values('pk')
         )
 
-        # Any deletion for one of the student's *active* groups
-        any_deletions = DeletedStudent.objects.filter(
-            student=OuterRef('pk'),
-            deleted=True,
-            group__in=Subquery(active_groups_subq),
-        )
-
-        # Deletion in requested period for active groups
-        deletions_in_period = any_deletions.filter(
-            deleted_date__year=year,
-            deleted_date__month=month,
+        deletions_in_period = (
+            DeletedStudent.objects
+            .filter(
+                student=OuterRef('pk'),
+                deleted_date__gte=start,  # 2025-10-01 inclusive
+                deleted_date__lt=end,  # 2025-11-01 exclusive
+                # deleted=True,  # drop this line if you don't toggle the flag
+                group__in=Subquery(active_groups_subq),  # remove if you want ANY group
+            )
         )
 
         students_list = (
             Student.objects
             .filter(
                 user__branch_id=branch,
-                groups_student__deleted=False,  # must be currently active somewhere
+                groups_student__deleted=False,  # base condition (active somewhere)
             )
-            .annotate(
-                has_any_del=Exists(any_deletions),
-                has_del_month=Exists(deletions_in_period),
-            )
-            # If a student has a relevant deletion, keep only those in the target month;
-            # otherwise (no relevant deletions), include them.
-            .filter(Q(has_del_month=True) | Q(has_any_del=False))
+            .annotate(has_del_month=Exists(deletions_in_period))
+            # Keep students who either:
+            # 1) have a deletion in the target month (for relevant groups), OR
+            # 2) have no deletion records at all (fallback to base filter)
+            .filter(Q(has_del_month=True) | Q(deleted_student_student__isnull=True))
             .distinct()
         )
         print("students", students_list)
