@@ -452,13 +452,13 @@ class GetSchoolStudents(APIView):
             student=OuterRef('pk'),
             deleted=True,
         )
-
+        print("any_deletions", any_deletions)
         # Subquery: deletion in the target month/year
         deletions_in_period = any_deletions.filter(
             deleted_date__year=year,
             deleted_date__month=month,
         )
-
+        print("deletions_in_period", deletions_in_period)
         students_list = (
             Student.objects
             .filter(
@@ -469,18 +469,10 @@ class GetSchoolStudents(APIView):
                 has_any_del=Exists(any_deletions),
                 has_del_month=Exists(deletions_in_period),
             )
-            # keep students who either:
-            # - have a deletion in the month, OR
-            # - have no deletions at all
             .filter(Q(has_del_month=True) | Q(has_any_del=False))
             .distinct()
         )
         print("students", students_list)
-        classes = ClassNumber.objects.filter(
-            price__isnull=False,
-            branch_id=branch
-        ).order_by('number')
-
         data = self.get_class_data(students_list, year=year, month=month)
         return Response(data)
 
