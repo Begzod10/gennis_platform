@@ -449,31 +449,23 @@ class GetSchoolStudents(APIView):
         end = date(year + (month == 12), (month % 12) + 1, 1)  # first day of next month
         print(start)
         print(end)
-        deletions_in_period = DeletedStudent.objects.filter(
-            student=OuterRef('pk'),
-            group__branch_id=branch_id,
-            deleted_date__gte=start,
-            deleted_date__lt=end,
-            # deleted=True,  # add if you actually toggle it
+        active_now = Student.objects.filter(
+            groups_student__deleted=False,
+            groups_student__branch_id=branch_id,  # scope by the group's branch (safer than user__branch_id)
         )
 
-        # active (has at least one non-deleted group in this branch)
-        active_in_branch = Group.objects.filter(
-            students=OuterRef('pk'),
-            deleted=False,
-            branch_id=branch_id,
+        # 2) DELETED THIS MONTH (by deletion record’s group branch)
+        deleted_this_month = Student.objects.filter(
+            id__in=DeletedStudent.objects.filter(
+                group__branch_id=branch_id,
+                deleted_date__gte=start,
+                deleted_date__lt=end,
+                # deleted=True,  # add only if you truly set this flag
+            ).values('student_id')
         )
 
-        students_list = (
-            Student.objects
-            .filter(user__branch_id=branch_id)  # keep branch scope by user
-            .annotate(
-                has_del_month=Exists(deletions_in_period),
-                is_active=Exists(active_in_branch),
-            )
-            .filter(Q(is_active=True) | Q(has_del_month=True))
-            .distinct()
-        )
+        # UNION the two querysets
+        students_list = (active_now | deleted_this_month).distinct()
         print("students", students_list)
         data = self.get_class_data(students_list, year=year, month=month)
         return Response(data)
