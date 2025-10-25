@@ -462,7 +462,7 @@ class GetSchoolStudents(APIView):
                 deleted_date__gte=start,  # 2025-10-01 inclusive
                 deleted_date__lt=end,  # 2025-11-01 exclusive
                 # deleted=True,  # drop this line if you don't toggle the flag
-                group__in=Subquery(active_groups_subq),  # remove if you want ANY group
+                # group__in=Subquery(active_groups_subq),  # remove if you want ANY group
             )
         )
 
