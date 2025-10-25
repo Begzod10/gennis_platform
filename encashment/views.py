@@ -34,7 +34,7 @@ from user.models import UserSalaryList, UserSalary
 from user.serializers import UserSalaryListSerializers
 from .models import Encashment
 from lead.models import Lead
-
+from django.db.models import Exists, OuterRef
 from django.db.models import Case, When, IntegerField, F
 from django.db.models.functions import Cast
 
@@ -448,17 +448,17 @@ class GetSchoolStudents(APIView):
         month = request.data.get('month')
         year = request.data.get('year')
         branch = request.query_params.get('branch')
+        deleted_qs = DeletedStudent.objects.filter(
+            student_id=OuterRef('pk'),
+            deleted_date__year=year,
+            deleted_date__month=month,
+        )
+
         students_list = (
             Student.objects
-            .filter(
-                user__branch_id=branch,
-                groups_student__deleted=False,  # still had an active group record
-                deleted_student_student__isnull=False,  # has a DeletedStudent row
-                deleted_student_student__deleted_date__year=year,
-                # DeletedStudent.related_name = 'deleted_student_student'
-                deleted_student_student__deleted_date__month=month,
-            )
-            .distinct()
+            .filter(user__branch_id=branch, groups_student__deleted=False)
+            .annotate(deleted_in_period=Exists(deleted_qs))
+            .filter(deleted_in_period=True)  # ensures a deletion record exists
         )
         classes = ClassNumber.objects.filter(
             price__isnull=False,
