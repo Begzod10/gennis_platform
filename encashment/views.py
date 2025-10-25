@@ -35,6 +35,7 @@ from user.serializers import UserSalaryListSerializers
 from .models import Encashment
 from lead.models import Lead
 
+
 class Encashments(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -334,13 +335,13 @@ class GetSchoolStudents(APIView):
                 discount = getattr(attendance, 'discount', 0)
 
                 paid_amount = (
-                    StudentPayment.objects.filter(
-                        student=student,
-                        deleted=False,
-                        status=True,
-                        date__month=current_month,
-                        date__year=current_year
-                    ).aggregate(total=Sum('payment_sum'))['total'] or 0
+                        StudentPayment.objects.filter(
+                            student=student,
+                            deleted=False,
+                            status=True,
+                            date__month=current_month,
+                            date__year=current_year
+                        ).aggregate(total=Sum('payment_sum'))['total'] or 0
                 )
 
                 total_debt += total_debt_student
@@ -393,6 +394,11 @@ class GetSchoolStudents(APIView):
 
     def get(self, request, *args, **kwargs):
         branch = request.query_params.get('branch')
+        students_list = Student.objects.filter(user__branch_id=branch, groups_student__deleted=False,
+                                               groups_student__price__isnull=False,
+                                               deleted_student_student_new__isnull=True,
+                                               deleted_student_student__isnull=True).all()
+        print(students_list)
         classes = ClassNumber.objects.filter(
             price__isnull=False,
             branch_id=branch
@@ -810,9 +816,6 @@ class EncashmentsSchool(APIView):
         })
 
 
-
-
-
 from django.db.models import Sum, Prefetch, Q
 
 from django.db.models import Sum, F, Q
@@ -820,6 +823,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
+
 
 class OneDayReportView(APIView):
 
