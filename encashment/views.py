@@ -285,14 +285,17 @@ class GetSchoolStudents(APIView):
         classes = (
             Group.objects
             .filter(deleted=False, students__in=students_list)
+            .select_related('class_number')
             .distinct()
             .order_by(
-                Case(
-                    When(class_number='0', then=0),
+                Case(  # 0 first, others next, NULLs last
+                    When(class_number__number=0, then=0),
+                    When(class_number__number__isnull=True, then=2),
                     default=1,
                     output_field=IntegerField(),
                 ),
-                Cast('class_number', IntegerField()).asc()
+                F('class_number__number').asc(nulls_last=True),
+                'id',  # stable tiebreaker
             )
         )
         # students_per_class = defaultdict(list)
