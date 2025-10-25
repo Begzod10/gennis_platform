@@ -432,7 +432,7 @@ class GetSchoolStudents(APIView):
     def get(self, request, *args, **kwargs):
         branch = request.query_params.get('branch')
         students_list = Student.objects.filter(user__branch_id=branch, groups_student__deleted=False,
-                                               groups_student__price__isnull=False,
+                                               # groups_student__price__isnull=False,
                                                deleted_student_student_new__isnull=True,
                                                deleted_student_student__isnull=True).all()
         classes = ClassNumber.objects.filter(
