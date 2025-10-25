@@ -347,7 +347,8 @@ class GetSchoolStudents(APIView):
                     group=_class,
                     group__deleted=False
                 )
-
+                if not attendance_data:
+                    continue
                 student_payments = StudentPayment.objects.filter(
                     student=student,
                     attendance=attendance_data,
