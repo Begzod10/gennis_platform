@@ -280,7 +280,12 @@ class GetSchoolStudents(APIView):
         #     .select_related('user')
         #     .prefetch_related('groups_student__class_number')
         # )
-        classes = Group.objects.filter(deleted=False, students__in=students_list).order_by('class_number').all()
+        classes = (
+            Group.objects
+            .filter(deleted=False, students__in=students_list)
+            .distinct()
+            .order_by('class_number')
+        )
         # students_per_class = defaultdict(list)
         # for student in students:
         #     for group in student.groups_student.all():
