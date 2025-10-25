@@ -38,6 +38,7 @@ from lead.models import Lead
 from django.db.models import Case, When, IntegerField, F
 from django.db.models.functions import Cast
 
+
 class Encashments(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -447,11 +448,18 @@ class GetSchoolStudents(APIView):
         month = request.data.get('month')
         year = request.data.get('year')
         branch = request.query_params.get('branch')
-        students_list = Student.objects.filter(user__branch_id=branch, groups_student__deleted=False,
-                                               # groups_student__price__isnull=False,
-                                               deleted_student_student_new__isnull=True,
-                                               # deleted_student_student__isnull=True
-                                               ).all()
+        students_list = (
+            Student.objects
+            .filter(
+                user__branch_id=branch,
+                groups_student__deleted=False,  # still had an active group record
+                deleted_student_student__isnull=False,  # has a DeletedStudent row
+                deleted_student_student__deleted_date__year=year,
+                # DeletedStudent.related_name = 'deleted_student_student'
+                deleted_student_student__deleted_date__month=month,
+            )
+            .distinct()
+        )
         classes = ClassNumber.objects.filter(
             price__isnull=False,
             branch_id=branch
