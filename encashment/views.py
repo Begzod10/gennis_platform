@@ -450,31 +450,28 @@ class GetSchoolStudents(APIView):
         print(start)
         print(end)
         # 1) rows that are ACTIVE now in this branch
-        active_now_ids = (
-            Student.objects
-            .filter(groups_student__deleted=False,
-                    groups_student__branch_id=branch_id)
-            .values('pk')  # important: same column set for union
-            .distinct()
+        active_in_branch = Group.objects.filter(
+            students=OuterRef('pk'),
+            deleted=False,
+            branch_id=branch_id,
         )
 
-        # 2) rows that were DELETED this month in this branch
-        deleted_this_month_ids = (
+        deleted_in_period = DeletedStudent.objects.filter(
+            student=OuterRef('pk'),
+            group__branch_id=branch_id,
+            deleted_date__gte=start,
+            deleted_date__lt=end,
+        )
+
+        students_list = (
             Student.objects
-            .filter(
-                deleted_student_student__group__branch_id=branch_id,
-                deleted_student_student__deleted_date__gte=start,
-                deleted_student_student__deleted_date__lt=end,
+            .annotate(
+                is_active=Exists(active_in_branch),
+                was_deleted=Exists(deleted_in_period),
             )
-            .values('pk')  # same column set
+            .filter(Q(is_active=True) | Q(was_deleted=True))
             .distinct()
         )
-
-        # UNION the two id sets safely
-        student_ids_union = active_now_ids.union(deleted_this_month_ids)
-
-        # Final queryset of Student objects
-        students_list = Student.objects.filter(pk__in=student_ids_union)
 
         print("students", students_list)
         data = self.get_class_data(students_list, year=year, month=month)
