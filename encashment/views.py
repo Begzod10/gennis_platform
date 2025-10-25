@@ -309,7 +309,7 @@ class GetSchoolStudents(APIView):
                 'students': []
             }
             data['class'].append(class_data)
-            for student in _class.students.all():
+            for student in students_list:
                 attendance_data = (
                     AttendancePerMonth.objects.filter(
                         student=student,
