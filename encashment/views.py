@@ -449,21 +449,16 @@ class GetSchoolStudents(APIView):
         end = date(year + (month == 12), (month % 12) + 1, 1)  # first day of next month
         print(start)
         print(end)
-        deletions_in_period = DeletedStudent.objects.filter(
-            student=OuterRef('pk'),
+        deleted_qs = DeletedStudent.objects.filter(
             group__branch_id=branch,
             deleted_date__gte=start,
             deleted_date__lt=end,
             # deleted=True,
         )
 
-        students_list = (
-            Student.objects
-            .filter(user__branch_id=branch)  # keep this only if you truly need it
-            .annotate(has_del_month=Exists(deletions_in_period))
-            .filter(Q(has_del_month=True) | Q(groups_student__deleted=False))
-            .distinct()
-        )
+        students_list = Student.objects.filter(
+            id__in=deleted_qs.values('student_id')
+        ).distinct()
         print("students", students_list)
         data = self.get_class_data(students_list, year=year, month=month)
         return Response(data)
