@@ -422,13 +422,17 @@ class GetSchoolStudents(APIView):
             branch_id=branch_id,
         )
 
-        deleted_on_or_before_start = DeletedStudent.objects.filter(
-            # student=OuterRef('pk'),
+        deleted_on_or_before_start2 = DeletedStudent.objects.filter(
             group__branch_id=branch_id,
             deleted_date__month__lte=month,  # <= 2025-10-01
         )
-        for student in deleted_on_or_before_start:
+        for student in deleted_on_or_before_start2:
             print(student.student.user.name, student.student.user.surname, student.deleted_date)
+        deleted_on_or_before_start = DeletedStudent.objects.filter(
+            student=OuterRef('pk'),
+            group__branch_id=branch_id,
+            deleted_date__month__lte=month,  # <= 2025-10-01
+        )
         students_list = (
             Student.objects
             .annotate(
