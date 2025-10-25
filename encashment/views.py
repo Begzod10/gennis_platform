@@ -471,8 +471,9 @@ class GetSchoolStudents(APIView):
             )
             .filter(
 
-                Q(is_active=True)
-                | Q(was_deleted=True)
+                # Q(is_active=True)
+                # |
+            Q(was_deleted=True)
 
             )
             .distinct()
