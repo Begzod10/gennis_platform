@@ -305,13 +305,27 @@ class GetSchoolStudents(APIView):
         print("classes", classes)
         for _class in classes:
             class_data = {
-                'class_number': _class.class_number.number,
+                'class_number': getattr(_class.class_number, 'number', None),
                 'students': []
             }
             data['class'].append(class_data)
-            for student in students_list:
+
+            # Per-class students: active in this class OR deleted from this class
+            class_students = (
+                Student.objects
+                .filter(
+                    Q(groups_student=_class, groups_student__deleted=False) |
+                    Q(deleted_student_student__group=_class)
+                )
+                # keep within your outer scope of students_list
+                .filter(id__in=students_list.values('id'))
+                .distinct()
+            )
+
+            for student in class_students:
                 attendance_data = (
-                    AttendancePerMonth.objects.filter(
+                    AttendancePerMonth.objects
+                    .filter(
                         student=student,
                         month_date__year=current_year,
                         month_date__month=current_month,
@@ -320,13 +334,13 @@ class GetSchoolStudents(APIView):
                     )
                     .first()
                 )
+
                 student_payments = StudentPayment.objects.filter(
                     student=student,
                     attendance=attendance_data,
                 )
-                cash_payment = 0
-                bank_payment = 0
-                click_payment = 0
+
+                cash_payment = bank_payment = click_payment = 0
                 for payment in student_payments:
                     if payment.payment_type.name == 'cash':
                         cash_payment += payment.payment_sum
@@ -334,23 +348,28 @@ class GetSchoolStudents(APIView):
                         bank_payment += payment.payment_sum
                     elif payment.payment_type.name == 'click':
                         click_payment += payment.payment_sum
+
                 total_debt_student = attendance_data.total_debt if attendance_data else 0
                 remaining_debt_student = attendance_data.remaining_debt if attendance_data else 0
                 discount = getattr(attendance_data, 'discount', 0)
                 paid_amount = (
-                        StudentPayment.objects.filter(
+                        StudentPayment.objects
+                        .filter(
                             student=student,
                             deleted=False,
                             status=True,
                             date__month=current_month,
                             date__year=current_year
-                        ).aggregate(total=Sum('payment_sum'))['total'] or 0
+                        )
+                        .aggregate(total=Sum('payment_sum'))['total'] or 0
                 )
+
                 total_debt += total_debt_student
                 total_sum_test += cash_payment + bank_payment + click_payment
                 reaming_debt += remaining_debt_student
                 total_dis += discount
                 total_discount += paid_amount
+
                 class_data['students'].append({
                     'id': student.user.id,
                     'name': student.user.name,
