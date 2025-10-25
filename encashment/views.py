@@ -353,8 +353,7 @@ class GetSchoolStudents(APIView):
                     .first()
                 )
 
-                if not attendance_data:
-                    continue
+
                 student_payments = StudentPayment.objects.filter(
                     student=student,
                     attendance=attendance_data,
@@ -472,9 +471,8 @@ class GetSchoolStudents(APIView):
             )
             .filter(
 
-                # Q(is_active=True)
-
-            Q(was_deleted=True)
+                Q(is_active=True)
+                | Q(was_deleted=True)
 
             )
             .distinct()
