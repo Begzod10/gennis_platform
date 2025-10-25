@@ -466,6 +466,7 @@ class GetSchoolStudents(APIView):
 
         # UNION the two querysets
         students_list = (active_now | deleted_this_month).distinct()
+
         print("students", students_list)
         data = self.get_class_data(students_list, year=year, month=month)
         return Response(data)
