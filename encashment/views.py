@@ -448,35 +448,22 @@ class GetSchoolStudents(APIView):
         start = date(year, month, 1)
         end = date(year + (month == 12), (month % 12) + 1, 1)  # first day of next month
 
-        # (optional) only consider deletions tied to student's active groups
-        active_groups_subq = (
-            Group.objects
-            .filter(students=OuterRef('pk'), deleted=False)
-            .values('pk')
-        )
-
-        deletions_in_period = (
-            DeletedStudent.objects
-            .filter(
-                student=OuterRef('pk'),
-                deleted_date__gte=start,  # 2025-10-01 inclusive
-                deleted_date__lt=end,  # 2025-11-01 exclusive
-                # deleted=True,  # drop this line if you don't toggle the flag
-                # group__in=Subquery(active_groups_subq),  # remove if you want ANY group
-            )
+        deletions_in_period = DeletedStudent.objects.filter(
+            student=OuterRef('pk'),
+            group__branch_id=branch,
+            deleted_date__gte=start,
+            deleted_date__lt=end,
+            # deleted=True,  # include if you actually toggle this flag
         )
 
         students_list = (
             Student.objects
-            .filter(
-                user__branch_id=branch,
-                groups_student__deleted=False,  # base condition (active somewhere)
-            )
+            .filter(user__branch_id=branch)  # keep branch filter
             .annotate(has_del_month=Exists(deletions_in_period))
-            # Keep students who either:
-            # 1) have a deletion in the target month (for relevant groups), OR
-            # 2) have no deletion records at all (fallback to base filter)
-            .filter(Q(has_del_month=True))
+            .filter(
+                Q(has_del_month=True)  # deleted in the month
+                | Q(groups_student__deleted=False)  # OR currently active
+            )
             .distinct()
         )
         print("students", students_list)
