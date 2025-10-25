@@ -462,7 +462,7 @@ class GetSchoolStudents(APIView):
             .annotate(has_del_month=Exists(deletions_in_period))
             .filter(
                 Q(has_del_month=True)  # deleted in the month
-                | Q(groups_student__deleted=False)  # OR currently active
+                # | Q(groups_student__deleted=False)  # OR currently active
             )
             .distinct()
         )
