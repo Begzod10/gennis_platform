@@ -424,13 +424,16 @@ class GetSchoolStudents(APIView):
         month = request.data.get('month')
         year = request.data.get('year')
         branch = request.query_params.get('branch')
-
+        students_list = Student.objects.filter(user__branch_id=branch, groups_student__deleted=False,
+                                               groups_student__price__isnull=False,
+                                               deleted_student_student_new__isnull=True,
+                                               deleted_student_student__isnull=True).all()
         classes = ClassNumber.objects.filter(
             price__isnull=False,
             branch_id=branch
         ).order_by('number')
 
-        data = self.get_class_data(classes, year=year, month=month)
+        data = self.get_class_data(students_list, year=year, month=month)
         return Response(data)
 
 
