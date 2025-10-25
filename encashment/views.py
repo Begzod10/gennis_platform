@@ -35,6 +35,8 @@ from user.serializers import UserSalaryListSerializers
 from .models import Encashment
 from lead.models import Lead
 
+from django.db.models import Case, When, IntegerField, F
+
 
 class Encashments(APIView):
     permission_classes = [IsAuthenticated]
@@ -284,7 +286,15 @@ class GetSchoolStudents(APIView):
             Group.objects
             .filter(deleted=False, students__in=students_list)
             .distinct()
-            .order_by('class_number')
+            .order_by(
+                # put zeros first
+                Case(
+                    When(class_number=0, then=0),
+                    default=1,
+                    output_field=IntegerField(),
+                ),
+                F('class_number').asc(nulls_last=True)  # then sort by the actual number
+            )
         )
         # students_per_class = defaultdict(list)
         # for student in students:
