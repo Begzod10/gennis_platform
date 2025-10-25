@@ -458,7 +458,7 @@ class GetSchoolStudents(APIView):
         deletions_in_period = (
             DeletedStudent.objects
             .filter(
-                student=OuterRef('student'),
+                student=OuterRef('pk'),
                 deleted_date__gte=start,  # 2025-10-01 inclusive
                 deleted_date__lt=end,  # 2025-11-01 exclusive
                 # deleted=True,  # drop this line if you don't toggle the flag
