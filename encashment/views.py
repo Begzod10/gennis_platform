@@ -340,13 +340,17 @@ class GetSchoolStudents(APIView):
             data['class'].append(class_data)
 
             for student in _class.students.all():
-                attendance_data = AttendancePerMonth.objects.get(
-                    student=student,
-                    month_date__year=current_year,
-                    month_date__month=current_month,
-                    group=_class,
-                    group__deleted=False
+                attendance_data = (
+                    AttendancePerMonth.objects.filter(
+                        student=student,
+                        month_date__year=current_year,
+                        month_date__month=current_month,
+                        group=_class,
+                        group__deleted=False,
+                    )
+                    .first()
                 )
+
                 if not attendance_data:
                     continue
                 student_payments = StudentPayment.objects.filter(
