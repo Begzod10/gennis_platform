@@ -443,22 +443,30 @@ class GetSchoolStudents(APIView):
     def post(self, request, *args, **kwargs):
         month = int(request.data.get('month'))  # e.g. 10
         year = int(request.data.get('year'))  # e.g. 2025
-        branch = request.query_params.get('branch')
+        branch_id = request.query_params.get('branch')
 
         start = date(year, month, 1)
         end = date(year + (month == 12), (month % 12) + 1, 1)  # first day of next month
         print(start)
         print(end)
-        deleted_qs = DeletedStudent.objects.filter(
-            group__branch_id=branch,
+        deletions_in_period = DeletedStudent.objects.filter(
+            student=OuterRef('pk'),
+            group__branch_id=branch_id,
             deleted_date__gte=start,
             deleted_date__lt=end,
-            # deleted=True,
+            # deleted=True,  # include if you actually toggle this flag
         )
 
-        students_list = Student.objects.filter(
-            id__in=deleted_qs.values('student_id')
-        ).distinct()
+        students_list = (
+            Student.objects
+            .filter(user__branch_id=branch_id)  # scope students to this branch
+            .annotate(has_del_month=Exists(deletions_in_period))
+            .filter(
+                Q(groups_student__deleted=False) |  # active now (in any non-deleted group)
+                Q(has_del_month=True)  # OR deleted this month in this branch
+            )
+            .distinct()
+        )
         print("students", students_list)
         data = self.get_class_data(students_list, year=year, month=month)
         return Response(data)
