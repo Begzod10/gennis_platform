@@ -426,9 +426,9 @@ class GetSchoolStudents(APIView):
             student=OuterRef('pk'),
             group__branch_id=branch_id,
             deleted_date__month__lte=month,  # <= 2025-10-01
-            deleted_date__year__lte=year,
         )
-
+        for student in deleted_on_or_before_start:
+            print(student.student.user.name, student.student.user.surname, student.deleted_date)
         students_list = (
             Student.objects
             .annotate(
