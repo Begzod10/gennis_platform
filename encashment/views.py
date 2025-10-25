@@ -447,7 +447,8 @@ class GetSchoolStudents(APIView):
 
         start = date(year, month, 1)
         end = date(year + (month == 12), (month % 12) + 1, 1)  # first day of next month
-
+        print(start)
+        print(end)
         deletions_in_period = DeletedStudent.objects.filter(
             student=OuterRef('pk'),
             group__branch_id=branch,
