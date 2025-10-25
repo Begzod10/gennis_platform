@@ -34,7 +34,7 @@ from user.models import UserSalaryList, UserSalary
 from user.serializers import UserSalaryListSerializers
 from .models import Encashment
 from lead.models import Lead
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, Subquery
 from django.db.models import Case, When, IntegerField, F
 from django.db.models.functions import Cast
 
@@ -437,10 +437,6 @@ class GetSchoolStudents(APIView):
                                                deleted_student_student_new__isnull=True,
                                                # deleted_student_student__isnull=True
                                                ).all()
-        classes = ClassNumber.objects.filter(
-            price__isnull=False,
-            branch_id=branch
-        ).order_by('number')
         data = self.get_class_data(students_list)
         return Response(data)
 
@@ -448,12 +444,20 @@ class GetSchoolStudents(APIView):
         month = request.data.get('month')
         year = request.data.get('year')
         branch = request.query_params.get('branch')
+        active_groups_subq = (
+            Group.objects
+            .filter(students=OuterRef('pk'), deleted=False)
+            .values('pk')
+        )
+
+        # Any deletion for one of the student's *active* groups
         any_deletions = DeletedStudent.objects.filter(
             student=OuterRef('pk'),
             deleted=True,
+            group__in=Subquery(active_groups_subq),
         )
 
-        # Subquery: deletion in the target month/year
+        # Deletion in requested period for active groups
         deletions_in_period = any_deletions.filter(
             deleted_date__year=year,
             deleted_date__month=month,
@@ -463,12 +467,14 @@ class GetSchoolStudents(APIView):
             Student.objects
             .filter(
                 user__branch_id=branch,
-                groups_student__deleted=False,
+                groups_student__deleted=False,  # must be currently active somewhere
             )
             .annotate(
                 has_any_del=Exists(any_deletions),
                 has_del_month=Exists(deletions_in_period),
             )
+            # If a student has a relevant deletion, keep only those in the target month;
+            # otherwise (no relevant deletions), include them.
             .filter(Q(has_del_month=True) | Q(has_any_del=False))
             .distinct()
         )
