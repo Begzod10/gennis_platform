@@ -460,6 +460,7 @@ class GetSchoolStudents(APIView):
             .annotate(deleted_in_period=Exists(deleted_qs))
             .filter(deleted_in_period=True)  # ensures a deletion record exists
         )
+        print("students", students_list)
         classes = ClassNumber.objects.filter(
             price__isnull=False,
             branch_id=branch
