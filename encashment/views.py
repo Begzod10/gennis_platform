@@ -413,22 +413,19 @@ class GetSchoolStudents(APIView):
         year = int(request.data.get('year'))  # e.g. 2025
         branch_id = request.query_params.get('branch')
 
-        start = date(year, month, 1)
-        end = date(year + (month == 12), (month % 12) + 1, 1)  # first day of next month
-        # 1) rows that are ACTIVE now in this branch
         active_in_branch = Group.objects.filter(
             students=OuterRef('pk'),
             deleted=False,
             branch_id=branch_id,
         )
 
-        deleted_on_or_before_start2 = DeletedStudent.objects.filter(
-            group__branch_id=branch_id,
-            deleted_date__month__gte=month,  # <= 2025-10-01
-            deleted_date__year=year
-        )
-        for student in deleted_on_or_before_start2:
-            print(student.student.user.name, student.student.user.surname, student.deleted_date)
+        # deleted_on_or_before_start2 = DeletedStudent.objects.filter(
+        #     group__branch_id=branch_id,
+        #     deleted_date__month__gte=month,  # <= 2025-10-01
+        #     deleted_date__year=year
+        # )
+        # for student in deleted_on_or_before_start2:
+        #     print(student.student.user.name, student.student.user.surname, student.deleted_date)
         deleted_on_or_before_start = DeletedStudent.objects.filter(
             student=OuterRef('pk'),
             group__branch_id=branch_id,
