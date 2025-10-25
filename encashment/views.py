@@ -260,7 +260,7 @@ class Encashments(APIView):
 
 class GetSchoolStudents(APIView):
 
-    def get_class_data(self, classes, year=None, month=None):
+    def get_class_data(self, students_list, year=None, month=None):
         total_sum_test = 0
         total_debt = 0
         reaming_debt = 0
@@ -275,45 +275,45 @@ class GetSchoolStudents(APIView):
         current_year = year if year else datetime.now().year
         current_month = month if month else datetime.now().month
 
-        students = (
-            Student.objects.filter(groups_student__class_number__in=classes)
-            .select_related('user')
-            .prefetch_related('groups_student__class_number')
-        )
+        # students = (
+        #     Student.objects.filter(groups_student__class_number__in=classes)
+        #     .select_related('user')
+        #     .prefetch_related('groups_student__class_number')
+        # )
+        classes = Group.objects.filter(deleted=False, students__in=students_list).order_by('number').all()
+        # students_per_class = defaultdict(list)
+        # for student in students:
+        #     for group in student.groups_student.all():
+        #         if group.class_number_id in [c.id for c in classes]:
+        #             students_per_class[group.class_number_id].append(student)
+        #
+        # attendance_data = (
+        #     AttendancePerMonth.objects.filter(
+        #         student__in=students,
+        #         month_date__year=current_year,
+        #         month_date__month=current_month,
+        #         group__deleted=False
+        #     )
+        #     .select_related('student', 'group', 'group__class_number')
+        # )
+        #
+        # attendance_map = {att.student_id: att for att in attendance_data}
 
-        students_per_class = defaultdict(list)
-        for student in students:
-            for group in student.groups_student.all():
-                if group.class_number_id in [c.id for c in classes]:
-                    students_per_class[group.class_number_id].append(student)
-
-        attendance_data = (
-            AttendancePerMonth.objects.filter(
-                student__in=students,
-                month_date__year=current_year,
-                month_date__month=current_month,
-                group__deleted=False
-            )
-            .select_related('student', 'group', 'group__class_number')
-        )
-
-        attendance_map = {att.student_id: att for att in attendance_data}
-
-        payment_data = (
-            StudentPayment.objects.filter(
-                student_id__in=[s.id for s in students],
-                date__month=current_month,
-                date__year=current_year,
-                deleted=False,
-                status=False
-            )
-            .values('student_id', 'payment_type__name')
-            .annotate(total_sum=Sum('payment_sum'))
-        )
-
-        payment_map = defaultdict(dict)
-        for payment in payment_data:
-            payment_map[payment['student_id']][payment['payment_type__name']] = payment['total_sum']
+        # payment_data = (
+        #     StudentPayment.objects.filter(
+        #         student_id__in=[s.id for s in students],
+        #         date__month=current_month,
+        #         date__year=current_year,
+        #         deleted=False,
+        #         status=False
+        #     )
+        #     .values('student_id', 'payment_type__name')
+        #     .annotate(total_sum=Sum('payment_sum'))
+        # )
+        #
+        # payment_map = defaultdict(dict)
+        # for payment in payment_data:
+        #     payment_map[payment['student_id']][payment['payment_type__name']] = payment['total_sum']
 
         for _class in classes:
             class_data = {
@@ -322,17 +322,34 @@ class GetSchoolStudents(APIView):
             }
             data['class'].append(class_data)
 
-            for student in students_per_class[_class.id]:
-                attendance = attendance_map.get(student.id)
-                payments = payment_map.get(student.id, {})
-
-                cash_payment = payments.get('cash', 0)
-                bank_payment = payments.get('bank', 0)
-                click_payment = payments.get('click', 0)
-
-                total_debt_student = attendance.total_debt if attendance else 0
-                remaining_debt_student = attendance.remaining_debt if attendance else 0
-                discount = getattr(attendance, 'discount', 0)
+            for student in _class.students.all():
+                attendance_data = (
+                    AttendancePerMonth.objects.get(
+                        student=student,
+                        month_date__year=current_year,
+                        month_date__month=current_month,
+                        group=_class,
+                        group__deleted=False
+                    )
+                    .select_related('student', 'group', 'group__class_number')
+                )
+                student_payments = StudentPayment.objects.filter(
+                    student=student,
+                    attendance=attendance_data,
+                )
+                cash_payment = 0
+                bank_payment = 0
+                click_payment = 0
+                for payment in student_payments:
+                    if payment.payment_type.name == 'cash':
+                        cash_payment += payment.payment_sum
+                    elif payment.payment_type.name == 'bank':
+                        bank_payment += payment.payment_sum
+                    elif payment.payment_type.name == 'click':
+                        click_payment += payment.payment_sum
+                total_debt_student = attendance_data.total_debt if attendance_data else 0
+                remaining_debt_student = attendance_data.remaining_debt if attendance_data else 0
+                discount = getattr(attendance_data, 'discount', 0)
 
                 paid_amount = (
                         StudentPayment.objects.filter(
@@ -362,7 +379,7 @@ class GetSchoolStudents(APIView):
                     'click': click_payment,
                     'total_dis': discount,
                     'total_discount': paid_amount,
-                    'month_id': attendance.id if attendance else None,
+                    'month_id': attendance_data.id if attendance_data else None,
                 })
 
         unique_dates = (
@@ -398,12 +415,11 @@ class GetSchoolStudents(APIView):
                                                groups_student__price__isnull=False,
                                                deleted_student_student_new__isnull=True,
                                                deleted_student_student__isnull=True).all()
-        print(students_list)
         classes = ClassNumber.objects.filter(
             price__isnull=False,
             branch_id=branch
         ).order_by('number')
-        data = self.get_class_data(classes)
+        data = self.get_class_data(students_list)
         return Response(data)
 
     def post(self, request, *args, **kwargs):
