@@ -324,8 +324,7 @@ class GetSchoolStudents(APIView):
                         student=student,
                         month_date__year=current_year,
                         month_date__month=current_month,
-                        group=_class,
-                        group__deleted=False,
+                        group=_class
                     )
                     .first()
                 )
