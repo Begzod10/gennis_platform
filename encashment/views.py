@@ -331,10 +331,21 @@ class GetSchoolStudents(APIView):
                 cash_payment = 0
                 bank_payment = 0
                 click_payment = 0
+                paid_amount = 0
                 if attendance_data:
                     student_payments = StudentPayment.objects.filter(
                         student=student,
+                        status=False,
+                        deleted=False,
                         attendance=attendance_data,
+                    )
+                    paid_amount = (
+                            StudentPayment.objects.filter(
+                                student=student,
+                                deleted=False,
+                                status=True,
+                                attendance=attendance_data,
+                            ).aggregate(total=Sum('payment_sum'))['total'] or 0
                     )
                     for payment in student_payments:
                         if payment.payment_type.name == 'cash':
@@ -346,15 +357,7 @@ class GetSchoolStudents(APIView):
                 total_debt_student = attendance_data.total_debt if attendance_data else 0
                 remaining_debt_student = attendance_data.remaining_debt if attendance_data else 0
                 discount = getattr(attendance_data, 'discount', 0)
-                paid_amount = (
-                        StudentPayment.objects.filter(
-                            student=student,
-                            deleted=False,
-                            status=True,
-                            date__month=current_month,
-                            date__year=current_year
-                        ).aggregate(total=Sum('payment_sum'))['total'] or 0
-                )
+
                 total_debt += total_debt_student
                 total_sum_test += cash_payment + bank_payment + click_payment
                 reaming_debt += remaining_debt_student
