@@ -432,7 +432,8 @@ class GetSchoolStudents(APIView):
             student=OuterRef('pk'),
             group__branch_id=branch_id,
             deleted_date__month__gte=month,  # <= 2025-10-01
-            deleted_date__year=year
+            deleted_date__year=year,
+            deleted=False
         )
         students_list = (
             Student.objects
