@@ -304,7 +304,7 @@ class GetSchoolStudents(APIView):
         )
         for _class in classes:
             class_data = {
-                'class_number': _class.class_number.number,
+                'class_number': _class.class_number.number + f"{_class.color.name}" if _class.class_number else '',
                 'students': []
             }
             data['class'].append(class_data)
