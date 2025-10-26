@@ -415,31 +415,28 @@ class GetSchoolStudents(APIView):
         year = int(request.data.get('year'))  # e.g. 2025
         branch_id = request.query_params.get('branch')
 
-        active_student_ids = (
-            Group.objects
-            .filter(
-                deleted=False,
-                branch_id=branch_id,
-            )
-            .values_list('students__id', flat=True)
+        active_in_branch = Group.objects.filter(
+            students=OuterRef('pk'),
+            deleted=False,
+            branch_id=branch_id,
         )
 
-        # Students deleted in the target period (IDs) — uses flat=True
-        deleted_student_ids = (
-            DeletedStudent.objects
-            .filter(
-                group__branch_id=branch_id,
-                deleted_date__year=year,
-                deleted_date__month__gte=month,  # your current condition
-                deleted=False,
-            )
-            .values_list('student_id', flat=True)
+        deleted_on_or_before_start = DeletedStudent.objects.filter(
+            student=OuterRef('pk'),
+            group__branch_id=branch_id,
+            deleted_date__month__gte=month,
+            deleted_date__year=year,
+            deleted=False
         )
-
         students_list = (
             Student.objects
+            .annotate(
+                is_active=Exists(active_in_branch),
+                was_deleted=Exists(deleted_on_or_before_start),
+            )
             .filter(
-                Q(id__in=active_student_ids) | Q(id__in=deleted_student_ids)
+                Q(is_active=True) |
+                (Q(was_deleted=True) & Q(is_active=False))  # ← exclude currently active from “deleted”
             )
             .distinct()
         )
