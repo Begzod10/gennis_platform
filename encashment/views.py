@@ -1,12 +1,7 @@
 from collections import defaultdict
-from datetime import datetime
-
-from django.db.models import Q
 from django.db.models import Sum
 from django.db.models.functions import ExtractMonth, ExtractYear
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -20,7 +15,6 @@ from books.serializers import BranchPaymentListSerializers
 from capital.models import Capital
 from capital.serializer.old_capital import OldCapitalsListSerializers
 from capital.serializers import OldCapital
-from classes.models import ClassNumber
 from group.models import Group
 from overhead.models import Overhead
 from overhead.serializers import OverheadSerializerGet
@@ -302,20 +296,36 @@ class GetSchoolStudents(APIView):
                 'id'
             )
         )
+        students_ids = students_list.values_list('id', flat=True)
         for _class in classes:
             class_data = {
                 'class_number': f"{_class.class_number.number}-{_class.color.name}",
                 'students': []
             }
             data['class'].append(class_data)
+            active_in_this_class = Group.objects.filter(
+                id=_class.id,
+                deleted=False,
+                students=OuterRef('pk'),
+            )
+            deleted_in_this_class = DeletedStudent.objects.filter(
+                group_id=_class.id,  # ← this class only
+                student=OuterRef('pk'),
+                deleted=False,
+                deleted_date__year=current_year,
+                deleted_date__month__gte=current_month,
+            )
             class_students = (
                 Student.objects
-                .filter(
-                    Q(groups_student=_class, groups_student__deleted=False) |
-                    Q(deleted_student_student__group=_class)
+                .filter(id__in=students_ids)  # keep within outer scope
+                .annotate(
+                    active_in_class=Exists(active_in_this_class),
+                    deleted_in_class=Exists(deleted_in_this_class),
                 )
-                # keep within your outer scope of students_list
-                .filter(id__in=students_list.values('id'))
+                .filter(
+                    Q(active_in_class=True) |
+                    (Q(deleted_in_class=True) & Q(active_in_class=False))
+                )
                 .distinct()
             )
             for student in class_students:
@@ -838,15 +848,6 @@ class EncashmentsSchool(APIView):
             'overall_total': overall_total,
             'dates': [{'year': year, 'months': months} for year, months in year_month_dict.items()],
         })
-
-
-from django.db.models import Sum, Prefetch, Q
-
-from django.db.models import Sum, F, Q
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.exceptions import ValidationError
 
 
 class OneDayReportView(APIView):
