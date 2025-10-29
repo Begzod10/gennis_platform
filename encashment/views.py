@@ -408,7 +408,7 @@ class GetSchoolStudents(APIView):
         data['reaming_debt'] = reaming_debt
         data['total_dis'] = total_dis
         data['total_discount'] = total_discount
-        data["total_with_discount"] = total_sum_test - (total_discount + total_dis)
+        data["total_with_discount"] = total_debt - (total_discount + total_dis)
         return data
 
     def get(self, request, *args, **kwargs):
