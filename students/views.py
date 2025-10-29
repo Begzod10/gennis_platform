@@ -438,7 +438,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
         start_date = date(academic_start_year, 9, 1)  # inclusive
         end_date = date(academic_start_year + 1, 7, 1)  # exclusive
         if not group:
-            deleted_student = DeletedStudent.objects.filter(deleted=False, student_id=student_id).order_by(
+            deleted_student = DeletedStudent.objects.filter(student_id=student_id).order_by(
                 "-deleted_date").first()
             qs = (
                 AttendancePerMonth.objects
@@ -502,6 +502,9 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
         student = Student.objects.get(pk=student_id)
 
         group = student.groups_student.first()
+        if not group:
+            deleted_student = DeletedStudent.objects.filter(student_id=student_id).order_by("-deleted_date").first()
+            group = deleted_student.group
         attendances = AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id).all().order_by(
             'month_date__year', 'month_date__month')
 
