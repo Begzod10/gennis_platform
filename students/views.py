@@ -445,8 +445,8 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 .filter(
                     student_id=student_id,
                     group_id=deleted_student.group_id,
-                    # month_date__gte=start_date,
-                    # month_date__lt=end_date,
+                    month_date__gte=start_date,
+                    month_date__lt=end_date,
                 )
                 .annotate(
                     month_number=ExtractMonth('month_date'),
