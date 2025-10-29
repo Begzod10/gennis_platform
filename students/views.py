@@ -427,10 +427,6 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
         student_id = self.kwargs.get('student_id')
         student = Student.objects.get(pk=student_id)
         group = student.groups_student.first()
-        if not group:
-            return AttendancePerMonth.objects.none()
-
-        # Determine academic year window (September -> next June)
         today = timezone.localdate()
         academic_start_year = today.year if today.month >= 9 else (today.year - 1)
 
@@ -441,21 +437,38 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
 
         start_date = date(academic_start_year, 9, 1)  # inclusive
         end_date = date(academic_start_year + 1, 7, 1)  # exclusive
-
-        qs = (
-            AttendancePerMonth.objects
-            .filter(
-                student_id=student_id,
-                group_id=group.id,
-                month_date__gte=start_date,
-                month_date__lt=end_date,
+        if not group:
+            deleted_student = DeletedStudent.objects.filter(deleted=False, student_id=student_id).order_by(
+                "-deleted_date").first()
+            qs = (
+                AttendancePerMonth.objects
+                .filter(
+                    student_id=student_id,
+                    group_id=deleted_student.group_id,
+                    # month_date__gte=start_date,
+                    # month_date__lt=end_date,
+                )
+                .annotate(
+                    month_number=ExtractMonth('month_date'),
+                    year_number=ExtractYear('month_date'),
+                )
+                .order_by('month_date')
             )
-            .annotate(
-                month_number=ExtractMonth('month_date'),
-                year_number=ExtractYear('month_date'),
+        else:
+            qs = (
+                AttendancePerMonth.objects
+                .filter(
+                    student_id=student_id,
+                    group_id=group.id,
+                    month_date__gte=start_date,
+                    month_date__lt=end_date,
+                )
+                .annotate(
+                    month_number=ExtractMonth('month_date'),
+                    year_number=ExtractYear('month_date'),
+                )
+                .order_by('month_date')
             )
-            .order_by('month_date')
-        )
 
         # Optional: ?month=1..12 mapped to the correct year in this academic window
         month_str = self.request.query_params.get("month")
