@@ -620,7 +620,7 @@ class StudentCharityModelView(APIView):
         #     current_year -= 1
         # if month_number in new_months:
         #     current_year += 1
-        date = datetime(year=current_year, month=int(month_number), day=int(datetime.now().day)).date()
+        date = datetime(year=current_year, month=int(datetime.now().month), day=int(datetime.now().day)).date()
         student_id = self.kwargs['student_id']
         student = get_object_or_404(Student, id=student_id)
         group = student.groups_student.first()
