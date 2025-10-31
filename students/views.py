@@ -643,6 +643,7 @@ class StudentCharityModelView(APIView):
                                                       branch_id=branch, deleted=False,
                                                       status=True).all()
             student_payments = StudentPayment.objects.filter(attendance=attendance_per_month, student_id=student_id,
+                                                             branch_id=branch,
                                                              deleted=False).all()
             total_payments = 0
             total_discount = 0
@@ -651,7 +652,7 @@ class StudentCharityModelView(APIView):
 
             for payment in student_payments:
                 total_payments += payment.payment_sum
-
+            print(total_payments, "total_payments")
             student_payment = StudentPayment.objects.create(student_id=student_id, payment_sum=payment_sum,
                                                             branch_id=branch, status=request.data['status'],
                                                             payment_type_id=request.data['payment_type'], date=date,
