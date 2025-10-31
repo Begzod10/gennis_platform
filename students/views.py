@@ -659,7 +659,7 @@ class StudentCharityModelView(APIView):
                                                             reason=request.data['reason'])
             student_payment.save()
             total_discount += payment_sum
-            attendance_per_month.discount = total_discount
+            attendance_per_month.total_charity = total_discount
             attendance_per_month.payment = total_payments
             attendance_per_month.remaining_debt = attendance_per_month.total_debt - total_payments
             attendance_per_month.save()
