@@ -657,8 +657,6 @@ class StudentCharityModelView(APIView):
 
             for payment in student_payments:
                 total_payments += payment.payment_sum
-            print(total_payments, "total_payments")
-
             total_discount += payment_sum
             attendance_per_month.total_charity = total_discount
             attendance_per_month.payment = total_payments
