@@ -638,7 +638,12 @@ class StudentCharityModelView(APIView):
 
         if attendance_per_month.remaining_debt >= payment_sum:
             attendance_per_month.remaining_debt -= payment_sum
-
+            student_payment = StudentPayment.objects.create(student_id=student_id, payment_sum=payment_sum,
+                                                            branch_id=branch, status=request.data['status'],
+                                                            payment_type_id=request.data['payment_type'], date=date,
+                                                            attendance=attendance_per_month,
+                                                            reason=request.data['reason'])
+            student_payment.save()
             discounts = StudentPayment.objects.filter(attendance=attendance_per_month, student_id=student_id,
                                                       branch_id=branch, deleted=False,
                                                       status=True).all()
@@ -653,12 +658,7 @@ class StudentCharityModelView(APIView):
             for payment in student_payments:
                 total_payments += payment.payment_sum
             print(total_payments, "total_payments")
-            student_payment = StudentPayment.objects.create(student_id=student_id, payment_sum=payment_sum,
-                                                            branch_id=branch, status=request.data['status'],
-                                                            payment_type_id=request.data['payment_type'], date=date,
-                                                            attendance=attendance_per_month,
-                                                            reason=request.data['reason'])
-            student_payment.save()
+
             total_discount += payment_sum
             attendance_per_month.total_charity = total_discount
             attendance_per_month.payment = total_payments
