@@ -87,33 +87,33 @@ def update_student_debt():
         get_remaining_debt_for_student(student.id)
 
 
-# @shared_task()
-# def update_deleted_students_debts():
-#     months = [9, 10]
-#     year = datetime.now().year
-#     for month in months:
-#         deleted_students = DeletedStudent.objects.filter(
-#             student__groups_student__isnull=True,
-#             deleted_date__month__gte=month,
-#             deleted_date__year=year,
-#         ).all()
-#         month_date = datetime(year, month, 1)
-#         for student in deleted_students:
-#             if student.group:
-#                 exist_month = AttendancePerMonth.objects.filter(
-#                     student_id=student.id,
-#                     month_date__year=year,
-#                     month_date__month=month,
-#                     group_id=student.group.id
-#                 ).first()
-#                 if exist_month:
-#                     print(f"  ✅ Exists: {month_date.strftime('%Y-%m')} (ID: {exist_month.id})")
-#                 else:
-#                     new_record = AttendancePerMonth.objects.create(
-#                         student_id=student.id,
-#                         month_date=month_date,
-#                         total_debt=student.group.price if student.group and student.group.price else 0,
-#                         payment=0,
-#                         group_id=student.group.id,
-#                         remaining_debt=0
-#                     )
+@shared_task()
+def update_deleted_students_debts():
+    months = [9, 10]
+    year = datetime.now().year
+    for month in months:
+        deleted_students = DeletedStudent.objects.filter(
+            student__groups_student__isnull=True,
+            deleted_date__month__gte=month,
+            deleted_date__year=year,
+        ).all()
+        month_date = datetime(year, month, 1)
+        for student in deleted_students:
+            if student.group:
+                exist_month = AttendancePerMonth.objects.filter(
+                    student_id=student.id,
+                    month_date__year=year,
+                    month_date__month=month,
+                    group_id=student.group.id
+                ).first()
+                if exist_month:
+                    print(f"  ✅ Exists: {month_date.strftime('%Y-%m')} (ID: {exist_month.id})")
+                else:
+                    new_record = AttendancePerMonth.objects.create(
+                        student_id=student.id,
+                        month_date=month_date,
+                        total_debt=student.group.price if student.group and student.group.price else 0,
+                        payment=0,
+                        group_id=student.group.id,
+                        remaining_debt=0
+                    )
