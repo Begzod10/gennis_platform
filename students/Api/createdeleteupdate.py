@@ -13,7 +13,7 @@ from students.serializers import DeletedStudentSerializer, StudentPaymentSeriali
 
 
 class StudentCreateView(CustomResponseMixin, generics.CreateAPIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
