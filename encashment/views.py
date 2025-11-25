@@ -313,7 +313,7 @@ class GetSchoolStudents(APIView):
                 student=OuterRef('pk'),
                 deleted=False,
                 deleted_date__year=current_year,
-                deleted_date__month__lte=current_month,
+                deleted_date__month__gte=current_month,
             )
             class_students = (
                 Student.objects
@@ -434,7 +434,7 @@ class GetSchoolStudents(APIView):
         deleted_on_or_before_start = DeletedStudent.objects.filter(
             student=OuterRef('pk'),
             group__branch_id=branch_id,
-            deleted_date__month__lte=month,
+            deleted_date__month__gte=month,
             deleted_date__year=year,
             deleted=False
         )
