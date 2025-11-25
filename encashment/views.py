@@ -671,7 +671,7 @@ class GetSchoolStudents(APIView):
         # Totals
         data['total_sum'] = total_sum_paid
         data['total_debt'] = total_debt
-        data['remaining_debt'] = remaining_debt  # ✅ Fixed typo
+        data['reaming_debt'] = remaining_debt  # ✅ Fixed typo
         data['total_dis'] = total_discount
         data['total_discount'] = total_paid_amount
         data['total_with_discount'] = total_debt - (total_paid_amount + total_discount)
