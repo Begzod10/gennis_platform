@@ -608,7 +608,20 @@ class GetSchoolStudents(APIView):
                 remaining_debt += remaining_debt_student
                 total_discount += discount
                 total_paid_amount += paid_amount
-
+                #                 class_data['students'].append({
+                #                     'id': student.user.id,
+                #                     'name': student.user.name,
+                #                     'surname': student.user.surname,
+                #                     'phone': student.user.phone,
+                #                     'total_debt': total_debt_student,
+                #                     'remaining_debt': remaining_debt_student,
+                #                     'cash': cash_payment,
+                #                     'bank': bank_payment,
+                #                     'click': click_payment,
+                #                     'total_dis': discount,
+                #                     'total_discount': paid_amount,
+                #                     'month_id': attendance_data.id if attendance_data else None,
+                #                 })
                 class_data['students'].append({
                     'id': student.user.id,
                     'name': student.user.name,
@@ -619,8 +632,8 @@ class GetSchoolStudents(APIView):
                     'cash': cash_payment,
                     'bank': bank_payment,
                     'click': click_payment,
-                    'discount': discount,
-                    'paid_amount': paid_amount,
+                    'total_dis': discount,
+                    'total_discount': paid_amount,
                     'month_id': attendance_data.id if attendance_data else None,
                 })
 
@@ -649,13 +662,18 @@ class GetSchoolStudents(APIView):
             {'year': year, 'months': months}
             for year, months in sorted(year_month_dict.items())
         ]
-
+        # data['total_sum'] = total_sum_test
+        #         data['total_debt'] = total_debt
+        #         data['reaming_debt'] = reaming_debt
+        #         data['total_dis'] = total_dis
+        #         data['total_discount'] = total_discount
+        #         data["total_with_discount"] = total_debt - (total_discount + total_dis)
         # Totals
-        data['total_sum_paid'] = total_sum_paid
+        data['total_sum'] = total_sum_paid
         data['total_debt'] = total_debt
         data['remaining_debt'] = remaining_debt  # ✅ Fixed typo
-        data['total_discount'] = total_discount
-        data['total_paid_amount'] = total_paid_amount
+        data['total_dis'] = total_discount
+        data['total_discount'] = total_paid_amount
         data['total_with_discount'] = total_debt - (total_paid_amount + total_discount)
 
         return data
