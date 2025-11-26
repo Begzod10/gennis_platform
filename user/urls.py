@@ -23,6 +23,7 @@ from user.Api.write import (
     UserSalaryListDestroyView,
     UsernameCheck
 )
+from .views import UserFaceIdView
 
 app_name = 'user'
 urlpatterns = [
@@ -45,4 +46,5 @@ urlpatterns = [
     path('username-check/', UsernameCheck.as_view(), name='username-check'),
     path('users-job/', UsersWithJob.as_view(), name='user-jobs'),
     path('user-salary/<int:pk>/', UserSalaryMonthView.as_view(), name='usersalary-check'),
+    path('user-face-id/', UserFaceIdView.as_view(), name='user-face-id'),
 ]

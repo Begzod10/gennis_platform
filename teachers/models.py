@@ -31,7 +31,7 @@ class Teacher(models.Model):
     deleted_date = models.DateField(null=True)
     working_hours = models.CharField(max_length=50, null=True)
     class_salary = models.IntegerField(default=0, null=True)
-    face_id = models.CharField(null=True)
+    # face_id = models.CharField(null=True)
     # system = models.ForeignKey('system.System', on_delete=models.SET_NULL, null=True)
 
 

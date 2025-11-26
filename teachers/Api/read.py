@@ -1,6 +1,5 @@
 from django.db.models.query import QuerySet
-from django.utils import timezone
-from django.utils.dateparse import parse_datetime
+
 from rest_framework import generics, filters
 from rest_framework import status
 from rest_framework.exceptions import NotFound
@@ -9,7 +8,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from teachers.filters import TeacherFilter
-from branch.models import Branch
 from permissions.response import QueryParamFilterMixin
 from teachers.models import TeacherGroupStatistics, Teacher, TeacherSalaryList, TeacherSalary, TeacherAttendance
 from teachers.serializer.lists import ActiveListTeacherSerializer, TeacherSalaryMonthlyListSerializer, \
@@ -19,6 +17,9 @@ from teachers.serializers import (TeacherSerializerRead, TeacherSalaryListForAcc
 
 from django.db.models import Sum
 from permissions.response import CustomPagination
+from pprint import pprint
+
+
 class TeacherGroupStatisticsListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     # http://ip_adress:8000/Teachers/teacher-statistics-view/?branch_id=3
@@ -38,9 +39,9 @@ class TeacherListView(QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     app_name = "O'qtuvchilar"
     filter_mappings = {'branch': "user__branch__id", 'age': 'user__birth_date', "subject": 'subject__id',
-        'language': 'user__language_id', 'deleted': 'deleted',
+                       'language': 'user__language_id', 'deleted': 'deleted',
 
-    }
+                       }
     queryset = Teacher.objects.all()
     serializer_class = ActiveListTeacherSerializer
     filter_backends = [filters.SearchFilter]
@@ -84,7 +85,6 @@ class TeacherSalaryListAPIView(QueryParamFilterMixin, generics.ListAPIView):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)
 
-
         page = self.paginate_queryset(queryset)
         serializer = self.get_serializer(page, many=True)
 
@@ -108,6 +108,7 @@ class TeacherSalaryListAPIView(QueryParamFilterMixin, generics.ListAPIView):
             'data': serializer.data,
             'totalCount': data
         })
+
 
 class TeacherSalaryDetailAPIView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
@@ -245,36 +246,3 @@ class TeacherSalaryListDetailView2(QueryParamFilterMixin, generics.RetrieveAPIVi
             return queryset2
         except TeacherSalaryList.DoesNotExist:
             raise NotFound('UserSalary not found for the given user_id')
-
-
-class TeacherFaceIdView(APIView):
-    def post(self, request, *args, **kwargs):
-        print(request.data)
-        face_id = request.data['id']
-        branch_id = request.data['branch_id']
-        entry_time = request.data['entry_time']
-        leave_time = request.data['leave_time']
-
-        date_obj = parse_datetime(entry_time)
-
-        tz = timezone.get_current_timezone()
-        if timezone.is_naive(date_obj):
-            date_obj = timezone.make_aware(date_obj, tz)
-        else:
-            date_obj = date_obj.astimezone(tz)
-
-        branch = Branch.objects.get(branch_id=branch_id)
-        teacher = Teacher.objects.get(face_id=face_id, user__branch_id=branch.id)
-
-        teacher_attendance, created = TeacherAttendance.objects.get_or_create(
-            teacher=teacher,
-            entry_time__date=date_obj.date(),
-            defaults={
-                'entry_time': date_obj,
-                'leave_time': parse_datetime(leave_time) if leave_time else None,
-                'status': True,
-                'system': branch.location.system
-            }
-        )
-
-        return Response({'face_id': teacher.face_id}, status=status.HTTP_200_OK)

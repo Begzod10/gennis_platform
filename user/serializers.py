@@ -52,8 +52,8 @@ class UserSerializerRead(serializers.ModelSerializer):
 
 class UserSerializerWrite(serializers.ModelSerializer):
     old_id = serializers.IntegerField(required=False)
-    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
-    language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all())
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), required=False)
+    language = serializers.PrimaryKeyRelatedField(queryset=Language.objects.all(), required=False)
     profession = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), required=False, allow_null=True)
     money = serializers.CharField(required=False, allow_null=True)
     share = serializers.CharField(required=False, allow_null=True)
@@ -64,27 +64,40 @@ class UserSerializerWrite(serializers.ModelSerializer):
                   'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
                   'branch', 'is_superuser', 'is_staff', 'old_id', 'profession', 'money', "share"]
         extra_kwargs = {
-            'password': {'write_only': True, 'required': True},
+            'password': {'write_only': True, 'required': False},
             'birth_date': {'required': False},
-            'language': {'required': True},
-            'branch': {'required': True},
             'is_superuser': {'required': False},
-            'is_staff': {'required': False}
+            'is_staff': {'required': False},
+            'username': {'validators': []}  # This removes the unique validator
         }
 
-    def create(self, validated_data):
-        # test
-        profession = validated_data.pop('profession', None)
+    def validate_username(self, value):
+        """Custom username validation"""
+        if self.instance and self.instance.username == value:
+            return value
 
-        user = super().create(validated_data)
-        user.set_password(validated_data['password'])
+        if CustomUser.objects.filter(username=value).exists():
+            raise serializers.ValidationError("custom user with this username already exists.")
+
+        return value
+
+    # REMOVE the validate() method completely - let the view handle required fields for create
+
+    def create(self, validated_data):
+        profession = validated_data.pop('profession', None)
+        password = validated_data.pop('password')
+
+        user = CustomUser.objects.create(**validated_data)
+        user.set_password(password)
         user.save()
+
         branch = validated_data.get('branch')
         if branch and branch.location:
             system = branch.location.system
             ManySystem.objects.get_or_create(user=user, system=system)
             ManyLocation.objects.get_or_create(user=user, location=branch.location)
             ManyBranch.objects.get_or_create(user=user, branch=branch)
+
         if profession is not None:
             CustomAutoGroup.objects.create(user=user, group=profession, salary='0')
             user.groups.add(profession)
@@ -96,46 +109,35 @@ class UserSerializerWrite(serializers.ModelSerializer):
                 user.is_staff = True
                 user.is_superuser = True
                 user.save()
+
         return user
 
     def update(self, instance, validated_data):
         profession = validated_data.pop('profession', None)
+        share = validated_data.pop('share', None)
+        salary = validated_data.pop('money', None)
+        password = validated_data.pop('password', None)
+
         if profession is not None:
             instance.groups.clear()
             instance.groups.add(profession)
             CustomAutoGroup.objects.filter(user=instance).update(group=profession)
-        pprint.pprint(validated_data)
-        share = validated_data.pop('share', None)
+
         if share is not None:
-            CustomAutoGroup.objects.filter(user=instance).update(share=share)
-            CustomAutoGroup.objects.filter(user=instance).update(salary=0)
-        salary = validated_data.pop('money', None)
+            CustomAutoGroup.objects.filter(user=instance).update(share=share, salary=0)
+
         if salary is not None:
-            CustomAutoGroup.objects.filter(user=instance).update(salary=salary)
-            CustomAutoGroup.objects.filter(user=instance).update(share=0)
-        user = super().update(instance, validated_data)
-        if 'password' in validated_data:
-            user.set_password(validated_data['password'])
-            user.save()
+            CustomAutoGroup.objects.filter(user=instance).update(salary=salary, share=0)
 
-        # user_data = UserSerializerRead(user).data
-        # self.send_data(user_data)
-        return user
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
 
-    # def validate(self, attrs):
-    #     username = attrs.get("username")
-    #     password = attrs.get("password")
-    #
-    #     try:
-    #         user = CustomUser.objects.get(username=username)
-    #     except CustomUser.DoesNotExist:
-    #         raise serializers.ValidationError({"detail": "Foydalanuvchi topilmadi yoki parol noto‘g‘ri."})
-    #
-    #     if not user.check_password(password):
-    #         raise serializers.ValidationError({"detail": "Foydalanuvchi topilmadi yoki parol noto‘g‘ri."})
-    #
-    #     attrs["user"] = user
-    #     return attrs
+        if password:
+            instance.set_password(password)
+
+        instance.save()
+
+        return instance
 
 
 class UserSalaryListSerializers(serializers.ModelSerializer):

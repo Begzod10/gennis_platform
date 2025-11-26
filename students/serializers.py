@@ -2,7 +2,7 @@ from datetime import date
 
 from django.db.models import Sum
 from rest_framework import serializers
-
+from pprint import pprint
 from attendances.models import AttendancePerMonth
 from branch.models import Branch
 from classes.models import ClassNumber
@@ -26,13 +26,27 @@ class StudentSerializer(serializers.ModelSerializer):
     parents_number = serializers.CharField(allow_null=True, allow_blank=True, required=False)
     shift = serializers.CharField()
     class_number = serializers.PrimaryKeyRelatedField(queryset=ClassNumber.objects.all())
+    face_id = serializers.CharField(required=False, allow_null=True, write_only=True)
 
     class Meta:
         model = Student
         fields = '__all__'
 
+    def to_internal_value(self, data):
+        """Override to remove username if it hasn't changed BEFORE validation"""
+        if self.instance and 'user' in data and 'username' in data['user']:
+            if data['user']['username'] == self.instance.user.username:
+                # Create a mutable copy and remove username
+                import copy
+                data = copy.deepcopy(data)
+                data['user'].pop('username')
+
+        return super().to_internal_value(data)
+
     def create(self, validated_data):
         user_data = validated_data.pop('user')
+        subject_data = validated_data.pop('subject', [])
+
         if isinstance(user_data.get('language'), Language):
             user_data['language'] = user_data['language'].id
         if isinstance(user_data.get('branch'), Branch):
@@ -43,24 +57,42 @@ class StudentSerializer(serializers.ModelSerializer):
         user = user_serializer.save()
 
         student = Student.objects.create(user=user, **validated_data)
-        if validated_data.get('subject'):
-            subject_data = validated_data.pop('subject')
+
+        if subject_data:
             student.subject.set(subject_data)
+
         return student
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', None)
         subject_data = validated_data.pop('subject', None)
+        face_id = validated_data.pop('face_id', None)
+
         if user_data:
             if isinstance(user_data.get('language'), Language):
                 user_data['language'] = user_data['language'].id
-            user_serializer = UserSerializerWrite(instance=instance.user, data=user_data, partial=True)
+
+            if isinstance(user_data.get('branch'), Branch):
+                user_data['branch'] = user_data['branch'].id
+
+            user_serializer = UserSerializerWrite(
+                instance=instance.user,
+                data=user_data,
+                partial=True
+            )
             user_serializer.is_valid(raise_exception=True)
             user_serializer.save()
-        if subject_data:
+
+        if face_id is not None:
+            instance.user.face_id = face_id
+            instance.user.save(update_fields=['face_id'])
+
+        if subject_data is not None:
             instance.subject.set(subject_data)
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+
         instance.save()
         return instance
 
@@ -147,6 +179,7 @@ class StudentListSerializer(serializers.ModelSerializer):
     color = serializers.SerializerMethodField(required=False)
     debt = serializers.SerializerMethodField(required=False)
     class_number = ClassNumberSerializers()
+    face_id = serializers.CharField(source='user.face_id', read_only=True)
 
     class Meta:
         model = Student

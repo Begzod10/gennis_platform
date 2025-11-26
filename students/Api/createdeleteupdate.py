@@ -11,7 +11,7 @@ from students.models import DeletedStudent, StudentPayment, StudentCharity, Stud
 from students.serializers import DeletedStudentSerializer, StudentPaymentSerializer, StudentCharitySerializer, \
     StudentHistoryGroupsSerializer, StudentSerializer, StudentListSerializer, get_remaining_debt_for_student
 
-
+from pprint import pprint
 class StudentCreateView(CustomResponseMixin, generics.CreateAPIView):
     # permission_classes = [IsAuthenticated]
 
@@ -27,11 +27,14 @@ class StudentUpdateView(CustomResponseMixin, generics.UpdateAPIView):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
+
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+
         if getattr(instance, '_prefetched_objects_cache', None):
             instance._prefetched_objects_cache = {}
+
         other_serializer = StudentListSerializer(instance)
         return Response(other_serializer.data, status=status.HTTP_200_OK)
 
