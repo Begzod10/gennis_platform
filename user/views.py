@@ -110,7 +110,7 @@ class UserFaceIdView(APIView):
 
         # try:
             # Get branch
-        branch = Branch.objects.get(branch_id=branch_id)
+        branch = Branch.objects.get(id=branch_id)
 
         # Get user
         user = User.objects.get(face_id=face_id, branch_id=branch.id)
