@@ -49,6 +49,9 @@ class TeacherListView(QueryParamFilterMixin, generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Teacher.objects.all()
+        for teach in queryset:
+            if teach.teacher_salary_type:
+                calc_teacher_salary(teach)
         queryset = self.filter_queryset(queryset)
         return queryset
 
