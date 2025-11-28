@@ -14,7 +14,7 @@ from teachers.serializer.lists import ActiveListTeacherSerializer, TeacherSalary
     TeacherSalaryForOneMonthListSerializer, calc_teacher_salary
 from teachers.serializers import (TeacherSerializerRead, TeacherSalaryListForAccounting,
                                   TeacherGroupStatisticsReadSerializers, TeacherSalaryReadSerializers)
-
+from teachers.functions.school.CalculateTeacherSalary import calculate_teacher_salary
 from django.db.models import Sum
 from permissions.response import CustomPagination
 from pprint import pprint
@@ -51,7 +51,7 @@ class TeacherListView(QueryParamFilterMixin, generics.ListAPIView):
         queryset = Teacher.objects.all()
         for teach in queryset:
             if teach.teacher_salary_type:
-                calc_teacher_salary(teach)
+                calculate_teacher_salary(teach)
         queryset = self.filter_queryset(queryset)
         return queryset
 
