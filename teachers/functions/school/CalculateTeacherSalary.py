@@ -42,7 +42,7 @@ def calculate_teacher_salary(teacher):
         #                 'percentage': 50,
         #             }
         #         )
-        month_date = datetime(today.year, today.month, 1)
+        month_date = datetime(today.year, today.month - 1, 1)
         exist_salary = TeacherSalary.objects.filter(teacher=teacher, month_date=month_date).exists()
         if not exist_salary:
             if teacher.teacher_salary_type is not None:

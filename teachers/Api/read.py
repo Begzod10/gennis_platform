@@ -63,6 +63,7 @@ class TeacherRetrieveView(generics.RetrieveAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         data = serializer.data
+
         if not instance.teacher_salary_type:
             data['msg'] = "O'qituvchiga toifa tanlanmagan"
         return Response(data)
