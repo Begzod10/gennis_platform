@@ -54,7 +54,7 @@ class LocationListUser(generics.RetrieveAPIView):
     serializer_class = SystemSerializersUsers
 
     def get(self, request, *args, **kwargs):
-        # user, auth_error = check_auth(request)
+        user, auth_error = check_auth(request)
         # if auth_error:
         #     return Response(auth_error)
 
@@ -101,3 +101,4 @@ class DynamicModelListView(GetModelsMixin, APIView):
     # def list(self, request, *args, **kwargs):
     #     queryset = self.get_queryset()
     #     return Response(queryset)
+

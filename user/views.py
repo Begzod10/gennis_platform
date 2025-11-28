@@ -171,7 +171,9 @@ class UserFaceIdView(APIView):
             # Handle student attendance
             if student:
                 # Check if student has groups
-                if not student.group.exists():
+                print(student.groups_student.all())
+                # print(student.group.all())
+                if not student.groups_student.exists():
                     return Response(
                         {'error': 'Student has no assigned group'},
                         status=status.HTTP_400_BAD_REQUEST
@@ -180,7 +182,7 @@ class UserFaceIdView(APIView):
                 # Get or create monthly summary
                 summary, created = StudentMonthlySummary.objects.get_or_create(
                     student=student,
-                    group=student.group.first(),  # Get first group
+                    group=student.groups_student.first(),  # Get first group
                     year=year,
                     month=month,
                     defaults={"stats": {}}
