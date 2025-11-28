@@ -108,133 +108,130 @@ class UserFaceIdView(APIView):
         year = date_obj.year
         month = date_obj.month
 
-        try:
+        # try:
             # Get branch
-            branch = Branch.objects.get(branch_id=branch_id)
+        branch = Branch.objects.get(branch_id=branch_id)
 
-            # Get user
-            user = User.objects.get(face_id=face_id, branch_id=branch.id)
+        # Get user
+        user = User.objects.get(face_id=face_id, branch_id=branch.id)
 
-            # Try to get teacher
-            teacher = None
-            try:
-                teacher = Teacher.objects.get(user_id=user.id)
-            except Teacher.DoesNotExist:
-                pass
+        # Try to get teacher
+        teacher = None
+        try:
+            teacher = Teacher.objects.get(user_id=user.id)
+        except Teacher.DoesNotExist:
+            pass
 
-            # Try to get student
-            student = None
-            try:
-                student = Student.objects.get(user_id=user.id)
-            except Student.DoesNotExist:
-                pass
+        # Try to get student
+        student = None
+        try:
+            student = Student.objects.get(user_id=user.id)
+        except Student.DoesNotExist:
+            pass
 
-            # If neither teacher nor student found
-            if not teacher and not student:
+        # If neither teacher nor student found
+        if not teacher and not student:
+            return Response(
+                {'error': 'User is neither a teacher nor a student'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Handle teacher attendance
+        if teacher:
+            # Parse leave_time if provided
+            leave_time_obj = None
+            if leave_time:
+                leave_time_obj = parse_datetime(leave_time)
+                if leave_time_obj:
+                    if timezone.is_naive(leave_time_obj):
+                        leave_time_obj = timezone.make_aware(leave_time_obj, tz)
+                    else:
+                        leave_time_obj = leave_time_obj.astimezone(tz)
+
+            teacher_attendance, created = TeacherAttendance.objects.get_or_create(
+                teacher=teacher,
+                entry_time__date=day,
+                defaults={
+                    'entry_time': date_obj,
+                    'leave_time': leave_time_obj,
+                    'status': True,
+                    'system': branch.location.system
+                }
+            )
+
+            # Update if already exists
+            if not created:
+                if not teacher_attendance.entry_time:
+                    teacher_attendance.entry_time = date_obj
+                if leave_time_obj:
+                    teacher_attendance.leave_time = leave_time_obj
+                teacher_attendance.status = True
+                teacher_attendance.save()
+
+        # Handle student attendance
+        if student:
+            if not student.groups_student.exists():
                 return Response(
-                    {'error': 'User is neither a teacher nor a student'},
-                    status=status.HTTP_404_NOT_FOUND
+                    {'error': 'Student has no assigned group'},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Handle teacher attendance
-            if teacher:
-                # Parse leave_time if provided
-                leave_time_obj = None
+            # Get or create monthly summary
+            summary, created = StudentMonthlySummary.objects.get_or_create(
+                student=student,
+                group=student.groups_student.first(),  # Get first group
+                year=year,
+                month=month,
+                defaults={"stats": {}}
+            )
+
+            status_present = True
+
+            # Get or create daily attendance
+            daily, created = StudentDailyAttendance.objects.get_or_create(
+                monthly_summary=summary,
+                day=day,
+                defaults={
+                    "status": status_present,
+                    "entry_time": date_obj,
+                    "leave_time": parse_datetime(leave_time) if leave_time else None,
+                }
+            )
+
+            # Update if already exists
+            if not created:
+                daily.status = status_present
+                if not daily.entry_time:
+                    daily.entry_time = date_obj
                 if leave_time:
                     leave_time_obj = parse_datetime(leave_time)
                     if leave_time_obj:
                         if timezone.is_naive(leave_time_obj):
                             leave_time_obj = timezone.make_aware(leave_time_obj, tz)
-                        else:
-                            leave_time_obj = leave_time_obj.astimezone(tz)
+                        daily.leave_time = leave_time_obj
+                daily.save()
 
-                teacher_attendance, created = TeacherAttendance.objects.get_or_create(
-                    teacher=teacher,
-                    entry_time__date=day,
-                    defaults={
-                        'entry_time': date_obj,
-                        'leave_time': leave_time_obj,
-                        'status': True,
-                        'system': branch.location.system
-                    }
-                )
+        # Return response
+        response_data = {'success': True}
+        if teacher:
+            response_data['teacher_face_id'] = teacher.user.face_id
+        if student:
+            response_data['student_face_id'] = student.user.face_id
 
-                # Update if already exists
-                if not created:
-                    if not teacher_attendance.entry_time:
-                        teacher_attendance.entry_time = date_obj
-                    if leave_time_obj:
-                        teacher_attendance.leave_time = leave_time_obj
-                    teacher_attendance.status = True
-                    teacher_attendance.save()
+        return Response(response_data, status=status.HTTP_200_OK)
 
-            # Handle student attendance
-            if student:
-                # Check if student has groups
-                print(student.groups_student.all())
-                # print(student.group.all())
-                if not student.groups_student.exists():
-                    return Response(
-                        {'error': 'Student has no assigned group'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-
-                # Get or create monthly summary
-                summary, created = StudentMonthlySummary.objects.get_or_create(
-                    student=student,
-                    group=student.groups_student.first(),  # Get first group
-                    year=year,
-                    month=month,
-                    defaults={"stats": {}}
-                )
-
-                status_present = True
-
-                # Get or create daily attendance
-                daily, created = StudentDailyAttendance.objects.get_or_create(
-                    monthly_summary=summary,
-                    day=day,
-                    defaults={
-                        "status": status_present,
-                        "entry_time": date_obj,
-                        "leave_time": parse_datetime(leave_time) if leave_time else None,
-                    }
-                )
-
-                # Update if already exists
-                if not created:
-                    daily.status = status_present
-                    if not daily.entry_time:
-                        daily.entry_time = date_obj
-                    if leave_time:
-                        leave_time_obj = parse_datetime(leave_time)
-                        if leave_time_obj:
-                            if timezone.is_naive(leave_time_obj):
-                                leave_time_obj = timezone.make_aware(leave_time_obj, tz)
-                            daily.leave_time = leave_time_obj
-                    daily.save()
-
-            # Return response
-            response_data = {'success': True}
-            if teacher:
-                response_data['teacher_face_id'] = teacher.user.face_id
-            if student:
-                response_data['student_face_id'] = student.user.face_id
-
-            return Response(response_data, status=status.HTTP_200_OK)
-
-        except Branch.DoesNotExist:
-            return Response(
-                {'error': 'Branch not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except User.DoesNotExist:
-            return Response(
-                {'error': 'User with this face_id not found in this branch'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        # except Branch.DoesNotExist:
+        #     return Response(
+        #         {'error': 'Branch not found'},
+        #         status=status.HTTP_404_NOT_FOUND
+        #     )
+        # except User.DoesNotExist:
+        #     return Response(
+        #         {'error': 'User with this face_id not found in this branch'},
+        #         status=status.HTTP_404_NOT_FOUND
+        #     )
+        # except Exception as e:
+        #     return Response(
+        #         {'error': str(e)},
+        #         status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        #     )
