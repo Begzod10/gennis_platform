@@ -199,6 +199,7 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
         return instance
 
     def delete_from_flask(self, instance):
+
         flask_url = f"{classroom_server}/api/time_table/timetable-list-delete/{instance.id}"
 
         if flask_url:

@@ -38,3 +38,6 @@ class StudentCallInfoUpdateView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
     queryset = StudentCallInfo.objects.all()
     serializer_class = StudentCallInfoCreateUpdateDeleteSerializers
+
+
+

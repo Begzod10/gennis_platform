@@ -4,6 +4,7 @@ from django.db import models
 
 from branch.models import Branch
 from students.models import Student
+from user.models import CustomUser
 
 
 class Task(models.Model):
@@ -44,3 +45,39 @@ class TaskStudent(models.Model):
     task_static = models.ForeignKey(TaskStatistics, related_name='task_static_student_info', on_delete=models.CASCADE)
     status = models.BooleanField()
     students = models.ForeignKey(Student, related_name='task_student_isd', on_delete=models.CASCADE)
+
+
+class Mission(models.Model):
+    STATUS_CHOICES = (
+        ("not_started", "Not Started"),
+        ("in_progress", "In Progress"),
+        ("blocked", "Blocked"),
+        ("completed", "Completed"),
+    )
+
+    title = models.CharField(max_length=255)
+    comment = models.CharField(max_length=255, null=True)
+    description = models.TextField()
+    branch = models.ForeignKey(
+        Branch,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="missions"
+    )
+    creator = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="created_workitems")
+    executor = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="executed_workitems")
+    reviewer = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name="reviewed_workitems")
+
+    start_time = models.DateField(auto_now_add=True)  # faqat kun
+    deadline = models.DateField()      # ✅ faqat kun
+    finish_time = models.DateField(null=True, blank=True)  # ✅ faqat kun
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="not_started")
+
+    created_at = models.DateField(auto_now_add=True)
+    delay_days = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.title

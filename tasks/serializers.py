@@ -1,16 +1,16 @@
-
 # serializers_list.py
 
 # serializer.py
 
 from datetime import datetime
+from django.utils import timezone
 
 from rest_framework import serializers
 
 from branch.serializers import BranchSerializer
-from students.serializers import StudentSerializer,Student
+from students.serializers import StudentSerializer, Student
 from user.models import CustomUser
-from .models import Task, Branch, StudentCallInfo, Group, TaskStudent, TaskStatistics, TaskDailyStatistics
+from .models import Task, Branch, StudentCallInfo, Group, TaskStudent, TaskStatistics, TaskDailyStatistics, Mission
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -39,7 +39,7 @@ class StudentCallInfoCreateUpdateDeleteSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = StudentCallInfo
-        fields = ['id', 'student_tasks', 'student','task', 'delay_date', 'comment', 'user']
+        fields = ['id', 'student_tasks', 'student', 'task', 'delay_date', 'comment', 'user']
 
     def save(self, **kwargs):
         student_tasks = self.validated_data.get('student_tasks')
@@ -86,3 +86,73 @@ class StudentCallInfoGetSerializers(serializers.ModelSerializer):
     class Meta:
         model = StudentCallInfo
         fields = '__all__'
+
+
+class UserShortSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CustomUser
+        fields = ["id", "full_name"]
+
+    def get_full_name(self, obj):
+        return f"{obj.name} {obj.surname}"
+
+
+class MissionCrudSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Mission
+        fields = [
+            "id", "title", "description",
+            "executor", "reviewer",
+            "deadline", "status", 'branch', 'creator',
+            'comment'
+        ]
+
+    def create(self, validated_data):
+        return Mission.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        status = validated_data.get('status', instance.status)
+        if status == 'completed' and instance.finish_time is None:
+            instance.finish_time = timezone.now().date()
+            instance.delay_days = (instance.finish_time - instance.deadline).days
+        return super().update(instance, validated_data)
+
+
+class MissionDetailSerializer(serializers.ModelSerializer):
+    creator = UserShortSerializer()
+    executor = UserShortSerializer()
+    reviewer = UserShortSerializer()
+    delay_info = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Mission
+        fields = [
+            "id",
+            "title",
+            "description",
+            "creator",
+            "executor",
+            "reviewer",
+            "start_time",
+            "deadline",
+            "finish_time",
+            "status",
+            "delay_info",
+            "created_at",
+            'branch',
+            'comment'
+        ]
+
+    def get_delay_info(self, obj):
+        if not obj.finish_time or not obj.deadline:
+            return None
+
+        diff_days = (obj.finish_time - obj.deadline).days
+        if diff_days < 0:
+            return f"{abs(diff_days)} kun erta tugatildi"
+        elif diff_days > 0:
+            return f"{diff_days} kun kech tugatildi"
+        else:
+            return "o‘z vaqtida tugatildi"

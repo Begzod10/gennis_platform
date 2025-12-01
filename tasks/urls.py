@@ -3,6 +3,7 @@ from django.urls import path
 from tasks.Api.createdelteupdate import TaskCreateView, TaskUpdateView, TaskDestroyView, StudentCallInfoCreateView, \
     StudentCallInfoUpdateView, StudentCallInfoDestroyView
 from tasks.Api.get import TaskRetrieveView, TaskListView, CallListView, CallRetrieveView,CreateTask
+from tasks.Api.missions.crud import MissionDetailAPIView, MissionListCreateAPIView
 
 urlpatterns = [
     path('task_create/', TaskCreateView.as_view(), name='task-create'),
@@ -16,5 +17,6 @@ urlpatterns = [
     path('call_info/', CallListView.as_view(), name='call-all'),
     path('call_info/<int:pk>/', CallRetrieveView.as_view(), name='call-detail'),
     path('dailiy_task_create/', CreateTask.as_view(), name='task-daily-create'),
-
+    path("missions/", MissionListCreateAPIView.as_view()),
+    path("missions/<int:pk>/", MissionDetailAPIView.as_view()),
 ]
