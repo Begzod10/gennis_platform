@@ -73,6 +73,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "tasks.middlewear.RecurringTaskMiddleware",
 ]
 
 ROOT_URLCONF = 'gennis_platform.urls'

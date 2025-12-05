@@ -11,13 +11,17 @@ class EmployerSerializer(serializers.ModelSerializer):
     age = serializers.SerializerMethodField(required=False)
     job = serializers.SerializerMethodField(required=False)
     status = serializers.SerializerMethodField(required=False)
+    user_id = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = CustomAutoGroup
-        fields = ('id', 'name', 'phone', 'age', 'job', 'status')
+        fields = ('id', 'name', 'phone', 'age', 'job', 'status', 'user_id')
 
     def get_name(self, obj):
         return f"{obj.user.name} {obj.user.surname} {obj.user.father_name}"
+
+    def get_user_id(self, obj):
+        return obj.user.id
 
     def get_phone(self, obj):
         return obj.user.phone

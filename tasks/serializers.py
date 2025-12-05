@@ -1,8 +1,7 @@
 # serializers_list.py
 
 # serializer.py
-
-from datetime import datetime
+from datetime import datetime, date
 from django.utils import timezone
 
 from rest_framework import serializers
@@ -10,7 +9,8 @@ from rest_framework import serializers
 from branch.serializers import BranchSerializer
 from students.serializers import StudentSerializer, Student
 from user.models import CustomUser
-from .models import Task, Branch, StudentCallInfo, Group, TaskStudent, TaskStatistics, TaskDailyStatistics, Mission
+from .models import Task, Branch, StudentCallInfo, Group, TaskStudent, TaskStatistics, TaskDailyStatistics, Mission, \
+    MissionSubtask, MissionAttachment, MissionComment, MissionProof, Tag, Notification
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -99,60 +99,160 @@ class UserShortSerializer(serializers.ModelSerializer):
         return f"{obj.name} {obj.surname}"
 
 
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ["id", "name"]
+
+
 class MissionCrudSerializer(serializers.ModelSerializer):
+    creator = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
+    executor = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
+    reviewer = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), allow_null=True, required=False)
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), allow_null=True, required=False)
+    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True, required=False)
+
     class Meta:
         model = Mission
         fields = [
-            "id", "title", "description",
-            "executor", "reviewer",
-            "deadline", "status", 'branch', 'creator',
-            'comment'
+            "id", "title", "description", 'creator',
+            "category", "tags",
+            "executor", "reviewer", "branch",
+            "deadline", "status",
+            "kpi_weight", "penalty_per_day",
+            "is_recurring", "recurring_type", 'final_sc'
         ]
 
     def create(self, validated_data):
-        return Mission.objects.create(**validated_data)
+        tags = validated_data.pop("tags", [])
+        mission = Mission.objects.create(**validated_data)
+        mission.tags.set(tags)
+        return mission
 
     def update(self, instance, validated_data):
-        status = validated_data.get('status', instance.status)
-        if status == 'completed' and instance.finish_time is None:
-            instance.finish_time = timezone.now().date()
-            instance.delay_days = (instance.finish_time - instance.deadline).days
-        return super().update(instance, validated_data)
+        tags = validated_data.pop("tags", None)
+
+        status = validated_data.get("status", instance.status)
+        if status == "completed" and not instance.finish_date:
+            instance.finish_date = timezone.now().date()
+            instance.calculate_delay_days()  # ← delay
+            instance.final_sc = instance.final_score()
+            instance.save()
+
+        instance = super().update(instance, validated_data)
+        if tags is not None:
+            instance.tags.set(tags)
+        return instance
+
+
+class MissionSubtaskSerializer(serializers.ModelSerializer):
+    mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
+
+    class Meta:
+        model = MissionSubtask
+        fields = ["id", "mission", "title", "is_done", "order"]
+
+
+class MissionAttachmentSerializer(serializers.ModelSerializer):
+    mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
+    file = serializers.FileField(required=False, allow_null=True)
+    uploaded_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
+
+    class Meta:
+        model = MissionAttachment
+        fields = ["id", "mission", "file", "note", "uploaded_at"]
+        read_only_fields = ["uploaded_at"]
+
+
+class MissionCommentSerializer(serializers.ModelSerializer):
+    mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
+
+    class Meta:
+        model = MissionComment
+        fields = ["id", "mission", "text", "attachment", "created_at"]
+        read_only_fields = ["created_at"]
+
+    def create(self, validated_data):
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
+
+
+class MissionProofSerializer(serializers.ModelSerializer):
+    mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
+    file = serializers.FileField(required=False, allow_null=True)
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
+
+    class Meta:
+        model = MissionProof
+        fields = ["id", "mission", "file", "comment", "created_at"]
+        read_only_fields = ["created_at"]
 
 
 class MissionDetailSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
+    start_date = serializers.DateField(format="%Y-%m-%d", read_only=True)
+    deadline = serializers.DateField(format="%Y-%m-%d", read_only=True)
+    finish_date = serializers.DateField(format="%Y-%m-%d", read_only=True)
     creator = UserShortSerializer()
     executor = UserShortSerializer()
     reviewer = UserShortSerializer()
+    subtasks = MissionSubtaskSerializer(many=True, read_only=True)
+    attachments = MissionAttachmentSerializer(many=True, read_only=True)
+    comments = MissionCommentSerializer(many=True, read_only=True)
+    proofs = MissionProofSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
     delay_info = serializers.SerializerMethodField()
+    deadline_color = serializers.SerializerMethodField()  # <-- yangi field
 
     class Meta:
         model = Mission
         fields = [
-            "id",
-            "title",
-            "description",
-            "creator",
-            "executor",
-            "reviewer",
-            "start_time",
-            "deadline",
-            "finish_time",
-            "status",
-            "delay_info",
-            "created_at",
-            'branch',
-            'comment'
+            "id", "title", "description", "category", "tags",
+            "creator", "executor", "reviewer", "branch",
+            "start_date", "deadline", "finish_date",
+            "status", "delay_days", "delay_info",
+            "kpi_weight", "penalty_per_day", "is_recurring", "recurring_type",
+            "subtasks", "attachments", "comments", "proofs", "created_at", 'final_sc', 'deadline_color'
         ]
 
     def get_delay_info(self, obj):
-        if not obj.finish_time or not obj.deadline:
+        if not obj.finish_date or not obj.deadline:
             return None
-
-        diff_days = (obj.finish_time - obj.deadline).days
+        diff_days = (obj.finish_date - obj.deadline).days
         if diff_days < 0:
             return f"{abs(diff_days)} kun erta tugatildi"
         elif diff_days > 0:
             return f"{diff_days} kun kech tugatildi"
+        return "o‘z vaqtida tugatildi"
+
+    def get_deadline_color(self, obj):
+        if not obj.deadline:
+            return "grey"
+
+        today = date.today()
+        remaining_days = (obj.deadline - today).days
+
+        if remaining_days <= 1:
+            return "red"
+        elif 2 <= remaining_days <= 4:
+            return "yellow"
         else:
-            return "o‘z vaqtida tugatildi"
+            return "green"
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
+    deadline = serializers.DateField(format="%Y-%m-%d", read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = [
+            "id",
+            "message",
+            "role",
+            "mission",
+            "deadline",
+            "is_read",
+            "created_at",
+        ]
