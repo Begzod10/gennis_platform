@@ -3,7 +3,7 @@ import requests
 from django.db.models.query import QuerySet as queryset
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, status,filters
+from rest_framework import generics, status, filters
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -14,7 +14,8 @@ from permissions.response import IsAdminOrIsSelf
 from permissions.response import QueryParamFilterMixin
 from subjects.serializers import SubjectSerializer, Subject
 from user.models import CustomUser, UserSalaryList
-from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalary, CustomAutoGroup,UserSalaryListSerializersTotal
+from user.serializers import UserSerializerRead, UserSalaryListSerializersRead, Employeers, UserSalary, CustomAutoGroup, \
+    UserSalaryListSerializersTotal
 from user.seriliazer.employer import EmployerSerializer
 from user.seriliazer.employer import UserForOneMonthListSerializer, EmployerSalaryMonths
 from ..serialziers_list import UsersWithJobSerializers
@@ -22,6 +23,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from user.filters import UserSalaryListFilter
 from django.db.models import Sum
 from permissions.response import CustomPagination
+
 
 class UserListCreateView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
@@ -196,11 +198,30 @@ class EmployeersListView(QueryParamFilterMixin, generics.ListAPIView):
         'age': 'user__birth_date',
         'language': 'user__language_id',
         'branch': 'user__branch__id',
-        'job': 'group__id'
+        'job': 'group__id',
     }
 
     queryset = CustomAutoGroup.objects.filter(deleted=False).all()
     serializer_class = EmployerSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        level = self.request.query_params.get("level", None)
+        print(level)
+
+        if not level:
+            return qs
+
+        try:
+            level = int(level)
+        except:
+            return qs
+
+        if level in [1, 2, 3]:
+            return qs.filter(user__level__gt=level)
+
+        return qs
 
 
 class EmployerRetrieveView(generics.RetrieveAPIView):

@@ -26,7 +26,7 @@ class UserSerializerRead(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
                   'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff', 'age', 'job', 'file']
+                  'branch', 'is_superuser', 'is_staff', 'age', 'job', 'file', 'level']
 
     def get_age(self, obj):
         return obj.calculate_age()
@@ -62,7 +62,7 @@ class UserSerializerWrite(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
                   'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff', 'old_id', 'profession', 'money', "share"]
+                  'branch', 'is_superuser', 'is_staff', 'old_id', 'profession', 'money', "share", "level"]
         extra_kwargs = {
             'password': {'write_only': True, 'required': False},
             'birth_date': {'required': False},
