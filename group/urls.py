@@ -44,5 +44,4 @@ urlpatterns = [
     path('groups_add_subject/', GroupSubjectAddView.as_view(), name="groups_add_subject"),
     path('groups_remove_subject/', GroupSubjectRemoveView.as_view(), name="groups_add_subject"),
     path('group_add_class_type/', AddClassTypeToGroup.as_view(), name='groups_by_class_type'),
-
 ]

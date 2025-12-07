@@ -6,6 +6,7 @@ from rest_framework import permissions
 from mobile.get_user import get_user
 from permissions.models import ManyBranch, ManyLocation
 from user.functions.functions import check_auth
+from user.models import CustomUser
 
 
 class CustomResponseMixin:
@@ -39,7 +40,9 @@ class QueryParamFilterMixin:
             value = query_params.get(param)
             if not value or value == 'null':
                 if param == 'branch':
-                    user = get_user(self.request)
+                    user_id = get_user(self.request)
+                    user = CustomUser.objects.get(id=user_id)
+
                     self.filter_conditions &= Q(**{field: user.branch_id})
                 continue
 
@@ -267,8 +270,8 @@ class CustomPagination(LimitOffsetPagination):
 
     def get_paginated_response(self, data):
         return Response({'count': self.count,
-            'next': self.get_next_link(),
-            'previous': self.get_previous_link(),
-            'limit': self.limit,
-            'offset': self.offset,
-            'results': data })
+                         'next': self.get_next_link(),
+                         'previous': self.get_previous_link(),
+                         'limit': self.limit,
+                         'offset': self.offset,
+                         'results': data})

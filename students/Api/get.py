@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 
-from rest_framework import generics,filters
+from rest_framework import generics, filters
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -9,7 +9,8 @@ from rest_framework.views import APIView
 from permissions.response import CustomPagination
 from rooms.models import Room
 from students.models import StudentPayment, StudentHistoryGroups, StudentCharity, Student, DeletedStudent
-from students.serializers import StudentPaymentListSerializer, StudentHistoryGroupsListSerializer,StudentHistoryGroupsListSerializer2, \
+from students.serializers import StudentPaymentListSerializer, StudentHistoryGroupsListSerializer, \
+    StudentHistoryGroupsListSerializer2, \
     StudentCharityListSerializer, StudentListSerializer
 from subjects.models import Subject
 from teachers.models import Teacher
@@ -19,6 +20,8 @@ from ..serializers_list import StudentPaymentListSerializerTest
 from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
 from students.filters import StudentPaymentsFilter
+
+
 class StudentRetrieveAPIView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -138,19 +141,25 @@ class StudentPaymentListAPIView(generics.ListAPIView):
             },
             {
                 "name": "Cash Payments",
-                "totalPayment": queryset.filter(payment_type__name__iexact='Cash').aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
+                "totalPayment":
+                    queryset.filter(payment_type__name__iexact='Cash').aggregate(total_sum=Sum('payment_sum'))[
+                        'total_sum'] or 0,
                 "totalPaymentCount": queryset.filter(payment_type__name__iexact='Cash').count(),
                 "type": "cash"
             },
             {
                 "name": "Click Payments",
-                "totalPayment": queryset.filter(payment_type__name__iexact="Click").aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
+                "totalPayment":
+                    queryset.filter(payment_type__name__iexact="Click").aggregate(total_sum=Sum('payment_sum'))[
+                        'total_sum'] or 0,
                 "totalPaymentCount": queryset.filter(payment_type__name__iexact="Click").count(),
                 "type": "click"
             },
             {
                 "name": "Bank Transfers",
-                "totalPayment": queryset.filter(payment_type__name__iexact="Bank").aggregate(total_sum=Sum('payment_sum'))['total_sum'] or 0,
+                "totalPayment":
+                    queryset.filter(payment_type__name__iexact="Bank").aggregate(total_sum=Sum('payment_sum'))[
+                        'total_sum'] or 0,
                 "totalPaymentCount": queryset.filter(payment_type__name__iexact="Bank").count(),
                 "type": "bank"
             },
@@ -160,6 +169,7 @@ class StudentPaymentListAPIView(generics.ListAPIView):
             'data': serializer.data,
             'totalCount': data
         })
+
 
 class StudentDeletedPaymentListAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]

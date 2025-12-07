@@ -27,11 +27,12 @@ class TeacherSerializer(serializers.ModelSerializer):
     teacher_salary_type = serializers.PrimaryKeyRelatedField(queryset=TeacherSalaryType.objects.all(), required=False,
                                                              allow_null=True)
     class_type = serializers.PrimaryKeyRelatedField(queryset=ClassTypes.objects.all(), required=False, allow_null=True)
+    face_id = serializers.CharField(source='user.face_id', read_only=True)
 
     class Meta:
         model = Teacher
         fields = ['user', 'subject', 'color', 'total_students', 'id', 'teacher_salary_type', 'salary_percentage',
-                  'class_type', 'working_hours', 'class_salary', 'face_id']
+                  'class_type', 'working_hours', 'class_salary', "face_id"]
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -162,6 +163,7 @@ class TeacherSerializerRead(serializers.ModelSerializer):
     calculate = serializers.SerializerMethodField(read_only=True, required=False, allow_null=True)
     status = serializers.SerializerMethodField()
     flow = serializers.SerializerMethodField()
+    face_id = serializers.CharField(source='user.face_id', read_only=True)
 
     class Meta:
         model = Teacher
@@ -253,22 +255,24 @@ class TeacherGroupStatisticsReadSerializers(serializers.ModelSerializer):
         from group.serializers import GroupReasonSerializers
         return GroupReasonSerializers(obj.reason).data
 
+
 class TeacherSalaryListForAccounting(serializers.ModelSerializer):
     student_id = serializers.CharField(source='teacher.id',
                                        read_only=True)
     name = serializers.CharField(source='teacher.user.name',
-                                         read_only=True)
+                                 read_only=True)
     surname = serializers.CharField(source='teacher.user.surname',
-                                            read_only=True)
+                                    read_only=True)
     payment_type_name = serializers.CharField(source='payment.name',
                                               read_only=True)
-    payment_sum = serializers.IntegerField(required=False,source='salary')
+    payment_sum = serializers.IntegerField(required=False, source='salary')
     status = serializers.BooleanField(required=False)
 
     class Meta:
         model = TeacherSalaryList
         fields = ['id', 'name', 'surname', 'payment_type_name', 'payment_sum', 'status',
-                  'date',"student_id"]
+                  'date', "student_id"]
+
 
 class TeacherSalaryListReadSerializers(serializers.ModelSerializer):
     teacher = TeacherSerializerRead(read_only=True)

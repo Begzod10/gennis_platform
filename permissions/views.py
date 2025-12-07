@@ -55,8 +55,8 @@ class LocationListUser(generics.RetrieveAPIView):
 
     def get(self, request, *args, **kwargs):
         user, auth_error = check_auth(request)
-        if auth_error:
-            return Response(auth_error)
+        # if auth_error:
+        #     return Response(auth_error)
 
         queryset = ManyLocation.objects.filter(user=user, location__system_id=self.kwargs['pk']).all()
         data = []
@@ -101,3 +101,4 @@ class DynamicModelListView(GetModelsMixin, APIView):
     # def list(self, request, *args, **kwargs):
     #     queryset = self.get_queryset()
     #     return Response(queryset)
+

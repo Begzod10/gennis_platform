@@ -57,6 +57,7 @@ class CustomUser(AbstractUser):
         related_query_name='custom_user',
     )
     file = models.FileField(upload_to='documents/', null=True, blank=True, default="")
+    face_id = models.CharField(max_length=200, blank=True, null=True)
 
     # acces models.ManyToManyField(Student)
 

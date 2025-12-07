@@ -1,26 +1,20 @@
 from collections import defaultdict
-from datetime import datetime
-
-from django.db.models import Q
 from django.db.models import Sum
 from django.db.models.functions import ExtractMonth, ExtractYear
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Q
 from django.core.exceptions import ValidationError
 from datetime import datetime
-
+from django.db.models import Prefetch, Q, F, Sum, Case, When, IntegerField, Exists, OuterRef
 from attendances.models import AttendancePerMonth
 from books.models import BranchPayment
 from books.serializers import BranchPaymentListSerializers
 from capital.models import Capital
 from capital.serializer.old_capital import OldCapitalsListSerializers
 from capital.serializers import OldCapital
-from classes.models import ClassNumber
 from group.models import Group
 from overhead.models import Overhead
 from overhead.serializers import OverheadSerializerGet
@@ -302,20 +296,36 @@ class GetSchoolStudents(APIView):
                 'id'
             )
         )
+        students_ids = students_list.values_list('id', flat=True)
         for _class in classes:
             class_data = {
-                'class_number': _class.class_number.number,
+                'class_number': f"{_class.class_number.number}-{_class.color.name}",
                 'students': []
             }
             data['class'].append(class_data)
+            active_in_this_class = Group.objects.filter(
+                id=_class.id,
+                deleted=False,
+                students=OuterRef('pk'),
+            )
+            deleted_in_this_class = DeletedStudent.objects.filter(
+                group_id=_class.id,  # ← this class only
+                student=OuterRef('pk'),
+                deleted=False,
+                deleted_date__year=current_year,
+                deleted_date__month__gte=current_month,
+            )
             class_students = (
                 Student.objects
-                .filter(
-                    Q(groups_student=_class, groups_student__deleted=False) |
-                    Q(deleted_student_student__group=_class)
+                .filter(id__in=students_ids)  # keep within outer scope
+                .annotate(
+                    active_in_class=Exists(active_in_this_class),
+                    deleted_in_class=Exists(deleted_in_this_class),
                 )
-                # keep within your outer scope of students_list
-                .filter(id__in=students_list.values('id'))
+                .filter(
+                    Q(active_in_class=True) |
+                    (Q(deleted_in_class=True) & Q(active_in_class=False))
+                )
                 .distinct()
             )
             for student in class_students:
@@ -324,18 +334,28 @@ class GetSchoolStudents(APIView):
                         student=student,
                         month_date__year=current_year,
                         month_date__month=current_month,
-                        group=_class,
-                        group__deleted=False,
+                        group=_class
                     )
                     .first()
                 )
                 cash_payment = 0
                 bank_payment = 0
                 click_payment = 0
+                paid_amount = 0
                 if attendance_data:
                     student_payments = StudentPayment.objects.filter(
                         student=student,
+                        status=False,
+                        deleted=False,
                         attendance=attendance_data,
+                    )
+                    paid_amount = (
+                            StudentPayment.objects.filter(
+                                student=student,
+                                deleted=False,
+                                status=True,
+                                attendance=attendance_data,
+                            ).aggregate(total=Sum('payment_sum'))['total'] or 0
                     )
                     for payment in student_payments:
                         if payment.payment_type.name == 'cash':
@@ -347,15 +367,6 @@ class GetSchoolStudents(APIView):
                 total_debt_student = attendance_data.total_debt if attendance_data else 0
                 remaining_debt_student = attendance_data.remaining_debt if attendance_data else 0
                 discount = getattr(attendance_data, 'discount', 0)
-                paid_amount = (
-                        StudentPayment.objects.filter(
-                            student=student,
-                            deleted=False,
-                            status=True,
-                            date__month=current_month,
-                            date__year=current_year
-                        ).aggregate(total=Sum('payment_sum'))['total'] or 0
-                )
                 total_debt += total_debt_student
                 total_sum_test += cash_payment + bank_payment + click_payment
                 reaming_debt += remaining_debt_student
@@ -396,6 +407,7 @@ class GetSchoolStudents(APIView):
         data['reaming_debt'] = reaming_debt
         data['total_dis'] = total_dis
         data['total_discount'] = total_discount
+        data["total_with_discount"] = total_debt - (total_discount + total_dis)
         return data
 
     def get(self, request, *args, **kwargs):
@@ -413,9 +425,6 @@ class GetSchoolStudents(APIView):
         year = int(request.data.get('year'))  # e.g. 2025
         branch_id = request.query_params.get('branch')
 
-        start = date(year, month, 1)
-        end = date(year + (month == 12), (month % 12) + 1, 1)  # first day of next month
-        # 1) rows that are ACTIVE now in this branch
         active_in_branch = Group.objects.filter(
             students=OuterRef('pk'),
             deleted=False,
@@ -425,9 +434,10 @@ class GetSchoolStudents(APIView):
         deleted_on_or_before_start = DeletedStudent.objects.filter(
             student=OuterRef('pk'),
             group__branch_id=branch_id,
-            deleted_date__month__lte=month,  # <= 2025-10-01
+            deleted_date__month__gte=month,
+            deleted_date__year=year,
+            deleted=False
         )
-
         students_list = (
             Student.objects
             .annotate(
@@ -435,17 +445,310 @@ class GetSchoolStudents(APIView):
                 was_deleted=Exists(deleted_on_or_before_start),
             )
             .filter(
-
-                Q(is_active=True)
-                |
-                Q(was_deleted=True)
-
+                Q(is_active=True) |
+                (Q(was_deleted=True) & Q(is_active=False))  # ← exclude currently active from “deleted”
             )
             .distinct()
         )
         data = self.get_class_data(students_list, year=year, month=month)
         return Response(data)
 
+# class GetSchoolStudents(APIView):
+#
+#     def get_class_data(self, students_list, branch_id, year=None, month=None):
+#         """
+#         Get class data with optimized queries
+#         """
+#         # Use current date consistently
+#         now = datetime.now()
+#         current_year = year if year is not None else now.year
+#         current_month = month if month is not None else now.month
+#
+#         # Initialize totals
+#         total_sum_paid = 0
+#         total_debt = 0
+#         remaining_debt = 0
+#         total_discount = 0
+#         total_paid_amount = 0
+#
+#         data = {
+#             'class': [],
+#             'dates': []
+#         }
+#
+#         students_ids = list(students_list.values_list('id', flat=True))
+#
+#         # Optimized: Get classes with branch filter and prefetch
+#         active_in_class = Group.objects.filter(
+#             students=OuterRef('pk'),
+#             deleted=False
+#         )
+#
+#         deleted_in_class = DeletedStudent.objects.filter(
+#             group=OuterRef('pk'),
+#             student__in=students_ids,
+#             deleted=False,
+#             deleted_date__year=current_year,
+#             deleted_date__month=current_month,  # Only this specific month
+#         )
+#
+#         classes = (
+#             Group.objects
+#             .filter(
+#                 deleted=False,
+#                 branch_id=branch_id,  # ✅ Added branch filter
+#             )
+#             .filter(
+#                 Q(students__in=students_list) |
+#                 Q(deleted_student_group__student__in=students_list,
+#                   deleted_student_group__deleted_date__year=current_year,
+#                   deleted_student_group__deleted_date__month=current_month)
+#             )
+#             .select_related('class_number', 'color')
+#             .prefetch_related(
+#                 # ✅ Prefetch students with their attendance and payments
+#                 Prefetch(
+#                     'students',
+#                     queryset=Student.objects.filter(id__in=students_ids)
+#                     .select_related('user')
+#                     .prefetch_related(
+#                         Prefetch(
+#                             'attendancepermonth_set',
+#                             queryset=AttendancePerMonth.objects.filter(
+#                                 month_date__year=current_year,
+#                                 month_date__month=current_month
+#                             ).prefetch_related(
+#                                 Prefetch(
+#                                     'studentpayment_set',
+#                                     queryset=StudentPayment.objects.filter(
+#                                         deleted=False
+#                                     ).select_related('payment_type')
+#                                 )
+#                             )
+#                         )
+#                     )
+#                 )
+#             )
+#             .distinct()
+#             .order_by(
+#                 Case(
+#                     When(class_number__number=0, then=0),
+#                     When(class_number__number__isnull=True, then=2),
+#                     default=1,
+#                     output_field=IntegerField(),
+#                 ),
+#                 F('class_number__number').asc(nulls_last=True),
+#                 'id'
+#             )
+#         )
+#
+#         for _class in classes:
+#             class_data = {
+#                 'class_number': f"{_class.class_number.number}-{_class.color.name}",
+#                 'students': []
+#             }
+#
+#             # Check which students are active or were deleted in this class
+#             active_students = set(_class.students.all())
+#
+#             # Get deleted students for this specific class and month
+#             deleted_students = DeletedStudent.objects.filter(
+#                 group=_class,
+#                 deleted=False,
+#                 deleted_date__year=current_year,
+#                 deleted_date__month=current_month,
+#                 student_id__in=students_ids
+#             ).values_list('student_id', flat=True)
+#
+#             # Combine active and deleted students
+#             relevant_student_ids = {s.id for s in active_students} | set(deleted_students)
+#
+#             for student in _class.students.all():
+#                 if student.id not in relevant_student_ids:
+#                     continue
+#
+#                 # ✅ No query - already prefetched
+#                 attendance_list = [
+#                     a for a in student.attendancepermonth_set.all()
+#                     if a.group_id == _class.id
+#                 ]
+#                 attendance_data = attendance_list[0] if attendance_list else None
+#
+#                 # Initialize payment amounts
+#                 cash_payment = 0
+#                 bank_payment = 0
+#                 click_payment = 0
+#                 paid_amount = 0
+#
+#                 if attendance_data:
+#                     # ✅ No query - already prefetched
+#                     payments = attendance_data.studentpayment_set.all()
+#
+#                     for payment in payments:
+#                         if payment.status:  # ✅ Paid payments
+#                             paid_amount += payment.payment_sum
+#
+#                             # Categorize by payment type
+#                             payment_type_name = payment.payment_type.name.lower()
+#                             if payment_type_name == 'cash':
+#                                 cash_payment += payment.payment_sum
+#                             elif payment_type_name == 'bank':
+#                                 bank_payment += payment.payment_sum
+#                             elif payment_type_name == 'click':
+#                                 click_payment += payment.payment_sum
+#
+#                 # Get values safely
+#                 total_debt_student = attendance_data.total_debt if attendance_data else 0
+#                 remaining_debt_student = attendance_data.remaining_debt if attendance_data else 0
+#                 discount = getattr(attendance_data, 'discount', 0) if attendance_data else 0
+#
+#                 # Accumulate totals
+#                 total_debt += total_debt_student
+#                 total_sum_paid += cash_payment + bank_payment + click_payment
+#                 remaining_debt += remaining_debt_student
+#                 total_discount += discount
+#                 total_paid_amount += paid_amount
+#                 #                 class_data['students'].append({
+#                 #                     'id': student.user.id,
+#                 #                     'name': student.user.name,
+#                 #                     'surname': student.user.surname,
+#                 #                     'phone': student.user.phone,
+#                 #                     'total_debt': total_debt_student,
+#                 #                     'remaining_debt': remaining_debt_student,
+#                 #                     'cash': cash_payment,
+#                 #                     'bank': bank_payment,
+#                 #                     'click': click_payment,
+#                 #                     'total_dis': discount,
+#                 #                     'total_discount': paid_amount,
+#                 #                     'month_id': attendance_data.id if attendance_data else None,
+#                 #                 })
+#                 class_data['students'].append({
+#                     'id': student.user.id,
+#                     'name': student.user.name,
+#                     'surname': student.user.surname,
+#                     'phone': student.user.phone,
+#                     'total_debt': total_debt_student,
+#                     'remaining_debt': remaining_debt_student,
+#                     'cash': cash_payment,
+#                     'bank': bank_payment,
+#                     'click': click_payment,
+#                     'total_dis': discount,
+#                     'total_discount': paid_amount,
+#                     'month_id': attendance_data.id if attendance_data else None,
+#                 })
+#
+#             # Only add class if it has students
+#             if class_data['students']:
+#                 data['class'].append(class_data)
+#
+#         # Get unique dates
+#         unique_dates = (
+#             AttendancePerMonth.objects
+#             .filter(system__name='school')
+#             .annotate(
+#                 year=ExtractYear('month_date'),
+#                 month=ExtractMonth('month_date')
+#             )
+#             .values('year', 'month')
+#             .distinct()
+#             .order_by('year', 'month')
+#         )
+#
+#         year_month_dict = defaultdict(list)
+#         for date in unique_dates:
+#             year_month_dict[date['year']].append(date['month'])
+#
+#         data['dates'] = [
+#             {'year': year, 'months': months}
+#             for year, months in sorted(year_month_dict.items())
+#         ]
+#         # data['total_sum'] = total_sum_test
+#         #         data['total_debt'] = total_debt
+#         #         data['reaming_debt'] = reaming_debt
+#         #         data['total_dis'] = total_dis
+#         #         data['total_discount'] = total_discount
+#         #         data["total_with_discount"] = total_debt - (total_discount + total_dis)
+#         # Totals
+#         data['total_sum'] = total_sum_paid
+#         data['total_debt'] = total_debt
+#         data['reaming_debt'] = remaining_debt  # ✅ Fixed typo
+#         data['total_dis'] = total_discount
+#         data['total_discount'] = total_paid_amount
+#         data['total_with_discount'] = total_debt - (total_paid_amount + total_discount)
+#
+#         return data
+#
+#     def get(self, request, *args, **kwargs):
+#         """GET: Current month data"""
+#         branch_id = request.query_params.get('branch')
+#
+#         if not branch_id:
+#             return Response({'error': 'branch parameter is required'}, status=400)
+#
+#         # Get active students in this branch
+#         students_list = Student.objects.filter(
+#             user__branch_id=branch_id,
+#             groups_student__deleted=False,
+#             deleted_student_student_new__isnull=True,
+#         ).distinct()
+#
+#         data = self.get_class_data(students_list, branch_id)
+#         return Response(data)
+#
+#     def post(self, request, *args, **kwargs):
+#         """POST: Specific month/year data"""
+#         branch_id = request.query_params.get('branch')
+#
+#         # ✅ Validate input
+#         try:
+#             month = int(request.data.get('month'))
+#             year = int(request.data.get('year'))
+#         except (TypeError, ValueError):
+#             return Response(
+#                 {'error': 'month and year must be valid integers'},
+#                 status=400
+#             )
+#
+#         if not (1 <= month <= 12):
+#             return Response({'error': 'month must be between 1 and 12'}, status=400)
+#
+#         if not branch_id:
+#             return Response({'error': 'branch parameter is required'}, status=400)
+#
+#         # Students who are either:
+#         # 1. Currently active in this branch
+#         # 2. Were deleted in/after the specified month
+#         active_in_branch = Group.objects.filter(
+#             students=OuterRef('pk'),
+#             deleted=False,
+#             branch_id=branch_id,
+#         )
+#
+#         # ✅ Fixed: Get students deleted ON or AFTER the target month
+#         deleted_in_or_after_month = DeletedStudent.objects.filter(
+#             student=OuterRef('pk'),
+#             group__branch_id=branch_id,
+#             deleted=False,
+#             deleted_date__year__gte=year,  # Year >= target year
+#         ).filter(
+#             Q(deleted_date__year__gt=year) |  # Future year
+#             Q(deleted_date__year=year, deleted_date__month__gte=month)  # Same year, month >=
+#         )
+#
+#         students_list = (
+#             Student.objects
+#             .annotate(
+#                 is_active=Exists(active_in_branch),
+#                 was_deleted=Exists(deleted_in_or_after_month),
+#             )
+#             .filter(
+#                 Q(is_active=True) | Q(was_deleted=True)
+#             )
+#             .distinct()
+#         )
+#
+#         data = self.get_class_data(students_list, branch_id, year=year, month=month)
+#         return Response(data)
 
 class GetTeacherSalary(APIView):
     def get(self, request, *args, **kwargs):
@@ -841,15 +1144,6 @@ class EncashmentsSchool(APIView):
             'overall_total': overall_total,
             'dates': [{'year': year, 'months': months} for year, months in year_month_dict.items()],
         })
-
-
-from django.db.models import Sum, Prefetch, Q
-
-from django.db.models import Sum, F, Q
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.exceptions import ValidationError
 
 
 class OneDayReportView(APIView):

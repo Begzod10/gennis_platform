@@ -4,6 +4,7 @@ from group.models import Group, GroupReason
 from students.models import Student, DeletedStudent
 from user.models import CustomUser
 
+
 class UserSerializer(serializers.ModelSerializer):
     age = serializers.SerializerMethodField(required=False)
     language = serializers.CharField(source='language.name', read_only=True)
@@ -36,10 +37,11 @@ class ActiveListSerializer(serializers.ModelSerializer):
     debt = serializers.CharField(source='user.balance', read_only=True)
     class_number = serializers.CharField(required=False, source='class_number.number')
     comment = serializers.CharField(required=False, source="user.comment")
+    face_id = serializers.CharField(source='user.face_id', read_only=True)
 
     class Meta:
         model = Student
-        fields = ('id', 'user', "group", "color", "debt", 'class_number', 'comment')
+        fields = ('id', 'user', "group", "color", "debt", 'class_number', 'comment', 'face_id')
 
     def get_color(self, obj):
         color_map = {1: '#FACC15', 2: '#FF3130', 0: '#24FF00'}

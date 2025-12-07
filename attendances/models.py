@@ -87,6 +87,8 @@ class StudentDailyAttendance(models.Model):
     day = models.DateField()
     status = models.BooleanField(default=False)  # True = keldi, False = kelmadi
     reason = models.CharField(max_length=255, null=True, blank=True)
+    entry_time = models.DateTimeField(null=True)
+    leave_time = models.DateTimeField(null=True)
 
     class Meta:
         unique_together = ('monthly_summary', 'day')

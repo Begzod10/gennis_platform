@@ -35,6 +35,16 @@ class TeacherUpdateView(generics.UpdateAPIView):
             data['msg'] = "O'qituvchiga toifa tanlanmagan"
         return Response(serializer.data)
 
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user = instance.user
+        user.face_id = request.data.get('face_id', user.face_id)
+        user.save()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
 
 class TeacherDestroyView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
