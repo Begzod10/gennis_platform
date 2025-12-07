@@ -409,6 +409,37 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id, month_date__gte=start_date,
                     month_date__lt=end_date, ).annotate(month_number=ExtractMonth('month_date'),
                     year_number=ExtractYear('month_date'), ).order_by('month_date'))
+            deleted_student = DeletedStudent.objects.filter(student_id=student_id).order_by(
+                "-deleted_date").first()
+            qs = (
+                AttendancePerMonth.objects
+                .filter(
+                    student_id=student_id,
+                    group_id=deleted_student.group_id,
+                    month_date__gte=start_date,
+                    month_date__lt=end_date,
+                )
+                .annotate(
+                    month_number=ExtractMonth('month_date'),
+                    year_number=ExtractYear('month_date'),
+                )
+                .order_by('month_date')
+            )
+        # else:
+        #     qs = (
+        #         AttendancePerMonth.objects
+        #         .filter(
+        #             student_id=student_id,
+        #             group_id=group.id,
+        #             month_date__gte=start_date,
+        #             month_date__lt=end_date,
+        #         )
+        #         .annotate(
+        #             month_number=ExtractMonth('month_date'),
+        #             year_number=ExtractYear('month_date'),
+        #         )
+        #         .order_by('month_date')
+        #     )
 
         # Optional: ?month=1..12 mapped to the correct year in this academic window
         month_str = self.request.query_params.get("month")
@@ -586,7 +617,9 @@ class StudentCharityModelView(APIView):
             discounts = StudentPayment.objects.filter(attendance=attendance_per_month, student_id=student_id,
                                                       branch_id=branch, deleted=False, status=True).all()
             student_payments = StudentPayment.objects.filter(attendance=attendance_per_month, student_id=student_id,
-                                                             branch_id=branch, deleted=False).all()
+
+                                                             branch_id=branch,
+                                                             deleted=False).all()
             total_payments = 0
             total_discount = 0
             for payment in discounts:

@@ -23,6 +23,13 @@ class CustomAutoGroup(models.Model):
 
 
 class CustomUser(AbstractUser):
+    LEVEL_CHOICES = (
+        (1, "1-daraja"),
+        (2, "2-daraja"),
+        (3, "3-daraja"),
+        (4, "4-daraja"),
+    )
+
     name = models.CharField(max_length=200, blank=True, null=True)
     surname = models.CharField(max_length=200, blank=True, null=True)
     username = models.CharField(max_length=200, blank=True, null=True, unique=True)
@@ -58,6 +65,10 @@ class CustomUser(AbstractUser):
     )
     file = models.FileField(upload_to='documents/', null=True, blank=True, default="")
     face_id = models.CharField(max_length=200, blank=True, null=True)
+
+    face_id = models.CharField(max_length=200, blank=True, null=True)
+
+    level = models.PositiveSmallIntegerField(choices=LEVEL_CHOICES, default=4)
 
     # acces models.ManyToManyField(Student)
 

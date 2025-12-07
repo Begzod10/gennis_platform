@@ -41,12 +41,19 @@ class ActiveListTeacherSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
     face_id = serializers.CharField(source='user.face_id', read_only=True)
 
+    face_id = serializers.CharField(source='user.face_id', read_only=True)
+
+    user_id = serializers.SerializerMethodField()
+
     class Meta:
         model = Teacher
-        fields = ('id', 'name', 'surname', 'username', 'age', 'phone', 'subject', 'status', 'face_id')
+        fields = ('id', 'name', 'surname', 'username', 'age', 'phone', 'subject', 'status', 'face_id', 'user_id')
 
     def get_name(self, obj):
         return obj.user.name
+
+    def get_user_id(self, obj):
+        return obj.user.id
 
     def get_username(self, obj):
         return obj.user.username

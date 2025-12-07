@@ -9,7 +9,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 from celery.schedules import crontab
 
-classroom_server = os.getenv('CLASSROOM_SERVER')
+# classroom_server = os.getenv('CLASSROOM_SERVER')
+classroom_server = "http://192.168.1.11:5001"
 gennis_server = os.getenv('GENNIS_SERVER')
 
 DEBUG = os.getenv('DEBUG', False)
@@ -72,6 +73,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "tasks.middlewear.RecurringTaskMiddleware",
 ]
 
 ROOT_URLCONF = 'gennis_platform.urls'
@@ -120,6 +122,9 @@ REST_FRAMEWORK = {
 
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
+    ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend'
     ],
 
     'DEFAULT_AUTHENTICATION_CLASSES': [
