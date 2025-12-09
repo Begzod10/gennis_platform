@@ -387,7 +387,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')
-        student = Student.objects.get(user_id=student_id)
+        student = Student.objects.get(id=student_id)
         group = student.groups_student.first()
         today = timezone.localdate()
         academic_start_year = today.year if today.month >= 9 else (today.year - 1)
@@ -405,10 +405,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 month_date__gte=start_date, month_date__lt=end_date, ).annotate(month_number=ExtractMonth('month_date'),
                 year_number=ExtractYear('month_date'), ).order_by('month_date'))
         else:
-            qs = (
-                AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id, month_date__gte=start_date,
-                    month_date__lt=end_date, ).annotate(month_number=ExtractMonth('month_date'),
-                    year_number=ExtractYear('month_date'), ).order_by('month_date'))
+
             deleted_student = DeletedStudent.objects.filter(student_id=student_id).order_by(
                 "-deleted_date").first()
             qs = (
@@ -425,22 +422,6 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 )
                 .order_by('month_date')
             )
-        # else:
-        #     qs = (
-        #         AttendancePerMonth.objects
-        #         .filter(
-        #             student_id=student_id,
-        #             group_id=group.id,
-        #             month_date__gte=start_date,
-        #             month_date__lt=end_date,
-        #         )
-        #         .annotate(
-        #             month_number=ExtractMonth('month_date'),
-        #             year_number=ExtractYear('month_date'),
-        #         )
-        #         .order_by('month_date')
-        #     )
-
         # Optional: ?month=1..12 mapped to the correct year in this academic window
         month_str = self.request.query_params.get("month")
         if month_str and month_str.isdigit():
