@@ -9,8 +9,8 @@ class CommentListCreateAPIView(generics.ListCreateAPIView):
     queryset = MissionComment.objects.all()
     serializer_class = MissionCommentSerializer
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    # def perform_create(self, serializer):
+    #     serializer.save(user=self.request.user)
 
 
 class CommentDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
