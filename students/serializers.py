@@ -141,7 +141,7 @@ def get_remaining_debt_for_student(student_id):
             if month.payment < 0:
                 month.payment = 0
                 month.save()
-            month.remaining_debt = month.total_debt - (month.payment + month.discount)
+            month.remaining_debt = max(0, month.total_debt - (month.payment + month.discount))
             month.save()
 
         remaining_debt_sum = AttendancePerMonth.objects.filter(
@@ -354,13 +354,13 @@ class StudentCharitySerializer(serializers.ModelSerializer):
 
 
 class StudentCharityListSerializer(serializers.ModelSerializer):
-    student = StudentSerializer(required=True)
-    group = GroupSerializer(required=True)
+    # student = StudentSerializer(required=True)
+    # group = GroupSerializer(required=True)
     charity_sum = serializers.IntegerField(required=False)
 
     class Meta:
         model = StudentCharity
-        fields = ['id', 'student', 'group', 'charity_sum', 'name']
+        fields = ['id', 'charity_sum', 'name']
 
 
 class StudentPaymentSerializer(serializers.ModelSerializer):

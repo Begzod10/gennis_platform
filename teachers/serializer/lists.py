@@ -39,6 +39,7 @@ class ActiveListTeacherSerializer(serializers.ModelSerializer):
     username = serializers.SerializerMethodField(required=False)
     subject = ActiveSubjectSerializerSerializer(many=True)
     status = serializers.SerializerMethodField()
+    face_id = serializers.CharField(source='user.face_id', read_only=True)
 
     face_id = serializers.CharField(source='user.face_id', read_only=True)
 

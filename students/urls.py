@@ -78,3 +78,4 @@ urlpatterns = [
     path('get_balance/<int:user_id>/', GetStudentBalance.as_view()),
     path('update_student_class_number/', StudentClassNumberUpdateView.as_view())
 ]
+
