@@ -45,7 +45,7 @@ class DeletedFromRegistered(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = DeletedNewStudentListSerializer
     filter_mappings = {'branch': 'student__user__branch_id', 'subject': 'subject__id',
-        'age': 'student__user__birth_date', 'language': 'student__user__language_id', }
+                       'age': 'student__user__birth_date', 'language': 'student__user__language_id', }
 
     def get_queryset(self):
         return DeletedNewStudent.objects.all()
@@ -55,7 +55,7 @@ class DeletedGroupStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ActiveListDeletedStudentSerializer
     filter_mappings = {'branch': 'student__user__branch_id', 'subject': 'student__subject__id',
-        'age': 'student__user__birth_date', 'language': 'student__user__language_id', }
+                       'age': 'student__user__birth_date', 'language': 'student__user__language_id', }
     filter_backends = [filters.SearchFilter]
     search_fields = ['student__user__name', 'student__user__surname', 'student__user__username']
 
@@ -86,7 +86,7 @@ class NewRegisteredStudents(QueryParamFilterMixin, ListAPIView):
 
         return (
             Student.objects.filter(~Q(id__in=excluded_ids) & Q(groups_student__isnull=True)).distinct().order_by('-pk')
-        # or 'id'
+            # or 'id'
         )
 
 
@@ -94,21 +94,21 @@ class ActiveStudents(QueryParamFilterMixin, ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ActiveListSerializer
     filter_mappings = {'branch': 'user__branch_id', 'subject': 'subject__id', 'age': 'user__birth_date',
-        'language': 'user__language_id', }
+                       'language': 'user__language_id', }
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__name', 'user__surname', 'user__username']
 
     def get_queryset(self, *args, **kwargs):
         # with silk_profile(name='ActiveStudents.get_queryset'):
         deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True,
-            deleted=False).values_list('student_id', flat=True)
+                                                            deleted=False).values_list('student_id', flat=True)
 
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
 
         active_students = Student.objects.select_related('user', 'user__language', 'class_number').prefetch_related(
             'user__student_user',
             Prefetch('groups_student', queryset=Group.objects.select_related('class_number', 'color').order_by('id'),
-                to_attr='prefetched_groups')).exclude(id__in=deleted_student_ids).exclude(
+                     to_attr='prefetched_groups')).exclude(id__in=deleted_student_ids).exclude(
             id__in=deleted_new_student_ids).filter(groups_student__isnull=False).distinct().order_by(
             'class_number__number')
 
@@ -387,7 +387,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')
-        student = Student.objects.get(id=student_id)
+        student = Student.objects.get(user_id=student_id)
         group = student.groups_student.first()
         today = timezone.localdate()
         academic_start_year = today.year if today.month >= 9 else (today.year - 1)
@@ -402,26 +402,16 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
         if not group:
             deleted_student = DeletedStudent.objects.filter(student_id=student_id).order_by("-deleted_date").first()
             qs = (AttendancePerMonth.objects.filter(student_id=student_id, group_id=deleted_student.group_id,
-                month_date__gte=start_date, month_date__lt=end_date, ).annotate(month_number=ExtractMonth('month_date'),
+                                                    month_date__gte=start_date, month_date__lt=end_date, ).annotate(
+                month_number=ExtractMonth('month_date'),
                 year_number=ExtractYear('month_date'), ).order_by('month_date'))
         else:
-
-            deleted_student = DeletedStudent.objects.filter(student_id=student_id).order_by(
-                "-deleted_date").first()
             qs = (
-                AttendancePerMonth.objects
-                .filter(
-                    student_id=student_id,
-                    group_id=deleted_student,
-                    month_date__gte=start_date,
-                    month_date__lt=end_date,
-                )
-                .annotate(
+                AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id, month_date__gte=start_date,
+                                                  month_date__lt=end_date, ).annotate(
                     month_number=ExtractMonth('month_date'),
-                    year_number=ExtractYear('month_date'),
-                )
-                .order_by('month_date')
-            )
+                    year_number=ExtractYear('month_date'), ).order_by('month_date'))
+
         # Optional: ?month=1..12 mapped to the correct year in this academic window
         month_str = self.request.query_params.get("month")
         if month_str and month_str.isdigit():
@@ -701,6 +691,7 @@ class GetMonthView(APIView):
             return Response({"error": "Attendance not found"}, status=404)
 
         return Response({"sum": attendances.remaining_debt})
+
 
 class GetStudentBalance(APIView):
     def get(self, request, user_id):
