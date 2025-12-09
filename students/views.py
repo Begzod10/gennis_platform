@@ -387,7 +387,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')
-        student = Student.objects.get(user_id=student_id)
+        student = Student.objects.get(id=student_id)
         group = student.groups_student.first()
         today = timezone.localdate()
         academic_start_year = today.year if today.month >= 9 else (today.year - 1)
