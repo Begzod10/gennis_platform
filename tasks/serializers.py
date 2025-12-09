@@ -170,12 +170,22 @@ class MissionCommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MissionComment
-        fields = ["id", "mission", "text", "attachment", "created_at"]
+        fields = ["id", "mission", "text", "attachment", "created_at", "user"]
         read_only_fields = ["created_at"]
 
     def create(self, validated_data):
-        validated_data["user"] = self.context["request"].user
         return super().create(validated_data)
+
+
+class MissionCommentDetailSerializer(serializers.ModelSerializer):
+    mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
+    user = UserShortSerializer()
+
+    class Meta:
+        model = MissionComment
+        fields = ["id", "mission", "text", "attachment", "created_at", "user"]
+        read_only_fields = ["created_at"]
 
 
 class MissionProofSerializer(serializers.ModelSerializer):
@@ -199,7 +209,7 @@ class MissionDetailSerializer(serializers.ModelSerializer):
     reviewer = UserShortSerializer()
     subtasks = MissionSubtaskSerializer(many=True, read_only=True)
     attachments = MissionAttachmentSerializer(many=True, read_only=True)
-    comments = MissionCommentSerializer(many=True, read_only=True)
+    comments = MissionCommentDetailSerializer(many=True, read_only=True)
     proofs = MissionProofSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     delay_info = serializers.SerializerMethodField()
