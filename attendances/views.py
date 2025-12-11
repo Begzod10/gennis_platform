@@ -42,16 +42,34 @@ class DeleteAttendanceMonthApiView(generics.RetrieveUpdateDestroyAPIView):
         if total_debt is None:
             return Response({'error': 'total_debt kiritilishi kerak'}, status=status.HTTP_400_BAD_REQUEST)
         student_payment = StudentPayment.objects.filter(attendance=instance, status=True).first()
-        sum = int(request.data.get('payment_sum'))
-        ## Attendancedan summani uzgartirish
-        instance.remaining_debt = instance.total_debt - (
-                instance.payment - student_payment.payment_sum) + instance.discount + sum
-        instance.payment = instance.payment - student_payment.payment_sum + sum
-        instance.total_charity = data.get('payment_sum')
+
+        sum_payment = int(request.data.get('payment_sum'))
+        
+        if student_payment is None:
+            # Agar mavjud bo'lmasa, yangi payment yaratish
+            student_payment = StudentPayment.objects.create(
+                attendance=instance,
+                payment_sum=sum_payment,
+                reason=data.get('reason', ''),
+                status=True
+            )
+            # Attendancedagi summani yangilash
+            instance.remaining_debt = instance.total_debt - sum_payment + instance.discount
+            instance.payment = sum_payment
+            instance.total_charity = sum_payment
+        else:
+            # Mavjud bo'lsa, summani o'zgartirish
+            old_payment = student_payment.payment_sum
+            instance.remaining_debt = instance.total_debt - (instance.payment - old_payment) + instance.discount + sum_payment
+            instance.payment = instance.payment - old_payment + sum_payment
+            instance.total_charity = sum_payment
+        
+            # StudentPayment ni yangilash
+            student_payment.payment_sum = sum_payment
+            student_payment.reason = data.get('reason', student_payment.reason)
+            student_payment.save()
+        
         instance.save()
-        student_payment.payment_sum = data.get('payment_sum')
-        student_payment.reason = data.get('reason')
-        student_payment.save()
 
         """Yillik chegirma"""
         attendances = AttendancePerMonth.objects.filter(student_id=instance.student)
