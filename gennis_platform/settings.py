@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'django_filters',
     'ui',
     'terms',
+    'parents',
     'apps.investor.apps.InvestorConfig',
 ]
 

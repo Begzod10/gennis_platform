@@ -20,6 +20,7 @@ urlpatterns = [
     path('api/Branch/', include('branch.urls')),
     path('api/Payments/', include('payments.urls')),
     path('api/Students/', include('students.urls')),
+    path('api/parents/', include('parents.urls')),
     path('api/Teachers/', include('teachers.urls')),
     path('api/Capital/', include('capital.urls')),
     path('api/Class/', include('classes.urls')),
