@@ -6,6 +6,7 @@ from user.models import CustomUser
 
 
 class ParentUserSerializer(serializers.ModelSerializer):
+    branch = serializers.CharField(source="branch.name")
     class Meta:
         model = CustomUser
         fields = [
