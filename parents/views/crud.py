@@ -63,7 +63,7 @@ class ParentDetailView(generics.RetrieveUpdateDestroyAPIView):
         parent.children.clear()
         parent.user.is_active = False
         parent.user.save()
-        return Response({"message": "Parent deleted"}, status=204)
+        return Response({"message": "Parent deleted"}, status=200)
 
 
 class ParentListView(generics.ListAPIView):
