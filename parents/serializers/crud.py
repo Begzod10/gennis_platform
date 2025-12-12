@@ -47,8 +47,16 @@ class ParentSerializer(serializers.ModelSerializer):
 
 
 class ParentSerializerForList(serializers.ModelSerializer):
-    user = ParentUserSerializer()
+
+    name= serializers.CharField(source="user.name")
+    surname= serializers.CharField(source="user.surname")
+    username=serializers.CharField(source="user.username")
+    father_name = serializers.CharField(source="user.father_name")
+    location=serializers.CharField(source="user.branch.name")
+    phone = serializers.CharField(source="user.phone")
+    born_date = serializers.CharField(source="user.birth_date")
 
     class Meta:
         model = Parent
-        fields = ["id", "user"]
+        fields = ["id", 'username', 'name', 'surname', 'father_name',
+            'born_date', 'phone', 'location']
