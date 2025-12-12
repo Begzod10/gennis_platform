@@ -1,9 +1,11 @@
+from django.db.models import Prefetch
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from group.models import Group
 from parents.models import Parent
 from parents.serializers.crud import ParentSerializer
-from students.models import Student, StudentPayment
+from students.models import Student, StudentPayment, DeletedNewStudent, DeletedStudent
 from students.serializer.lists import ActiveListSerializer
 from students.serializers import StudentPaymentSerializer
 
@@ -40,9 +42,19 @@ class AvailableStudentsView(APIView):
 
         existing_ids = parent.children.values_list("id", flat=True)
 
-        available = Student.objects.exclude(id__in=existing_ids)
+        deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True,
+                                                            deleted=False).values_list('student_id', flat=True)
 
-        return Response(ActiveListSerializer(available, many=True).data)
+        deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
+
+        active_students = Student.objects.select_related('user', 'user__language', 'class_number').prefetch_related(
+            'user__student_user',
+            Prefetch('groups_student', queryset=Group.objects.select_related('class_number', 'color').order_by('id'),
+                     to_attr='prefetched_groups')).exclude(id__in=deleted_student_ids).exclude(
+            id__in=deleted_new_student_ids).filter(groups_student__isnull=False).exclude(id__in=existing_ids).distinct().order_by(
+            'class_number__number')
+
+        return Response(ActiveListSerializer(active_students, many=True).data)
 
 
 class StudentPaymentListView(APIView):
