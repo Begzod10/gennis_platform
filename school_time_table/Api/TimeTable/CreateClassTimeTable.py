@@ -156,6 +156,7 @@ class ClassTimeTableLessonsView(APIView):
         }
         return Response(data)
 
+
 class ClassTimeTableForClassView(APIView):
     def get(self, request):
         week_id = self.request.query_params.get('week')

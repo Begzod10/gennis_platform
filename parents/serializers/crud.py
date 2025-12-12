@@ -20,6 +20,23 @@ class StudentSerializer(serializers.ModelSerializer):
         fields = ["id", "user", "shift", "class_number"]
 
 
+class StudentSerializerMobile(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+
+    def get_user(self, obj):
+        return {
+            "id": obj.user.id,
+            "name": obj.user.name,
+            "surname": obj.user.surname,
+            "shift": obj.shift,
+            "class_number": obj.class_number
+        }
+
+    class Meta:
+        model = Student
+        fields = ["id", "user", "shift", "class_number"]
+
+
 class ParentSerializer(serializers.ModelSerializer):
     user = ParentUserSerializer()
     children = StudentSerializer(many=True)
