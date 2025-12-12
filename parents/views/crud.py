@@ -27,7 +27,7 @@ class ParentCreateView(generics.CreateAPIView):
             birth_date=data.get("birth_date"),
             phone=data.get("phone"),
             password=make_password("12345678"),
-            branch=data.get("location"),
+            branch_id=data.get("location"),
         )
 
         parent = Parent.objects.create(user=user)
