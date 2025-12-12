@@ -16,9 +16,17 @@ class ParentUserSerializer(serializers.ModelSerializer):
 
 
 class StudentSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source="user.name")
+    surname = serializers.CharField(source="user.surname")
+    username = serializers.CharField(source="user.username")
+    father_name = serializers.CharField(source="user.father_name")
+    location = serializers.CharField(source="user.branch.name")
+    phone = serializers.CharField(source="user.phone")
+    born_date = serializers.CharField(source="user.birth_date")
     class Meta:
         model = Student
-        fields = ["id", "user", "shift", "class_number"]
+        fields = ["id", "shift", "class_number",'username', 'name', 'surname', 'father_name',
+            'born_date', 'phone', 'location']
 
 
 class StudentSerializerMobile(serializers.ModelSerializer):

@@ -4,9 +4,8 @@ from rest_framework.views import APIView
 
 from group.models import Group
 from parents.models import Parent
-from parents.serializers.crud import ParentSerializer
+from parents.serializers.crud import ParentSerializer, StudentSerializer
 from students.models import Student, StudentPayment, DeletedNewStudent, DeletedStudent
-from students.serializer.lists import ActiveListSerializer
 from students.serializers import StudentPaymentSerializer
 
 
@@ -51,10 +50,10 @@ class AvailableStudentsView(APIView):
             'user__student_user',
             Prefetch('groups_student', queryset=Group.objects.select_related('class_number', 'color').order_by('id'),
                      to_attr='prefetched_groups')).exclude(id__in=deleted_student_ids).exclude(
-            id__in=deleted_new_student_ids).filter(groups_student__isnull=False).exclude(id__in=existing_ids).distinct().order_by(
+            id__in=deleted_new_student_ids).filter(groups_student__isnull=False,user__branch_id=parent.user.branch.id).exclude(id__in=existing_ids).distinct().order_by(
             'class_number__number')
 
-        return Response(ActiveListSerializer(active_students, many=True).data)
+        return Response(StudentSerializer(active_students, many=True).data)
 
 
 class StudentPaymentListView(APIView):
