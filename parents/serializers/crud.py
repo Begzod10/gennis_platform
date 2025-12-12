@@ -10,7 +10,7 @@ class ParentUserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = [
             'id', 'username', 'name', 'surname', 'father_name',
-            'birth_date', 'phone', 'address', 'branch'
+            'birth_date', 'phone', 'branch'
         ]
 
 
