@@ -24,7 +24,7 @@ class ParentCreateView(generics.CreateAPIView):
             name=data.get("name"),
             surname=data.get("surname"),
             father_name=data.get("father_name"),
-            birth_date=data.get("birth_date"),
+            birth_date=data.get("born_date"),
             phone=data.get("phone"),
             password=make_password("12345678"),
             branch_id=data.get("location"),
@@ -67,7 +67,7 @@ class ParentDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class ParentListView(generics.ListAPIView):
-    serializer_class = ParentSerializer
+    serializer_class = ParentSerializerForList
 
     def get_queryset(self):
         branch_id = self.kwargs["branch_id"]

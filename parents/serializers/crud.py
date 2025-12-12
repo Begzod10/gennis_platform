@@ -44,3 +44,11 @@ class ParentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Parent
         fields = ["id", "user", "children"]
+
+
+class ParentSerializerForList(serializers.ModelSerializer):
+    user = ParentUserSerializer()
+
+    class Meta:
+        model = Parent
+        fields = ["id", "user"]
