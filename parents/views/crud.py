@@ -5,7 +5,7 @@ from rest_framework import generics
 from rest_framework.response import Response
 
 from parents.models import Parent
-from parents.serializers.crud import ParentSerializer
+from parents.serializers.crud import ParentSerializer, ParentSerializerForList
 from user.models import CustomUser
 
 
