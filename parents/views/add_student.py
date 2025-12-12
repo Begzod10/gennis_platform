@@ -36,26 +36,46 @@ class AddStudentsView(APIView):
 
 
 class AvailableStudentsView(APIView):
-    def get(self, request, id):
-        parent = Parent.objects.get(id=id)
+    serializer_class = StudentSerializer
+
+    def get_queryset(self):
+        parent_id = self.kwargs["id"]
+        parent = Parent.objects.get(id=parent_id)
 
         existing_ids = parent.children.values_list("id", flat=True)
 
-        deleted_student_ids = DeletedStudent.objects.filter(student__groups_student__isnull=True,
-                                                            deleted=False).values_list('student_id', flat=True)
+        deleted_student_ids = DeletedStudent.objects.filter(
+            student__groups_student__isnull=True,
+            deleted=False
+        ).values_list('student_id', flat=True)
 
         deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
 
-        active_students = Student.objects.select_related('user', 'user__language', 'class_number').prefetch_related(
-            'user__student_user',
-            Prefetch('groups_student', queryset=Group.objects.select_related('class_number', 'color').order_by('id'),
-                     to_attr='prefetched_groups')).exclude(id__in=deleted_student_ids).exclude(
-            id__in=deleted_new_student_ids).filter(groups_student__isnull=False,user__branch_id=parent.user.branch.id).exclude(id__in=existing_ids).distinct().order_by(
-            'class_number__number')
+        students = (
+            Student.objects
+            .select_related('user', 'user__language', 'class_number')
+            .prefetch_related(
+                'user__student_user',
+                Prefetch(
+                    'groups_student',
+                    queryset=Group.objects
+                        .select_related('class_number', 'color')
+                        .order_by('id'),
+                    to_attr='prefetched_groups'
+                )
+            )
+            .filter(
+                groups_student__isnull=False,
+                user__branch_id=parent.user.branch.id
+            )
+            .exclude(id__in=deleted_student_ids)
+            .exclude(id__in=deleted_new_student_ids)
+            .exclude(id__in=existing_ids)
+            .distinct()
+            .order_by('class_number__number')
+        )
 
-        return Response(StudentSerializer(active_students, many=True).data)
-
-
+        return students
 class StudentPaymentListView(APIView):
     def get(self, request):
         user_id = request.query_params.get("id")
