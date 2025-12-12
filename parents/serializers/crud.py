@@ -23,10 +23,11 @@ class StudentSerializer(serializers.ModelSerializer):
     location = serializers.CharField(source="user.branch.name")
     phone = serializers.CharField(source="user.phone")
     born_date = serializers.CharField(source="user.birth_date")
+    age = serializers.CharField(source="user.calculate_age")
     class Meta:
         model = Student
         fields = ["id", "shift", "class_number",'username', 'name', 'surname', 'father_name',
-            'born_date', 'phone', 'location']
+            'born_date', 'phone', 'location','age']
 
 
 class StudentSerializerMobile(serializers.ModelSerializer):
