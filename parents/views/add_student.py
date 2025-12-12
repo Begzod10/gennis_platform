@@ -1,4 +1,5 @@
 from django.db.models import Prefetch
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -35,7 +36,7 @@ class AddStudentsView(APIView):
         return Response(ParentSerializer(parent).data)
 
 
-class AvailableStudentsView(APIView):
+class AvailableStudentsView(ListAPIView):
     serializer_class = StudentSerializer
 
     def get_queryset(self):
