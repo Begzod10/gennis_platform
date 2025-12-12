@@ -26,7 +26,6 @@ class ParentCreateView(generics.CreateAPIView):
             father_name=data.get("father_name"),
             birth_date=data.get("birth_date"),
             phone=data.get("phone"),
-            address=data.get("address"),
             password=make_password("12345678")
         )
 
@@ -45,7 +44,7 @@ class ParentDetailView(generics.RetrieveUpdateDestroyAPIView):
         user = parent.user
         data = request.data
 
-        for field in ["name", "surname", "phone", "address", "father_name"]:
+        for field in ["name", "surname", "phone", "father_name"]:
             if field in data:
                 setattr(user, field, data[field])
 
