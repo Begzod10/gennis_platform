@@ -5,7 +5,7 @@ from rest_framework import generics
 from rest_framework.response import Response
 
 from parents.models import Parent
-from parents.serializers.crud import ParentSerializer
+from parents.serializers.crud import ParentSerializer, ParentSerializerForList
 from user.models import CustomUser
 
 
@@ -24,9 +24,10 @@ class ParentCreateView(generics.CreateAPIView):
             name=data.get("name"),
             surname=data.get("surname"),
             father_name=data.get("father_name"),
-            birth_date=data.get("birth_date"),
+            birth_date=data.get("born_date"),
             phone=data.get("phone"),
-            password=make_password("12345678")
+            password=make_password("12345678"),
+            branch_id=data.get("location"),
         )
 
         parent = Parent.objects.create(user=user)
@@ -62,11 +63,11 @@ class ParentDetailView(generics.RetrieveUpdateDestroyAPIView):
         parent.children.clear()
         parent.user.is_active = False
         parent.user.save()
-        return Response({"message": "Parent deleted"}, status=204)
+        return Response({"message": "Parent deleted"}, status=200)
 
 
 class ParentListView(generics.ListAPIView):
-    serializer_class = ParentSerializer
+    serializer_class = ParentSerializerForList
 
     def get_queryset(self):
         branch_id = self.kwargs["branch_id"]

@@ -6,18 +6,28 @@ from user.models import CustomUser
 
 
 class ParentUserSerializer(serializers.ModelSerializer):
+    branch = serializers.CharField(source="branch.name")
     class Meta:
         model = CustomUser
         fields = [
             'id', 'username', 'name', 'surname', 'father_name',
-            'birth_date', 'phone', 'address', 'branch'
+            'birth_date', 'phone', 'branch'
         ]
 
 
 class StudentSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source="user.name")
+    surname = serializers.CharField(source="user.surname")
+    username = serializers.CharField(source="user.username")
+    father_name = serializers.CharField(source="user.father_name")
+    location = serializers.CharField(source="user.branch.name")
+    phone = serializers.CharField(source="user.phone")
+    born_date = serializers.CharField(source="user.birth_date")
+    age = serializers.CharField(source="user.calculate_age")
     class Meta:
         model = Student
-        fields = ["id", "user", "shift", "class_number"]
+        fields = ["id", "shift", "class_number",'username', 'name', 'surname', 'father_name',
+            'born_date', 'phone', 'location','age']
 
 
 class StudentSerializerMobile(serializers.ModelSerializer):
@@ -44,3 +54,19 @@ class ParentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Parent
         fields = ["id", "user", "children"]
+
+
+class ParentSerializerForList(serializers.ModelSerializer):
+
+    name= serializers.CharField(source="user.name")
+    surname= serializers.CharField(source="user.surname")
+    username=serializers.CharField(source="user.username")
+    father_name = serializers.CharField(source="user.father_name")
+    location=serializers.CharField(source="user.branch.name")
+    phone = serializers.CharField(source="user.phone")
+    born_date = serializers.CharField(source="user.birth_date")
+
+    class Meta:
+        model = Parent
+        fields = ["id", 'username', 'name', 'surname', 'father_name',
+            'born_date', 'phone', 'location']
