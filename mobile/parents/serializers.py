@@ -1,7 +1,7 @@
 # time_table/serializers.py
 from rest_framework import serializers
 from school_time_table.models import ClassTimeTable
-from attendances.models import StudentDailyAttendance
+from attendances.models import StudentDailyAttendance, AttendancePerMonth
 
 
 class ClassTimeTableSerializer(serializers.ModelSerializer):
@@ -39,3 +39,13 @@ class StudentDailyAttendanceMobileSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentDailyAttendance
         fields = ["id", "student_id", "group_id", "day", "status", "reason", "entry_time", "leave_time"]
+
+
+class AttendancePerMonthParentSerializer(serializers.ModelSerializer):
+
+
+    class Meta:
+        model = AttendancePerMonth
+        fields = ['id', 'status', 'total_debt', 'ball_percentage', 'month_date',
+                  'total_charity', 'remaining_debt', 'payment', 'remaining_salary',
+                  ]

@@ -39,12 +39,12 @@ class StudentSerializerMobile(serializers.ModelSerializer):
             "name": obj.user.name,
             "surname": obj.user.surname,
             "shift": obj.shift,
-            "class_number": obj.class_number
+            "class_number": obj.class_number.number
         }
 
     class Meta:
         model = Student
-        fields = ["id", "user", "shift", "class_number"]
+        fields = ["id", "user"]
 
 
 class ParentSerializer(serializers.ModelSerializer):
