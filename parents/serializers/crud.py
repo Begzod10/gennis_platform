@@ -43,7 +43,7 @@ class StudentSerializerMobile(serializers.ModelSerializer):
         if first_group:
             return {
                 "id": first_group.id,
-                "name": first_group.name
+                "name": first_group.name if first_group.name else f"{first_group.class_number.number}-{first_group.color.name}"
             }
         return None
 
