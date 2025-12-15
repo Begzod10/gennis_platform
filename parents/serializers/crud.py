@@ -34,6 +34,13 @@ class StudentSerializer(serializers.ModelSerializer):
 
 class StudentSerializerMobile(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
+    group = serializers.SerializerMethodField()
+
+    def get_group(self, obj):
+        return {
+            "id": obj.groups_student.id,
+            "name": obj.groups_student.name
+        }
 
     def get_user(self, obj):
         return {
