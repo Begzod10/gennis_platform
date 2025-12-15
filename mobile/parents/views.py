@@ -81,7 +81,12 @@ class ChildrenTodayTimeTableView(APIView):
     def get(self, request):
         try:
             # Verify the student belongs to this parent
-            today = timezone.localdate()
+            date_get = request.query_params.get("date", None)
+            if not date_get:
+
+                today = timezone.localdate()
+            else:
+                today = date.fromisoformat(date_get)
             academic_start_year = today.year if today.month >= 9 else (today.year - 1)
             academic_end_year = today.year if today.month <= 6 else (today.year + 1)
             academic_year = f"{academic_start_year}-{academic_end_year}"
@@ -99,7 +104,6 @@ class ChildrenTodayTimeTableView(APIView):
                 )
             # Get today's date
             today = date.today()
-            # Get today's timetable for the student
             timetable = ClassTimeTable.objects.filter(
                 students__id=student_id,
                 date=today
