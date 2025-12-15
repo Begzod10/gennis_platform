@@ -37,10 +37,15 @@ class StudentSerializerMobile(serializers.ModelSerializer):
     group = serializers.SerializerMethodField()
 
     def get_group(self, obj):
-        return {
-            "id": obj.groups_student[0].id,
-            "name": obj.groups_student[0].name
-        }
+        # Get the first group safely
+        first_group = obj.groups_student.first()
+
+        if first_group:
+            return {
+                "id": first_group.id,
+                "name": first_group.name
+            }
+        return None
 
     def get_user(self, obj):
         return {
