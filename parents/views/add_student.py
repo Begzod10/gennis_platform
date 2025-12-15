@@ -1,4 +1,5 @@
 from django.db.models import Prefetch
+from rest_framework import filters
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -38,6 +39,8 @@ class AddStudentsView(APIView):
 
 class AvailableStudentsView(ListAPIView):
     serializer_class = StudentSerializer
+    search_fields = ["user__name","user__surname"]
+    filter_backends = (filters.SearchFilter,)
 
     def get_queryset(self):
         parent_id = self.kwargs["id"]
