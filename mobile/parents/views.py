@@ -85,7 +85,11 @@ class ChildrenTodayTimeTableView(APIView):
             academic_start_year = today.year if today.month >= 9 else (today.year - 1)
             academic_end_year = today.year if today.month <= 6 else (today.year + 1)
             academic_year = f"{academic_start_year}-{academic_end_year}"
-            terms = Term.objects.get(academic_year=academic_year)
+            terms = Term.objects.filter(
+                academic_year=academic_year,
+                start_date__lte=today,
+                end_date__gte=today
+            ).first()
             student_id = request.query_params.get('student_id')
             parent = Parent.objects.get(user=request.user)
             if not parent.children.filter(id=student_id).exists():
