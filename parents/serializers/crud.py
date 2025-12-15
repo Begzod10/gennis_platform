@@ -7,6 +7,7 @@ from user.models import CustomUser
 
 class ParentUserSerializer(serializers.ModelSerializer):
     branch = serializers.CharField(source="branch.name")
+
     class Meta:
         model = CustomUser
         fields = [
@@ -24,10 +25,11 @@ class StudentSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(source="user.phone")
     born_date = serializers.CharField(source="user.birth_date")
     age = serializers.CharField(source="user.calculate_age")
+
     class Meta:
         model = Student
-        fields = ["id", "shift", "class_number",'username', 'name', 'surname', 'father_name',
-            'born_date', 'phone', 'location','age']
+        fields = ["id", "shift", "class_number", 'username', 'name', 'surname', 'father_name',
+                  'born_date', 'phone', 'location', 'age']
 
 
 class StudentSerializerMobile(serializers.ModelSerializer):
@@ -44,7 +46,7 @@ class StudentSerializerMobile(serializers.ModelSerializer):
 
     class Meta:
         model = Student
-        fields = ["id", "user"]
+        fields = ["id", "user", "group"]
 
 
 class ParentSerializer(serializers.ModelSerializer):
@@ -57,16 +59,15 @@ class ParentSerializer(serializers.ModelSerializer):
 
 
 class ParentSerializerForList(serializers.ModelSerializer):
-
-    name= serializers.CharField(source="user.name")
-    surname= serializers.CharField(source="user.surname")
-    username=serializers.CharField(source="user.username")
+    name = serializers.CharField(source="user.name")
+    surname = serializers.CharField(source="user.surname")
+    username = serializers.CharField(source="user.username")
     father_name = serializers.CharField(source="user.father_name")
-    location=serializers.CharField(source="user.branch.name")
+    location = serializers.CharField(source="user.branch.name")
     phone = serializers.CharField(source="user.phone")
     born_date = serializers.CharField(source="user.birth_date")
 
     class Meta:
         model = Parent
         fields = ["id", 'username', 'name', 'surname', 'father_name',
-            'born_date', 'phone', 'location']
+                  'born_date', 'phone', 'location']
