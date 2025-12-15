@@ -41,7 +41,6 @@ class ChildrenDebtMonthView(APIView):
 
     def get(self, request):
         student_id = request.query_params.get('student_id')
-        print(student_id)
         student = Student.objects.get(pk=student_id)
         group = student.groups_student.first()
         today = timezone.localdate()
@@ -188,7 +187,7 @@ class TermsByChildren(APIView):
         term_id = kwargs.get('term_id')
         subject_id = kwargs.get('subject_id', None)
 
-        student = Student.objects.get(id=student_id)
+        student = Student.objects.get(pk=student_id)
         if subject_id:
 
             assignments = Assignment.objects.filter(
