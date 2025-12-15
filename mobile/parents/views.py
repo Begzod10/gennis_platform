@@ -113,8 +113,8 @@ class ChildrenTodayTimeTableView(APIView):
                 percentage = 0
                 for ts in test:
                     assignment = Assignment.objects.filter(test=ts, student_id=student_id).first()
-                    calculated_result = round((assignment.test.weight * assignment.percentage) / 100, 2)
-                    percentage += calculated_result
+                    calculated_result = (assignment.test.weight * assignment.percentage) / 100
+                    percentage += round(calculated_result, 2)
 
                 lessons.append({
                     'time': f"{lesson.hours.start_time.strftime('%H:%M')} - {lesson.hours.end_time.strftime('%H:%M')}",
