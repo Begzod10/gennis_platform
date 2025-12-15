@@ -183,9 +183,9 @@ class ListTermChildren(generics.ListAPIView):
 
 class TermsByChildren(APIView):
     def get(self, request, *args, **kwargs):
-        student_id = kwargs.get('student_id')
-        term_id = kwargs.get('term_id')
-        subject_id = kwargs.get('subject_id', None)
+        student_id = request.query_params.get('student_id')
+        term_id = request.query_params.get('term_id')
+        subject_id = request.query_params.get('subject_id', None)
 
         student = Student.objects.get(pk=student_id)
         if subject_id:
