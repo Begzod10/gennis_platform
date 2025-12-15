@@ -13,7 +13,7 @@ from mobile.parents.serializers import ClassTimeTableSerializer, StudentDailyAtt
     AttendancePerMonthParentSerializer
 from school_time_table.models import ClassTimeTable
 from attendances.models import StudentDailyAttendance
-from terms.models import Assignment, Term
+from terms.models import Assignment, Term, Test
 from terms.serializers import TermSerializer
 from collections import defaultdict
 
@@ -81,6 +81,11 @@ class ChildrenTodayTimeTableView(APIView):
     def get(self, request):
         try:
             # Verify the student belongs to this parent
+            today = timezone.localdate()
+            academic_start_year = today.year if today.month >= 9 else (today.year - 1)
+            academic_end_year = today.year if today.month <= 6 else (today.year + 1)
+            academic_year = f"{academic_start_year}-{academic_end_year}"
+            terms = Term.objects.get(academic_year=academic_year)
             student_id = request.query_params.get('student_id')
             parent = Parent.objects.get(user=request.user)
             if not parent.children.filter(id=student_id).exists():
@@ -97,7 +102,22 @@ class ChildrenTodayTimeTableView(APIView):
             ).select_related(
                 'hours', 'room', 'teacher', 'subject', 'group', 'week'
             ).order_by('hours__start_time')  # Order by lesson time
+            lessons = []
+            for lesson in timetable:
 
+                test = Test.objects.filter(term=terms, group=lesson.group, subject=lesson.subject).all()
+                percentage = 0
+                for ts in test:
+                    assignment = Assignment.objects.filter(test=ts, student_id=student_id).first()
+                    percentage += assignment.percentage
+
+                lessons.append({
+                    'time': f"{lesson.hours.start_time.strftime('%H:%M')} - {lesson.hours.end_time.strftime('%H:%M')}",
+                    'subject': lesson.subject.name if lesson.subject else None,
+                    'teacher': f"{lesson.teacher.user.name + ' ' + lesson.teacher.user.surname}" if lesson.teacher else None,
+                    'room': lesson.room.name if lesson.room else None,
+                    "overall_rating": round((percentage / len(test)) * 100)
+                })
             serializer = ClassTimeTableSerializer(timetable, many=True)
 
             return Response({
