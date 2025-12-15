@@ -120,7 +120,7 @@ class ChildrenTodayTimeTableView(APIView):
                     'subject': lesson.subject.name if lesson.subject else None,
                     'teacher': f"{lesson.teacher.user.name + ' ' + lesson.teacher.user.surname}" if lesson.teacher else None,
                     'room': lesson.room.name if lesson.room else None,
-                    "overall_rating": round((percentage / len(test)) * 100)
+                    "overall_rating": round((percentage / len(test)) * 100) if len(test) != 0 else 0
                 })
             serializer = ClassTimeTableSerializer(timetable, many=True)
 
