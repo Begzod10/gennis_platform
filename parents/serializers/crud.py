@@ -38,8 +38,8 @@ class StudentSerializerMobile(serializers.ModelSerializer):
 
     def get_group(self, obj):
         return {
-            "id": obj.groups_student.id,
-            "name": obj.groups_student.name
+            "id": obj.groups_student[0].id,
+            "name": obj.groups_student[0].name
         }
 
     def get_user(self, obj):
