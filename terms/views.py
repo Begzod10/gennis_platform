@@ -76,7 +76,7 @@ class ListTest(views.APIView):
 
         for group in groups:
             group_data = {
-                "title": group.name if group.name else f"{group.class_number.number} {group.class_number.class_types.name}",
+                "title": group.name if group.name else f"{group.class_number.number} {group.color.name}",
                 "id": group.id, "type": "group", "children": []}
 
             group_subjects = (GroupSubjects.objects.filter(group=group).select_related('subject').distinct('subject'))

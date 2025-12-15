@@ -4,16 +4,16 @@ from parents.models import Parent
 from students.models import Student, DeletedStudent
 from parents.serializers.crud import StudentSerializerMobile
 from attendances.models import AttendancePerMonth
-from attendances.serializers import AttendancePerMonthSerializer
 from rest_framework.views import APIView
 from django.utils import timezone
 from datetime import date
 from django.db.models.functions import ExtractMonth, ExtractYear
 from rest_framework.response import Response
-from mobile.parents.serializers import ClassTimeTableSerializer, StudentDailyAttendanceMobileSerializer
+from mobile.parents.serializers import ClassTimeTableSerializer, StudentDailyAttendanceMobileSerializer, \
+    AttendancePerMonthParentSerializer
 from school_time_table.models import ClassTimeTable
 from attendances.models import StudentDailyAttendance
-from terms.models import Assignment, Term
+from terms.models import Assignment, Term, Test
 from terms.serializers import TermSerializer
 from collections import defaultdict
 
@@ -29,13 +29,18 @@ class ChildrenListView(generics.ListAPIView):
         except Parent.DoesNotExist:
             return Student.objects.none()
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 
 class ChildrenDebtMonthView(APIView):
-    serializer_class = AttendancePerMonthSerializer
+    serializer_class = AttendancePerMonthParentSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        student_id = self.kwargs.get('student_id')
+        student_id = request.query_params.get('student_id')
         student = Student.objects.get(pk=student_id)
         group = student.groups_student.first()
         today = timezone.localdate()
@@ -67,15 +72,30 @@ class ChildrenDebtMonthView(APIView):
             if 1 <= m <= 12:
                 year_for_month = academic_start_year if m in (9, 10, 11, 12) else academic_start_year + 1
                 qs = qs.filter(month_date__year=year_for_month, month_date__month=m)
-        return qs
+        return Response(self.serializer_class(qs, many=True).data)
 
 
 class ChildrenTodayTimeTableView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, student_id):
+    def get(self, request):
         try:
             # Verify the student belongs to this parent
+            date_get = request.query_params.get("date", None)
+            if not date_get:
+
+                today = timezone.localdate()
+            else:
+                today = date.fromisoformat(date_get)
+            academic_start_year = today.year if today.month >= 9 else (today.year - 1)
+            academic_end_year = today.year if today.month <= 6 else (today.year + 1)
+            academic_year = f"{academic_start_year}-{academic_end_year}"
+            terms = Term.objects.filter(
+                academic_year=academic_year,
+                start_date__lte=today,
+                end_date__gte=today
+            ).first()
+            student_id = request.query_params.get('student_id')
             parent = Parent.objects.get(user=request.user)
             if not parent.children.filter(id=student_id).exists():
                 return Response(
@@ -83,21 +103,35 @@ class ChildrenTodayTimeTableView(APIView):
                     status=403
                 )
             # Get today's date
-            today = date.today()
-            # Get today's timetable for the student
             timetable = ClassTimeTable.objects.filter(
                 students__id=student_id,
                 date=today
             ).select_related(
                 'hours', 'room', 'teacher', 'subject', 'group', 'week'
             ).order_by('hours__start_time')  # Order by lesson time
+            lessons = []
+            for lesson in timetable:
 
-            serializer = ClassTimeTableSerializer(timetable, many=True)
+                test = Test.objects.filter(term=terms, group=lesson.group, subject=lesson.subject).all()
+                percentage = 0
+                for ts in test:
+                    assignment = Assignment.objects.filter(test=ts, student_id=student_id).first()
+                    calculated_result = (assignment.test.weight * assignment.percentage) / 100
+                    percentage += round(calculated_result, 2)
+
+                lessons.append({
+                    'time': f"{lesson.hours.start_time.strftime('%H:%M')} - {lesson.hours.end_time.strftime('%H:%M')}",
+                    'subject': lesson.subject.name if lesson.subject else None,
+                    'teacher': f"{lesson.teacher.user.name + ' ' + lesson.teacher.user.surname}" if lesson.teacher else None,
+                    'room': lesson.room.name if lesson.room else None,
+                    "overall_rating": f"{percentage}%"
+                })
+            # serializer = ClassTimeTableSerializer(timetable, many=True)
 
             return Response({
                 'student_id': student_id,
                 'date': today,
-                'lessons': serializer.data
+                'lessons': lessons
             })
         except Parent.DoesNotExist:
             return Response({'error': 'Parent profile not found'}, status=404)
@@ -106,8 +140,32 @@ class ChildrenTodayTimeTableView(APIView):
 class ChildrenAttendanceMonthView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, student_id):
+    def get(self, request):
         try:
+            # Get parameters from request
+            student_id = request.query_params.get('student_id')
+            month = request.query_params.get('month')
+            year = request.query_params.get('year')
+
+            # Validate required parameters
+            if not student_id:
+                return Response(
+                    {'error': 'student_id is required'},
+                    status=400
+                )
+
+            # Use current month/year if not provided
+            today = date.today()
+            month = int(month) if month else today.month
+            year = int(year) if year else today.year
+
+            # Validate month and year
+            if not (1 <= month <= 12):
+                return Response(
+                    {'error': 'month must be between 1 and 12'},
+                    status=400
+                )
+
             # Verify the student belongs to this parent
             parent = Parent.objects.get(user=request.user)
             if not parent.children.filter(id=student_id).exists():
@@ -115,23 +173,28 @@ class ChildrenAttendanceMonthView(APIView):
                     {'error': 'Student not found or not your child'},
                     status=403
                 )
-            # Get today's date
-            today = date.today()
-            # Get today's timetable for the student
+
+            # Get attendances through monthly_summary relation
             attendances = StudentDailyAttendance.objects.filter(
-                student_id=student_id,
-                day__month=today.month,
-                day__year=today.year
-            )
+                monthly_summary__student_id=student_id,
+                monthly_summary__year=year,
+                monthly_summary__month=month,
+
+            ).select_related('monthly_summary').order_by('day')
+
             serializer = StudentDailyAttendanceMobileSerializer(attendances, many=True)
 
             return Response({
                 'student_id': student_id,
-                'date': today,
+                'month': month,
+                'year': year,
                 'attendances': serializer.data
             })
+
         except Parent.DoesNotExist:
             return Response({'error': 'Parent profile not found'}, status=404)
+        except ValueError:
+            return Response({'error': 'Invalid month or year format'}, status=400)
 
 
 # https://school.gennis.uz/api/terms/education-years/
@@ -142,17 +205,17 @@ class ListTermChildren(generics.ListAPIView):
     serializer_class = TermSerializer
 
     def get_queryset(self):
-        academic_year = self.kwargs.get('academic_year')
+        academic_year = self.request.query_params.get('academic_year')
         return self.queryset.filter(academic_year=academic_year)
 
 
 class TermsByChildren(APIView):
     def get(self, request, *args, **kwargs):
-        student_id = kwargs.get('student_id')
-        term_id = kwargs.get('term_id')
-        subject_id = kwargs.get('subject_id', None)
+        student_id = request.query_params.get('student_id')
+        term_id = request.query_params.get('term_id')
+        subject_id = request.query_params.get('subject_id', None)
 
-        student = Student.objects.get(id=student_id)
+        student = Student.objects.get(pk=student_id)
         if subject_id:
 
             assignments = Assignment.objects.filter(

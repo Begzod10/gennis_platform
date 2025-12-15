@@ -150,6 +150,7 @@ class UserFaceIdView(APIView):
 
             teacher_attendance, created = TeacherAttendance.objects.get_or_create(
                 teacher=teacher,
+                day=day,
                 entry_time__date=day,
                 defaults={
                     'entry_time': date_obj,
