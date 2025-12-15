@@ -103,7 +103,6 @@ class ChildrenTodayTimeTableView(APIView):
                     status=403
                 )
             # Get today's date
-            today = date.today()
             timetable = ClassTimeTable.objects.filter(
                 students__id=student_id,
                 date=today
