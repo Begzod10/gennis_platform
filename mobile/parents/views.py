@@ -122,12 +122,12 @@ class ChildrenTodayTimeTableView(APIView):
                     'room': lesson.room.name if lesson.room else None,
                     "overall_rating": round((percentage / len(test)) * 100) if len(test) != 0 else 0
                 })
-            serializer = ClassTimeTableSerializer(timetable, many=True)
+            # serializer = ClassTimeTableSerializer(timetable, many=True)
 
             return Response({
                 'student_id': student_id,
                 'date': today,
-                'lessons': serializer.data
+                'lessons': lessons
             })
         except Parent.DoesNotExist:
             return Response({'error': 'Parent profile not found'}, status=404)
