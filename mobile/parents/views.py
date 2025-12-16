@@ -83,7 +83,6 @@ class ChildrenTodayTimeTableView(APIView):
             # Verify the student belongs to this parent
             date_get = request.query_params.get("date", None)
             if not date_get:
-
                 today = timezone.localdate()
             else:
                 today = date.fromisoformat(date_get)
@@ -111,7 +110,6 @@ class ChildrenTodayTimeTableView(APIView):
             ).order_by('hours__start_time')  # Order by lesson time
             lessons = []
             for lesson in timetable:
-
                 test = Test.objects.filter(term=terms, group=lesson.group, subject=lesson.subject).all()
                 percentage = 0
                 for ts in test:
@@ -127,7 +125,6 @@ class ChildrenTodayTimeTableView(APIView):
                     "overall_rating": f"{percentage}%"
                 })
             # serializer = ClassTimeTableSerializer(timetable, many=True)
-
             return Response({
                 'student_id': student_id,
                 'date': today,
