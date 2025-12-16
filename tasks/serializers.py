@@ -107,7 +107,12 @@ class TagSerializer(serializers.ModelSerializer):
 
 class MissionCrudSerializer(serializers.ModelSerializer):
     creator = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
-    executor = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
+    executor_ids = serializers.ListField(
+        child=serializers.PrimaryKeyRelatedField(
+            queryset=CustomUser.objects.all()
+        ),
+        write_only=True
+    )
     reviewer = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), allow_null=True, required=False)
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), allow_null=True, required=False)
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True, required=False)
@@ -117,22 +122,43 @@ class MissionCrudSerializer(serializers.ModelSerializer):
         fields = [
             "id", "title", "description", 'creator',
             "category", "tags",
-            "executor", "reviewer", "branch",
-            "deadline", "status",
+            "executor_ids", "redirected_by_id", "reviewer", "branch",
+            "deadline", "status", "is_redirected",
             "kpi_weight", "penalty_per_day",
             "is_recurring", "recurring_type", 'final_sc'
         ]
 
     def create(self, validated_data):
+        executor_ids = validated_data.pop("executor_ids")
         tags = validated_data.pop("tags", [])
-        mission = Mission.objects.create(**validated_data)
-        mission.tags.set(tags)
-        return mission
+
+        missions = []
+
+        for executor in executor_ids:
+            mission = Mission.objects.create(
+                executor=executor,
+                **validated_data
+            )
+            if tags:
+                mission.tags.set(tags)
+
+            missions.append(mission)
+
+        return missions  # 👈 LIST qaytaramiz
 
     def update(self, instance, validated_data):
         tags = validated_data.pop("tags", None)
-
+        new_executor = validated_data.get("executor_ids")[0]
         status = validated_data.get("status", instance.status)
+        if new_executor:
+            instance.is_redirected = True
+            instance.redirected_by_id = new_executor.id
+            instance.redirected_at = timezone.now()
+        else:
+            instance.is_redirected = False
+            instance.redirected_by = None
+            instance.redirected_at = None
+
         if status == "completed" and not instance.finish_date:
             instance.finish_date = timezone.now().date()
             instance.calculate_delay_days()  # ← delay
@@ -204,23 +230,25 @@ class MissionDetailSerializer(serializers.ModelSerializer):
     start_date = serializers.DateField(format="%Y-%m-%d", read_only=True)
     deadline = serializers.DateField(format="%Y-%m-%d", read_only=True)
     finish_date = serializers.DateField(format="%Y-%m-%d", read_only=True)
+    redirected_at = serializers.DateTimeField(format="%Y-%m-%d", allow_null=True)
     creator = UserShortSerializer()
     executor = UserShortSerializer()
     reviewer = UserShortSerializer()
+    redirected_by = UserShortSerializer()
     subtasks = MissionSubtaskSerializer(many=True, read_only=True)
     attachments = MissionAttachmentSerializer(many=True, read_only=True)
     comments = MissionCommentDetailSerializer(many=True, read_only=True)
     proofs = MissionProofSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     delay_info = serializers.SerializerMethodField()
-    deadline_color = serializers.SerializerMethodField()  # <-- yangi field
+    deadline_color = serializers.SerializerMethodField()
 
     class Meta:
         model = Mission
         fields = [
             "id", "title", "description", "category", "tags",
-            "creator", "executor", "reviewer", "branch",
-            "start_date", "deadline", "finish_date",
+            "creator", "executor", "reviewer", "redirected_by", "branch",
+            "start_date", "deadline", "finish_date", "is_redirected", "redirected_at",
             "status", "delay_days", "delay_info",
             "kpi_weight", "penalty_per_day", "is_recurring", "recurring_type",
             "subtasks", "attachments", "comments", "proofs", "created_at", 'final_sc', 'deadline_color'

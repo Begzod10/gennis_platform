@@ -89,6 +89,24 @@ class Mission(models.Model):
     reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
                                  related_name="reviewed_missions")
 
+    original_executor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="original_executor_missions"
+    )
+
+    is_redirected = models.BooleanField(default=False)
+
+    redirected_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="redirected_by_missions"
+    )
+
+    redirected_at = models.DateTimeField(null=True, blank=True)
+
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True)
 
     # Date only fields (faqat yil-oy-kun). Agar sizga time ham kerak bo'lsa DateTimeField ga o'zgartiring.

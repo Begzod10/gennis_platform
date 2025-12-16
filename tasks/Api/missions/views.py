@@ -18,8 +18,17 @@ class MissionListCreateAPIView(generics.ListCreateAPIView):
             return MissionCrudSerializer
         return MissionDetailSerializer
 
-    def perform_create(self, serializer):
-        serializer.save(creator=self.request.user)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        missions = serializer.save()  # ← LIST
+
+        read_serializer = MissionDetailSerializer(
+            missions, many=True, context={"request": request}
+        )
+
+        return Response(read_serializer.data, status=status.HTTP_201_CREATED)
 
 
 class MissionDetailAPIView(generics.RetrieveUpdateDestroyAPIView):

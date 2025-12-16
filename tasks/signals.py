@@ -72,6 +72,12 @@ def mission_status_changed(sender, instance, **kwargs):
             f"'{instance.title}' tasdiqlandi.",
             "executor"
         )
+        send_notification(
+            creator,
+            instance,
+            f"'{instance.title}' tugallandi.",
+            "creator"
+        )
 
     if new_status == "recheck":
         send_notification(
