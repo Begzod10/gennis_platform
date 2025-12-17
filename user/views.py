@@ -65,7 +65,7 @@ class CustomTokenRefreshView(TokenRefreshView):
         #     "refresh_token": str(RefreshToken.for_user(user)),
         # })
         return Response({"user": response_data, "access": str(serializer.validated_data.get('access')),
-                         "refresh_token": str(RefreshToken.for_user(user)), },
+                         "refresh_token": str(RefreshToken.for_user(user)), "balance": user.balance},
                         status=status.HTTP_200_OK)
 
 
