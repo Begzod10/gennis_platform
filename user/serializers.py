@@ -532,7 +532,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'surname', 'name', 'id', 'groups', 'profile_photo', 'location_id',)
+        fields = ('username', 'surname', 'name', 'id', 'groups', 'profile_photo', 'location_id', "balance")
 
 
 class UserSalaryUpdateSerializers(serializers.ModelSerializer):
