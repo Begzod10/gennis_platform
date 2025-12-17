@@ -27,7 +27,7 @@ class TeacherAdmin(admin.ModelAdmin):
 # Register the TeacherAttendance model
 @admin.register(TeacherAttendance)
 class TeacherAttendanceAdmin(admin.ModelAdmin):
-    list_display = ('teacher', 'status', 'system')
+    list_display = ('teacher', 'status', 'system', 'day', 'entry_time', 'leave_time')
     search_fields = ('teacher__user__username', 'system__name')
     list_filter = ('status', 'system')
 
@@ -76,8 +76,3 @@ class TeacherHistoryGroupsAdmin(admin.ModelAdmin):
     date_hierarchy = 'joined_day'
 
 
-@admin.register(TeacherAttendance)
-class TeacherAttendanceAdmin(admin.ModelAdmin):
-    list_display = ('teacher', 'status', 'date', 'system', 'entry_time', 'leave_time')
-    search_fields = ('teacher__user__username',)
-    list_filter = ('status', 'system')
