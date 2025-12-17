@@ -35,6 +35,7 @@ class StudentSerializer(serializers.ModelSerializer):
 class StudentSerializerMobile(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     group = serializers.SerializerMethodField()
+    balance = serializers.IntegerField(source="user.balance")
 
     def get_group(self, obj):
         # Get the first group safely
@@ -58,7 +59,7 @@ class StudentSerializerMobile(serializers.ModelSerializer):
 
     class Meta:
         model = Student
-        fields = ["id", "user", "group"]
+        fields = ["id", "user", "group", "balance"]
 
 
 class ParentSerializer(serializers.ModelSerializer):
