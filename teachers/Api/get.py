@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -21,15 +22,30 @@ class TeacherAttendanceListView(generics.ListAPIView):
         return Response(serializer.data)
 
 
-class TeacherAttendanceRetrieveView(generics.RetrieveAPIView):
+class TeacherAttendanceRetrieveView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
-    queryset = TeacherAttendance.objects.all()
     serializer_class = TeacherAttendanceListSerializers
 
-    def retrieve(self, request, *args, **kwargs):
-        teacher_attendance = self.get_object()
-        teacher_attendance_data = self.get_serializer(teacher_attendance).data
-        return Response(teacher_attendance_data)
+    def get_queryset(self):
+        teacher_id = self.kwargs['pk']
+
+        today = timezone.now().date()
+
+        year = self.request.query_params.get('year', today.year)
+        month = self.request.query_params.get('month', today.month)
+        day = self.request.query_params.get('day')
+
+        qs = TeacherAttendance.objects.filter(
+            teacher_id=teacher_id,
+            day__year=year,
+            day__month=month
+        )
+
+        if day:
+            qs = qs.filter(day__day=day)
+
+        return qs
+
 
 
 class TeachersForBranches(generics.ListAPIView):

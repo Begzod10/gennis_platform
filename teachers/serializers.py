@@ -19,6 +19,7 @@ from teachers.models import TeacherGroupStatistics, Teacher
 from user.serializers import UserSerializerWrite, UserSerializerRead
 from .models import (TeacherAttendance)
 from .models import (TeacherSalaryList, TeacherSalary, TeacherSalaryType)
+from .serializer.lists import ActiveListTeacherSerializer
 
 
 class TeacherSerializer(serializers.ModelSerializer):
@@ -104,14 +105,13 @@ class TeacherAttendanceSerializers(serializers.ModelSerializer):
 
 class TeacherAttendanceListSerializers(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
-    teacher = TeacherSerializer(required=False)
-    system = SystemSerializers(required=False)
     day = serializers.DateField(required=False)
-    status = serializers.BooleanField(required=False)
+    leave_time = serializers.DateTimeField(format='%H:%M:%S')
+    entry_time = serializers.DateTimeField(format='%H:%M:%S')
 
     class Meta:
         model = TeacherAttendance
-        fields = ['id', 'teacher', 'system', 'day', 'status']
+        fields = ['id', 'day','entry_time','leave_time']
 
 
 class TeacherGroupStatisticsSerializers(serializers.ModelSerializer):
