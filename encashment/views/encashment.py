@@ -26,7 +26,7 @@ from teachers.models import TeacherSalaryList, TeacherSalary
 from teachers.serializers import TeacherSalaryListCreateSerializers
 from user.models import UserSalaryList, UserSalary
 from user.serializers import UserSalaryListSerializers
-from .models import Encashment
+from encashment.models import Encashment
 from lead.models import Lead
 from django.db.models import Exists, OuterRef, Subquery
 from django.db.models import Case, When, IntegerField, F

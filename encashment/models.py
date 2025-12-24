@@ -15,3 +15,15 @@ class Encashment(models.Model):
     total_branch_payment = models.BigIntegerField()
     total_overhead = models.BigIntegerField()
     total_capital = models.BigIntegerField()
+
+
+class DailySummary(models.Model):
+    date = models.DateField(auto_now_add=True)
+    total_students = models.BigIntegerField()
+    new_students = models.BigIntegerField()
+    deleted_students = models.BigIntegerField()
+    present_students = models.BigIntegerField()
+    new_deleted_students = models.BigIntegerField()
+    total_payments = models.BigIntegerField()
+    total_payments_sum = models.BigIntegerField()
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE)

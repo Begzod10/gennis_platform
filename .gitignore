@@ -12,3 +12,9 @@ transfer/
 logs/
 staticfiles
 nohup.out
+celery.beat.PersistentScheduler
+celery.loaders.app.AppLoader
+celerybeat-schedule.bak
+celerybeat-schedule.dat
+celerybeat-schedule.dir
+celerybeat-schedule
