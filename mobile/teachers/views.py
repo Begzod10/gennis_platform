@@ -7,12 +7,13 @@ from django.shortcuts import get_object_or_404
 from rest_framework import permissions, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from group.models import GroupSubjects
 from attendances.models import AttendancePerDay, Student, AttendancePerMonth, Group, StudentScoreByTeacher
 from time_table.models import GroupTimeTable
 from permissions.response import QueryParamFilterMixin
 from teachers.models import Teacher, TeacherSalary
 from user.models import CustomUser
+from flows.models import Flow
 from school_time_table.models import ClassTimeTable
 from ..get_user import get_user
 
@@ -60,7 +61,8 @@ class TeacherGroupProfileView(APIView):
                 day__month=month,
                 day__year=year
             ).all()
-            total_average = round(sum(score.average for score in student_attendance) / len(student_attendance)) if student_attendance else 0
+            total_average = round(sum(score.average for score in student_attendance) / len(
+                student_attendance)) if student_attendance else 0
             total_persent = student_attendance = StudentScoreByTeacher.objects.filter(
                 student=student,
                 teacher=teacher,
@@ -86,4 +88,74 @@ class TeacherGroupProfileView(APIView):
                 'subject': schedule.subject.name if schedule.subject else None,
             })
 
+        return Response(info)
+
+
+class TeacherProfileView(APIView):
+    def get(self, request):
+        teacher_id = request.query_params.get('teacher_id')
+        teacher = Teacher.objects.get(pk=teacher_id)
+
+        teacher_salary = TeacherSalary.objects.filter(teacher=teacher).last()
+        self.class_room = True
+        user = teacher.user
+        info = {
+            'id': user.id,
+            'name': user.name,
+            'surname': user.surname,
+            'username': user.username,
+            'father_name': user.father_name,
+            'balance': teacher_salary.remaining_salary if teacher_salary.remaining_salary else teacher_salary.total_salary,
+            "teacher_id": teacher.id,
+            'role': 'teacher',
+            'birth_date': user.birth_date.isoformat() if user.birth_date else None,
+            'phone_number': user.phone,
+            'branch_id': user.branch_id,
+            'observer': user.observer,
+            'subjects': [{
+                'id': subject.id,
+                'name': subject.name
+            } for subject in teacher.subject.all()],
+            'color': teacher.color if teacher.color else None,
+            'groups': [{
+                'name': group.name if group.name else f'{group.class_number.number}-{group.color.name}',
+                'id': group.id,
+                'subjects': [
+                    {'id': subject.subject.id, 'name': subject.subject.name} for subject in
+                    GroupSubjects.objects.filter(group=group).all()
+                ],
+                'teacher_salary': group.teacher_salary,
+                'price': group.price,
+                "teacher_id": user.id
+            } for group in teacher.group_set.all()],
+            'flows': [
+                {
+                    'id': flow.id,
+                    'name': flow.name,
+                    'subject': {
+                        'id': flow.subject.id if flow.subject else None,
+                        'name': flow.subject.name if flow.subject else None,
+                    } if flow.subject else None,
+                    'branch': {
+                        'id': flow.branch.id,
+                        'name': flow.branch.name,
+                    } if flow.branch else None,
+                    'desc': flow.desc,
+                    'activity': flow.activity,
+                    'level': {
+                        'id': flow.level.id,
+                        'name': flow.level.name,
+                    } if flow.level else None,
+                    'classes': flow.classes,
+                    'students': [
+                        {
+                            'id': s.id,
+                            'name': s.user.name,
+                            'surname': s.user.surname,
+                        } for s in flow.students.all()
+                    ]
+                }
+                for flow in Flow.objects.filter(teacher=teacher).all()
+            ]
+        }
         return Response(info)
