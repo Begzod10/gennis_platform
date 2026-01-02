@@ -38,9 +38,7 @@ class TeacherGroupProfileView(APIView):
 
         # Determine if it's a flow or group
         is_flow = bool(flow_status)
-
-        # Get entity (group or flow) with optimized queries
-        if is_flow:
+        if is_flow == True:
             entity = Flow.objects.select_related('teacher', 'teacher__user').prefetch_related(
                 Prefetch(
                     'students',
