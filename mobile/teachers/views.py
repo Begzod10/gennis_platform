@@ -60,7 +60,7 @@ class TeacherGroupProfileView(APIView):
                 day__month=month,
                 day__year=year
             ).all()
-            total_average = round(sum(score.average for score in student_attendance) / len(student_attendance))
+            total_average = round(sum(score.average for score in student_attendance) / len(student_attendance)) if student_attendance else 0
             total_persent = student_attendance = StudentScoreByTeacher.objects.filter(
                 student=student,
                 teacher=teacher,
@@ -69,7 +69,7 @@ class TeacherGroupProfileView(APIView):
                 day__month=month,
                 day__year=year
             ).count()
-            present_percent = round(total_persent / student_attendance * 100, 2)
+            present_percent = round(total_persent / student_attendance * 100, 2) if student_attendance else 0
             info['students'].append({
                 'id': student.id,
                 'name': student.user.name,
