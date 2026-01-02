@@ -20,133 +20,137 @@ from django.db.models import Prefetch
 from django.utils import timezone
 from datetime import timedelta
 
+from django.db.models import Avg, Count, Q, Prefetch
+
 
 class TeacherGroupProfileView(APIView):
     def get(self, request):
         group_id = request.query_params.get('group_id')
         flow_status = request.query_params.get('flow')
-        group = None
-        flow = None
-        if not flow_status:
-            group = Group.objects.get(pk=group_id)
-        else:
-            flow = Flow.objects.get(pk=group_id)
-        month = datetime.now().month
-        year = datetime.now().year
-        # Get current week's Monday and Friday
-        today = timezone.now().date()
-        monday = today - timedelta(days=today.weekday())  # Start of week (Monday)
-        friday = monday + timedelta(days=4)  # End of work week (Friday)
 
-        # Filter ClassTimeTable for current week and group
-        if not flow_status:
-            class_schedule = ClassTimeTable.objects.filter(
-                group_id=group_id,
-                date__gte=monday,
-                date__lte=friday
-            ).select_related('week', 'room', 'hours', 'teacher', 'subject').order_by('date', 'hours')
+        # Get current date info
+        now = timezone.now()
+        today = now.date()
+        month = now.month
+        year = now.year
+        monday = today - timedelta(days=today.weekday())
+        friday = monday + timedelta(days=4)
+
+        # Determine if it's a flow or group
+        is_flow = bool(flow_status)
+
+        # Get entity (group or flow) with optimized queries
+        if is_flow:
+            entity = Flow.objects.select_related('teacher', 'teacher__user').prefetch_related(
+                Prefetch(
+                    'students',
+                    queryset=Student.objects.select_related('user')
+                )
+            ).get(pk=group_id)
+            teacher = entity.teacher
+            entity_name = entity.name
+            filter_field = 'flow_id'
         else:
-            class_schedule = ClassTimeTable.objects.filter(
-                flow_id=flow.id,
-                date__gte=monday,
-                date__lte=friday
-            ).select_related('week', 'room', 'hours', 'teacher', 'subject').order_by('date', 'hours')
-        if not flow_status:
-            next_lesson = ClassTimeTable.objects.filter(
-                group_id=group_id,
-                date__gt=datetime.now().date(),
-            ).first()
+            entity = Group.objects.select_related(
+                'class_number', 'color'
+            ).prefetch_related(
+                Prefetch(
+                    'students',
+                    queryset=Student.objects.select_related('user')
+                ),
+                Prefetch(
+                    'teacher',
+                    queryset=Teacher.objects.select_related('user')
+                )
+            ).get(pk=group_id)
+            teacher = entity.teacher.first()
+            entity_name = f"{entity.class_number.number}-{entity.color.name}"
+            filter_field = 'group_id'
+
+        # Get schedules for current week
+        schedule_filter = {
+            filter_field: group_id,
+            'date__gte': monday,
+            'date__lte': friday
+        }
+        class_schedule = ClassTimeTable.objects.filter(
+            **schedule_filter
+        ).select_related(
+            'week', 'room', 'hours', 'subject'
+        ).order_by('date', 'hours__start_time')
+
+        # Get next lesson
+        next_lesson_filter = {
+            filter_field: group_id,
+            'date__gt': today
+        }
+        next_lesson = ClassTimeTable.objects.filter(
+            **next_lesson_filter
+        ).select_related('hours').order_by('date', 'hours__start_time').first()
+
+        # Build base info
+        info = {
+            "group_name": entity_name,
+            "group_id": entity.id,
+            "students_count": entity.students.count(),
+            "next_lesson": next_lesson.date.strftime('%Y-%m-%d') if next_lesson else None,
+            "start_time": next_lesson.hours.start_time.strftime('%H:%M') if next_lesson else None,
+            "students": [],
+            "schedule": []
+        }
+
+        # Get all student scores in bulk
+        score_filter = {
+            'teacher': teacher,
+            'day__month': month,
+            'day__year': year
+        }
+        if is_flow:
+            score_filter['flow'] = entity
         else:
-            next_lesson = ClassTimeTable.objects.filter(
-                flow_id=flow.id,
-                date__gt=datetime.now().date(),
-            ).first()
-        if not flow_status:
-            teacher = group.teacher.first()
-        else:
-            teacher = flow.teacher
-        if not flow_status:
-            info = {
-                "group_name": f"{group.class_number.number}-{group.color.name}",
-                "group_id": group.id,
-                "students_count": group.students.count(),
-                "next_lesson": next_lesson.date.strftime('%Y-%m-%d') if next_lesson else None,
-                "start_time": next_lesson.hours.start_time.strftime('%H:%M') if next_lesson else None,
-                "students": [],
-                "schedule": []
+            score_filter['group'] = entity
+
+        # Aggregate attendance and scores per student
+        student_scores = StudentScoreByTeacher.objects.filter(
+            **score_filter
+        ).values('student_id').annotate(
+            avg_score=Avg('average'),
+            total_count=Count('id'),
+            present_count=Count('id', filter=Q(status=True))
+        )
+
+        # Convert to dictionary for O(1) lookup
+        scores_dict = {
+            item['student_id']: {
+                'average': round(item['avg_score']) if item['avg_score'] else 0,
+                'present_percent': round(item['present_count'] / item['total_count'] * 100, 2) if item[
+                    'total_count'] else 0
             }
-        else:
-            info = {
-                "group_name": f"{flow.name}",
-                "group_id": flow.id,
-                "students_count": flow.students.count(),
-                "next_lesson": next_lesson.date.strftime('%Y-%m-%d') if next_lesson else None,
-                "start_time": next_lesson.hours.start_time.strftime('%H:%M') if next_lesson else None,
-                "students": [],
-                "schedule": []
-            }
-        if not flow_status:
-            for student in group.students.all():
-                student_attendance = StudentScoreByTeacher.objects.filter(
-                    student=student,
-                    teacher=teacher,
-                    group=group,
-                    day__month=month,
-                    day__year=year
-                ).all()
-                total_average = round(sum(score.average for score in student_attendance) / len(
-                    student_attendance)) if student_attendance else 0
-                total_persent = student_attendance = StudentScoreByTeacher.objects.filter(
-                    student=student,
-                    teacher=teacher,
-                    group=group,
-                    status=True,
-                    day__month=month,
-                    day__year=year
-                ).count()
-                present_percent = round(total_persent / student_attendance * 100, 2) if student_attendance else 0
-                info['students'].append({
-                    'id': student.id,
-                    'name': student.user.name,
-                    'surname': student.user.surname,
-                    'average': total_average,
-                    'present_percent': present_percent
-                })
-        else:
-            for student in flow.students.all():
-                student_attendance = StudentScoreByTeacher.objects.filter(
-                    student=student,
-                    teacher=teacher,
-                    flow=flow,
-                    day__month=month,
-                    day__year=year
-                ).all()
-                total_average = round(sum(score.average for score in student_attendance) / len(
-                    student_attendance)) if student_attendance else 0
-                total_persent = student_attendance = StudentScoreByTeacher.objects.filter(
-                    student=student,
-                    teacher=teacher,
-                    flow=flow,
-                    status=True,
-                    day__month=month,
-                    day__year=year
-                ).count()
-                present_percent = round(total_persent / student_attendance * 100, 2) if student_attendance else 0
-                info['students'].append({
-                    'id': student.id,
-                    'name': student.user.name,
-                    'surname': student.user.surname,
-                    'average': total_average,
-                    'present_percent': present_percent
-                })
-        for schedule in class_schedule:
-            info['schedule'].append({
+            for item in student_scores
+        }
+
+        # Build student list
+        for student in entity.students.all():
+            student_data = scores_dict.get(student.id, {'average': 0, 'present_percent': 0})
+            info['students'].append({
+                'id': student.id,
+                'name': student.user.name,
+                'surname': student.user.surname,
+                'average': student_data['average'],
+                'present_percent': student_data['present_percent']
+            })
+
+        # Build schedule list
+        info['schedule'] = [
+            {
                 'date': schedule.date,
                 'week_day': schedule.week.name_en if schedule.week else None,
                 'room': schedule.room.name if schedule.room else None,
                 'time': f"{schedule.hours.start_time} - {schedule.hours.end_time}",
                 'subject': schedule.subject.name if schedule.subject else None,
-            })
+            }
+            for schedule in class_schedule
+        ]
 
         return Response(info)
 
