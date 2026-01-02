@@ -35,10 +35,10 @@ class TeacherGroupProfileView(APIView):
         year = now.year
         monday = today - timedelta(days=today.weekday())
         friday = monday + timedelta(days=4)
-
+        is_flow = flow_status in ['true', 'True', '1']
         # Determine if it's a flow or group
-        is_flow = bool(flow_status)
-        if is_flow == True:
+
+        if is_flow:
             entity = Flow.objects.select_related('teacher', 'teacher__user').prefetch_related(
                 Prefetch(
                     'students',
