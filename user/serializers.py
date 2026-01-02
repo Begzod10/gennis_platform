@@ -14,6 +14,7 @@ from payments.serializers import PaymentTypesSerializers, PaymentTypes
 from permissions.models import ManySystem, ManyBranch, ManyLocation
 from user.models import CustomUser, UserSalaryList, UserSalary, Branch, CustomAutoGroup
 from flows.models import Flow
+from teachers.models import Teacher, TeacherSalary
 
 
 class UserSerializerRead(serializers.ModelSerializer):
@@ -331,7 +332,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             return self.object
         elif teacher:
             self.class_room = True
+            teacher = Teacher.objects.get(pk=teacher.id)
 
+            teacher_salary = TeacherSalary.objects.filter(teacher=teacher).last()
             self.object = {
                 'id': user.id,
                 'name': user.name,
@@ -339,7 +342,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'username': user.username,
                 'father_name': user.father_name,
                 'password': password,
-                'balance': teacher.id,
+                'balance': teacher_salary.remaining_salary if teacher_salary.remaining_salary else teacher_salary.total_salary,
                 "teacher_id": teacher.id,
                 'role': 'teacher',
                 'birth_date': user.birth_date.isoformat() if user.birth_date else None,
