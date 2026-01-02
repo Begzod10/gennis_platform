@@ -16,7 +16,7 @@ from user.models import CustomUser
 from flows.models import Flow
 from school_time_table.models import ClassTimeTable
 from ..get_user import get_user
-
+from django.db.models import Prefetch
 from django.utils import timezone
 from datetime import timedelta
 
@@ -200,74 +200,119 @@ class TeacherSalaryView(APIView):
         return Response(salary_list)
 
 
+
+
+
 class TeacherClassesView(APIView):
     def get(self, request):
         today = timezone.now().date()
         monday = today - timedelta(days=today.weekday())
         friday = monday + timedelta(days=4)
-        teacher = request.query_params.get('teacher_id')
+        teacher_id = request.query_params.get('teacher_id')
 
+        # Single optimized query with select_related
         base_query = ClassTimeTable.objects.filter(
-            teacher_id=teacher,
+            teacher_id=teacher_id,
             date__gte=monday,
             date__lte=friday
+        ).select_related(
+            'week', 'room', 'hours', 'subject', 'flow', 'group', 'group__class_number', 'group__color'
+        ).order_by('date', 'hours__start_time')
+
+        # Get unique flow_ids and group_ids
+        flow_ids = base_query.filter(
+            flow_id__isnull=False
+        ).values_list('flow_id', flat=True).distinct()
+
+        group_ids = base_query.filter(
+            group_id__isnull=False
+        ).values_list('group_id', flat=True).distinct()
+
+        # Prefetch flows and groups with their schedules
+        flows = Flow.objects.filter(id__in=flow_ids).prefetch_related(
+            Prefetch(
+                'classtimetable_set',
+                queryset=base_query.filter(flow_id__isnull=False),
+                to_attr='current_week_schedules'
+            )
         )
 
-        # Get unique flow_ids
-        flow_ids = list(base_query.values_list('flow_id', flat=True).distinct().exclude(flow_id__isnull=True))
+        groups = Group.objects.filter(id__in=group_ids).select_related(
+            'class_number', 'color'
+        ).prefetch_related(
+            Prefetch(
+                'classtimetable_set',
+                queryset=base_query.filter(group_id__isnull=False),
+                to_attr='current_week_schedules'
+            )
+        )
 
-        # Get unique group_ids
-        group_ids = list(base_query.values_list('group_id', flat=True).distinct().exclude(group_id__isnull=True))
+        # Get next lessons in one query for flows
+        next_flow_lessons = {
+            lesson.flow_id: lesson
+            for lesson in ClassTimeTable.objects.filter(
+                flow_id__in=flow_ids,
+                date__gt=today
+            ).select_related('hours').order_by('flow_id', 'date', 'hours__start_time').distinct('flow_id')
+        }
 
-        flows = Flow.objects.filter(id__in=flow_ids).all()
-        groups = Group.objects.filter(id__in=group_ids).all()
+        # Get next lessons in one query for groups
+        next_group_lessons = {
+            lesson.group_id: lesson
+            for lesson in ClassTimeTable.objects.filter(
+                group_id__in=group_ids,
+                date__gt=today
+            ).select_related('hours').order_by('group_id', 'date', 'hours__start_time').distinct('group_id')
+        }
 
         classes = []
+
+        # Process flows
         for flow in flows:
-            time_table = base_query.filter(flow_id=flow.id).order_by('date').all()
-            next_lesson = ClassTimeTable.objects.filter(flow_id=flow.id, date__gt=datetime.now().date()).first()
-            info = {
+            next_lesson = next_flow_lessons.get(flow.id)
+
+            classes.append({
                 'id': flow.id,
                 'name': flow.name,
-                "flow": True,
-                "schedules": [],
-                "next_lesson": {
+                'flow': True,
+                'schedules': [
+                    {
+                        'date': schedule.date,
+                        'week_day': schedule.week.name_en if schedule.week else None,
+                        'room': schedule.room.name if schedule.room else None,
+                        'time': f"{schedule.hours.start_time} - {schedule.hours.end_time}",
+                        'subject': schedule.subject.name if schedule.subject else None,
+                    }
+                    for schedule in flow.current_week_schedules
+                ],
+                'next_lesson': {
                     'date': next_lesson.date.strftime('%Y-%m-%d') if next_lesson else None,
-                    'time': f"{next_lesson.hours.start_time}" if next_lesson else None,
-
+                    'time': str(next_lesson.hours.start_time) if next_lesson else None,
                 }
-            }
-            for schedule in time_table:
-                info['schedules'].append({
-                    'date': schedule.date,
-                    'week_day': schedule.week.name_en if schedule.week else None,
-                    'room': schedule.room.name if schedule.room else None,
-                    'time': f"{schedule.hours.start_time} - {schedule.hours.end_time}",
-                    'subject': schedule.subject.name if schedule.subject else None,
-                })
+            })
+
+        # Process groups
         for group in groups:
-            time_table = base_query.filter(group_id=group.id).order_by('date').all()
-            next_lesson = ClassTimeTable.objects.filter(group_id=group.id, date__gt=datetime.now().date()).first()
-            info = {
+            next_lesson = next_group_lessons.get(group.id)
+
+            classes.append({
                 'id': group.id,
                 'name': f"{group.class_number.number}-{group.color.name}",
-                "flow": False,
-                "schedules": [],
-                "next_lesson": {
+                'flow': False,
+                'schedules': [
+                    {
+                        'date': schedule.date,
+                        'week_day': schedule.week.name_en if schedule.week else None,
+                        'room': schedule.room.name if schedule.room else None,
+                        'time': f"{schedule.hours.start_time} - {schedule.hours.end_time}",
+                        'subject': schedule.subject.name if schedule.subject else None,
+                    }
+                    for schedule in group.current_week_schedules
+                ],
+                'next_lesson': {
                     'date': next_lesson.date.strftime('%Y-%m-%d') if next_lesson else None,
-                    'time': f"{next_lesson.hours.start_time}" if next_lesson else None,
-
+                    'time': str(next_lesson.hours.start_time) if next_lesson else None,
                 }
-            }
-            for schedule in time_table:
-                info['schedules'].append({
-                    'date': schedule.date,
-                    'week_day': schedule.week.name_en if schedule.week else None,
-                    'room': schedule.room.name if schedule.room else None,
-                    'time': f"{schedule.hours.start_time} - {schedule.hours.end_time}",
-                    'subject': schedule.subject.name if schedule.subject else None,
-                })
-            classes.append(info)
-        return Response({
-            'classes': classes
-        })
+            })
+
+        return Response({'classes': classes})
