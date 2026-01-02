@@ -95,7 +95,6 @@ class TeacherProfileView(APIView):
     def get(self, request):
         teacher_id = request.query_params.get('teacher_id')
         teacher = Teacher.objects.get(pk=teacher_id)
-
         teacher_salary = TeacherSalary.objects.filter(teacher=teacher).last()
         self.class_room = True
         user = teacher.user
@@ -159,3 +158,24 @@ class TeacherProfileView(APIView):
             ]
         }
         return Response(info)
+
+
+class SalaryYearsView(APIView):
+    def get(self, request):
+        teacher_id = request.query_params.get('teacher_id')
+        teacher = Teacher.objects.get(pk=teacher_id)
+
+        # Extract unique years at database level
+        years = TeacherSalary.objects.filter(
+            teacher=teacher
+        ).annotate(
+            year=ExtractYear('month_date')
+        ).values_list('year', flat=True).distinct().order_by('year')
+        year_list = []
+        for year in years:
+            info = {
+                "value": year,
+                "current": year == datetime.now().year
+            }
+            year_list.append(info)
+        return Response(list(year_list))

@@ -1,9 +1,10 @@
 from django.urls import path
 
-from .views import TeacherGroupProfileView, TeacherProfileView
+from .views import TeacherGroupProfileView, TeacherProfileView, SalaryYearsView
 
 app_name = 'teachers'
 urlpatterns = [
     path('group-profile/', TeacherGroupProfileView.as_view(), name='group-profile'),
     path('teacher-profile/', TeacherProfileView.as_view(), name='teacher-profile'),
+    path('salary-years/', SalaryYearsView.as_view(), name='salary-years'),
 ]
