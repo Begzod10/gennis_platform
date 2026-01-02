@@ -80,7 +80,7 @@ class TeacherGroupProfileView(APIView):
         for schedule in class_schedule:
             info['schedule'].append({
                 'date': schedule.date,
-                'week_day': schedule.week.name if schedule.week else None,
+                'week_day': schedule.week.name_en if schedule.week else None,
                 'room': schedule.room.name if schedule.room else None,
                 'time': f"{schedule.hours.start_time} - {schedule.hours.end_time}",
                 'subject': schedule.subject.name if schedule.subject else None,
