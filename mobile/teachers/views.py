@@ -1,7 +1,7 @@
 import calendar
 import json
 from datetime import datetime
-
+from teachers.serializers import TeacherSalaryList
 from django.db.models.functions import ExtractMonth, ExtractYear
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, generics
@@ -179,3 +179,22 @@ class SalaryYearsView(APIView):
             }
             year_list.append(info)
         return Response(list(year_list))
+
+
+class TeacherSalaryView(APIView):
+    def get(self, request):
+        teacher_id = request.query_params.get('teacher_id')
+        teacher = Teacher.objects.get(pk=teacher_id)
+        year = request.query_params.get('year', datetime.now().year)
+        queryset = TeacherSalary.objects.filter(teacher=teacher, month_date__year=year).order_by('-month_date')
+        salary_list = []
+        for salary in queryset:
+            salary_list.append({
+                'id': salary.id,
+                'date': salary.month_date.isoformat(),
+                'total_salary': salary.total_salary,
+                'taken_salary': salary.taken_salary,
+                'remaining_salary': salary.remaining_salary,
+
+            })
+        return Response(salary_list)
