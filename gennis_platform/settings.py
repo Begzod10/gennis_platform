@@ -175,6 +175,12 @@ CELERY_BEAT_SCHEDULE = {
         # "schedule": crontab(minute="*/1"),  # 21:00 every day
 
     },
+    "daily_summary_task": {
+        "task": "encashment.tasks.daily_summary",
+        "schedule": crontab(minute=0, hour=20),
+        # "schedule": crontab(minute="*/1"),
+
+    },
     # "update_deleted_students_debts": {
     #     "task": "students.tasks.update_deleted_students_debts",
     #     # "schedule": crontab(minute=0, hour=0, day_of_month="1"),
