@@ -24,7 +24,13 @@ from datetime import timedelta
 class TeacherGroupProfileView(APIView):
     def get(self, request):
         group_id = request.query_params.get('group_id')
-        group = Group.objects.get(pk=group_id)
+        flow_status = request.query_params.get('flow')
+        group = None
+        flow = None
+        if not flow_status:
+            group = Group.objects.get(pk=group_id)
+        else:
+            flow = Flow.objects.get(pk=group_id)
         month = datetime.now().month
         year = datetime.now().year
         # Get current week's Monday and Friday
@@ -33,52 +39,106 @@ class TeacherGroupProfileView(APIView):
         friday = monday + timedelta(days=4)  # End of work week (Friday)
 
         # Filter ClassTimeTable for current week and group
-        class_schedule = ClassTimeTable.objects.filter(
-            group_id=group_id,
-            date__gte=monday,
-            date__lte=friday
-        ).select_related('week', 'room', 'hours', 'teacher', 'subject').order_by('date', 'hours')
-        next_lesson = ClassTimeTable.objects.filter(
-            group_id=group_id,
-            date__gt=datetime.now().date(),
-        ).first()
-        teacher = group.teacher.first()
-        info = {
-            "group_name": f"{group.class_number.number}-{group.color.name}",
-            "group_id": group.id,
-            "students_count": group.students.count(),
-            "next_lesson": next_lesson.date.strftime('%Y-%m-%d') if next_lesson else None,
-            "start_time": next_lesson.hours.start_time.strftime('%H:%M') if next_lesson else None,
-            "students": [],
-            "schedule": []
-        }
-
-        for student in group.students.all():
-            student_attendance = StudentScoreByTeacher.objects.filter(
-                student=student,
-                teacher=teacher,
-                group=group,
-                day__month=month,
-                day__year=year
-            ).all()
-            total_average = round(sum(score.average for score in student_attendance) / len(
-                student_attendance)) if student_attendance else 0
-            total_persent = student_attendance = StudentScoreByTeacher.objects.filter(
-                student=student,
-                teacher=teacher,
-                group=group,
-                status=True,
-                day__month=month,
-                day__year=year
-            ).count()
-            present_percent = round(total_persent / student_attendance * 100, 2) if student_attendance else 0
-            info['students'].append({
-                'id': student.id,
-                'name': student.user.name,
-                'surname': student.user.surname,
-                'average': total_average,
-                'present_percent': present_percent
-            })
+        if not flow_status:
+            class_schedule = ClassTimeTable.objects.filter(
+                group_id=group_id,
+                date__gte=monday,
+                date__lte=friday
+            ).select_related('week', 'room', 'hours', 'teacher', 'subject').order_by('date', 'hours')
+        else:
+            class_schedule = ClassTimeTable.objects.filter(
+                flow_id=flow.id,
+                date__gte=monday,
+                date__lte=friday
+            ).select_related('week', 'room', 'hours', 'teacher', 'subject').order_by('date', 'hours')
+        if not flow_status:
+            next_lesson = ClassTimeTable.objects.filter(
+                group_id=group_id,
+                date__gt=datetime.now().date(),
+            ).first()
+        else:
+            next_lesson = ClassTimeTable.objects.filter(
+                flow_id=flow.id,
+                date__gt=datetime.now().date(),
+            ).first()
+        if not flow_status:
+            teacher = group.teacher.first()
+        else:
+            teacher = flow.teacher
+        if not flow_status:
+            info = {
+                "group_name": f"{group.class_number.number}-{group.color.name}",
+                "group_id": group.id,
+                "students_count": group.students.count(),
+                "next_lesson": next_lesson.date.strftime('%Y-%m-%d') if next_lesson else None,
+                "start_time": next_lesson.hours.start_time.strftime('%H:%M') if next_lesson else None,
+                "students": [],
+                "schedule": []
+            }
+        else:
+            info = {
+                "group_name": f"{flow.name}",
+                "group_id": flow.id,
+                "students_count": flow.students.count(),
+                "next_lesson": next_lesson.date.strftime('%Y-%m-%d') if next_lesson else None,
+                "start_time": next_lesson.hours.start_time.strftime('%H:%M') if next_lesson else None,
+                "students": [],
+                "schedule": []
+            }
+        if not flow_status:
+            for student in group.students.all():
+                student_attendance = StudentScoreByTeacher.objects.filter(
+                    student=student,
+                    teacher=teacher,
+                    group=group,
+                    day__month=month,
+                    day__year=year
+                ).all()
+                total_average = round(sum(score.average for score in student_attendance) / len(
+                    student_attendance)) if student_attendance else 0
+                total_persent = student_attendance = StudentScoreByTeacher.objects.filter(
+                    student=student,
+                    teacher=teacher,
+                    group=group,
+                    status=True,
+                    day__month=month,
+                    day__year=year
+                ).count()
+                present_percent = round(total_persent / student_attendance * 100, 2) if student_attendance else 0
+                info['students'].append({
+                    'id': student.id,
+                    'name': student.user.name,
+                    'surname': student.user.surname,
+                    'average': total_average,
+                    'present_percent': present_percent
+                })
+        else:
+            for student in flow.students.all():
+                student_attendance = StudentScoreByTeacher.objects.filter(
+                    student=student,
+                    teacher=teacher,
+                    flow=flow,
+                    day__month=month,
+                    day__year=year
+                ).all()
+                total_average = round(sum(score.average for score in student_attendance) / len(
+                    student_attendance)) if student_attendance else 0
+                total_persent = student_attendance = StudentScoreByTeacher.objects.filter(
+                    student=student,
+                    teacher=teacher,
+                    flow=flow,
+                    status=True,
+                    day__month=month,
+                    day__year=year
+                ).count()
+                present_percent = round(total_persent / student_attendance * 100, 2) if student_attendance else 0
+                info['students'].append({
+                    'id': student.id,
+                    'name': student.user.name,
+                    'surname': student.user.surname,
+                    'average': total_average,
+                    'present_percent': present_percent
+                })
         for schedule in class_schedule:
             info['schedule'].append({
                 'date': schedule.date,
@@ -198,9 +258,6 @@ class TeacherSalaryView(APIView):
 
             })
         return Response(salary_list)
-
-
-
 
 
 class TeacherClassesView(APIView):
