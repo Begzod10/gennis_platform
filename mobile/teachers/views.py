@@ -221,19 +221,53 @@ class TeacherClassesView(APIView):
 
         flows = Flow.objects.filter(id__in=flow_ids).all()
         groups = Group.objects.filter(id__in=group_ids).all()
+
         classes = []
         for flow in flows:
-            classes.append({
+            time_table = base_query.filter(flow_id=flow.id).order_by('date').all()
+            next_lesson = ClassTimeTable.objects.filter(flow_id=flow.id, date__gt=datetime.now().date()).first()
+            info = {
                 'id': flow.id,
                 'name': flow.name,
                 "flow": True,
-            })
+                "schedules": [],
+                "next_lesson": {
+                    'date': next_lesson.date.strftime('%Y-%m-%d'),
+                    'time': f"{next_lesson.hours.start_time}",
+
+                }
+            }
+            for schedule in time_table:
+                info['schedules'].append({
+                    'date': schedule.date,
+                    'week_day': schedule.week.name_en if schedule.week else None,
+                    'room': schedule.room.name if schedule.room else None,
+                    'time': f"{schedule.hours.start_time} - {schedule.hours.end_time}",
+                    'subject': schedule.subject.name if schedule.subject else None,
+                })
         for group in groups:
-            classes.append({
+            time_table = base_query.filter(group_id=group.id).order_by('date').all()
+            next_lesson = ClassTimeTable.objects.filter(group_id=group.id, date__gt=datetime.now().date()).first()
+            info = {
                 'id': group.id,
                 'name': f"{group.class_number.number}-{group.color.name}",
                 "flow": False,
-            })
+                "schedules": [],
+                "next_lesson": {
+                    'date': next_lesson.date.strftime('%Y-%m-%d'),
+                    'time': f"{next_lesson.hours.start_time}",
+
+                }
+            }
+            for schedule in time_table:
+                info['schedules'].append({
+                    'date': schedule.date,
+                    'week_day': schedule.week.name_en if schedule.week else None,
+                    'room': schedule.room.name if schedule.room else None,
+                    'time': f"{schedule.hours.start_time} - {schedule.hours.end_time}",
+                    'subject': schedule.subject.name if schedule.subject else None,
+                })
+            classes.append(info)
         return Response({
             'classes': classes
         })
