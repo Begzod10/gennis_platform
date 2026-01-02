@@ -198,3 +198,42 @@ class TeacherSalaryView(APIView):
 
             })
         return Response(salary_list)
+
+
+class TeacherClassesView(APIView):
+    def get(self, request):
+        today = timezone.now().date()
+        monday = today - timedelta(days=today.weekday())
+        friday = monday + timedelta(days=4)
+        teacher = request.query_params.get('teacher_id')
+
+        base_query = ClassTimeTable.objects.filter(
+            teacher_id=teacher,
+            date__gte=monday,
+            date__lte=friday
+        )
+
+        # Get unique flow_ids
+        flow_ids = list(base_query.values_list('flow_id', flat=True).distinct().exclude(flow_id__isnull=True))
+
+        # Get unique group_ids
+        group_ids = list(base_query.values_list('group_id', flat=True).distinct().exclude(group_id__isnull=True))
+
+        flows = Flow.objects.filter(id__in=flow_ids).all()
+        groups = Group.objects.filter(id__in=group_ids).all()
+        classes = []
+        for flow in flows:
+            classes.append({
+                'id': flow.id,
+                'name': flow.name,
+                "flow": True,
+            })
+        for group in groups:
+            classes.append({
+                'id': group.id,
+                'name': f"{group.class_number.number}-{group.color.name}",
+                "flow": False,
+            })
+        return Response({
+            'classes': classes
+        })

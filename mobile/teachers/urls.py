@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import TeacherGroupProfileView, TeacherProfileView, SalaryYearsView, TeacherSalaryView
+from .views import TeacherGroupProfileView, TeacherProfileView, SalaryYearsView, TeacherSalaryView, TeacherClassesView
 
 app_name = 'teachers'
 urlpatterns = [
@@ -8,4 +8,5 @@ urlpatterns = [
     path('teacher-profile/', TeacherProfileView.as_view(), name='teacher-profile'),
     path('salary-years/', SalaryYearsView.as_view(), name='salary-years'),
     path('teacher-salary/', TeacherSalaryView.as_view(), name='teacher-salary'),
+    path('teacher-classes/', TeacherClassesView.as_view(), name='teacher-classes'),
 ]
