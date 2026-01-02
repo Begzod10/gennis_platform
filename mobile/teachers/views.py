@@ -232,8 +232,8 @@ class TeacherClassesView(APIView):
                 "flow": True,
                 "schedules": [],
                 "next_lesson": {
-                    'date': next_lesson.date.strftime('%Y-%m-%d'),
-                    'time': f"{next_lesson.hours.start_time}",
+                    'date': next_lesson.date.strftime('%Y-%m-%d') if next_lesson else None,
+                    'time': f"{next_lesson.hours.start_time}" if next_lesson else None,
 
                 }
             }
@@ -254,8 +254,8 @@ class TeacherClassesView(APIView):
                 "flow": False,
                 "schedules": [],
                 "next_lesson": {
-                    'date': next_lesson.date.strftime('%Y-%m-%d'),
-                    'time': f"{next_lesson.hours.start_time}",
+                    'date': next_lesson.date.strftime('%Y-%m-%d') if next_lesson else None,
+                    'time': f"{next_lesson.hours.start_time}" if next_lesson else None,
 
                 }
             }
