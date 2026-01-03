@@ -303,8 +303,8 @@ class GetSchoolStudents(APIView):
                 last_deleted_group_id=Subquery(last_deleted_group)
             )
             .filter(
-                Q(is_active=True) |  # Active in this group
-                Q(group_id=F('last_deleted_group_id'))  # Or this is the last deleted group
+                Q(is_active=True) |
+                Q(group_id=F('last_deleted_group_id'))
             )
             .select_related(
                 'student',
@@ -316,10 +316,9 @@ class GetSchoolStudents(APIView):
             .order_by('group__class_number__number', 'group__id', 'student__user__surname')
         )
 
-        # Get all attendance IDs for payment lookup
         attendance_ids = list(attendance_records.values_list('id', flat=True))
 
-        # Pre-aggregate all payment data
+        # Get payment breakdown ONLY for display (cash/bank/click)
         payment_aggregates = (
             StudentPayment.objects
             .filter(
@@ -351,7 +350,6 @@ class GetSchoolStudents(APIView):
             )
         )
 
-        # Convert to dict for lookup
         payments_dict = defaultdict(lambda: {
             'cash': 0, 'bank': 0, 'click': 0, 'paid': 0
         })
@@ -363,7 +361,6 @@ class GetSchoolStudents(APIView):
                 'paid': payment['paid'] or 0
             }
 
-        # Group attendance records by class
         classes_dict = {}
 
         for attendance_data in attendance_records:
@@ -372,7 +369,6 @@ class GetSchoolStudents(APIView):
 
             class_key = f"{_class.class_number.number}-{_class.color.name}"
 
-            # Create class entry if it doesn't exist
             if class_key not in classes_dict:
                 classes_dict[class_key] = {
                     'class_number': class_key,
@@ -380,26 +376,28 @@ class GetSchoolStudents(APIView):
                     'order': (_class.class_number.number or 999, _class.id)
                 }
 
-            # Get payment data for this attendance record
+            # Get payment breakdown for DISPLAY ONLY
             payments = payments_dict[attendance_data.id]
             cash_payment = payments['cash']
             bank_payment = payments['bank']
             click_payment = payments['click']
             paid_amount = payments['paid']
 
-            # Get attendance data
+            # USE ATTENDANCE DATA AS SOURCE OF TRUTH
             total_debt_student = attendance_data.total_debt or 0
             remaining_debt_student = attendance_data.remaining_debt or 0
             discount = attendance_data.discount or 0
 
+            # Calculate payment from attendance: total_debt - remaining_debt - discount
+            payment_student = total_debt_student - remaining_debt_student - discount
+
             # Accumulate totals
             total_debt += total_debt_student
-            total_sum_test += cash_payment + bank_payment + click_payment
+            total_sum_test += payment_student  # ✅ Use calculated payment
             reaming_debt += remaining_debt_student
             total_dis += discount
-            total_discount += paid_amount
+            total_discount += paid_amount  # Keep this for backward compatibility
 
-            # Add student to class
             classes_dict[class_key]['students'].append({
                 'id': student.user.id,
                 'name': student.user.name,
@@ -415,7 +413,7 @@ class GetSchoolStudents(APIView):
                 'month_id': attendance_data.id,
             })
 
-        # Sort classes by class number
+        # Sort and clean classes
         sorted_classes = sorted(
             classes_dict.values(),
             key=lambda x: (
@@ -425,13 +423,12 @@ class GetSchoolStudents(APIView):
             )
         )
 
-        # Remove the 'order' key before sending to frontend
         for class_data in sorted_classes:
             del class_data['order']
 
         data['class'] = sorted_classes
 
-        # Get available dates
+        # Get dates
         unique_dates = (
             AttendancePerMonth.objects
             .filter(system__name='school')
@@ -452,7 +449,6 @@ class GetSchoolStudents(APIView):
             {'year': year, 'months': months} for year, months in year_month_dict.items()
         ]
 
-        # Set totals
         data['total_sum'] = total_sum_test
         data['total_debt'] = total_debt
         data['reaming_debt'] = reaming_debt
