@@ -398,7 +398,7 @@ class GetSchoolStudents(APIView):
                 paid_amount = 0
 
                 if attendance_data:
-                    payments = payments_dict.get((student.id, attendance_data.id))
+                    payments = payments_dict[(student.id, attendance_data.id)]  # ✅ Uses defaultdict default
                     cash_payment = payments['cash']
                     bank_payment = payments['bank']
                     click_payment = payments['click']
