@@ -29,11 +29,6 @@ class DeleteGroups(APIView):
                 student.save()
             today = datetime.now()
             date = datetime(today.year, today.month, 1)
-            month_date = date.strftime("%Y-%m-%d")
-            # attendances_per_month = student.attendancepermonth_set.filter(group=group, student=student,
-            #                                                               month_date__gte=month_date, payment=0)
-            # for attendance in attendances_per_month:
-            #     attendance.delete()
             student_history_group = StudentHistoryGroups.objects.filter(group=group, student=student).order_by(
                 '-joined_day')
             if student_history_group.exists():
