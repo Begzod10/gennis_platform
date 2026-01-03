@@ -256,14 +256,6 @@ class Encashments(APIView):
             return Response({'error': str(e)}, status=500)
 
 
-from django.db.models import (
-    Sum, Case, When, F, Q, Exists, OuterRef,
-    IntegerField, Prefetch
-)
-from django.db.models.functions import ExtractYear, ExtractMonth
-from collections import defaultdict
-
-
 class GetSchoolStudents(APIView):
 
     def get_class_data(self, students_list, year=None, month=None):
@@ -281,7 +273,6 @@ class GetSchoolStudents(APIView):
         current_year = year if year else datetime.now().year
         current_month = month if month else datetime.now().month
 
-        # Get all classes with optimized queries
         classes = (
             Group.objects
             .filter(deleted=False)
@@ -305,7 +296,7 @@ class GetSchoolStudents(APIView):
 
         students_ids = students_list.values_list('id', flat=True)
 
-        # Pre-fetch all attendance data for this month
+        # Pre-fetch all attendance data
         attendance_dict = {
             (att.student_id, att.group_id): att
             for att in AttendancePerMonth.objects.filter(
@@ -315,7 +306,7 @@ class GetSchoolStudents(APIView):
             ).select_related('student', 'group')
         }
 
-        # Pre-aggregate all payment data by student and attendance
+        # Pre-aggregate all payment data - FIXED: removed 'status' from values()
         payment_aggregates = (
             StudentPayment.objects
             .filter(
@@ -325,7 +316,7 @@ class GetSchoolStudents(APIView):
                 attendance__month_date__month=current_month,
             )
             .select_related('payment_type')
-            .values('student_id', 'attendance_id', 'status')
+            .values('student_id', 'attendance_id')  # ✅ No 'status' here
             .annotate(
                 cash=Sum(Case(
                     When(payment_type__name='cash', status=False, then='payment_sum'),
@@ -350,7 +341,6 @@ class GetSchoolStudents(APIView):
             )
         )
 
-        # Convert to nested dictionary for O(1) lookup
         payments_dict = defaultdict(lambda: {
             'cash': 0, 'bank': 0, 'click': 0, 'paid': 0
         })
@@ -400,7 +390,6 @@ class GetSchoolStudents(APIView):
             )
 
             for student in class_students:
-                # O(1) lookup instead of database query
                 attendance_data = attendance_dict.get((student.id, _class.id))
 
                 cash_payment = 0
@@ -410,10 +399,10 @@ class GetSchoolStudents(APIView):
 
                 if attendance_data:
                     payments = payments_dict.get((student.id, attendance_data.id))
-                    cash_payment = payments['cash'] if payments else 0
-                    bank_payment = payments['bank'] if payments else 0
-                    click_payment = payments['click'] if payments else 0
-                    paid_amount = payments['paid']  if payments else 0
+                    cash_payment = payments['cash']
+                    bank_payment = payments['bank']
+                    click_payment = payments['click']
+                    paid_amount = payments['paid']
 
                 total_debt_student = attendance_data.total_debt if attendance_data else 0
                 remaining_debt_student = attendance_data.remaining_debt if attendance_data else 0
