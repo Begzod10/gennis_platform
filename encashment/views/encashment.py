@@ -258,7 +258,7 @@ class Encashments(APIView):
 
 class GetSchoolStudents(APIView):
 
-    def get_class_data(self, students_list, year=None, month=None):
+    def get_class_data(self, branch_id, year=None, month=None):
         total_sum_test = 0
         total_debt = 0
         reaming_debt = 0
@@ -273,50 +273,60 @@ class GetSchoolStudents(APIView):
         current_year = year if year else datetime.now().year
         current_month = month if month else datetime.now().month
 
-        classes = (
-            Group.objects
-            .filter(deleted=False)
-            .filter(
-                Q(students__in=students_list) |
-                Q(deleted_student_group__student__in=students_list)
-            )
-            .select_related('class_number', 'color')
-            .distinct()
-            .order_by(
-                Case(
-                    When(class_number__number=0, then=0),
-                    When(class_number__number__isnull=True, then=2),
-                    default=1,
-                    output_field=IntegerField(),
-                ),
-                F('class_number__number').asc(nulls_last=True),
-                'id'
-            )
+        # Subquery: Is student active in this group?
+        is_active_in_group = Group.objects.filter(
+            id=OuterRef('group_id'),
+            students=OuterRef('student_id'),
+            deleted=False
         )
 
-        students_ids = students_list.values_list('id', flat=True)
+        # Subquery: Last deletion group for this student
+        last_deleted_group = DeletedStudent.objects.filter(
+            student_id=OuterRef('student_id'),
+            deleted=False,
+            deleted_date__year=current_year,
+            deleted_date__month__gte=current_month
+        ).order_by('-deleted_date', '-id').values('group_id')[:1]
 
-        # Pre-fetch all attendance data
-        attendance_dict = {
-            (att.student_id, att.group_id): att
-            for att in AttendancePerMonth.objects.filter(
-                student_id__in=students_ids,
+        # Get attendance records - ONE record per student
+        # Either their active group OR their last deleted group
+        attendance_records = (
+            AttendancePerMonth.objects
+            .filter(
                 month_date__year=current_year,
                 month_date__month=current_month,
-            ).select_related('student', 'group')
-        }
+                student__user__branch_id=branch_id,
+                group__deleted=False
+            )
+            .annotate(
+                is_active=Exists(is_active_in_group),
+                last_deleted_group_id=Subquery(last_deleted_group)
+            )
+            .filter(
+                Q(is_active=True) |  # Active in this group
+                Q(group_id=F('last_deleted_group_id'))  # Or this is the last deleted group
+            )
+            .select_related(
+                'student',
+                'student__user',
+                'group',
+                'group__class_number',
+                'group__color'
+            )
+            .order_by('group__class_number__number', 'group__id', 'student__user__surname')
+        )
 
-        # Pre-aggregate all payment data - FIXED: removed 'status' from values()
+        # Get all attendance IDs for payment lookup
+        attendance_ids = list(attendance_records.values_list('id', flat=True))
+
+        # Pre-aggregate all payment data
         payment_aggregates = (
             StudentPayment.objects
             .filter(
-                student_id__in=students_ids,
-                deleted=False,
-                attendance__month_date__year=current_year,
-                attendance__month_date__month=current_month,
+                attendance_id__in=attendance_ids,
+                deleted=False
             )
-            .select_related('payment_type')
-            .values('student_id', 'attendance_id')  # ✅ No 'status' here
+            .values('attendance_id')
             .annotate(
                 cash=Sum(Case(
                     When(payment_type__name='cash', status=False, then='payment_sum'),
@@ -341,100 +351,94 @@ class GetSchoolStudents(APIView):
             )
         )
 
+        # Convert to dict for lookup
         payments_dict = defaultdict(lambda: {
             'cash': 0, 'bank': 0, 'click': 0, 'paid': 0
         })
         for payment in payment_aggregates:
-            key = (payment['student_id'], payment['attendance_id'])
-            payments_dict[key] = {
+            payments_dict[payment['attendance_id']] = {
                 'cash': payment['cash'] or 0,
                 'bank': payment['bank'] or 0,
                 'click': payment['click'] or 0,
                 'paid': payment['paid'] or 0
             }
 
-        for _class in classes:
-            class_data = {
-                'class_number': f"{_class.class_number.number}-{_class.color.name}",
-                'students': []
-            }
-            data['class'].append(class_data)
+        # Group attendance records by class
+        classes_dict = {}
 
-            active_in_this_class = Group.objects.filter(
-                id=_class.id,
-                deleted=False,
-                students=OuterRef('pk'),
+        for attendance_data in attendance_records:
+            _class = attendance_data.group
+            student = attendance_data.student
+
+            class_key = f"{_class.class_number.number}-{_class.color.name}"
+
+            # Create class entry if it doesn't exist
+            if class_key not in classes_dict:
+                classes_dict[class_key] = {
+                    'class_number': class_key,
+                    'students': [],
+                    'order': (_class.class_number.number or 999, _class.id)
+                }
+
+            # Get payment data for this attendance record
+            payments = payments_dict[attendance_data.id]
+            cash_payment = payments['cash']
+            bank_payment = payments['bank']
+            click_payment = payments['click']
+            paid_amount = payments['paid']
+
+            # Get attendance data
+            total_debt_student = attendance_data.total_debt or 0
+            remaining_debt_student = attendance_data.remaining_debt or 0
+            discount = attendance_data.discount or 0
+
+            # Accumulate totals
+            total_debt += total_debt_student
+            total_sum_test += cash_payment + bank_payment + click_payment
+            reaming_debt += remaining_debt_student
+            total_dis += discount
+            total_discount += paid_amount
+
+            # Add student to class
+            classes_dict[class_key]['students'].append({
+                'id': student.user.id,
+                'name': student.user.name,
+                'surname': student.user.surname,
+                'phone': student.user.phone,
+                'total_debt': total_debt_student,
+                'remaining_debt': remaining_debt_student,
+                'cash': cash_payment,
+                'bank': bank_payment,
+                'click': click_payment,
+                'total_dis': discount,
+                'total_discount': paid_amount,
+                'month_id': attendance_data.id,
+            })
+
+        # Sort classes by class number
+        sorted_classes = sorted(
+            classes_dict.values(),
+            key=lambda x: (
+                0 if x['order'][0] == 0 else (2 if x['order'][0] == 999 else 1),
+                x['order'][0] if x['order'][0] != 999 else float('inf'),
+                x['order'][1]
             )
+        )
 
-            deleted_in_this_class = DeletedStudent.objects.filter(
-                group_id=_class.id,
-                student=OuterRef('pk'),
-                deleted=False,
-                deleted_date__year=current_year,
-                deleted_date__month__gte=current_month,
-            )
+        # Remove the 'order' key before sending to frontend
+        for class_data in sorted_classes:
+            del class_data['order']
 
-            class_students = (
-                Student.objects
-                .filter(id__in=students_ids)
-                .select_related('user')
-                .annotate(
-                    active_in_class=Exists(active_in_this_class),
-                    deleted_in_class=Exists(deleted_in_this_class),
-                )
-                .filter(
-                    Q(active_in_class=True) |
-                    (Q(deleted_in_class=True) & Q(active_in_class=False))
-                )
-                .distinct()
-            )
+        data['class'] = sorted_classes
 
-            for student in class_students:
-                attendance_data = attendance_dict.get((student.id, _class.id))
-
-                cash_payment = 0
-                bank_payment = 0
-                click_payment = 0
-                paid_amount = 0
-
-                if attendance_data:
-                    payments = payments_dict[(student.id, attendance_data.id)]  # ✅ Uses defaultdict default
-                    cash_payment = payments['cash']
-                    bank_payment = payments['bank']
-                    click_payment = payments['click']
-                    paid_amount = payments['paid']
-
-                total_debt_student = attendance_data.total_debt if attendance_data else 0
-                remaining_debt_student = attendance_data.remaining_debt if attendance_data else 0
-                discount = getattr(attendance_data, 'discount', 0)
-
-                total_debt += total_debt_student
-                total_sum_test += cash_payment + bank_payment + click_payment
-                reaming_debt += remaining_debt_student
-                total_dis += discount
-                total_discount += paid_amount
-
-                class_data['students'].append({
-                    'id': student.user.id,
-                    'name': student.user.name,
-                    'surname': student.user.surname,
-                    'phone': student.user.phone,
-                    'total_debt': total_debt_student,
-                    'remaining_debt': remaining_debt_student,
-                    'cash': cash_payment,
-                    'bank': bank_payment,
-                    'click': click_payment,
-                    'total_dis': discount,
-                    'total_discount': paid_amount,
-                    'month_id': attendance_data.id if attendance_data else None,
-                })
-
+        # Get available dates
         unique_dates = (
-            AttendancePerMonth.objects.annotate(
+            AttendancePerMonth.objects
+            .filter(system__name='school')
+            .annotate(
                 year=ExtractYear('month_date'),
                 month=ExtractMonth('month_date')
             )
-            .filter(system__name='school')
             .values('year', 'month')
             .distinct()
             .order_by('year', 'month')
@@ -448,6 +452,7 @@ class GetSchoolStudents(APIView):
             {'year': year, 'months': months} for year, months in year_month_dict.items()
         ]
 
+        # Set totals
         data['total_sum'] = total_sum_test
         data['total_debt'] = total_debt
         data['reaming_debt'] = reaming_debt
@@ -459,13 +464,7 @@ class GetSchoolStudents(APIView):
 
     def get(self, request, *args, **kwargs):
         branch = request.query_params.get('branch')
-        students_list = Student.objects.filter(
-            user__branch_id=branch,
-            groups_student__deleted=False,
-            deleted_student_student_new__isnull=True,
-        ).select_related('user').distinct()
-
-        data = self.get_class_data(students_list)
+        data = self.get_class_data(branch)
         return Response(data)
 
     def post(self, request, *args, **kwargs):
@@ -473,35 +472,7 @@ class GetSchoolStudents(APIView):
         year = int(request.data.get('year'))
         branch_id = request.query_params.get('branch')
 
-        active_in_branch = Group.objects.filter(
-            students=OuterRef('pk'),
-            deleted=False,
-            branch_id=branch_id,
-        )
-
-        deleted_on_or_before_start = DeletedStudent.objects.filter(
-            student=OuterRef('pk'),
-            group__branch_id=branch_id,
-            deleted_date__month__gte=month,
-            deleted_date__year=year,
-            deleted=False
-        )
-
-        students_list = (
-            Student.objects
-            .select_related('user')
-            .annotate(
-                is_active=Exists(active_in_branch),
-                was_deleted=Exists(deleted_on_or_before_start),
-            )
-            .filter(
-                Q(is_active=True) |
-                (Q(was_deleted=True) & Q(is_active=False))
-            )
-            .distinct()
-        )
-
-        data = self.get_class_data(students_list, year=year, month=month)
+        data = self.get_class_data(branch_id, year=year, month=month)
         return Response(data)
 
 
