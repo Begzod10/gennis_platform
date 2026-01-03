@@ -410,10 +410,10 @@ class GetSchoolStudents(APIView):
 
                 if attendance_data:
                     payments = payments_dict.get((student.id, attendance_data.id))
-                    cash_payment = payments['cash']
-                    bank_payment = payments['bank']
-                    click_payment = payments['click']
-                    paid_amount = payments['paid']
+                    cash_payment = payments['cash'] if payments else 0
+                    bank_payment = payments['bank'] if payments else 0
+                    click_payment = payments['click'] if payments else 0
+                    paid_amount = payments['paid']  if payments else 0
 
                 total_debt_student = attendance_data.total_debt if attendance_data else 0
                 remaining_debt_student = attendance_data.remaining_debt if attendance_data else 0
