@@ -289,7 +289,6 @@ class GetSchoolStudents(APIView):
         ).order_by('-deleted_date', '-id').values('group_id')[:1]
 
         # Get attendance records - ONE record per student
-        # Either their active group OR their last deleted group
         attendance_records = (
             AttendancePerMonth.objects
             .filter(
@@ -318,7 +317,7 @@ class GetSchoolStudents(APIView):
 
         attendance_ids = list(attendance_records.values_list('id', flat=True))
 
-        # Get payment breakdown ONLY for display (cash/bank/click)
+        # Get payment breakdown
         payment_aggregates = (
             StudentPayment.objects
             .filter(
@@ -376,27 +375,27 @@ class GetSchoolStudents(APIView):
                     'order': (_class.class_number.number or 999, _class.id)
                 }
 
-            # Get payment breakdown for DISPLAY ONLY
+            # Get payment breakdown
             payments = payments_dict[attendance_data.id]
             cash_payment = payments['cash']
             bank_payment = payments['bank']
             click_payment = payments['click']
             paid_amount = payments['paid']
 
-            # USE ATTENDANCE DATA AS SOURCE OF TRUTH
+            # Use attendance data
             total_debt_student = attendance_data.total_debt or 0
             remaining_debt_student = attendance_data.remaining_debt or 0
             discount = attendance_data.discount or 0
 
-            # Calculate payment from attendance: total_debt - remaining_debt - discount
-            payment_student = total_debt_student - remaining_debt_student - discount
+            # ✅ Calculate payment: subtract ALL discounts and remaining debt
+            payment_student = total_debt_student - remaining_debt_student - discount - paid_amount
 
             # Accumulate totals
             total_debt += total_debt_student
-            total_sum_test += payment_student  # ✅ Use calculated payment
+            total_sum_test += payment_student
             reaming_debt += remaining_debt_student
             total_dis += discount
-            total_discount += paid_amount  # Keep this for backward compatibility
+            total_discount += paid_amount
 
             classes_dict[class_key]['students'].append({
                 'id': student.user.id,
@@ -413,7 +412,7 @@ class GetSchoolStudents(APIView):
                 'month_id': attendance_data.id,
             })
 
-        # Sort and clean classes
+        # Sort classes
         sorted_classes = sorted(
             classes_dict.values(),
             key=lambda x: (
