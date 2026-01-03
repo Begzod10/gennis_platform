@@ -87,12 +87,6 @@ def update_student_debt():
         get_remaining_debt_for_student(student.id)
 
 
-from celery import shared_task
-from datetime import datetime
-from collections import defaultdict
-from django.db.models import Max
-
-
 @shared_task()
 def update_deleted_students_debts():
     """Create AttendancePerMonth records for deleted students' LAST deletion only"""
