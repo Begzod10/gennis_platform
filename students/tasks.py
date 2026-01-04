@@ -2,6 +2,7 @@ from celery import shared_task
 from datetime import datetime
 from .models import Student, DeletedStudent, DeletedNewStudent
 from attendances.models import AttendancePerMonth
+from students.models import StudentPayment
 from students.serializers import get_remaining_debt_for_student
 
 
@@ -151,26 +152,35 @@ def update_deleted_students_debts():
                 print(
                     f"  ✅ Exists: {last_deletion.student.user.name} {last_deletion.student.user.surname} - Group: {last_deletion.group.class_number.number}-{last_deletion.group.color.name} (ID: {exist_month.id})")
                 existing_count += 1
+                student_payments = StudentPayment.objects.filter(
+                    attendance=exist_month,
+                    deleted=False  # Don't count deleted payments
+                )
+                if not student_payments.exists():
+                    exist_month.delete()
+                    print(f"  🗑️  Deleted (no payments): {exist_month.student.user.name} - ID: {exist_month.id}")
+                else:
+                    print(f"  🔒 Kept (has payments): {exist_month.student.user.name} - ID: {exist_month.id}")
             else:
                 # Create new record for LAST deletion only
-                new_record = AttendancePerMonth.objects.create(
-                    student=last_deletion.student,
-                    teacher=last_deletion.teacher,
-                    group=last_deletion.group,
-                    month_date=month_date,
-                    total_debt=last_deletion.group.price or 0,
-                    remaining_debt=last_deletion.group.price or 0,
-                    payment=0,
-                    status=False,
-                    system=last_deletion.group.system,
-                    discount=0,
-                    discount_percentage=0,
-                    present_days=0,
-                    absent_days=0,
-                    scored_days=0
-                )
-                print(
-                    f"  ➕ Created: {last_deletion.student.user.name} {last_deletion.student.user.surname} - Group: {last_deletion.group.class_number.number}-{last_deletion.group.color.name} - Debt: {new_record.total_debt} (ID: {new_record.id})")
+                # new_record = AttendancePerMonth.objects.create(
+                #     student=last_deletion.student,
+                #     teacher=last_deletion.teacher,
+                #     group=last_deletion.group,
+                #     month_date=month_date,
+                #     total_debt=last_deletion.group.price or 0,
+                #     remaining_debt=last_deletion.group.price or 0,
+                #     payment=0,
+                #     status=False,
+                #     system=last_deletion.group.system,
+                #     discount=0,
+                #     discount_percentage=0,
+                #     present_days=0,
+                #     absent_days=0,
+                #     scored_days=0
+                # )
+                # print(
+                #     f"  ➕ Created: {last_deletion.student.user.name} {last_deletion.student.user.surname} - Group: {last_deletion.group.class_number.number}-{last_deletion.group.color.name} - Debt: {new_record.total_debt} (ID: {new_record.id})")
                 created_count += 1
 
     print(f"\n✨ Summary:")
