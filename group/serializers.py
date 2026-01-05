@@ -97,6 +97,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         comment = validated_data.get("comment")
         group_reason = validated_data.get("group_reason")
         price = validated_data.pop("price", None)
+
         if price:
             instance.price = price
             instance.save()
@@ -107,75 +108,86 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
             for attendance in attendances:
                 attendance.total_debt = price
                 attendance.save()
+
         teacher_status = True
         for attr, value in validated_data.items():
-            if attr != 'update_method' and attr != 'students' and attr != 'teacher':
+            if attr not in ['update_method', 'students', 'teacher']:
                 setattr(instance, attr, value)
 
         if group_type == 'school':
             if 'teacher' in validated_data:
-                teacher_history_group = TeacherHistoryGroups.objects.get(group=instance,
-                                                                         teacher=instance.teacher.all()[0])
-                teacher_history_group.left_day = datetime.now()
-                teacher_history_group.save()
-                teach = instance.teacher.all()[0]
-                # request(url=f"{classroom_server}/delete_teacher_from_group/{teach.user_id}/{instance.id}/turon",
-                #         method='DELETE')
+                # Get current teacher
+                current_teacher = instance.teacher.first()
+                if current_teacher:
+                    teacher_history_group = TeacherHistoryGroups.objects.filter(
+                        group=instance,
+                        teacher=current_teacher,
+                        left_day__isnull=True
+                    ).first()
 
-                for time_table in instance.classtimetable_set.all():
-                    instance.teacher.all()[0].class_time_table.remove(time_table)
-                    validated_data.get('teacher')[0].class_time_table.add(time_table)
-                instance.teacher.remove(instance.teacher.all()[0])
-                instance.teacher.remove(*instance.teacher.all())
-                instance.teacher.add(validated_data.get('teacher')[0])
-                TeacherHistoryGroups.objects.create(group=instance, teacher=validated_data.get('teacher')[0],
-                                                    joined_day=datetime.now())
+                    if teacher_history_group:
+                        teacher_history_group.left_day = datetime.now()
+                        teacher_history_group.save()
+
+                    # Remove teacher from timetables
+                    for time_table in instance.classtimetable_set.all():
+                        current_teacher.class_time_table.remove(time_table)
+                        validated_data.get('teacher')[0].class_time_table.add(time_table)
+
+                    instance.teacher.clear()
+                    instance.teacher.add(validated_data.get('teacher')[0])
+
+                    TeacherHistoryGroups.objects.create(
+                        group=instance,
+                        teacher=validated_data.get('teacher')[0],
+                        joined_day=datetime.now()
+                    )
+
             if update_method:
                 if update_method == "add_students":
+                    current_teacher = instance.teacher.first()
+
                     for student in students:
                         student.joined_group = datetime.now()
                         student.save()
                         instance.students.add(student)
-                        StudentHistoryGroups.objects.create(group=instance, student=student,
-                                                            teacher=instance.teacher.all()[
-                                                                0] if instance.teacher.all() else None,
-                                                            joined_day=datetime.now())
-                        if instance.classtimetable_set.all():
-                            for time_table in instance.classtimetable_set.all():
-                                student.class_time_table.add(time_table)
-                    create_school_student_debts(instance, students)
-                elif update_method == "remove_students":
 
+                        StudentHistoryGroups.objects.create(
+                            group=instance,
+                            student=student,
+                            teacher=current_teacher,
+                            joined_day=datetime.now()
+                        )
+
+                        # Add to timetables
+                        for time_table in instance.classtimetable_set.all():
+                            student.class_time_table.add(time_table)
+
+                    create_school_student_debts(instance, students)
+
+                elif update_method == "remove_students":
                     if delete_type == 'new_students':
                         for student in students:
-                            today = datetime.now()
-                            date = datetime(today.year, today.month, 1)
-                            month_date = date.strftime("%Y-%m-%d")
-                            # attendances_per_month = student.attendancepermonth_set.filter(group=instance,
-                            #                                                               student=student,
-                            #                                                               month_date__gte=month_date,
-                            #                                                               payment=0)
-                            # for attendance in attendances_per_month:
-                            #     attendance.delete()
                             instance.students.remove(student)
-                            student_history_group = StudentHistoryGroups.objects.get(group=instance,
-                                                                                     teacher=instance.teacher.all()[
-                                                                                         0] if instance.teacher.all() else None,
-                                                                                     student=student)
-                            student_history_group.left_day = datetime.now()
-                            student_history_group.save()
-                            if instance.classtimetable_set.all():
-                                for time_table in instance.classtimetable_set.all():
-                                    student.class_time_table.remove(time_table)
+
+                            # Update ALL active history records (close them all)
+                            StudentHistoryGroups.objects.filter(
+                                group=instance,
+                                student=student,
+                                left_day__isnull=True
+                            ).update(left_day=datetime.now())
+
+                            # Remove from timetables
+                            for time_table in instance.classtimetable_set.all():
+                                student.class_time_table.remove(time_table)
                     else:
+                        today = datetime.now()
+                        year = today.year
+                        month = today.month
 
                         for student in students:
-                            today = datetime.now()
-                            date = datetime(today.year, today.month, 1)
                             del_date = validated_data.get('del_date', None)
-                            month_date = date.strftime("%Y-%m-%d")
-                            year = today.year
-                            month = today.month
+                            deletion_date = del_date if del_date else datetime.now()
 
                             instance.students.remove(student)
 
@@ -185,16 +197,16 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                 group=instance,
                                 comment=comment if comment else None,
                                 group_reason_id=group_reason if group_reason else None,
-                                deleted_date=del_date if del_date else datetime.now()
+                                deleted_date=deletion_date
                             )
-                            # Update student history
-                            student_history_group = StudentHistoryGroups.objects.get(
+
+                            # Update ALL active student history records
+                            StudentHistoryGroups.objects.filter(
                                 group=instance,
-                                teacher=instance.teacher.all()[0] if instance.teacher.all() else None,
-                                student=student
-                            )
-                            student_history_group.left_day = datetime.now()
-                            student_history_group.save()
+                                student=student,
+                                left_day__isnull=True
+                            ).update(left_day=datetime.now())
+
                             # Find or get AttendancePerMonth
                             exist_month = AttendancePerMonth.objects.filter(
                                 student=student,
@@ -207,7 +219,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                 # Calculate actual study days from month start to deletion date
                                 studying_days = [0, 1, 2, 3, 4]  # Monday=0 to Friday=4
                                 start_date = datetime(year, month, 1).date()
-                                end_date = deleted_student.deleted_date  # This is today's date
+                                end_date = deletion_date.date() if hasattr(deletion_date, 'date') else deletion_date
 
                                 # Count weekdays (Monday-Friday) from start to deletion date
                                 study_days = 0
@@ -238,28 +250,22 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                 else:
                                     calculated_debt = 0
 
-                                # Update existing AttendancePerMonth record
                                 # Calculate how much was already paid
                                 already_paid = exist_month.total_debt - exist_month.remaining_debt
 
                                 # Update with new calculated debt
                                 exist_month.total_debt = calculated_debt
-                                exist_month.remaining_debt = max(0, calculated_debt - already_paid)  # Can't be negative
+                                exist_month.remaining_debt = max(0, calculated_debt - already_paid)
                                 exist_month.present_days = study_days
                                 exist_month.save()
 
-                                # print(f"  🔄 Updated: {student.user.name} {student.user.surname} - "
-                                #       f"Study Days: {study_days}/{total_weekdays_in_month} - "
-                                #       f"Old Debt: {group_price:,} → New Debt: {calculated_debt:,} - "
-                                #       f"Already Paid: {already_paid:,} - "
-                                #       f"Remaining: {exist_month.remaining_debt:,}")
-
                             # Remove from timetable
-                            if instance.classtimetable_set.all():
-                                for time_table in instance.classtimetable_set.all():
-                                    student.class_time_table.remove(time_table)
+                            for time_table in instance.classtimetable_set.all():
+                                student.class_time_table.remove(time_table)
+
         instance.color = validated_data.get('color', instance.color)
         instance.save()
+
         from group.serializers_list.serializers_self import GroupListSerializer
         return GroupListSerializer(instance).data
 

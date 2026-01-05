@@ -118,3 +118,4 @@ class StudentScoreByTeacher(models.Model):
     status = models.BooleanField(default=False)
     average = models.IntegerField(default=0)
     day = models.DateField(auto_now_add=True)
+

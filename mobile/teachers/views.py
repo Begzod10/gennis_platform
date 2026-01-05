@@ -19,7 +19,7 @@ from ..get_user import get_user
 from django.db.models import Prefetch
 from django.utils import timezone
 from datetime import timedelta
-
+from django.db import transaction
 from django.db.models import Avg, Count, Q, Prefetch
 
 
@@ -375,3 +375,72 @@ class TeacherClassesView(APIView):
             })
 
         return Response({'classes': classes})
+
+
+class StudentScoreView(APIView):
+    def post(self, request):
+        day = request.data.get('day')
+        student_list = request.data.get('student_list')
+        flow_status = request.query_params.get('flow')
+        group_id = request.query_params.get('group_id')
+
+        is_flow = flow_status in ['true', 'True', '1']
+
+        # Get the appropriate object once
+        parent_obj = Flow.objects.get(id=group_id) if is_flow else Group.objects.get(id=group_id)
+        filter_key = 'flow' if is_flow else 'group'
+        # Fetch all existing scores in one query
+        existing_scores = StudentScoreByTeacher.objects.filter(
+            **{filter_key: parent_obj},
+            student_id__in=[s['id'] for s in student_list],
+            day=day
+        )
+
+        # Create a lookup dictionary for O(1) access
+        score_lookup = {score.student_id: score for score in existing_scores}
+
+        scores_to_update = []
+        scores_to_create = []
+
+        for student in student_list:
+            student_id = student['id']
+            status = student.get('status')
+
+            # Calculate scores
+            if status:
+                homework = student.get('homework', 0)
+                activeness = student.get('activeness', 0)
+                average = round((homework + activeness) / 2)
+            else:
+                homework = activeness = average = 0
+
+            # Check if score exists
+            if student_id in score_lookup:
+                student_score = score_lookup[student_id]
+                student_score.homework = homework
+                student_score.activeness = activeness
+                student_score.average = average
+                student_score.status = status
+                scores_to_update.append(student_score)
+            else:
+                scores_to_create.append(StudentScoreByTeacher(
+                    **{filter_key: parent_obj},
+                    student_id=student_id,
+                    day=day,
+                    homework=homework,
+                    activeness=activeness,
+                    average=average,
+                    status=status
+                ))
+
+        # Perform bulk operations in a transaction
+        with transaction.atomic():
+            if scores_to_update:
+                StudentScoreByTeacher.objects.bulk_update(
+                    scores_to_update,
+                    ['homework', 'activeness', 'average', 'status']
+                )
+            if scores_to_create:
+                StudentScoreByTeacher.objects.bulk_create(scores_to_create)
+
+        return Response({'status': 'success'})
