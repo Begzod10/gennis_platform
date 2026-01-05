@@ -219,7 +219,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                 # Calculate actual study days from month start to deletion date
                                 studying_days = [0, 1, 2, 3, 4]  # Monday=0 to Friday=4
                                 start_date = datetime(year, month, 1).date()
-                                end_date = deletion_date.date() if hasattr(deletion_date, 'date') else deletion_date
+                                end_date = del_date.date() if hasattr(del_date, 'date') else del_date
 
                                 # Count weekdays (Monday-Friday) from start to deletion date
                                 study_days = 0
