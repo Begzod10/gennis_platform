@@ -387,7 +387,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')
-        student = Student.objects.select_related('user').prefetch_related('groups_student').get(id=student_id)
+        student = Student.objects.get(id=student_id)
         group = student.groups_student.first()
         today = timezone.localdate()
         academic_start_year = today.year if today.month >= 9 else (today.year - 1)
@@ -399,125 +399,86 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
 
         start_date = date(academic_start_year, 9, 1)  # inclusive
         end_date = date(academic_start_year + 1, 7, 1)  # exclusive
-
-        # Determine group_id to use
+        print(start_date, end_date)
         if not group:
             deleted_student = DeletedStudent.objects.filter(
                 student_id=student_id
-            ).select_related('group').order_by("-pk").first()
+            ).order_by("-pk").first()
+            print('deleted_group', deleted_student.group_id)
+            if deleted_student:
+                qs = (
+                    AttendancePerMonth.objects.filter(
+                        student_id=student_id,
+                        group_id=deleted_student.group_id,
+                        month_date__gte=start_date,
+                        month_date__lt=end_date,
+                        group__deleted=False
+                    ).annotate(
+                        month_number=ExtractMonth('month_date'),
+                        year_number=ExtractYear('month_date'),
+                    ).order_by('month_date')
+                )
+                return qs
 
-            if not deleted_student:
-                return AttendancePerMonth.objects.none()
-
-            group_id = deleted_student.group_id
         else:
-            group_id = group.id
+            qs = (
+                AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id, month_date__gte=start_date,
+                                                  month_date__lt=end_date, ).annotate(
+                    month_number=ExtractMonth('month_date'),
+                    year_number=ExtractYear('month_date'), ).order_by('month_date'))
 
-        # Single query for attendance
-        qs = AttendancePerMonth.objects.filter(
-            student_id=student_id,
-            group_id=group_id,
-            month_date__gte=start_date,
-            month_date__lt=end_date,
-            group__deleted=False
-        ).select_related('group').annotate(
-            month_number=ExtractMonth('month_date'),
-            year_number=ExtractYear('month_date'),
-        ).order_by('month_date')
-
-        return qs
+            return qs
 
     def retrieve(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-
         if not queryset.exists():
-            return Response({"month": [], "data": []})
-
+            return Response([])
         student_id = self.kwargs.get('student_id')
-        student = Student.objects.select_related('user').prefetch_related('groups_student').get(pk=student_id)
 
-        # Determine group once
+        months_with_attendance = queryset.values_list('month_number', flat=True).distinct()
+        data = []
+        student = Student.objects.get(pk=student_id)
+
         group = student.groups_student.first()
         if not group:
-            deleted_student = DeletedStudent.objects.filter(
-                student_id=student_id
-            ).select_related('group').order_by("-pk").first()
-            if not deleted_student:
-                return Response({"month": [], "data": []})
+            deleted_student = DeletedStudent.objects.filter(student_id=student_id).order_by("-id").first()
             group = deleted_student.group
-
-        # OPTIMIZATION: Fetch all attendances with related data in one query
-        attendances = AttendancePerMonth.objects.filter(
-            student_id=student_id,
-            group_id=group.id
-        ).prefetch_related(
-            Prefetch(
-                'studentpayment_set',
-                queryset=StudentPayment.objects.filter(deleted=False).select_related('payment_type')
-            )
-        ).order_by('month_date__year', 'month_date__month')
-
-        # OPTIMIZATION: Bulk fetch discount payments
-        attendance_ids = [a.id for a in attendances]
-        discount_payments = {
-            sp.attendance_id: sp
-            for sp in StudentPayment.objects.filter(
-                attendance_id__in=attendance_ids,
-                status=True
-            )  # Removed .select_related('reason') - it's not a ForeignKey
-        }
-
-        # OPTIMIZATION: Fetch student charity once
-        student_charity = StudentCharity.objects.filter(student_id=student_id).first()
-        charity_name = student_charity.name if student_charity else None
-
-        # OPTIMIZATION: Pre-calculate payment aggregations
-        payment_aggregations = {}
-        for attendance in attendances:
-            payments = {
-                'cash': 0,
-                'bank': 0,
-                'click': 0
-            }
-
-            for payment in attendance.studentpayment_set.all():
-                if not payment.status:  # status=False
-                    payment_type = payment.payment_type.name if payment.payment_type else None
-                    if payment_type in payments:
-                        payments[payment_type] += payment.payment_sum or 0
-
-            payment_aggregations[attendance.id] = payments
-
-        # Build response data
-        data = []
-        months_with_attendance = set()
+        attendances = AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id).all().order_by(
+            'month_date__year', 'month_date__month')
 
         for attendance in attendances:
-            months_with_attendance.add(attendance.month_date.month)
+            student_payemnt = StudentPayment.objects.filter(attendance=attendance, status=True
 
-            discount_payment = discount_payments.get(attendance.id)
-            payments = payment_aggregations.get(attendance.id, {'cash': 0, 'bank': 0, 'click': 0})
+                                                            ).first()
+            data.append({'id': attendance.id, 'month': attendance.month_date, 'total_debt': attendance.total_debt,
+                         'remaining_debt': attendance.remaining_debt, 'payment': attendance.payment,
+                         "discount": attendance.discount, "old_money": attendance.old_money,
+                         "discount_sum": student_payemnt.payment_sum if student_payemnt else 0,
+                         "discount_reason": student_payemnt.reason if student_payemnt else 0,
+                         "discount_id": student_payemnt.id if student_payemnt else 0,
+                         "reason": StudentCharity.objects.filter(
+                             student_id=student_id).first().name if StudentCharity.objects.filter(
+                             student_id=student_id).first() else None, 'cash':
+                             attendance.studentpayment_set.filter(payment_type__name='cash', deleted=False,
+                                                                  status=False,
 
-            data.append({
-                'id': attendance.id,
-                'month': attendance.month_date,
-                'total_debt': attendance.total_debt,
-                'remaining_debt': attendance.remaining_debt,
-                'payment': attendance.payment,
-                'discount': attendance.discount,
-                'old_money': attendance.old_money,
-                'discount_sum': discount_payment.payment_sum if discount_payment else 0,
-                'discount_reason': discount_payment.reason if discount_payment else None,  # Changed: removed .name
-                'discount_id': discount_payment.id if discount_payment else 0,
-                'reason': charity_name,
-                'cash': payments['cash'],
-                'bank': payments['bank'],
-                'click': payments['click'],
-            })
+                                                                  ).aggregate(total_sum=Sum('payment_sum'))[
+                                 'total_sum'] or 0, 'bank':
+                             attendance.studentpayment_set.filter(payment_type__name='bank', deleted=False,
+                                                                  status=False,
 
-        # Calculate missing months
+                                                                  ).aggregate(total_sum=Sum('payment_sum'))[
+                                 'total_sum'] or 0, 'click':
+                             attendance.studentpayment_set.filter(payment_type__name='click', deleted=False,
+                                                                  status=False,
+
+                                                                  ).aggregate(total_sum=Sum('payment_sum'))[
+                                 'total_sum'] or 0,
+
+                         })
+
         all_months = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
-        missing_months = set(all_months) - months_with_attendance
+        missing_months = set(all_months) - set(months_with_attendance)
         month_names = [calendar.month_name[month] for month in sorted(missing_months)]
 
         return Response({"month": month_names, "data": data})
