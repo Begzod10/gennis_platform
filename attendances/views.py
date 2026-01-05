@@ -44,7 +44,7 @@ class DeleteAttendanceMonthApiView(generics.RetrieveUpdateDestroyAPIView):
         student_payment = StudentPayment.objects.filter(attendance=instance, status=True).first()
 
         sum_payment = int(request.data.get('payment_sum'))
-        
+
         if student_payment is None:
             # Agar mavjud bo'lmasa, yangi payment yaratish
             student_payment = StudentPayment.objects.create(
@@ -60,15 +60,16 @@ class DeleteAttendanceMonthApiView(generics.RetrieveUpdateDestroyAPIView):
         else:
             # Mavjud bo'lsa, summani o'zgartirish
             old_payment = student_payment.payment_sum
-            instance.remaining_debt = instance.total_debt - (instance.payment - old_payment) + instance.discount + sum_payment
+            instance.remaining_debt = instance.total_debt - (
+                    instance.payment - old_payment) + instance.discount + sum_payment
             instance.payment = instance.payment - old_payment + sum_payment
             instance.total_charity = sum_payment
-        
+
             # StudentPayment ni yangilash
             student_payment.payment_sum = sum_payment
             student_payment.reason = data.get('reason', student_payment.reason)
             student_payment.save()
-        
+
         instance.save()
 
         """Yillik chegirma"""
@@ -87,8 +88,9 @@ class DeleteAttendanceMonthApiView(generics.RetrieveUpdateDestroyAPIView):
             i.save()
 
             StudentCharity.objects.update_or_create(student=i.student,
-                defaults={'charity_sum': discount_amount, 'name': data['reason'],
-                    "group": i.student.groups_student.first(), "branch": i.student.user.branch})
+                                                    defaults={'charity_sum': discount_amount, 'name': data['reason'],
+                                                              "group": i.student.groups_student.first(),
+                                                              "branch": i.student.user.branch})
 
         instance.old_money = instance.total_debt
         instance.discount = int(data['discount'])
@@ -98,10 +100,10 @@ class DeleteAttendanceMonthApiView(generics.RetrieveUpdateDestroyAPIView):
         remaining_debt = get_remaining_debt_for_student(instance.student_id)
 
         return Response({'msg': "Muvaffaqiyatli o'zgartirildi", 'total_debt': instance.total_debt,
-            'discount_percentage': instance.discount_percentage, 'discount': instance.discount,
-            'payment_sum': instance.total_charity, 'reason': data.get('reason'),
-            'remaining_debt': int(instance.total_debt) - int(instance.payment) - int(instance.discount),
-            "persentage": data.get("persentage"), }, status=status.HTTP_200_OK)
+                         'discount_percentage': instance.discount_percentage, 'discount': instance.discount,
+                         'payment_sum': instance.total_charity, 'reason': data.get('reason'),
+                         'remaining_debt': int(instance.total_debt) - int(instance.payment) - int(instance.discount),
+                         "persentage": data.get("persentage"), }, status=status.HTTP_200_OK)
 
 
 class AttendanceYearListView(APIView):
@@ -141,7 +143,7 @@ class GroupStudentsForChangeDebtView(APIView):
         for attendance in attendances:
             student_payemnt = StudentPayment.objects.filter(attendance=attendance, status=True
 
-            ).first()
+                                                            ).first()
             data.append({'id': attendance.student_id, 'name': attendance.student.user.name,
                          'surname': attendance.student.user.surname, 'attendance_id': attendance.id,
                          'total_debt': attendance.total_debt, 'remaining_debt': attendance.remaining_debt,
@@ -160,7 +162,7 @@ class AttendanceDayAPIView(APIView):
         current_month = datetime.now().month
 
         attendances = AttendancePerDay.objects.filter(group_id=group_id).values(year=F('day__year'),
-            month=F('day__month')).distinct()
+                                                                                month=F('day__month')).distinct()
 
         months_data = []
         years = set()
@@ -173,7 +175,7 @@ class AttendanceDayAPIView(APIView):
             years.add(year)
 
         return Response({"data": {"current_month": current_month, "current_year": current_year, "months": months_data,
-            "years": sorted(list(years))}})
+                                  "years": sorted(list(years))}})
 
 
 class GroupAttendanceView(APIView):
@@ -199,13 +201,14 @@ class GroupAttendanceView(APIView):
         results = []
         for student in group.students.all():
             summary, created = StudentMonthlySummary.objects.get_or_create(student=student, group=group, year=year,
-                month=month, defaults={"stats": {}})
+                                                                           month=month, defaults={"stats": {}})
 
             reason = absent_dict.get(student.id)
             status_present = student.id not in absent_dict
 
             daily, created = StudentDailyAttendance.objects.get_or_create(monthly_summary=summary, day=day,
-                defaults={"status": status_present, "reason": reason})
+                                                                          defaults={"status": status_present,
+                                                                                    "reason": reason})
 
             if not created:
                 daily.status = status_present
@@ -244,7 +247,7 @@ def generate_workdays(year, month):
 
 
 def normalize_periods_ensure_current_and_prev(existing_periods: Dict[int, List[dict]], generate_workdays,
-        now: datetime, ) -> Dict[int, List[dict]]:
+                                              now: datetime, ) -> Dict[int, List[dict]]:
     """
     - Preserves all existing months & days.
     - Merges duplicate entries for the same month (union of days).
@@ -305,14 +308,16 @@ class AttendancePeriodsView(APIView):
         if not summaries.exists():
             today = date.today()
             return Response({"group_id": group_id, "periods": [{"year": today.year,
-                "months": [{"month": today.month, "days": generate_workdays(today.year, today.month)}]}]})
+                                                                "months": [{"month": today.month,
+                                                                            "days": generate_workdays(today.year,
+                                                                                                      today.month)}]}]})
 
         periods = {}
         now = datetime.now()
         normalized = normalize_periods_ensure_current_and_prev(periods, generate_workdays, now)
 
         result = {"group_id": group_id,
-            "periods": [{"year": y, "months": normalized[y]} for y in sorted(normalized.keys())]}
+                  "periods": [{"year": y, "months": normalized[y]} for y in sorted(normalized.keys())]}
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -374,7 +379,8 @@ class BranchDailyStatsView(APIView):
         for group in groups:
             students = group.students.all()
             records = StudentDailyAttendance.objects.filter(monthly_summary__group=group,
-                day=target_date).select_related("monthly_summary__student__user")
+                                                            day=target_date).select_related(
+                "monthly_summary__student__user")
 
             rec_map = {r.monthly_summary.student_id: r.status for r in records}
 
@@ -395,8 +401,9 @@ class BranchDailyStatsView(APIView):
             branch_total += total_students
 
             group_list.append({"group_id": group.id, "group_name": group.name, "students": student_data,
-                "summary": {"present": present, "absent": absent, "total": students.count()}})
+                               "summary": {"present": present, "absent": absent, "total": students.count()}})
 
         return Response({"branch_id": branch_id, "date": str(target_date), "groups": group_list,
-            "overall_summary": {"present": branch_present, "absent": branch_absent, "total": branch_total}},
-            status=status.HTTP_200_OK)
+                         "overall_summary": {"present": branch_present, "absent": branch_absent,
+                                             "total": branch_total}},
+                        status=status.HTTP_200_OK)

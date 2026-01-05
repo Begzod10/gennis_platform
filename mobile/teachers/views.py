@@ -389,6 +389,7 @@ class StudentScoreView(APIView):
         # Get the appropriate object once
         parent_obj = Flow.objects.get(id=group_id) if is_flow else Group.objects.get(id=group_id)
         filter_key = 'flow' if is_flow else 'group'
+        teacher = parent_obj.teacher if is_flow else parent_obj.teacher[1]
         # Fetch all existing scores in one query
         existing_scores = StudentScoreByTeacher.objects.filter(
             **{filter_key: parent_obj},
@@ -427,6 +428,7 @@ class StudentScoreView(APIView):
                     **{filter_key: parent_obj},
                     student_id=student_id,
                     day=day,
+                    teacher_id=teacher.id,
                     homework=homework,
                     activeness=activeness,
                     average=average,
