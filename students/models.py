@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.conf import settings
 from django.db import models
 
@@ -94,7 +96,7 @@ class DeletedStudent(models.Model):
     group_reason = models.ForeignKey('group.GroupReason', on_delete=models.SET_NULL, null=True,
                                      related_name='deleted_student_group_reason')
 
-    deleted_date = models.DateField(auto_now_add=True)
+    deleted_date = models.DateField(default=datetime.now)
     old_id = models.IntegerField(unique=True, null=True)
     comment = models.CharField(max_length=255, null=True)
     deleted = models.BooleanField(default=False)
