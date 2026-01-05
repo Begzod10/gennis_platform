@@ -189,6 +189,10 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                         for student in students:
                             del_date = validated_data.get('del_date', None)
 
+                            print(f"\n{'=' * 60}")
+                            print(f"🔍 Processing student: {student.user.name} {student.user.surname}")
+                            print(f"📅 del_date received: {del_date} (type: {type(del_date)})")
+
                             # Handle deletion date
                             if del_date:
                                 if isinstance(del_date, str):
@@ -199,6 +203,8 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                     deletion_date = del_date
                             else:
                                 deletion_date = today.date()
+
+                            print(f"📅 deletion_date converted: {deletion_date} (type: {type(deletion_date)})")
 
                             instance.students.remove(student)
 
@@ -221,32 +227,46 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                 left_day__isnull=True
                             ).update(left_day=datetime.now())
 
-                            # FIXED: Get ALL AttendancePerMonth records for this student/month/group
-                            attendance_records = AttendancePerMonth.objects.filter(
+                            # Find or get AttendancePerMonth
+                            exist_month = AttendancePerMonth.objects.filter(
                                 student=student,
                                 month_date__year=year,
                                 month_date__month=month,
                                 group=instance
-                            )
+                            ).first()
 
-                            if attendance_records.exists():
-                                # Calculate study days once (same for all records)
+                            print(f"📊 exist_month found: {exist_month is not None}")
+
+                            if exist_month:
+                                print(f"💰 Group price: {instance.price}")
+                                print(f"📆 Calculating for year={year}, month={month}")
+
+                                # Calculate actual study days from month start to deletion date
                                 studying_days = [0, 1, 2, 3, 4]  # Monday=0 to Friday=4
                                 start_date = datetime(year, month, 1).date()
                                 end_date = deletion_date
 
-                                # Count weekdays from start to deletion date
+                                print(f"📅 Period: {start_date} to {end_date}")
+
+                                # Count weekdays (Monday-Friday) from start to deletion date
                                 study_days = 0
                                 current_date = start_date
 
                                 while current_date <= end_date:
                                     if current_date.weekday() in studying_days:
                                         study_days += 1
+                                        print(f"   ✓ {current_date} ({current_date.strftime('%A')}) - counted")
+                                    else:
+                                        print(f"   ✗ {current_date} ({current_date.strftime('%A')}) - weekend, skipped")
                                     current_date += timedelta(days=1)
 
-                                # Calculate total weekdays in full month
+                                print(f"📊 Study days counted: {study_days}")
+
+                                # Calculate total weekdays in the full month
                                 last_day_of_month = (datetime(year, month + 1, 1) if month < 12
                                                      else datetime(year + 1, 1, 1)) - timedelta(days=1)
+                                print(f"📅 Month ends: {last_day_of_month.date()}")
+
                                 total_weekdays_in_month = 0
                                 current_date = start_date
 
@@ -254,30 +274,45 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                     if current_date.weekday() in studying_days:
                                         total_weekdays_in_month += 1
                                     current_date += timedelta(days=1)
-                                print("attendance_records", attendance_records)
-                                # Update each attendance record
-                                # for exist_month in attendance_records:
-                                #     # Use the original total_debt from THIS specific record
-                                #     group_price = exist_month.total_debt or 0
-                                #
-                                #     if total_weekdays_in_month > 0:
-                                #         price_per_day = group_price / total_weekdays_in_month
-                                #         calculated_debt = int(price_per_day * study_days)
-                                #     else:
-                                #         calculated_debt = 0
-                                #
-                                #     # Calculate how much was already paid
-                                #     already_paid = exist_month.total_debt - exist_month.remaining_debt
-                                #
-                                #     # Update with new calculated debt
-                                #     exist_month.total_debt = calculated_debt
-                                #     exist_month.remaining_debt = max(0, calculated_debt - already_paid)
-                                #     exist_month.present_days = study_days
-                                #     exist_month.save()
+
+                                print(f"📊 Total weekdays in full month: {total_weekdays_in_month}")
+
+                                # Calculate price based on actual study days
+                                group_price = exist_month.total_debt or 0
+                                print(f"💰 Group price used: {group_price}")
+
+                                if total_weekdays_in_month > 0:
+                                    price_per_day = group_price / total_weekdays_in_month
+                                    calculated_debt = int(price_per_day * study_days)
+                                    print(f"💵 Price per day: {price_per_day:.2f}")
+                                    print(f"💰 Calculated debt: {calculated_debt}")
+                                else:
+                                    calculated_debt = 0
+                                    print(f"⚠️ WARNING: total_weekdays_in_month is 0!")
+
+                                # Calculate how much was already paid
+                                already_paid = exist_month.total_debt - exist_month.remaining_debt
+                                print(f"💳 Already paid: {already_paid}")
+                                print(f"💰 Old total_debt: {exist_month.total_debt}")
+                                print(f"💸 Old remaining_debt: {exist_month.remaining_debt}")
+
+                                # Update with new calculated debt
+                                exist_month.total_debt = calculated_debt
+                                exist_month.remaining_debt = max(0, calculated_debt - already_paid)
+                                exist_month.present_days = study_days
+                                exist_month.save()
+
+                                print(f"✅ NEW total_debt: {exist_month.total_debt}")
+                                print(f"✅ NEW remaining_debt: {exist_month.remaining_debt}")
+                                print(f"✅ NEW present_days: {exist_month.present_days}")
+                            else:
+                                print(f"⚠️ No AttendancePerMonth record found for this student/month/group")
 
                             # Remove from timetable
                             for time_table in instance.classtimetable_set.all():
                                 student.class_time_table.remove(time_table)
+
+                            print(f"{'=' * 60}\n")
 
         instance.color = validated_data.get('color', instance.color)
         instance.save()
