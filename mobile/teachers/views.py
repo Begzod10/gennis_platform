@@ -130,12 +130,20 @@ class TeacherGroupProfileView(APIView):
         # Build student list
         for student in entity.students.all():
             student_data = scores_dict.get(student.id, {'average': 0, 'present_percent': 0})
+            today_score = StudentScoreByTeacher.objects.filter(
+                student=student,
+                teacher=teacher,
+                group_id=group_id if not is_flow else None,
+                flow_id=group_id if is_flow else None,
+                day__day=today.day
+            ).exists()
             info['students'].append({
                 'id': student.id,
                 'name': student.user.name,
                 'surname': student.user.surname,
                 'average': student_data['average'],
-                'present_percent': student_data['present_percent']
+                'present_percent': student_data['present_percent'],
+                'marked': today_score
             })
 
         # Build schedule list
