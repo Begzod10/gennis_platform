@@ -399,6 +399,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
 
         start_date = date(academic_start_year, 9, 1)  # inclusive
         end_date = date(academic_start_year + 1, 7, 1)  # exclusive
+        print(start_date, end_date)
         if not group:
             deleted_student = DeletedStudent.objects.filter(
                 student_id=student_id
