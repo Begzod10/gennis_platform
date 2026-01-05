@@ -21,7 +21,31 @@ from .models import StudentDailyAttendance, GroupMonthlySummary
 from .serializers import StudentDailyAttendanceSerializer
 
 
-# Create your views here.
+class ChangeStudentDebitFromClassProfile(generics.RetrieveUpdateDestroyAPIView):
+    queryset = AttendancePerMonth.objects.all()
+    serializer_class = AttendancePerMonthSerializer
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        data = request.data
+
+        total_debt = data.get('total_debt')
+        if total_debt is None:
+            return Response({'error': 'total_debt kiritilishi kerak'}, status=status.HTTP_400_BAD_REQUEST)
+
+        instance.old_money = instance.total_debt
+        instance.total_debt = total_debt
+        instance.save()
+
+        remaining_debt = get_remaining_debt_for_student(instance.student_id)
+
+        return Response(
+            {
+                'msg': "Muvaffaqiyatli o'zgartirildi",
+                'total_debt': instance.total_debt,
+                'remaining_debt': int(instance.total_debt) - int(instance.payment) - int(instance.discount),
+            },
+            status=status.HTTP_200_OK
+        )
 
 
 class DeleteAttendanceMonthApiView(generics.RetrieveUpdateDestroyAPIView):

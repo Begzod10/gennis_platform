@@ -6,7 +6,8 @@ from .Api.AttendanceList import AttendanceList, AttendanceListForAllGroups, Atte
 from .Api.ToAttend import ToAttend, ToAttendSchool
 from .Api.attend_dates import WeekdaysInMonthAPIView
 from .views import DeleteAttendanceMonthApiView, AttendanceYearListView, GroupStudentsForChangeDebtView, \
-    AttendanceDayAPIView, AttendancePeriodsView, GroupMonthlyAttendanceView, AttendanceCreateView, AttendanceDeleteView, AttendanceDatesView, BranchDailyStatsView, GroupAttendanceView
+    AttendanceDayAPIView, AttendancePeriodsView, GroupMonthlyAttendanceView, AttendanceCreateView, AttendanceDeleteView, \
+    AttendanceDatesView, BranchDailyStatsView, GroupAttendanceView, ChangeStudentDebitFromClassProfile
 
 urlpatterns = [
     path('to_attend/<int:group_id>/', ToAttend.as_view(), name='to-attend'),
@@ -22,6 +23,8 @@ urlpatterns = [
     path('school-to-attend-days/<int:group_id>/', WeekdaysInMonthAPIView.as_view(), name='school-to-attend-days'),
     path('attendance_per_month_delete/<int:pk>/', DeleteAttendanceMonthApiView.as_view(),
          name='attendance_delete<str>'),
+    path('attendance_per_month_change/<int:pk>/', ChangeStudentDebitFromClassProfile.as_view(),
+         name='change<str>'),
     path('attendance_year_list/<int:group_id>/', AttendanceYearListView.as_view(), name='attendance_year_list'),
     path('attendance_year_list_all/<int:group_id>/', GroupStudentsForChangeDebtView.as_view(),
          name='attendance_year_list_s'),
