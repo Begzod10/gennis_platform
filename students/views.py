@@ -464,7 +464,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
             for sp in StudentPayment.objects.filter(
                 attendance_id__in=attendance_ids,
                 status=True
-            ).select_related('reason')
+            )  # Removed .select_related('reason') - it's not a ForeignKey
         }
 
         # OPTIMIZATION: Fetch student charity once
@@ -507,7 +507,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 'discount': attendance.discount,
                 'old_money': attendance.old_money,
                 'discount_sum': discount_payment.payment_sum if discount_payment else 0,
-                'discount_reason': discount_payment.reason.name if discount_payment and discount_payment.reason else None,
+                'discount_reason': discount_payment.reason if discount_payment else None,  # Changed: removed .name
                 'discount_id': discount_payment.id if discount_payment else 0,
                 'reason': charity_name,
                 'cash': payments['cash'],
