@@ -286,7 +286,7 @@ class GetSchoolStudents(APIView):
             deleted=False,
             deleted_date__year=current_year,
             deleted_date__month__gte=current_month
-        ).order_by('-deleted_date', '-id').values('group_id')[:1]
+        ).order_by('-id').values('group_id')[:1]
 
         # Get attendance records - ONE record per student
         attendance_records = (
