@@ -419,7 +419,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                     ).order_by('month_date')
                 )
                 for i in qs:
-                    print(i.total_debt)
+                    print(i.total_debt, i.id)
         else:
             qs = (
                 AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id, month_date__gte=start_date,
