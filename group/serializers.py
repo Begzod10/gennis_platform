@@ -278,7 +278,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                 print(f"📊 Total weekdays in full month: {total_weekdays_in_month}")
 
                                 # Calculate price based on actual study days
-                                group_price = instance.price or 0
+                                group_price = exist_month.total_debt or 0
                                 print(f"💰 Group price used: {group_price}")
 
                                 if total_weekdays_in_month > 0:
