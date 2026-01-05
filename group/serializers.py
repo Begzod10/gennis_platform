@@ -181,104 +181,103 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                             # Remove from timetables
                             for time_table in instance.classtimetable_set.all():
                                 student.class_time_table.remove(time_table)
+                    else:
+                        today = datetime.now()
+                        year = today.year
+                        month = today.month
+
+                        for student in students:
+                            del_date = validated_data.get('del_date', None)
+
+                            # Handle deletion date
+                            if del_date:
+                                if isinstance(del_date, str):
+                                    deletion_date = datetime.strptime(del_date, "%Y-%m-%d").date()
+                                elif isinstance(del_date, datetime):
+                                    deletion_date = del_date.date()
                                 else:
-                                today = datetime.now()
-                                year = today.year
-                                month = today.month
+                                    deletion_date = del_date
+                            else:
+                                deletion_date = today.date()
 
-                                for student in students:
-                                    del_date = validated_data.get('del_date', None)
+                            instance.students.remove(student)
 
-                                    # Handle deletion date
-                                    if del_date:
-                                        if isinstance(del_date, str):
-                                            deletion_date = datetime.strptime(del_date, "%Y-%m-%d").date()
-                                        elif isinstance(del_date, datetime):
-                                            deletion_date = del_date.date()
-                                        else:
-                                            deletion_date = del_date
-                                    else:
-                                        deletion_date = today.date()
+                            # Create DeletedStudent record
+                            deleted_student = DeletedStudent.objects.create(
+                                student=student,
+                                group=instance,
+                                comment=comment if comment else None,
+                                group_reason_id=group_reason if group_reason else None
+                            )
 
-                                    instance.students.remove(student)
+                            if del_date:
+                                deleted_student.deleted_date = deletion_date
+                                deleted_student.save(update_fields=['deleted_date'])
 
-                                    # Create DeletedStudent record
-                                    deleted_student = DeletedStudent.objects.create(
-                                        student=student,
-                                        group=instance,
-                                        comment=comment if comment else None,
-                                        group_reason_id=group_reason if group_reason else None
-                                    )
+                            # Update ALL active student history records
+                            StudentHistoryGroups.objects.filter(
+                                group=instance,
+                                student=student,
+                                left_day__isnull=True
+                            ).update(left_day=datetime.now())
 
-                                    if del_date:
-                                        deleted_student.deleted_date = deletion_date
-                                        deleted_student.save(update_fields=['deleted_date'])
+                            # FIXED: Get ALL AttendancePerMonth records for this student/month/group
+                            attendance_records = AttendancePerMonth.objects.filter(
+                                student=student,
+                                month_date__year=year,
+                                month_date__month=month,
+                                group=instance
+                            )
 
-                                    # Update ALL active student history records
-                                    StudentHistoryGroups.objects.filter(
-                                        group=instance,
-                                        student=student,
-                                        left_day__isnull=True
-                                    ).update(left_day=datetime.now())
+                            if attendance_records.exists():
+                                # Calculate study days once (same for all records)
+                                studying_days = [0, 1, 2, 3, 4]  # Monday=0 to Friday=4
+                                start_date = datetime(year, month, 1).date()
+                                end_date = deletion_date
 
-                                    # FIXED: Get ALL AttendancePerMonth records for this student/month/group
-                                    attendance_records = AttendancePerMonth.objects.filter(
-                                        student=student,
-                                        month_date__year=year,
-                                        month_date__month=month,
-                                        group=instance
-                                    )
+                                # Count weekdays from start to deletion date
+                                study_days = 0
+                                current_date = start_date
 
-                                    if attendance_records.exists():
-                                        # Calculate study days once (same for all records)
-                                        studying_days = [0, 1, 2, 3, 4]  # Monday=0 to Friday=4
-                                        start_date = datetime(year, month, 1).date()
-                                        end_date = deletion_date
+                                while current_date <= end_date:
+                                    if current_date.weekday() in studying_days:
+                                        study_days += 1
+                                    current_date += timedelta(days=1)
 
-                                        # Count weekdays from start to deletion date
-                                        study_days = 0
-                                        current_date = start_date
+                                # Calculate total weekdays in full month
+                                last_day_of_month = (datetime(year, month + 1, 1) if month < 12
+                                                     else datetime(year + 1, 1, 1)) - timedelta(days=1)
+                                total_weekdays_in_month = 0
+                                current_date = start_date
 
-                                        while current_date <= end_date:
-                                            if current_date.weekday() in studying_days:
-                                                study_days += 1
-                                            current_date += timedelta(days=1)
+                                while current_date <= last_day_of_month.date():
+                                    if current_date.weekday() in studying_days:
+                                        total_weekdays_in_month += 1
+                                    current_date += timedelta(days=1)
+                                print("attendance_records", attendance_records)
+                                # Update each attendance record
+                                # for exist_month in attendance_records:
+                                #     # Use the original total_debt from THIS specific record
+                                #     group_price = exist_month.total_debt or 0
+                                #
+                                #     if total_weekdays_in_month > 0:
+                                #         price_per_day = group_price / total_weekdays_in_month
+                                #         calculated_debt = int(price_per_day * study_days)
+                                #     else:
+                                #         calculated_debt = 0
+                                #
+                                #     # Calculate how much was already paid
+                                #     already_paid = exist_month.total_debt - exist_month.remaining_debt
+                                #
+                                #     # Update with new calculated debt
+                                #     exist_month.total_debt = calculated_debt
+                                #     exist_month.remaining_debt = max(0, calculated_debt - already_paid)
+                                #     exist_month.present_days = study_days
+                                #     exist_month.save()
 
-                                        # Calculate total weekdays in full month
-                                        last_day_of_month = (datetime(year, month + 1, 1) if month < 12
-                                                             else datetime(year + 1, 1, 1)) - timedelta(days=1)
-                                        total_weekdays_in_month = 0
-                                        current_date = start_date
-
-                                        while current_date <= last_day_of_month.date():
-                                            if current_date.weekday() in studying_days:
-                                                total_weekdays_in_month += 1
-                                            current_date += timedelta(days=1)
-
-                                        # Update each attendance record
-                                        print("attendance_records", len(attendance_records))
-                                        # for exist_month in attendance_records:
-                                        #     # Use the original total_debt from THIS specific record
-                                        #     group_price = exist_month.total_debt or 0
-                                        #
-                                        #     if total_weekdays_in_month > 0:
-                                        #         price_per_day = group_price / total_weekdays_in_month
-                                        #         calculated_debt = int(price_per_day * study_days)
-                                        #     else:
-                                        #         calculated_debt = 0
-                                        #
-                                        #     # Calculate how much was already paid
-                                        #     already_paid = exist_month.total_debt - exist_month.remaining_debt
-                                        #
-                                        #     # Update with new calculated debt
-                                        #     exist_month.total_debt = calculated_debt
-                                        #     exist_month.remaining_debt = max(0, calculated_debt - already_paid)
-                                        #     exist_month.present_days = study_days
-                                        #     exist_month.save()
-
-                                    # Remove from timetable
-                                    for time_table in instance.classtimetable_set.all():
-                                        student.class_time_table.remove(time_table)
+                            # Remove from timetable
+                            for time_table in instance.classtimetable_set.all():
+                                student.class_time_table.remove(time_table)
 
         instance.color = validated_data.get('color', instance.color)
         instance.save()
