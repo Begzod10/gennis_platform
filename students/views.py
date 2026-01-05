@@ -509,7 +509,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 'discount_sum': discount_payment.payment_sum if discount_payment else 0,
                 'discount_reason': discount_payment.reason if discount_payment else None,  # Changed: removed .name
                 'discount_id': discount_payment.id if discount_payment else 0,
-                'reason': discount_payment.reason,  # Changed: removed .name
+                'reason': discount_payment.reason if discount_payment else None,  # Changed: removed .name
                 'cash': payments['cash'],
                 'bank': payments['bank'],
                 'click': payments['click'],
