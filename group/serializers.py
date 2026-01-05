@@ -64,7 +64,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
                   'deleted', 'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system', 'class_number',
                   'color', 'course_types', 'class_number', 'update_method', 'time_table', 'create_type', 'group_type',
-                  'delete_type', 'comment', 'group_reason']
+                  'delete_type', 'comment', 'group_reason', 'del_date']
 
     def create(self, validated_data):
         time_tables = validated_data.pop('time_table', None)
