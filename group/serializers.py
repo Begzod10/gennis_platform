@@ -1,9 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.db.models import Q
 from rest_framework import serializers
 from django.utils.timezone import now
-
+from attendances.models import AttendancePerMonth
 from branch.models import Branch
 from branch.serializers import BranchSerializer
 from classes.models import ClassNumber, ClassColors
@@ -57,13 +57,14 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
     course_types = serializers.PrimaryKeyRelatedField(queryset=CourseTypes.objects.all(), required=False)
     delete_type = serializers.CharField(default=None, allow_blank=True)
     comment = serializers.CharField(default=None, allow_blank=True, required=False)
+    del_date = serializers.DateField(default=None, required=False)
 
     class Meta:
         model = Group
         fields = ['id', 'name', 'price', 'status', 'created_date', 'teacher_salary', 'attendance_days',
                   'deleted', 'branch', 'language', 'level', 'subject', 'students', 'teacher', 'system', 'class_number',
                   'color', 'course_types', 'class_number', 'update_method', 'time_table', 'create_type', 'group_type',
-                  'delete_type', 'comment', 'group_reason']
+                  'delete_type', 'comment', 'group_reason', 'del_date']
 
     def create(self, validated_data):
         time_tables = validated_data.pop('time_table', None)
@@ -76,7 +77,6 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         group = Group.objects.create(**validated_data, system_id=validated_data.get('branch').location.system_id)
         for student in students_data:
             if not active_groups.filter(students__id=student.id).exists():
-
                 group.students.set(students_data)
         group.teacher.set(teacher_data)
         for student in students_data:
@@ -98,109 +98,174 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         comment = validated_data.get("comment")
         group_reason = validated_data.get("group_reason")
         price = validated_data.pop("price", None)
+
         if price:
             instance.price = price
             instance.save()
             today = datetime.now().replace(day=1).strftime("%Y-%m-%d")
-            from attendances.models import AttendancePerMonth
+
             attendances = AttendancePerMonth.objects.filter(month_date__gte=today, group=instance)
 
             for attendance in attendances:
                 attendance.total_debt = price
                 attendance.save()
+
         teacher_status = True
         for attr, value in validated_data.items():
-            if attr != 'update_method' and attr != 'students' and attr != 'teacher':
+            if attr not in ['update_method', 'students', 'teacher']:
                 setattr(instance, attr, value)
 
         if group_type == 'school':
             if 'teacher' in validated_data:
-                teacher_history_group = TeacherHistoryGroups.objects.get(group=instance,
-                                                                         teacher=instance.teacher.all()[0])
-                teacher_history_group.left_day = datetime.now()
-                teacher_history_group.save()
-                teach = instance.teacher.all()[0]
-                # request(url=f"{classroom_server}/delete_teacher_from_group/{teach.user_id}/{instance.id}/turon",
-                #         method='DELETE')
+                # Get current teacher
+                current_teacher = instance.teacher.first()
+                if current_teacher:
+                    teacher_history_group = TeacherHistoryGroups.objects.filter(
+                        group=instance,
+                        teacher=current_teacher,
+                        left_day__isnull=True
+                    ).first()
 
-                for time_table in instance.classtimetable_set.all():
-                    instance.teacher.all()[0].class_time_table.remove(time_table)
-                    validated_data.get('teacher')[0].class_time_table.add(time_table)
-                instance.teacher.remove(instance.teacher.all()[0])
-                instance.teacher.remove(*instance.teacher.all())
-                instance.teacher.add(validated_data.get('teacher')[0])
-                TeacherHistoryGroups.objects.create(group=instance, teacher=validated_data.get('teacher')[0],
-                                                    joined_day=datetime.now())
+                    if teacher_history_group:
+                        teacher_history_group.left_day = datetime.now()
+                        teacher_history_group.save()
+
+                    # Remove teacher from timetables
+                    for time_table in instance.classtimetable_set.all():
+                        current_teacher.class_time_table.remove(time_table)
+                        validated_data.get('teacher')[0].class_time_table.add(time_table)
+
+                    instance.teacher.clear()
+                    instance.teacher.add(validated_data.get('teacher')[0])
+
+                    TeacherHistoryGroups.objects.create(
+                        group=instance,
+                        teacher=validated_data.get('teacher')[0],
+                        joined_day=datetime.now()
+                    )
+
             if update_method:
                 if update_method == "add_students":
+                    current_teacher = instance.teacher.first()
+
                     for student in students:
                         student.joined_group = datetime.now()
                         student.save()
                         instance.students.add(student)
-                        StudentHistoryGroups.objects.create(group=instance, student=student,
-                                                            teacher=instance.teacher.all()[
-                                                                0] if instance.teacher.all() else None,
-                                                            joined_day=datetime.now())
-                        if instance.classtimetable_set.all():
-                            for time_table in instance.classtimetable_set.all():
-                                student.class_time_table.add(time_table)
-                    create_school_student_debts(instance, students)
-                elif update_method == "remove_students":
 
+                        StudentHistoryGroups.objects.create(
+                            group=instance,
+                            student=student,
+                            teacher=current_teacher,
+                            joined_day=datetime.now()
+                        )
+
+                        # Add to timetables
+                        for time_table in instance.classtimetable_set.all():
+                            student.class_time_table.add(time_table)
+
+                    create_school_student_debts(instance, students)
+
+                elif update_method == "remove_students":
                     if delete_type == 'new_students':
                         for student in students:
-                            today = datetime.now()
-                            date = datetime(today.year, today.month, 1)
-                            month_date = date.strftime("%Y-%m-%d")
-                            # attendances_per_month = student.attendancepermonth_set.filter(group=instance,
-                            #                                                               student=student,
-                            #                                                               month_date__gte=month_date,
-                            #                                                               payment=0)
-                            # for attendance in attendances_per_month:
-                            #     attendance.delete()
                             instance.students.remove(student)
-                            student_history_group = StudentHistoryGroups.objects.get(group=instance,
-                                                                                     teacher=instance.teacher.all()[
-                                                                                         0] if instance.teacher.all() else None,
-                                                                                     student=student)
-                            student_history_group.left_day = datetime.now()
-                            student_history_group.save()
-                            if instance.classtimetable_set.all():
-                                for time_table in instance.classtimetable_set.all():
-                                    student.class_time_table.remove(time_table)
+
+                            # Update ALL active history records (close them all)
+                            StudentHistoryGroups.objects.filter(
+                                group=instance,
+                                student=student,
+                                left_day__isnull=True
+                            ).update(left_day=datetime.now())
+
+                            # Remove from timetables
+                            for time_table in instance.classtimetable_set.all():
+                                student.class_time_table.remove(time_table)
                     else:
+                        today = datetime.now()
+                        year = today.year
+                        month = today.month
+
                         for student in students:
-                            today = datetime.now()
-                            date = datetime(today.year, today.month, 1)
-                            month_date = date.strftime("%Y-%m-%d")
-                            # attendances_per_month = student.attendancepermonth_set.filter(group=instance,
-                            #                                                               student=student,
-                            #                                                               month_date__gte=month_date,
-                            #                                                               payment=0)
-                            # for attendance in attendances_per_month:
-                            #     attendance.delete()
-                            # attendances_per_month2 = student.attendancepermonth_set.filter(
-                            #     student=student,
-                            #     month_date__lte=month_date,
-                            #     payment=0)
-                            # for attendance in attendances_per_month2:
-                            #     if attendance.group == instance:
-                            #         attendance.delete()
+                            del_date = validated_data.get('del_date', None)
+
                             instance.students.remove(student)
-                            DeletedStudent.objects.create(student=student, group=instance,
-                                                          comment=comment if comment else None,
-                                                          group_reason_id=group_reason if group_reason else None)
-                            student_history_group = StudentHistoryGroups.objects.get(group=instance,
-                                                                                     teacher=instance.teacher.all()[
-                                                                                         0] if instance.teacher.all() else None,
-                                                                                     student=student)
-                            student_history_group.left_day = datetime.now()
-                            student_history_group.save()
-                            if instance.classtimetable_set.all():
-                                for time_table in instance.classtimetable_set.all():
-                                    student.class_time_table.remove(time_table)
+
+                            # Create DeletedStudent record
+                            deleted_student = DeletedStudent.objects.create(
+                                student=student,
+                                group=instance,
+                                comment=comment if comment else None,
+                                group_reason_id=group_reason if group_reason else None,
+                                deleted_date=del_date
+                            )
+
+                            # Update ALL active student history records
+                            StudentHistoryGroups.objects.filter(
+                                group=instance,
+                                student=student,
+                                left_day__isnull=True
+                            ).update(left_day=datetime.now())
+
+                            # Find or get AttendancePerMonth
+                            exist_month = AttendancePerMonth.objects.filter(
+                                student=student,
+                                month_date__year=year,
+                                month_date__month=month,
+                                group=instance
+                            ).first()
+
+                            if exist_month:
+                                # Calculate actual study days from month start to deletion date
+                                studying_days = [0, 1, 2, 3, 4]  # Monday=0 to Friday=4
+                                start_date = datetime(year, month, 1).date()
+                                end_date = del_date.date() if hasattr(del_date, 'date') else del_date
+
+                                # Count weekdays (Monday-Friday) from start to deletion date
+                                study_days = 0
+                                current_date = start_date
+
+                                while current_date <= end_date:
+                                    if current_date.weekday() in studying_days:
+                                        study_days += 1
+                                    current_date += timedelta(days=1)
+
+                                # Calculate total weekdays in the full month
+                                last_day_of_month = (datetime(year, month + 1, 1) if month < 12
+                                                     else datetime(year + 1, 1, 1)) - timedelta(days=1)
+                                total_weekdays_in_month = 0
+                                current_date = start_date
+
+                                while current_date <= last_day_of_month.date():
+                                    if current_date.weekday() in studying_days:
+                                        total_weekdays_in_month += 1
+                                    current_date += timedelta(days=1)
+
+                                # Calculate price based on actual study days
+                                group_price = instance.price or 0
+
+                                if total_weekdays_in_month > 0:
+                                    price_per_day = group_price / total_weekdays_in_month
+                                    calculated_debt = int(price_per_day * study_days)
+                                else:
+                                    calculated_debt = 0
+
+                                # Calculate how much was already paid
+                                already_paid = exist_month.total_debt - exist_month.remaining_debt
+
+                                # Update with new calculated debt
+                                exist_month.total_debt = calculated_debt
+                                exist_month.remaining_debt = max(0, calculated_debt - already_paid)
+                                exist_month.present_days = study_days
+                                exist_month.save()
+
+                            # Remove from timetable
+                            for time_table in instance.classtimetable_set.all():
+                                student.class_time_table.remove(time_table)
+
         instance.color = validated_data.get('color', instance.color)
         instance.save()
+
         from group.serializers_list.serializers_self import GroupListSerializer
         return GroupListSerializer(instance).data
 

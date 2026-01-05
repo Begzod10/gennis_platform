@@ -1,13 +1,14 @@
 from django.urls import path
 
-from .views import TeacherPaymentsListView, TeachersDebtedStudentsListView, TeacherProfileView, \
-    TeachersAttendaceStudentsListView, GroupListView
+from .views import TeacherGroupProfileView, TeacherProfileView, SalaryYearsView, TeacherSalaryView, TeacherClassesView, \
+    StudentScoreView
 
 app_name = 'teachers'
 urlpatterns = [
-    path('payments/', TeacherPaymentsListView.as_view(), name='teacher-payments'),
-    path('debted-students/', TeachersDebtedStudentsListView.as_view(), name='debted-students'),
-    path('attandance-students/', TeachersAttendaceStudentsListView.as_view(), name='debted-students'),
-    path('profile/', TeacherProfileView.as_view(), name='teacher-profile'),
-    path('groups/', GroupListView.as_view(), name='teacher-profile'),
+    path('group-profile/', TeacherGroupProfileView.as_view(), name='group-profile'),
+    path('teacher-profile/', TeacherProfileView.as_view(), name='teacher-profile'),
+    path('salary-years/', SalaryYearsView.as_view(), name='salary-years'),
+    path('teacher-salary/', TeacherSalaryView.as_view(), name='teacher-salary'),
+    path('teacher-classes/', TeacherClassesView.as_view(), name='teacher-classes'),
+    path('student-score/', StudentScoreView.as_view(), name='student-score'),
 ]

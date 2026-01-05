@@ -3,6 +3,7 @@ from django.db import models
 from students.models import Student
 from teachers.models import Teacher
 from group.models import Group
+from flows.models import Flow
 
 
 class AttendancePerMonth(models.Model):
@@ -105,3 +106,16 @@ class GroupMonthlySummary(models.Model):
 
     def __str__(self):
         return f"{self.group.name} - {self.year}/{self.month}"
+
+
+class StudentScoreByTeacher(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    flow = models.ForeignKey(Flow, on_delete=models.CASCADE, null=True)
+    homework = models.IntegerField(default=0)
+    activeness = models.IntegerField(default=0)
+    status = models.BooleanField(default=False)
+    average = models.IntegerField(default=0)
+    day = models.DateField(auto_now_add=True)
+

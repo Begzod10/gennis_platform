@@ -55,4 +55,4 @@ class RecurringTaskMiddleware(MiddlewareMixin):
         old_task.last_generated = today
         old_task.save()
 
-        print(f"[RECURRING] Yangi task yaratildi: {new_task.title} | deadline: {new_deadline}")
+
