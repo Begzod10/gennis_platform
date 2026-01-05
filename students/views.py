@@ -418,8 +418,8 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                         year_number=ExtractYear('month_date'),
                     ).order_by('month_date')
                 )
-                for i in qs:
-                    print(i.total_debt, i.id)
+                return qs
+
         else:
             qs = (
                 AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id, month_date__gte=start_date,
@@ -427,16 +427,18 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                     month_number=ExtractMonth('month_date'),
                     year_number=ExtractYear('month_date'), ).order_by('month_date'))
 
-        # Optional: ?month=1..12 mapped to the correct year in this academic window
-        month_str = self.request.query_params.get("month")
-        if month_str and month_str.isdigit():
-            m = int(month_str)
-            if 1 <= m <= 12:
-                year_for_month = academic_start_year if m in (9, 10, 11, 12) else academic_start_year + 1
-                qs = qs.filter(month_date__year=year_for_month, month_date__month=m)
+            return qs
 
-        # ✅ Return queryset of model instances (with annotations)
-        return qs
+        # # Optional: ?month=1..12 mapped to the correct year in this academic window
+        # month_str = self.request.query_params.get("month")
+        # if month_str and month_str.isdigit():
+        #     m = int(month_str)
+        #     if 1 <= m <= 12:
+        #         year_for_month = academic_start_year if m in (9, 10, 11, 12) else academic_start_year + 1
+        #         qs = qs.filter(month_date__year=year_for_month, month_date__month=m)
+
+        # # ✅ Return queryset of model instances (with annotations)
+        # return qs
 
     def retrieve(self, request, *args, **kwargs):
         queryset = self.get_queryset()
