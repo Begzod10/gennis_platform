@@ -418,6 +418,8 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                         year_number=ExtractYear('month_date'),
                     ).order_by('month_date')
                 )
+                for i in qs:
+                    print(i.total_debt)
         else:
             qs = (
                 AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id, month_date__gte=start_date,
