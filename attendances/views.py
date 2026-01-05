@@ -72,7 +72,7 @@ class DeleteAttendanceMonthApiView(generics.RetrieveUpdateDestroyAPIView):
         instance.save()
 
         """Yillik chegirma"""
-        attendances = AttendancePerMonth.objects.filter(student_id=instance.student)
+        attendances = AttendancePerMonth.objects.filter(student_id=instance.student).all()
 
         for i in attendances:
             discount = int(data['discount'])
@@ -91,6 +91,7 @@ class DeleteAttendanceMonthApiView(generics.RetrieveUpdateDestroyAPIView):
                     "group": i.student.groups_student.first(), "branch": i.student.user.branch})
 
         instance.old_money = instance.total_debt
+        instance.discount = int(data['discount'])
         instance.total_debt = total_debt
         instance.save()
 
