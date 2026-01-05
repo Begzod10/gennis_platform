@@ -57,7 +57,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
     course_types = serializers.PrimaryKeyRelatedField(queryset=CourseTypes.objects.all(), required=False)
     delete_type = serializers.CharField(default=None, allow_blank=True)
     comment = serializers.CharField(default=None, allow_blank=True, required=False)
-    del_date = serializers.DateField(default=None,  required=False)
+    del_date = serializers.DateField(default=None, required=False)
 
     class Meta:
         model = Group
@@ -188,7 +188,6 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
 
                         for student in students:
                             del_date = validated_data.get('del_date', None)
-                            deletion_date = del_date if del_date else datetime.now()
 
                             instance.students.remove(student)
 
@@ -198,7 +197,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                 group=instance,
                                 comment=comment if comment else None,
                                 group_reason_id=group_reason if group_reason else None,
-                                deleted_date=deletion_date
+                                deleted_date=del_date
                             )
 
                             # Update ALL active student history records
