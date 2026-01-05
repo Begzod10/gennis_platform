@@ -383,7 +383,7 @@ class DeleteFromDeleted(APIView):
         return Response({'msg': "Student muvoffaqiyatlik orqaga qaytarildi"}, status=status.HTTP_200_OK)
 
 
-class MissingAttendanceListView(generics.RetrieveAPIView):
+class MissingAttendanceView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')
