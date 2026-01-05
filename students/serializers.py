@@ -141,8 +141,9 @@ def get_remaining_debt_for_student(student_id):
             if month.payment < 0:
                 month.payment = 0
                 month.save()
-            month.remaining_debt = max(0, month.total_debt - (month.payment + month.discount))
-            month.save()
+            if month.total_debt:
+                month.remaining_debt = max(0, month.total_debt - (month.payment + month.discount))
+                month.save()
 
         remaining_debt_sum = AttendancePerMonth.objects.filter(
             student_id=student_id,
