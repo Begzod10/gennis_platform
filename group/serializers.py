@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from django.db.models import Q
 from rest_framework import serializers
 from django.utils.timezone import now
-
+from attendances.models import AttendancePerMonth
 from branch.models import Branch
 from branch.serializers import BranchSerializer
 from classes.models import ClassNumber, ClassColors
@@ -102,7 +102,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
             instance.price = price
             instance.save()
             today = datetime.now().replace(day=1).strftime("%Y-%m-%d")
-            from attendances.models import AttendancePerMonth
+
             attendances = AttendancePerMonth.objects.filter(month_date__gte=today, group=instance)
 
             for attendance in attendances:
