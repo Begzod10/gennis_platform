@@ -57,6 +57,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
     course_types = serializers.PrimaryKeyRelatedField(queryset=CourseTypes.objects.all(), required=False)
     delete_type = serializers.CharField(default=None, allow_blank=True)
     comment = serializers.CharField(default=None, allow_blank=True, required=False)
+    del_date = serializers.CharField(default=None, allow_blank=True, required=False)
 
     class Meta:
         model = Group
