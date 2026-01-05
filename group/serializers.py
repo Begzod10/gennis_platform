@@ -189,6 +189,23 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                         for student in students:
                             del_date = validated_data.get('del_date', None)
 
+                            print(f"\n{'=' * 60}")
+                            print(f"🔍 Processing student: {student.user.name} {student.user.surname}")
+                            print(f"📅 del_date received: {del_date} (type: {type(del_date)})")
+
+                            # Handle deletion date
+                            if del_date:
+                                if isinstance(del_date, str):
+                                    deletion_date = datetime.strptime(del_date, "%Y-%m-%d").date()
+                                elif isinstance(del_date, datetime):
+                                    deletion_date = del_date.date()
+                                else:
+                                    deletion_date = del_date
+                            else:
+                                deletion_date = today.date()
+
+                            print(f"📅 deletion_date converted: {deletion_date} (type: {type(deletion_date)})")
+
                             instance.students.remove(student)
 
                             # Create DeletedStudent record
@@ -196,9 +213,12 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                 student=student,
                                 group=instance,
                                 comment=comment if comment else None,
-                                group_reason_id=group_reason if group_reason else None,
-                                deleted_date=del_date
+                                group_reason_id=group_reason if group_reason else None
                             )
+
+                            if del_date:
+                                deleted_student.deleted_date = deletion_date
+                                deleted_student.save(update_fields=['deleted_date'])
 
                             # Update ALL active student history records
                             StudentHistoryGroups.objects.filter(
@@ -215,11 +235,18 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                 group=instance
                             ).first()
 
+                            print(f"📊 exist_month found: {exist_month is not None}")
+
                             if exist_month:
+                                print(f"💰 Group price: {instance.price}")
+                                print(f"📆 Calculating for year={year}, month={month}")
+
                                 # Calculate actual study days from month start to deletion date
                                 studying_days = [0, 1, 2, 3, 4]  # Monday=0 to Friday=4
                                 start_date = datetime(year, month, 1).date()
-                                end_date = del_date.date() if hasattr(del_date, 'date') else del_date
+                                end_date = deletion_date
+
+                                print(f"📅 Period: {start_date} to {end_date}")
 
                                 # Count weekdays (Monday-Friday) from start to deletion date
                                 study_days = 0
@@ -228,11 +255,18 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                 while current_date <= end_date:
                                     if current_date.weekday() in studying_days:
                                         study_days += 1
+                                        print(f"   ✓ {current_date} ({current_date.strftime('%A')}) - counted")
+                                    else:
+                                        print(f"   ✗ {current_date} ({current_date.strftime('%A')}) - weekend, skipped")
                                     current_date += timedelta(days=1)
+
+                                print(f"📊 Study days counted: {study_days}")
 
                                 # Calculate total weekdays in the full month
                                 last_day_of_month = (datetime(year, month + 1, 1) if month < 12
                                                      else datetime(year + 1, 1, 1)) - timedelta(days=1)
+                                print(f"📅 Month ends: {last_day_of_month.date()}")
+
                                 total_weekdays_in_month = 0
                                 current_date = start_date
 
@@ -241,17 +275,26 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                         total_weekdays_in_month += 1
                                     current_date += timedelta(days=1)
 
+                                print(f"📊 Total weekdays in full month: {total_weekdays_in_month}")
+
                                 # Calculate price based on actual study days
                                 group_price = instance.price or 0
+                                print(f"💰 Group price used: {group_price}")
 
                                 if total_weekdays_in_month > 0:
                                     price_per_day = group_price / total_weekdays_in_month
                                     calculated_debt = int(price_per_day * study_days)
+                                    print(f"💵 Price per day: {price_per_day:.2f}")
+                                    print(f"💰 Calculated debt: {calculated_debt}")
                                 else:
                                     calculated_debt = 0
+                                    print(f"⚠️ WARNING: total_weekdays_in_month is 0!")
 
                                 # Calculate how much was already paid
                                 already_paid = exist_month.total_debt - exist_month.remaining_debt
+                                print(f"💳 Already paid: {already_paid}")
+                                print(f"💰 Old total_debt: {exist_month.total_debt}")
+                                print(f"💸 Old remaining_debt: {exist_month.remaining_debt}")
 
                                 # Update with new calculated debt
                                 exist_month.total_debt = calculated_debt
@@ -259,9 +302,17 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                 exist_month.present_days = study_days
                                 exist_month.save()
 
+                                print(f"✅ NEW total_debt: {exist_month.total_debt}")
+                                print(f"✅ NEW remaining_debt: {exist_month.remaining_debt}")
+                                print(f"✅ NEW present_days: {exist_month.present_days}")
+                            else:
+                                print(f"⚠️ No AttendancePerMonth record found for this student/month/group")
+
                             # Remove from timetable
                             for time_table in instance.classtimetable_set.all():
                                 student.class_time_table.remove(time_table)
+
+                            print(f"{'=' * 60}\n")
 
         instance.color = validated_data.get('color', instance.color)
         instance.save()
