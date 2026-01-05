@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.db.models import Q
 from rest_framework import serializers
@@ -76,7 +76,6 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         group = Group.objects.create(**validated_data, system_id=validated_data.get('branch').location.system_id)
         for student in students_data:
             if not active_groups.filter(students__id=student.id).exists():
-
                 group.students.set(students_data)
         group.teacher.set(teacher_data)
         for student in students_data:
@@ -169,33 +168,93 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                                 for time_table in instance.classtimetable_set.all():
                                     student.class_time_table.remove(time_table)
                     else:
+
                         for student in students:
                             today = datetime.now()
                             date = datetime(today.year, today.month, 1)
+                            del_date = validated_data.get('del_date', None)
                             month_date = date.strftime("%Y-%m-%d")
-                            # attendances_per_month = student.attendancepermonth_set.filter(group=instance,
-                            #                                                               student=student,
-                            #                                                               month_date__gte=month_date,
-                            #                                                               payment=0)
-                            # for attendance in attendances_per_month:
-                            #     attendance.delete()
-                            # attendances_per_month2 = student.attendancepermonth_set.filter(
-                            #     student=student,
-                            #     month_date__lte=month_date,
-                            #     payment=0)
-                            # for attendance in attendances_per_month2:
-                            #     if attendance.group == instance:
-                            #         attendance.delete()
+                            year = today.year
+                            month = today.month
+
                             instance.students.remove(student)
-                            DeletedStudent.objects.create(student=student, group=instance,
-                                                          comment=comment if comment else None,
-                                                          group_reason_id=group_reason if group_reason else None)
-                            student_history_group = StudentHistoryGroups.objects.get(group=instance,
-                                                                                     teacher=instance.teacher.all()[
-                                                                                         0] if instance.teacher.all() else None,
-                                                                                     student=student)
+
+                            # Create DeletedStudent record
+                            deleted_student = DeletedStudent.objects.create(
+                                student=student,
+                                group=instance,
+                                comment=comment if comment else None,
+                                group_reason_id=group_reason if group_reason else None,
+                                deleted_date=del_date if del_date else datetime.now()
+                            )
+                            # Update student history
+                            student_history_group = StudentHistoryGroups.objects.get(
+                                group=instance,
+                                teacher=instance.teacher.all()[0] if instance.teacher.all() else None,
+                                student=student
+                            )
                             student_history_group.left_day = datetime.now()
                             student_history_group.save()
+                            # Find or get AttendancePerMonth
+                            exist_month = AttendancePerMonth.objects.filter(
+                                student=student,
+                                month_date__year=year,
+                                month_date__month=month,
+                                group=instance
+                            ).first()
+
+                            if exist_month:
+                                # Calculate actual study days from month start to deletion date
+                                studying_days = [0, 1, 2, 3, 4]  # Monday=0 to Friday=4
+                                start_date = datetime(year, month, 1).date()
+                                end_date = deleted_student.deleted_date  # This is today's date
+
+                                # Count weekdays (Monday-Friday) from start to deletion date
+                                study_days = 0
+                                current_date = start_date
+
+                                while current_date <= end_date:
+                                    if current_date.weekday() in studying_days:
+                                        study_days += 1
+                                    current_date += timedelta(days=1)
+
+                                # Calculate total weekdays in the full month
+                                last_day_of_month = (datetime(year, month + 1, 1) if month < 12
+                                                     else datetime(year + 1, 1, 1)) - timedelta(days=1)
+                                total_weekdays_in_month = 0
+                                current_date = start_date
+
+                                while current_date <= last_day_of_month.date():
+                                    if current_date.weekday() in studying_days:
+                                        total_weekdays_in_month += 1
+                                    current_date += timedelta(days=1)
+
+                                # Calculate price based on actual study days
+                                group_price = instance.price or 0
+
+                                if total_weekdays_in_month > 0:
+                                    price_per_day = group_price / total_weekdays_in_month
+                                    calculated_debt = int(price_per_day * study_days)
+                                else:
+                                    calculated_debt = 0
+
+                                # Update existing AttendancePerMonth record
+                                # Calculate how much was already paid
+                                already_paid = exist_month.total_debt - exist_month.remaining_debt
+
+                                # Update with new calculated debt
+                                exist_month.total_debt = calculated_debt
+                                exist_month.remaining_debt = max(0, calculated_debt - already_paid)  # Can't be negative
+                                exist_month.present_days = study_days
+                                exist_month.save()
+
+                                # print(f"  🔄 Updated: {student.user.name} {student.user.surname} - "
+                                #       f"Study Days: {study_days}/{total_weekdays_in_month} - "
+                                #       f"Old Debt: {group_price:,} → New Debt: {calculated_debt:,} - "
+                                #       f"Already Paid: {already_paid:,} - "
+                                #       f"Remaining: {exist_month.remaining_debt:,}")
+
+                            # Remove from timetable
                             if instance.classtimetable_set.all():
                                 for time_table in instance.classtimetable_set.all():
                                     student.class_time_table.remove(time_table)

@@ -770,3 +770,12 @@ class StudentClassNumberUpdateView(APIView):
             student.class_number = class_number_get
             student.save()
         return Response({"msg": "O'quvchilar sinf raqami o'zgartirildi"}, status=status.HTTP_200_OK)
+
+
+class ChangeDateDeletedStudent(APIView):
+    def post(self, request):
+        student_id = request.data.get('student_id')
+        student = DeletedStudent.objects.get(id=student_id)
+        student.deleted_date = request.data.get('deleted_date')
+        student.save()
+        return Response({"msg": "O'quvchi o'chirilgan vaqti o'zgartirildi"}, status=status.HTTP_200_OK)
