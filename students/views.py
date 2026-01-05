@@ -403,7 +403,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
             deleted_student = DeletedStudent.objects.filter(
                 student_id=student_id
             ).order_by("-deleted_date").first()
-
+            print('deleted_group', deleted_student.group_id)
             if deleted_student:
                 qs = (
                     AttendancePerMonth.objects.filter(
