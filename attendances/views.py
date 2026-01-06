@@ -97,27 +97,24 @@ class DeleteAttendanceMonthApiView(generics.RetrieveUpdateDestroyAPIView):
         instance.save()
 
         """Yillik chegirma"""
-        attendances = AttendancePerMonth.objects.filter(student_id=instance.student).all()
 
-        for i in attendances:
-            discount = int(data['discount'])
+        discount = int(data['discount'])
 
-            if data.get("persentage"):
-                discount_amount = (i.total_debt * discount) / 100
-                i.discount_percentage = discount
-            else:
-                discount_amount = discount
+        if data.get("persentage"):
+            discount_amount = (instance.total_debt * discount) / 100
+            instance.discount_percentage = discount
+        else:
+            discount_amount = discount
 
-            i.discount = discount_amount
-            i.save()
+        instance.discount = discount_amount
+        instance.save()
 
-            StudentCharity.objects.update_or_create(student=i.student,
-                                                    defaults={'charity_sum': discount_amount, 'name': data['reason'],
-                                                              "group": i.student.groups_student.first(),
-                                                              "branch": i.student.user.branch})
+        StudentCharity.objects.update_or_create(student=instance.student,
+                                                defaults={'charity_sum': discount_amount, 'name': data['reason'],
+                                                          "group": instance.student.groups_student.first(),
+                                                          "branch": instance.student.user.branch})
 
         instance.old_money = instance.total_debt
-        instance.discount = int(data['discount'])
         instance.total_debt = total_debt
         instance.save()
 
