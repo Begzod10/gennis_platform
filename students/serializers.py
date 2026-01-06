@@ -439,10 +439,11 @@ class StudentPaymentListSerializer(serializers.ModelSerializer):
     payment_type = serializers.SerializerMethodField(required=False)
     payment_sum = serializers.IntegerField(required=False)
     status = serializers.BooleanField(required=False, source='deleted')
+    attendance =serializers.SerializerMethodField()
 
     class Meta:
         model = StudentPayment
-        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'added_data', 'date']
+        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'added_data', 'date','attendance']
 
     def get_payment_type(self, obj):
         info = {
@@ -450,6 +451,10 @@ class StudentPaymentListSerializer(serializers.ModelSerializer):
             'name': "skidka" if obj.status == True else obj.payment_type.name
         }
         return info
+
+    def get_attendance(self, obj):
+        """return month name"""
+        return obj.attendance.month_date.strftime("%B")
 
 
 class DeletedNewStudentSerializer(serializers.ModelSerializer):
