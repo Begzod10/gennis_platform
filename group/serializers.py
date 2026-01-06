@@ -131,9 +131,9 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
                         teacher_history_group.save()
 
                     # Remove teacher from timetables
-                    for time_table in instance.classtimetable_set.all():
-                        current_teacher.class_time_table.remove(time_table)
-                        validated_data.get('teacher')[0].class_time_table.add(time_table)
+                    # for time_table in instance.classtimetable_set.all():
+                    #     current_teacher.class_time_table.remove(time_table)
+                    #     validated_data.get('teacher')[0].class_time_table.add(time_table)
 
                     instance.teacher.clear()
                     instance.teacher.add(validated_data.get('teacher')[0])
