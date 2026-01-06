@@ -111,8 +111,8 @@ class DeleteAttendanceMonthApiView(generics.RetrieveUpdateDestroyAPIView):
 
         StudentCharity.objects.update_or_create(student=instance.student,
                                                 defaults={'charity_sum': discount_amount, 'name': data['reason'],
-                                                          "group": i.student.groups_student.first(),
-                                                          "branch": i.student.user.branch})
+                                                          "group": instance.student.groups_student.first(),
+                                                          "branch": instance.student.user.branch})
 
         instance.old_money = instance.total_debt
         instance.total_debt = total_debt
