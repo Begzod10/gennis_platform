@@ -506,6 +506,16 @@ class TeacherTodayAttendance(APIView):
 
         highest_percentage = max(percentages) if percentages else 0
 
+        # ✅ DASHBOARD GA SAQLASH
+        dashboard, _ = TeacherDashboard.objects.get_or_create(
+            teacher=teacher,
+            created_at=today
+        )
+
+        dashboard.attendance_percentage = average_percentage
+        dashboard.class_count = class_count
+        dashboard.save()
+
         return Response({
             "summary": {
                 "average_percentage": average_percentage,
@@ -514,7 +524,6 @@ class TeacherTodayAttendance(APIView):
             },
             "attendance_history": results
         })
-
 
 class TeacherDashboardView(APIView):
     permission_classes = [IsAuthenticated]
