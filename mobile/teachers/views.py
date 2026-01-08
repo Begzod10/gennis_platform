@@ -481,6 +481,8 @@ class TeacherTodayAttendance(APIView):
                 total=Count("id"),
             )
         )
+        print(teacher.id)
+        print(qs)
 
         result = []
         for item in qs:
