@@ -197,27 +197,27 @@ def update_deleted_students_debts():
                     calculated_debt = 0
 
                 # Create new record for LAST deletion only
-                new_record = AttendancePerMonth.objects.create(
-                    student=last_deletion.student,
-                    teacher=last_deletion.teacher,
-                    group=last_deletion.group,
-                    month_date=month_date,
-                    total_debt=calculated_debt,
-                    remaining_debt=calculated_debt,
-                    payment=0,
-                    status=False,
-                    system=last_deletion.group.system,
-                    discount=0,
-                    discount_percentage=0,
-                    present_days=study_days,
-                    absent_days=0,
-                    scored_days=0
-                )
+                # new_record = AttendancePerMonth.objects.create(
+                #     student=last_deletion.student,
+                #     teacher=last_deletion.teacher,
+                #     group=last_deletion.group,
+                #     month_date=month_date,
+                #     total_debt=calculated_debt,
+                #     remaining_debt=calculated_debt,
+                #     payment=0,
+                #     status=False,
+                #     system=last_deletion.group.system,
+                #     discount=0,
+                #     discount_percentage=0,
+                #     present_days=study_days,
+                #     absent_days=0,
+                #     scored_days=0
+                # )
                 print(
                     f"  ➕ Created: {last_deletion.student.user.name} {last_deletion.student.user.surname} - "
                     f"Group: {last_deletion.group.class_number.number}-{last_deletion.group.color.name} - "
                     f"Study Days: {study_days}/{total_weekdays_in_month} - "
-                    f"Debt: {new_record.total_debt:,} (ID: {new_record.id})")
+                    f"Debt: {calculated_debt:,} (ID: )")
                 created_count += 1
 
     print(f"\n✨ Summary:")

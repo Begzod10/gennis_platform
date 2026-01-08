@@ -611,7 +611,6 @@ class TeacherChangeLessonPlanView(generics.UpdateAPIView):
         })
 
 
-
 class TeacherGetLessonPlanView(generics.ListAPIView):
     serializer_class = LessonPlanGetSerializer
     permission_classes = [IsAuthenticated]
