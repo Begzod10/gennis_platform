@@ -467,6 +467,9 @@ class TeacherTodayAttendance(APIView):
             )
 
         today = localdate()
+        print(today.year)
+        print(today.month)
+        print(today.day)
 
         qs = (
             StudentScoreByTeacher.objects
