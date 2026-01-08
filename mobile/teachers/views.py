@@ -17,7 +17,7 @@ from group.models import GroupSubjects
 from lesson_plan.models import LessonPlan
 from lesson_plan.serializers import LessonPlanGetSerializer
 from mobile.models import TeacherDashboard
-from mobile.teachers.serializers import TeacherDashboardSerializer
+from mobile.teachers.serializers import TeacherDashboardSerializer, TeacherLessonPlanGetSerializer
 from school_time_table.models import ClassTimeTable
 from teachers.models import Teacher, TeacherSalary
 
@@ -619,7 +619,7 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
             status_flag = current_date < lesson_plan.date
             data.append({
                 "group": lesson_plan.group.name,
-                "lesson_plan": LessonPlanGetSerializer(lesson_plan).data,
+                "lesson_plan": TeacherLessonPlanGetSerializer(lesson_plan).data,
                 "status": status_flag
             })
 
