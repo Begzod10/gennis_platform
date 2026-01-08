@@ -1,26 +1,20 @@
-import calendar
-import json
 from datetime import datetime
-from teachers.serializers import TeacherSalaryList
-from django.db.models.functions import ExtractMonth, ExtractYear
-from django.shortcuts import get_object_or_404
-from rest_framework import permissions, generics
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from group.models import GroupSubjects
-from attendances.models import AttendancePerDay, Student, AttendancePerMonth, Group, StudentScoreByTeacher
-from time_table.models import GroupTimeTable
-from permissions.response import QueryParamFilterMixin
-from teachers.models import Teacher, TeacherSalary
-from user.models import CustomUser
-from flows.models import Flow
-from school_time_table.models import ClassTimeTable
-from ..get_user import get_user
-from django.db.models import Prefetch
-from django.utils import timezone
 from datetime import timedelta
+
 from django.db import transaction
 from django.db.models import Avg, Count, Q, Prefetch
+from django.db.models.functions import ExtractYear
+from django.utils import timezone
+from django.utils.timezone import localdate
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from attendances.models import Student, Group, StudentScoreByTeacher
+from flows.models import Flow
+from group.models import GroupSubjects
+from school_time_table.models import ClassTimeTable
+from teachers.models import Teacher, TeacherSalary
 
 
 class TeacherGroupProfileView(APIView):
@@ -457,3 +451,48 @@ class StudentScoreView(APIView):
                 StudentScoreByTeacher.objects.bulk_create(scores_to_create)
 
         return Response({'status': 'success'})
+
+
+class TeacherTodayAttendance(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            teacher = Teacher.objects.get(user=request.user)
+        except Teacher.DoesNotExist:
+            return Response(
+                {"detail": "Siz teacher emassiz"},
+                status=403
+            )
+
+        today = localdate()
+
+        qs = (
+            StudentScoreByTeacher.objects
+            .filter(teacher=teacher, day=today)
+            .values("group__name", "flow__name")
+            .annotate(
+                present=Count("id", filter=Q(status=True)),
+                absent=Count("id", filter=Q(status=False)),
+                total=Count("id"),
+            )
+        )
+
+        result = []
+        for item in qs:
+            total = item["total"]
+            present = item["present"]
+
+            percentage = round((present / total) * 100, 1) if total else 0
+
+            result.append({
+                "group": item["group__name"],
+                "flow": item["flow__name"],
+                "present": present,
+                "absent": item["absent"],
+                "total": total,
+                "percentage": percentage,
+            })
+
+        serializer = TeacherTodayAttendance(result, many=True)
+        return Response(serializer.data)

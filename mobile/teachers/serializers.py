@@ -13,3 +13,10 @@ from ..get_user import get_user
 
 
 
+class TeacherTodayAttendanceSerializer(serializers.Serializer):
+    group = serializers.CharField(allow_null=True)
+    flow = serializers.CharField(allow_null=True)
+    present = serializers.IntegerField()
+    absent = serializers.IntegerField()
+    total = serializers.IntegerField()
+    percentage = serializers.FloatField()
