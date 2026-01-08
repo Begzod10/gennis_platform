@@ -6,6 +6,7 @@ from django.db.models import Avg, Count, Q, Prefetch
 from django.db.models.functions import ExtractYear
 from django.utils import timezone
 from django.utils.timezone import localdate
+from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,8 +14,10 @@ from rest_framework.views import APIView
 from attendances.models import Student, Group, StudentScoreByTeacher
 from flows.models import Flow
 from group.models import GroupSubjects
+from lesson_plan.models import LessonPlan
+from lesson_plan.serializers import LessonPlanGetSerializer
 from mobile.models import TeacherDashboard
-from mobile.teachers.serializers import TeacherTodayAttendanceSerializer, TeacherDashboardSerializer
+from mobile.teachers.serializers import TeacherDashboardSerializer
 from school_time_table.models import ClassTimeTable
 from teachers.models import Teacher, TeacherSalary
 
@@ -525,6 +528,7 @@ class TeacherTodayAttendance(APIView):
             "attendance_history": results
         })
 
+
 class TeacherDashboardView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -564,3 +568,61 @@ class TeacherDashboardView(APIView):
 
         serializer = TeacherDashboardSerializer(data)
         return Response(serializer.data)
+
+
+class TeacherLessonPlanListView(generics.ListAPIView):
+    serializer_class = LessonPlanGetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # 🔐 token → teacher
+        try:
+            teacher = Teacher.objects.get(user=self.request.user)
+        except Teacher.DoesNotExist:
+            return LessonPlan.objects.none()
+
+        today = localdate()
+        weekday = today.weekday()
+
+        if weekday >= 5:
+            monday = today + timedelta(days=(7 - weekday))
+        else:
+            monday = today - timedelta(days=weekday)
+
+        friday = monday + timedelta(days=4)
+
+        group_ids = ClassTimeTable.objects.filter(
+            teacher=teacher
+        ).values_list("group_id", flat=True).distinct()
+
+        date_param = self.kwargs.get("date")
+
+        if date_param:
+            date = datetime.strptime(date_param, "%Y-%m")
+            return LessonPlan.objects.filter(
+                teacher=teacher,
+                group_id__in=group_ids,
+                date__year=date.year,
+                date__month=date.month
+            )
+
+        return LessonPlan.objects.filter(
+            teacher=teacher,
+            group_id__in=group_ids,
+            date__range=[monday, friday]
+        )
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        days = sorted(lp.date.day for lp in queryset)
+        months = sorted(set(lp.date.month for lp in queryset))
+        years = sorted(set(lp.date.year for lp in queryset))
+
+        return Response({
+            "month_list": months,
+            "years_list": years,
+            "month": months[0] if months else None,
+            "year": years[0] if years else None,
+            "days": days
+        })
