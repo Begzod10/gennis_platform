@@ -467,9 +467,6 @@ class TeacherTodayAttendance(APIView):
             )
 
         today = localdate()
-        print(today.year)
-        print(today.month)
-        print(today.day)
 
         qs = (
             StudentScoreByTeacher.objects
@@ -481,17 +478,18 @@ class TeacherTodayAttendance(APIView):
                 total=Count("id"),
             )
         )
-        print(teacher.id)
-        print(qs)
 
-        result = []
+        results = []
+        percentages = []
+
         for item in qs:
             total = item["total"]
             present = item["present"]
 
             percentage = round((present / total) * 100, 1) if total else 0
+            percentages.append(percentage)
 
-            result.append({
+            results.append({
                 "group": item["group__name"],
                 "flow": item["flow__name"],
                 "present": present,
@@ -500,5 +498,18 @@ class TeacherTodayAttendance(APIView):
                 "percentage": percentage,
             })
 
-        serializer = TeacherTodayAttendanceSerializer(result, many=True)
-        return Response(serializer.data)
+        class_count = len(results)
+        average_percentage = round(
+            sum(percentages) / class_count, 1
+        ) if class_count else 0
+
+        highest_percentage = max(percentages) if percentages else 0
+
+        return Response({
+            "summary": {
+                "average_percentage": average_percentage,
+                "class_count": class_count,
+                "highest_percentage": highest_percentage
+            },
+            "attendance_history": results
+        })
