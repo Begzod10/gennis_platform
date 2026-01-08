@@ -13,7 +13,8 @@ from rest_framework.views import APIView
 from attendances.models import Student, Group, StudentScoreByTeacher
 from flows.models import Flow
 from group.models import GroupSubjects
-from mobile.teachers.serializers import TeacherTodayAttendanceSerializer
+from mobile.models import TeacherDashboard
+from mobile.teachers.serializers import TeacherTodayAttendanceSerializer, TeacherDashboardSerializer
 from school_time_table.models import ClassTimeTable
 from teachers.models import Teacher, TeacherSalary
 
@@ -513,3 +514,44 @@ class TeacherTodayAttendance(APIView):
             },
             "attendance_history": results
         })
+
+
+class TeacherDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            teacher = Teacher.objects.get(user=request.user)
+        except Teacher.DoesNotExist:
+            return Response(
+                {"detail": "Siz teacher emassiz"},
+                status=403
+            )
+
+        today = localdate()
+
+        monday = today - timedelta(days=today.weekday())
+
+        saturday = monday + timedelta(days=5)
+
+        lessons_count = ClassTimeTable.objects.filter(
+            teacher=teacher,
+            date__range=[monday, saturday]
+        ).count()
+
+        dashboard, _ = TeacherDashboard.objects.get_or_create(
+            teacher=teacher,
+            created_at=today
+        )
+
+        data = {
+            "attendance_percentage": dashboard.attendance_percentage,
+            "class_count": dashboard.class_count,
+            "lessons_count": lessons_count,
+            "task_count": 0,
+            "task_completed": 0,
+            "rank": 0,
+        }
+
+        serializer = TeacherDashboardSerializer(data)
+        return Response(serializer.data)

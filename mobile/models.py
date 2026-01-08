@@ -12,3 +12,4 @@ class TeacherDashboard(models.Model):
     class_count = models.IntegerField(default=0)
     task_completed = models.BooleanField(default=False)
     lessons_count = models.IntegerField(default=0)
+    created_at = models.DateField(auto_now_add=True)

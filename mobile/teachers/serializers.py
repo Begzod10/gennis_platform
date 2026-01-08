@@ -20,3 +20,11 @@ class TeacherTodayAttendanceSerializer(serializers.Serializer):
     absent = serializers.IntegerField()
     total = serializers.IntegerField()
     percentage = serializers.FloatField()
+
+class TeacherDashboardSerializer(serializers.Serializer):
+    attendance_percentage = serializers.FloatField()
+    class_count = serializers.IntegerField()
+    lessons_count = serializers.IntegerField()
+    task_count = serializers.IntegerField()
+    task_completed = serializers.IntegerField()
+    rank = serializers.IntegerField()
