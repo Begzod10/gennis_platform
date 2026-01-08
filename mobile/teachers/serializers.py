@@ -30,13 +30,25 @@ class TeacherDashboardSerializer(serializers.Serializer):
     task_completed = serializers.IntegerField()
     rank = serializers.IntegerField()
 
-class TeacherLessonPlanGetSerializer(serializers.ModelSerializer):
+class LessonPlanGetSerializer(serializers.ModelSerializer):
     group = serializers.CharField(source="group.name", read_only=True)
     students = serializers.SerializerMethodField()
 
     class Meta:
         model = LessonPlan
-        fields = ['__all__']
+        fields = (
+            "id",
+            "group",
+            "date",
+            "objective",
+            "main_lesson",
+            "homework",
+            "assessment",
+            "activities",
+            "resources",
+            "students",
+        )
+
 
     def get_students(self, obj):
         comments = LessonPlanStudents.objects.filter(
