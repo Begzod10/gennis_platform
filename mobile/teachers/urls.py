@@ -13,6 +13,7 @@ urlpatterns = [
     path('student-score/', StudentScoreView.as_view(), name='student-score'),
     path( "teacher/today-attendance/",TeacherTodayAttendance.as_view(),name="teacher-today-attendance"),
     path("teacher/dashboard/",TeacherDashboardView.as_view(),name="teacher-dashboard"),
-    path("teacher/lesson-plans/", TeacherLessonPlanListView.as_view())
+    path("teacher/lesson-plans/", TeacherLessonPlanListView.as_view()),
+    path("teacher/lesson-plans/<str:date>/", TeacherLessonPlanListView.as_view())
 
 ]
