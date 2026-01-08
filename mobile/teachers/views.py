@@ -627,54 +627,54 @@ class TeacherLessonPlanListView(generics.ListAPIView):
         })
 
 
-class TeacherGetLessonPlanView(generics.RetrieveAPIView):
+class TeacherGetLessonPlanView(generics.ListAPIView):
     serializer_class = LessonPlanGetSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_object(self):
+    def get_queryset(self):
         day = self.request.query_params.get("day")
         month = self.request.query_params.get("month")
         year = self.request.query_params.get("year")
 
         if not all([day, month, year]):
-            return None
+            return LessonPlan.objects.none()
 
         date = datetime.strptime(
             f"{year}-{month}-{day}", "%Y-%m-%d"
         ).date()
 
-        # 🔐 token → teacher
         try:
             teacher = Teacher.objects.get(user=self.request.user)
         except Teacher.DoesNotExist:
-            return None
+            return LessonPlan.objects.none()
 
-        time_table = ClassTimeTable.objects.filter(
+        group_ids = ClassTimeTable.objects.filter(
             teacher=teacher
-        ).select_related("group").first()
-
-        if not time_table:
-            return None
+        ).values_list("group_id", flat=True).distinct()
 
         return LessonPlan.objects.filter(
             teacher=teacher,
-            group_id=time_table.group_id,
+            group_id__in=group_ids,
             date=date
-        ).first()
+        )
 
-    def get(self, request, *args, **kwargs):
-        lesson_plan = self.get_object()
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
 
-        if not lesson_plan:
+        if not queryset.exists():
             return Response(
                 {"msg": "Lesson plan not found"},
                 status=status.HTTP_200_OK
             )
 
         current_date = now().date()
-        status_flag = current_date < lesson_plan.date
 
-        return Response({
-            "lesson_plan": LessonPlanGetSerializer(lesson_plan).data,
-            "status": status_flag
-        })
+        data = []
+        for lesson_plan in queryset:
+            status_flag = current_date < lesson_plan.date
+            data.append({
+                "lesson_plan": LessonPlanGetSerializer(lesson_plan).data,
+                "status": status_flag
+            })
+
+        return Response(data)
