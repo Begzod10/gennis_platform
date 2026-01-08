@@ -30,7 +30,7 @@ class TeacherDashboardSerializer(serializers.Serializer):
     task_completed = serializers.IntegerField()
     rank = serializers.IntegerField()
 
-class LessonPlanGetSerializer(serializers.ModelSerializer):
+class TeacherLessonPlanGetSerializer(serializers.ModelSerializer):
     group = serializers.CharField(source="group.name", read_only=True)
     students = serializers.SerializerMethodField()
 
