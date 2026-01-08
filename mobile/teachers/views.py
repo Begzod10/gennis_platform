@@ -570,7 +570,10 @@ class TeacherDashboardView(APIView):
         return Response(serializer.data)
 
 
-class TeacherLessonPlanListView(generics.ListAPIView):
+
+
+
+class TeacherGetLessonPlanView(generics.ListAPIView):
     serializer_class = LessonPlanGetSerializer
     permission_classes = [IsAuthenticated]
 
@@ -594,69 +597,11 @@ class TeacherLessonPlanListView(generics.ListAPIView):
             teacher=teacher
         ).values_list("group_id", flat=True).distinct()
 
-        date_param = self.kwargs.get("date")
-
-        if date_param:
-            date = datetime.strptime(date_param, "%Y-%m")
-            return LessonPlan.objects.filter(
-                teacher=teacher,
-                group_id__in=group_ids,
-                date__year=date.year,
-                date__month=date.month
-            )
-
         return LessonPlan.objects.filter(
             teacher=teacher,
             group_id__in=group_ids,
             date__range=[monday, friday]
-        )
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-
-        days = sorted(lp.date.day for lp in queryset)
-        months = sorted(set(lp.date.month for lp in queryset))
-        years = sorted(set(lp.date.year for lp in queryset))
-
-        return Response({
-            "month_list": months,
-            "years_list": years,
-            "month": months[0] if months else None,
-            "year": years[0] if years else None,
-            "days": days
-        })
-
-
-class TeacherGetLessonPlanView(generics.ListAPIView):
-    serializer_class = LessonPlanGetSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        day = self.request.query_params.get("day")
-        month = self.request.query_params.get("month")
-        year = self.request.query_params.get("year")
-
-        if not all([day, month, year]):
-            return LessonPlan.objects.none()
-
-        date = datetime.strptime(
-            f"{year}-{month}-{day}", "%Y-%m-%d"
-        ).date()
-
-        try:
-            teacher = Teacher.objects.get(user=self.request.user)
-        except Teacher.DoesNotExist:
-            return LessonPlan.objects.none()
-
-        group_ids = ClassTimeTable.objects.filter(
-            teacher=teacher
-        ).values_list("group_id", flat=True).distinct()
-
-        return LessonPlan.objects.filter(
-            teacher=teacher,
-            group_id__in=group_ids,
-            date=date
-        )
+        ).select_related("group")
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -673,6 +618,7 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
         for lesson_plan in queryset:
             status_flag = current_date < lesson_plan.date
             data.append({
+                "group": lesson_plan.group.name,
                 "lesson_plan": LessonPlanGetSerializer(lesson_plan).data,
                 "status": status_flag
             })
