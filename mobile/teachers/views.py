@@ -5,8 +5,8 @@ from django.db import transaction
 from django.db.models import Avg, Count, Q, Prefetch
 from django.db.models.functions import ExtractYear
 from django.utils import timezone
-from django.utils.timezone import localdate
-from rest_framework import generics
+from django.utils.timezone import localdate, now
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -575,7 +575,6 @@ class TeacherLessonPlanListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # 🔐 token → teacher
         try:
             teacher = Teacher.objects.get(user=self.request.user)
         except Teacher.DoesNotExist:
@@ -625,4 +624,57 @@ class TeacherLessonPlanListView(generics.ListAPIView):
             "month": months[0] if months else None,
             "year": years[0] if years else None,
             "days": days
+        })
+
+
+class TeacherGetLessonPlanView(generics.RetrieveAPIView):
+    serializer_class = LessonPlanGetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        day = self.request.query_params.get("day")
+        month = self.request.query_params.get("month")
+        year = self.request.query_params.get("year")
+
+        if not all([day, month, year]):
+            return None
+
+        date = datetime.strptime(
+            f"{year}-{month}-{day}", "%Y-%m-%d"
+        ).date()
+
+        # 🔐 token → teacher
+        try:
+            teacher = Teacher.objects.get(user=self.request.user)
+        except Teacher.DoesNotExist:
+            return None
+
+        time_table = ClassTimeTable.objects.filter(
+            teacher=teacher
+        ).select_related("group").first()
+
+        if not time_table:
+            return None
+
+        return LessonPlan.objects.filter(
+            teacher=teacher,
+            group_id=time_table.group_id,
+            date=date
+        ).first()
+
+    def get(self, request, *args, **kwargs):
+        lesson_plan = self.get_object()
+
+        if not lesson_plan:
+            return Response(
+                {"msg": "Lesson plan not found"},
+                status=status.HTTP_200_OK
+            )
+
+        current_date = now().date()
+        status_flag = current_date < lesson_plan.date
+
+        return Response({
+            "lesson_plan": LessonPlanGetSerializer(lesson_plan).data,
+            "status": status_flag
         })
