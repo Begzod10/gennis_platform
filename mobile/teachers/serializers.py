@@ -31,7 +31,7 @@ class TeacherDashboardSerializer(serializers.Serializer):
     rank = serializers.IntegerField()
 
 class TeacherLessonPlanGetSerializer(serializers.ModelSerializer):
-    group_name = serializers.CharField(source="group.name", read_only=True)
+    group = serializers.CharField(source="group.name", read_only=True)
     students = serializers.SerializerMethodField()
 
     class Meta:
