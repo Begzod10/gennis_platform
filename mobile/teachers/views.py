@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from attendances.models import Student, Group, StudentScoreByTeacher
 from flows.models import Flow
 from group.models import GroupSubjects
+from mobile.teachers.serializers import TeacherTodayAttendanceSerializer
 from school_time_table.models import ClassTimeTable
 from teachers.models import Teacher, TeacherSalary
 
@@ -494,5 +495,5 @@ class TeacherTodayAttendance(APIView):
                 "percentage": percentage,
             })
 
-        serializer = TeacherTodayAttendance(result, many=True)
+        serializer = TeacherTodayAttendanceSerializer(result, many=True)
         return Response(serializer.data)
