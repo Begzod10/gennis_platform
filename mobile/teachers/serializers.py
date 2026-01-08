@@ -33,11 +33,10 @@ class TeacherDashboardSerializer(serializers.Serializer):
 class TeacherLessonPlanGetSerializer(serializers.ModelSerializer):
     group_name = serializers.CharField(source="group.name", read_only=True)
     students = serializers.SerializerMethodField()
-    date  = serializers.DateField()
 
     class Meta:
         model = LessonPlan
-        fields = ("id", "group_name", "students")
+        fields = ['__all__']
 
     def get_students(self, obj):
         comments = LessonPlanStudents.objects.filter(
