@@ -111,11 +111,10 @@ class GroupMonthlySummary(models.Model):
 class StudentScoreByTeacher(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
     flow = models.ForeignKey(Flow, on_delete=models.CASCADE, null=True)
     homework = models.IntegerField(default=0)
     activeness = models.IntegerField(default=0)
     status = models.BooleanField(default=False)
     average = models.IntegerField(default=0)
     day = models.DateField(auto_now_add=True)
-
