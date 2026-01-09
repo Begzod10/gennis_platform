@@ -393,16 +393,20 @@ class StudentScoreView(APIView):
 
         is_flow = flow_status in ['true', 'True', '1']
 
-        # Get the appropriate object once
-        parent_obj = Flow.objects.get(id=group_id) if is_flow else Group.objects.get(id=group_id)
-        filter_key = 'flow' if is_flow else 'group'
+        # Get the appropriate object and teacher
         if is_flow:
-            teacher = parent_obj.teacher  # ForeignKey - returns Teacher object directly
+            flow = Flow.objects.get(id=group_id)
+            group = None
+            teacher = flow.teacher
         else:
-            teacher = parent_obj.teacher.first()
-            # Fetch all existing scores in one query
+            flow = None
+            group = Group.objects.get(id=group_id)
+            teacher = group.teacher.first()
+
+        # Fetch all existing scores in one query
         existing_scores = StudentScoreByTeacher.objects.filter(
-            **{filter_key: parent_obj},
+            flow=flow,
+            group=group,
             student_id__in=[s['id'] for s in student_list],
             day=day
         )
@@ -435,10 +439,11 @@ class StudentScoreView(APIView):
                 scores_to_update.append(student_score)
             else:
                 scores_to_create.append(StudentScoreByTeacher(
-                    **{filter_key: parent_obj},
                     student_id=student_id,
+                    teacher=teacher,
+                    flow=flow,
+                    group=group,
                     day=day,
-                    teacher_id=teacher.id,
                     homework=homework,
                     activeness=activeness,
                     average=average,
