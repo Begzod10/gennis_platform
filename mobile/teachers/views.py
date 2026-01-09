@@ -575,6 +575,9 @@ class TeacherChangeLessonPlanView(generics.UpdateAPIView):
     serializer_class = LessonPlanSerializer
     permission_classes = [IsAuthenticated]
 
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
     def update(self, request, *args, **kwargs):
         plan_id = kwargs.get('pk')
         lesson_plan = self.get_object()
