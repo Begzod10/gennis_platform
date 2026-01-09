@@ -217,7 +217,7 @@ def update_deleted_students_debts():
                     f"  ➕ Created: {last_deletion.student.user.name} {last_deletion.student.user.surname} - "
                     f"Group: {last_deletion.group.class_number.number}-{last_deletion.group.color.name} - "
                     f"Study Days: {study_days}/{total_weekdays_in_month} - "
-                    f"Debt: {new_record.total_debt:,} (ID: {new_record.id})")
+                    f"Debt: {calculated_debt:,} (ID: )")
                 created_count += 1
 
     print(f"\n✨ Summary:")
