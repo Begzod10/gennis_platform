@@ -148,9 +148,11 @@ class MissionCrudSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         tags = validated_data.pop("tags", None)
-        new_executor = validated_data.get("executor_ids")[0]
-        status = validated_data.get("status", instance.status)
-        if new_executor:
+
+        executor_ids = validated_data.pop("executor_ids", None)
+
+        if executor_ids:
+            new_executor = executor_ids[0]
             instance.is_redirected = True
             instance.redirected_by_id = new_executor.id
             instance.redirected_at = timezone.now()
@@ -159,15 +161,18 @@ class MissionCrudSerializer(serializers.ModelSerializer):
             instance.redirected_by = None
             instance.redirected_at = None
 
+        status = validated_data.get("status", instance.status)
+
         if status == "completed" and not instance.finish_date:
             instance.finish_date = timezone.now().date()
-            instance.calculate_delay_days()  # ← delay
+            instance.calculate_delay_days()
             instance.final_sc = instance.final_score()
-            instance.save()
 
         instance = super().update(instance, validated_data)
+
         if tags is not None:
             instance.tags.set(tags)
+
         return instance
 
 
