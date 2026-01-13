@@ -28,7 +28,7 @@ from classes.models import ClassNumber
 from group.models import Group
 from permissions.response import QueryParamFilterMixin
 from students.serializer.lists import ActiveListSerializer, ActiveListDeletedStudentSerializer
-from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment
+from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment, StudentHistoryGroups
 from .serializers import StudentCharity, get_remaining_debt_for_student
 from .serializers import (StudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
 
@@ -293,7 +293,11 @@ class GetMonth(APIView):
         student = Student.objects.get(pk=student_id)
         group = student.groups_student.first()
         if group is None:
-            return Response([])
+            history = StudentHistoryGroups.objects.filter(student=student).last()
+            if history:
+                group = history.group
+            else:
+                return Response([])
         month = AttendancePerMonth.objects.filter(student_id=student_id, status=False,
                                                   group_id=group.id).all().order_by('month_date__year',
                                                                                     'month_date__month')
