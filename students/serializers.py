@@ -454,7 +454,7 @@ class StudentPaymentListSerializer(serializers.ModelSerializer):
 
     def get_attendance(self, obj):
         """return month name"""
-        return obj.attendance.month_date.strftime("%B")
+        return obj.attendance.month_date.strftime("%B") if obj.attendance.month_date else ""
 
 
 class DeletedNewStudentSerializer(serializers.ModelSerializer):
