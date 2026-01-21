@@ -512,23 +512,31 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 )
 
                 discount_payment = discount_payments.get(attendance.id)
+                discount_sum = discount_payment.payment_sum if discount_payment else 0
 
-                # ✅ REAL PAYMENT
+                # ✅ REAL PAYMENT (discount bilan)
                 real_payment = (
                         payments['cash'] +
                         payments['bank'] +
-                        payments['click']
+                        payments['click'] +
+                        discount_sum
                 )
 
-                # ✅ UPDATE AGAR FARQ BO‘LSA
-                if attendance.payment != real_payment:
-                    attendance.payment = real_payment
-                    attendance.remaining_debt = attendance.total_debt - real_payment
+                # ✅ CHEGARALASH (minusga tushmasin)
+                if real_payment >= attendance.total_debt:
+                    new_payment = attendance.total_debt
+                    new_remaining_debt = 0
+                else:
+                    new_payment = real_payment
+                    new_remaining_debt = attendance.total_debt - real_payment
 
-                    # Manfiy bo‘lib ketmasligi uchun (ixtiyoriy)
-                    if attendance.remaining_debt < 0:
-                        attendance.remaining_debt = 0
-
+                # ✅ FAQAT FARQ BO‘LSA UPDATE
+                if (
+                        attendance.payment != new_payment or
+                        attendance.remaining_debt != new_remaining_debt
+                ):
+                    attendance.payment = new_payment
+                    attendance.remaining_debt = new_remaining_debt
                     attendance.save(update_fields=[
                         'payment',
                         'remaining_debt'
@@ -542,7 +550,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                     'payment': attendance.payment,
                     'discount': attendance.discount,
                     'old_money': attendance.old_money,
-                    'discount_sum': discount_payment.payment_sum if discount_payment else 0,
+                    'discount_sum': discount_sum,
                     'discount_reason': discount_payment.reason if discount_payment else None,
                     'discount_id': discount_payment.id if discount_payment else 0,
                     'reason': discount_payment.reason if discount_payment else None,
@@ -550,7 +558,6 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                     'bank': payments['bank'],
                     'click': payments['click'],
                 })
-
         # Yo‘q oylar
         all_months = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
         missing_months = set(all_months) - months_with_attendance
