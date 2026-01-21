@@ -7,6 +7,7 @@ from datetime import date
 from datetime import datetime
 
 import docx
+from django.db import transaction
 from django.db.models import Prefetch
 from django.db.models import Q
 from django.db.models import Sum
