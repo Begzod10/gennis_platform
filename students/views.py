@@ -479,7 +479,6 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
 
         attendance_ids = list(attendances.values_list('id', flat=True))
 
-        # 💰 PAYMENT AGGREGATION (get_class_data bilan bir xil)
         payment_aggregations = (
             StudentPayment.objects
             .filter(
@@ -523,7 +522,6 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 'paid': p['paid'] or 0,
             }
 
-        # discount paymentlar (status=True)
         discount_payments = {
             sp.attendance_id: sp
             for sp in StudentPayment.objects.filter(
@@ -535,7 +533,6 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
         data = []
         months_with_attendance = set()
 
-        # 🔒 FAQAT O‘QISH – HECH QANDAY SAVE YO‘Q
         for attendance in attendances:
             months_with_attendance.add(attendance.month_date.month)
 
@@ -544,13 +541,15 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
             cash = payments['cash']
             bank = payments['bank']
             click = payments['click']
-            paid_amount = payments['paid']          # chegirma (StudentPayment status=True)
+            paid_amount = payments['paid']
+            donation = attendance.discount or 0
 
             total_debt = attendance.total_debt or 0
-            remaining_debt = attendance.remaining_debt or 0
-            donation = attendance.discount or 0     # hayriya
 
-            # ✅ ASL FORMULA (get_class_data bilan 1:1)
+            covered_amount = cash + bank + click + paid_amount + donation
+
+            remaining_debt = max(0, total_debt - covered_amount)
+
             payment = total_debt - remaining_debt - donation - paid_amount
             if payment < 0:
                 payment = 0
@@ -574,7 +573,6 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 'click': click,
             })
 
-        # 📅 MISSING MONTHS
         all_months = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
         missing_months = set(all_months) - months_with_attendance
         month_names = [calendar.month_name[m] for m in sorted(missing_months)]
