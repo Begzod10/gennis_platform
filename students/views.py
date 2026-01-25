@@ -3,12 +3,13 @@ import datetime
 import json
 import os
 import uuid
+from collections import defaultdict
 from datetime import date
 from datetime import datetime
 
 import docx
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Case, When, IntegerField
 from django.db.models import Q
 from django.db.models import Sum
 from django.db.models.functions import ExtractMonth
