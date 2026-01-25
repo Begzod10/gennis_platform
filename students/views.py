@@ -555,7 +555,8 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                 payment = 0
 
             discount_payment = discount_payments.get(attendance.id)
-
+            attendance.remaining_debt = remaining_debt
+            attendance.save()
             data.append({
                 'id': attendance.id,
                 'month': attendance.month_date,
