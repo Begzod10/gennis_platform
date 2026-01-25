@@ -519,8 +519,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
                         payments['cash'] +
                         payments['bank'] +
                         payments['click'] +
-                        discount_sum+
-                        attendance.discount
+                        discount_sum
                 )
 
                 # ✅ CHEGARALASH (minusga tushmasin)
