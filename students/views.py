@@ -516,10 +516,9 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
 
                 # ✅ REAL PAYMENT (discount bilan)
                 real_payment = (
-                        payments['cash'] +
-                        payments['bank'] +
-                        payments['click'] +
-                        discount_sum
+                        attendance.payment if attendance.payment else 0+
+                        discount_sum+
+                        attendance.discount
                 )
 
                 # ✅ CHEGARALASH (minusga tushmasin)
