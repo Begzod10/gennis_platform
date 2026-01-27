@@ -259,10 +259,10 @@ class Encashments(APIView):
 class GetSchoolStudents(APIView):
 
     def get_class_data(self, branch_id, year=None, month=None):
-        total_sum_test = 0
+        total_sum = 0
         total_debt = 0
-        reaming_debt = 0
-        total_dis = 0
+        total_remaining = 0
+        total_donation = 0
         total_discount = 0
 
         data = {
@@ -270,17 +270,15 @@ class GetSchoolStudents(APIView):
             'dates': []
         }
 
-        current_year = year if year else datetime.now().year
-        current_month = month if month else datetime.now().month
+        current_year = year or datetime.now().year
+        current_month = month or datetime.now().month
 
-        # Subquery: Is student active in this group?
         is_active_in_group = Group.objects.filter(
             id=OuterRef('group_id'),
             students=OuterRef('student_id'),
             deleted=False
         )
 
-        # Subquery: Last deletion group for this student
         last_deleted_group = DeletedStudent.objects.filter(
             student_id=OuterRef('student_id'),
             deleted=False,
@@ -288,8 +286,7 @@ class GetSchoolStudents(APIView):
             deleted_date__month__gte=current_month
         ).order_by('-id').values('group_id')[:1]
 
-        # Get attendance records - ONE record per student
-        attendance_records = (
+        attendances = (
             AttendancePerMonth.objects
             .filter(
                 month_date__year=current_year,
@@ -312,18 +309,18 @@ class GetSchoolStudents(APIView):
                 'group__class_number',
                 'group__color'
             )
-            .order_by('group__class_number__number', 'group__id', 'student__user__surname')
+            .order_by(
+                'group__class_number__number',
+                'group__id',
+                'student__user__surname'
+            )
         )
 
-        attendance_ids = list(attendance_records.values_list('id', flat=True))
+        attendance_ids = list(attendances.values_list('id', flat=True))
 
-        # Get payment breakdown
         payment_aggregates = (
             StudentPayment.objects
-            .filter(
-                attendance_id__in=attendance_ids,
-                deleted=False
-            )
+            .filter(attendance_id__in=attendance_ids, deleted=False)
             .values('attendance_id')
             .annotate(
                 cash=Sum(Case(
@@ -345,76 +342,73 @@ class GetSchoolStudents(APIView):
                     When(status=True, then='payment_sum'),
                     default=0,
                     output_field=IntegerField()
-                ))
+                )),
             )
         )
 
         payments_dict = defaultdict(lambda: {
             'cash': 0, 'bank': 0, 'click': 0, 'paid': 0
         })
-        for payment in payment_aggregates:
-            payments_dict[payment['attendance_id']] = {
-                'cash': payment['cash'] or 0,
-                'bank': payment['bank'] or 0,
-                'click': payment['click'] or 0,
-                'paid': payment['paid'] or 0
+
+        for p in payment_aggregates:
+            payments_dict[p['attendance_id']] = {
+                'cash': p['cash'] or 0,
+                'bank': p['bank'] or 0,
+                'click': p['click'] or 0,
+                'paid': p['paid'] or 0,
             }
 
-        classes_dict = {}
+        classes = {}
 
-        for attendance_data in attendance_records:
-            _class = attendance_data.group
-            student = attendance_data.student
+        for attendance in attendances:
+            group = attendance.group
+            student = attendance.student
 
-            class_key = f"{_class.class_number.number}-{_class.color.name}"
+            class_key = f"{group.class_number.number}-{group.color.name}"
 
-            if class_key not in classes_dict:
-                classes_dict[class_key] = {
+            if class_key not in classes:
+                classes[class_key] = {
                     'class_number': class_key,
                     'students': [],
-                    'order': (_class.class_number.number or 999, _class.id)
+                    'order': (group.class_number.number or 999, group.id)
                 }
 
-            # Get payment breakdown
-            payments = payments_dict[attendance_data.id]
-            cash_payment = payments['cash']
-            bank_payment = payments['bank']
-            click_payment = payments['click']
-            paid_amount = payments['paid']
+            payments = payments_dict[attendance.id]
 
-            # Use attendance data
-            total_debt_student = attendance_data.total_debt or 0
-            remaining_debt_student = attendance_data.remaining_debt or 0
-            discount = attendance_data.discount or 0
+            cash = payments['cash']
+            bank = payments['bank']
+            click = payments['click']
+            paid = payments['paid']  # chegirma
+            donation = attendance.discount or 0  # hayriya
+            debt = attendance.total_debt or 0
 
-            # ✅ Calculate payment: subtract ALL discounts and remaining debt
-            payment_student = total_debt_student - remaining_debt_student - discount - paid_amount
+            covered = cash + bank + click + paid + donation
+            remaining = max(0, debt - covered)
+            payment = max(0, debt - remaining - donation - paid)
 
-            # Accumulate totals
-            total_debt += total_debt_student
-            total_sum_test += payment_student
-            reaming_debt += remaining_debt_student
-            total_dis += discount
-            total_discount += paid_amount
+            total_debt += debt
+            total_remaining += remaining
+            total_donation += donation
+            total_discount += paid
+            total_sum += payment
 
-            classes_dict[class_key]['students'].append({
+            classes[class_key]['students'].append({
                 'id': student.user.id,
                 'name': student.user.name,
                 'surname': student.user.surname,
                 'phone': student.user.phone,
-                'total_debt': total_debt_student,
-                'remaining_debt': remaining_debt_student,
-                'cash': cash_payment,
-                'bank': bank_payment,
-                'click': click_payment,
-                'total_dis': discount,
-                'total_discount': paid_amount,
-                'month_id': attendance_data.id,
+                'total_debt': debt,
+                'remaining_debt': remaining,
+                'cash': cash,
+                'bank': bank,
+                'click': click,
+                'total_dis': donation,
+                'total_discount': paid,
+                'month_id': attendance.id,
             })
 
-        # Sort classes
         sorted_classes = sorted(
-            classes_dict.values(),
+            classes.values(),
             key=lambda x: (
                 0 if x['order'][0] == 0 else (2 if x['order'][0] == 999 else 1),
                 x['order'][0] if x['order'][0] != 999 else float('inf'),
@@ -422,12 +416,11 @@ class GetSchoolStudents(APIView):
             )
         )
 
-        for class_data in sorted_classes:
-            del class_data['order']
+        for c in sorted_classes:
+            del c['order']
 
         data['class'] = sorted_classes
 
-        # Get dates
         unique_dates = (
             AttendancePerMonth.objects
             .filter(system__name='school')
@@ -440,23 +433,22 @@ class GetSchoolStudents(APIView):
             .order_by('year', 'month')
         )
 
-        year_month_dict = defaultdict(list)
-        for date in unique_dates:
-            year_month_dict[date['year']].append(date['month'])
+        year_months = defaultdict(list)
+        for d in unique_dates:
+            year_months[d['year']].append(d['month'])
 
         data['dates'] = [
-            {'year': year, 'months': months} for year, months in year_month_dict.items()
+            {'year': y, 'months': m} for y, m in year_months.items()
         ]
 
-        data['total_sum'] = total_sum_test
+        data['total_sum'] = total_sum
         data['total_debt'] = total_debt
-        data['reaming_debt'] = reaming_debt
-        data['total_dis'] = total_dis
+        data['reaming_debt'] = total_remaining
+        data['total_dis'] = total_donation
         data['total_discount'] = total_discount
-        data["total_with_discount"] = total_debt - (total_discount + total_dis)
+        data['total_with_discount'] = total_debt - (total_discount + total_donation)
 
         return data
-
     def get(self, request, *args, **kwargs):
         branch = request.query_params.get('branch')
         data = self.get_class_data(branch)

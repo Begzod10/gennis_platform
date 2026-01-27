@@ -216,11 +216,12 @@ class UserSalaryListSerializersTotal(serializers.ModelSerializer):
                                               read_only=True)
     payment_sum = serializers.IntegerField(required=False, source='salary')
     status = serializers.BooleanField(required=False)
+    employee_id = serializers.CharField(required=False,source='user_salary.permission.id')
 
     class Meta:
-        model = UserSalary
+        model = UserSalaryList
         fields = ['id', 'name', 'surname', 'payment_type_name', 'payment_sum', 'status',
-                  'date', "student_id"]
+                  'date', "student_id","employee_id"]
 
 
 class UserSalaryListSerializersRead(serializers.ModelSerializer):
