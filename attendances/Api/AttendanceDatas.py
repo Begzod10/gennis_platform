@@ -8,8 +8,10 @@ from rest_framework.views import APIView
 
 from group.models import Group
 from ..models import AttendancePerMonth, Student
-
+from students.models import DeletedStudent
 from rest_framework.permissions import IsAuthenticated
+
+
 class AttendanceDatas(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -103,6 +105,7 @@ class AttendanceDatasForGroup(APIView):
 
         return JsonResponse(final_output)
 
+
 class AttendanceDatasForAllGroup(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -140,7 +143,13 @@ class AttendanceDatasForAllGroup(APIView):
         try:
             student = Student.objects.get(pk=student_id)
             groups = student.groups_student.all()
-
+            deleted_student = DeletedStudent.objects.filter(
+                student_id=student_id
+            ).select_related('group').order_by("-pk").first()
+            if groups:
+                group_data = groups[0]
+            else:
+                group_data = deleted_student.group
             attendance_records = AttendancePerMonth.objects.filter(group__in=groups)
             if student_id:
                 attendance_records = attendance_records.filter(student__id=student_id)
