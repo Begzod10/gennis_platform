@@ -217,6 +217,11 @@ class CheckClassTimeTable(APIView):
             lesson_students = group.students.filter(class_time_table__hours_id=hour,
                                                     class_time_table__room_id=room,
                                                     class_time_table__date=date).all()
+            if lesson_room:
+                room = lesson_room.room
+                if room.deleted:
+                    lesson_room.delete()
+            lesson_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
             if lesson_students:
                 status = False
                 for student in lesson_students:
@@ -262,6 +267,11 @@ class CheckClassTimeTable(APIView):
         elif type == 'flow':
             room = data.get('room')
             flow = Flow.objects.get(pk=checked_id)
+            lesson_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
+            if lesson_room:
+                room = lesson_room.room
+                if room.deleted:
+                    lesson_room.delete()
             lesson_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
             if lesson_room:
                 status = False
