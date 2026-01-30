@@ -249,6 +249,7 @@ class CheckClassTimeTable(APIView):
             if lesson_for_this_room:
                 if room.deleted:
                     lesson_for_this_room.delete()
+            lesson = ClassTimeTable.objects.filter(date=date, teacher_id=checked_id, hours_id=hour).first()
             if lesson:
                 status = False
                 if lesson.flow_id == None:
