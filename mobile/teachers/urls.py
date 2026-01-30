@@ -17,10 +17,10 @@ urlpatterns = [
 
     path("teacher/lesson-plan/", TeacherGetLessonPlanView.as_view()),
     path('teacher/change_lesson_plan/<int:pk>/', TeacherChangeLessonPlanView.as_view(), name='change_lesson_plan'),
-    path('payments/', TeacherPaymentsListView.as_view(), name='teacher-payments'),
-    path('debted-students/', TeachersDebtedStudentsListView.as_view(), name='debted-students'),
-    path('attandance-students/', TeachersAttendaceStudentsListView.as_view(), name='debted-students'),
-    path('profile/', TeacherProfileView.as_view(), name='teacher-profile'),
-    path('groups/', GroupListView.as_view(), name='teacher-profile'),
-    path('missions/', include('mobile.teachers.missions.urls'), name='missions'),
+    # path('payments/', TeacherPaymentsListView.as_view(), name='teacher-payments'),
+    # path('debted-students/', TeachersDebtedStudentsListView.as_view(), name='debted-students'),
+    # path('attandance-students/', TeachersAttendaceStudentsListView.as_view(), name='debted-students'),
+    # path('profile/', TeacherProfileView.as_view(), name='teacher-profile'),
+    # path('groups/', GroupListView.as_view(), name='teacher-profile'),
+    # path('missions/', include('mobile.teachers.missions.urls'), name='missions'),
 ]
