@@ -244,11 +244,13 @@ class CheckClassTimeTable(APIView):
             #         f"{group.class_number.number}-{group.color.name} sinifining {class_subject.subject.name} fanining haftalik dars soati to'lgan")
         elif type == 'teacher':
             lesson = ClassTimeTable.objects.filter(date=date, teacher_id=checked_id, hours_id=hour).first()
+            room = lesson.room
             if lesson:
                 status = False
                 if lesson.flow_id == None:
-                    msg.append(
-                        f"Bu vaqtda '{lesson.teacher.user.name} {lesson.teacher.user.surname}' ustozining  '{lesson.room.name}' xonada  '{lesson.group.class_number.number}-{lesson.group.color.name}' sinifiga darsi bor")
+                    # msg.append(
+                    #     f"Bu vaqtda '{lesson.teacher.user.name} {lesson.teacher.user.surname}' ustozining  '{lesson.room.name}' xonada  '{lesson.group.class_number.number}-{lesson.group.color.name}' sinifiga darsi bor")
+                    msg.append(f"xona status:{room.deleted}")
                 else:
                     msg.append(
                         f"Bu vaqtda '{lesson.teacher.user.name} {lesson.teacher.user.surname}' ustozining  '{lesson.room.name}' xonada  '{lesson.flow.name}' patokiga darsi bor")

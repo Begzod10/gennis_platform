@@ -295,7 +295,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
         # Rooms ordered by 'order' (if present) else by id, with consistent output_field
         rooms = (
             Room.objects
-            .filter(branch=branch)
+            .filter(branch=branch, deleted=False)
             .annotate(
                 sort_order=Coalesce(
                     Cast('order', BigIntegerField()),
