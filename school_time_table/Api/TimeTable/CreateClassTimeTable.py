@@ -250,7 +250,7 @@ class CheckClassTimeTable(APIView):
         elif type == 'teacher':
             lesson = ClassTimeTable.objects.filter(date=date, teacher_id=checked_id, hours_id=hour).first()
 
-            lesson_for_this_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
+            lesson_for_this_room = ClassTimeTable.objects.filter(date=date, room_id=lesson.room, hours_id=hour).first()
             if lesson_for_this_room:
                 if lesson_for_this_room.room.deleted:
                     lesson_for_this_room.delete()
