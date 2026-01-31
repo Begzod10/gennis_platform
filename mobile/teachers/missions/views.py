@@ -17,8 +17,9 @@ class MobileMissionListAPIView(ListAPIView):
 
     def get_queryset(self):
         user_id = int(self.request.query_params.get("user"))
+        print(user_id)
         user = CustomUser.objects.get(pk=user_id)
-
+        print(user)
         qs = (
             Mission.objects
             .filter(executor=user)
