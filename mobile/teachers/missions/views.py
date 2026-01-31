@@ -50,9 +50,6 @@ class MobileMissionDetailAPIView(RetrieveAPIView):
 class MobileMissionStatusAPIView(UpdateAPIView):
     serializer_class = MobileMissionStatusSerializer
 
-    def get_queryset(self):
-        return Mission.objects.filter(executor=self.request.user)
-
     def perform_update(self, serializer):
         mission = serializer.save()
 
