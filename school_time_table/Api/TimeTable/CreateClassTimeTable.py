@@ -217,6 +217,11 @@ class CheckClassTimeTable(APIView):
             lesson_students = group.students.filter(class_time_table__hours_id=hour,
                                                     class_time_table__room_id=room,
                                                     class_time_table__date=date).all()
+            if lesson_room:
+                room = lesson_room.room
+                if room.deleted:
+                    lesson_room.delete()
+            lesson_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
             if lesson_students:
                 status = False
                 for student in lesson_students:
@@ -244,11 +249,12 @@ class CheckClassTimeTable(APIView):
             #         f"{group.class_number.number}-{group.color.name} sinifining {class_subject.subject.name} fanining haftalik dars soati to'lgan")
         elif type == 'teacher':
             lesson = ClassTimeTable.objects.filter(date=date, teacher_id=checked_id, hours_id=hour).first()
-            room = lesson.room
-            lesson_for_this_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
-            if lesson_for_this_room:
-                if room.deleted:
-                    lesson_for_this_room.delete()
+            if lesson:
+                if lesson.room:
+                    lesson_for_this_room = ClassTimeTable.objects.filter(date=date, room_id=lesson.room, hours_id=hour).first()
+                    if lesson_for_this_room:
+                        if lesson_for_this_room.room.deleted:
+                            lesson_for_this_room.delete()
             lesson = ClassTimeTable.objects.filter(date=date, teacher_id=checked_id, hours_id=hour).first()
             if lesson:
                 status = False
@@ -262,6 +268,11 @@ class CheckClassTimeTable(APIView):
         elif type == 'flow':
             room = data.get('room')
             flow = Flow.objects.get(pk=checked_id)
+            lesson_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
+            if lesson_room:
+                room = lesson_room.room
+                if room.deleted:
+                    lesson_room.delete()
             lesson_room = ClassTimeTable.objects.filter(date=date, room_id=room, hours_id=hour).first()
             if lesson_room:
                 status = False
