@@ -75,7 +75,7 @@ class MobileMissionCommentAPIView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         mission_id = int(self.kwargs["mission_id"])
-        user_id = int(self.request.query_params.get("user"))
+        user_id = int(self.request.query_params.get("user_id"))
         user = CustomUser.objects.get(pk=user_id)
 
         return MissionComment.objects.filter(
