@@ -16,7 +16,7 @@ class MobileMissionListAPIView(ListAPIView):
     serializer_class = MobileMissionSerializer
 
     def get_queryset(self):
-        user_id = int(self.request.query_params.get("user"))
+        user_id = int(self.request.query_params.get("user_id"))
         print(user_id)
         user = CustomUser.objects.get(pk=user_id)
         print(user)
