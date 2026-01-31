@@ -16,7 +16,7 @@ class MobileMissionListAPIView(ListAPIView):
     serializer_class = MobileMissionSerializer
 
     def get_queryset(self):
-        user_id = self.request.query_params.get("user")
+        user_id = int(self.request.query_params.get("user"))
         user = CustomUser.objects.get(pk=user_id)
 
         qs = (
@@ -74,8 +74,9 @@ class MobileMissionStatusAPIView(UpdateAPIView):
 class MobileMissionCommentAPIView(generics.ListCreateAPIView):
 
     def get_queryset(self):
-        mission_id = self.kwargs["mission_id"]
-        user = self.request.user
+        mission_id = int(self.kwargs["mission_id"])
+        user_id = int(self.request.query_params.get("user"))
+        user = CustomUser.objects.get(pk=user_id)
 
         return MissionComment.objects.filter(
             mission_id=mission_id,
@@ -89,7 +90,7 @@ class MobileMissionCommentAPIView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         mission_id = self.kwargs["mission_id"]
-        user_id = self.request.query_params.get("user")
+        user_id = int(self.request.query_params.get("user"))
         user = CustomUser.objects.get(pk=user_id)
         mission = get_object_or_404(
             Mission,
@@ -115,7 +116,7 @@ class UserNotificationsAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         role = "executor"
-        user_id = self.request.query_params.get("user_id")
+        user_id = int(self.request.query_params.get("user_id"))
 
         today = date.today()
         if role == "executor" and user_id:
