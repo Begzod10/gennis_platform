@@ -90,7 +90,7 @@ class MobileMissionCommentAPIView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         mission_id = self.kwargs["mission_id"]
-        user_id = int(self.request.query_params.get("user"))
+        user_id = int(self.request.query_params.get("user_id"))
         user = CustomUser.objects.get(pk=user_id)
         mission = get_object_or_404(
             Mission,
