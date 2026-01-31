@@ -52,7 +52,6 @@ class MobileMissionStatusAPIView(UpdateAPIView):
     serializer_class = MobileMissionStatusSerializer
 
     def perform_update(self, serializer):
-
         mission = serializer.save()
 
         # finish + score
@@ -107,7 +106,8 @@ class MobileMissionCommentAPIView(generics.ListCreateAPIView):
         send_notification(
             user=mission.creator,
             mission=mission,
-            message=f"{user.get_full_name()} taskga comment yozdi"
+            message=f"{user.get_full_name()} taskga comment yozdi",
+            role="creator"
         )
 
 
