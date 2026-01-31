@@ -48,9 +48,11 @@ class MobileMissionDetailAPIView(RetrieveAPIView):
 
 
 class MobileMissionStatusAPIView(UpdateAPIView):
+    queryset = Mission.objects.all()
     serializer_class = MobileMissionStatusSerializer
 
     def perform_update(self, serializer):
+
         mission = serializer.save()
 
         # finish + score
