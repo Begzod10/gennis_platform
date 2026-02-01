@@ -448,7 +448,7 @@ class GroupLessonsAPIView(APIView):
             selected_date = date.today()
 
         try:
-            Group.objects.get(id=group_id)
+            group = Group.objects.prefetch_related("students__user").get(id=group_id)
         except Group.DoesNotExist:
             return Response(
                 {"error": "Group not found"},
@@ -469,21 +469,23 @@ class GroupLessonsAPIView(APIView):
                 group_id=group_id,
                 teacher=lesson.teacher,
                 day=selected_date
-            ).select_related("student", "student__user")
+            ).select_related("student")
+
+            score_map = {s.student_id: s for s in scores}
 
             students_data = []
 
-            for score in scores:
-                student = score.student
+            for student in group.students.all():
                 user = student.user
+                score = score_map.get(student.id)
 
                 students_data.append({
                     "student_id": student.id,
                     "student_name": f"{user.name} {user.surname}",
-                    "status": score.status,
-                    "homework": score.homework,
-                    "activeness": score.activeness,
-                    "average": score.average,
+                    "status": score.status if score else False,
+                    "homework": score.homework if score else 0,
+                    "activeness": score.activeness if score else 0,
+                    "average": score.average if score else 0,
                 })
 
             result.append({
