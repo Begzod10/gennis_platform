@@ -448,14 +448,12 @@ class GroupLessonsAPIView(APIView):
             selected_date = date.today()
 
         try:
-            group = Group.objects.prefetch_related("students").get(id=group_id)
+            Group.objects.get(id=group_id)
         except Group.DoesNotExist:
             return Response(
                 {"error": "Group not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
-
-        group_students = group.students.all()
 
         lessons = ClassTimeTable.objects.filter(
             group_id=group_id,
@@ -466,35 +464,36 @@ class GroupLessonsAPIView(APIView):
 
         result = []
 
-
         for lesson in lessons:
             scores = StudentScoreByTeacher.objects.filter(
                 group_id=group_id,
                 teacher=lesson.teacher,
                 day=selected_date
-            ).select_related("student")
-
-            score_map = {s.student_id: s for s in scores}
+            ).select_related("student", "student__user")
 
             students_data = []
 
-            for student in group_students:
-                score = score_map.get(student.id)
+            for score in scores:
+                student = score.student
+                user = student.user
 
                 students_data.append({
                     "student_id": student.id,
-                    "student_name": student.user.name + " " + student.user.surname,
-                    "status": True if score else False,
-                    "homework": score.homework if score else 0,
-                    "activeness": score.activeness if score else 0,
-                    "average": score.average if score else 0,
+                    "student_name": f"{user.name} {user.surname}",
+                    "status": score.status,
+                    "homework": score.homework,
+                    "activeness": score.activeness,
+                    "average": score.average,
                 })
 
             result.append({
                 "lesson_id": lesson.id,
                 "date": str(selected_date),
                 "teacher_id": lesson.teacher.id if lesson.teacher else None,
-                "teacher_name": lesson.teacher.user.name + " " + lesson.teacher.user.surname if lesson.teacher else None,
+                "teacher_name": (
+                    f"{lesson.teacher.user.name} {lesson.teacher.user.surname}"
+                    if lesson.teacher else None
+                ),
                 "subject": lesson.subject.name if lesson.subject else None,
                 "time": lesson.hours.name if lesson.hours else None,
                 "room": lesson.room.name if lesson.room else None,
@@ -502,3 +501,4 @@ class GroupLessonsAPIView(APIView):
             })
 
         return Response(result, status=status.HTTP_200_OK)
+
