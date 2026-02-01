@@ -11,10 +11,11 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from attendances.models import AttendancePerMonth, StudentMonthlySummary
+from attendances.models import AttendancePerMonth, StudentMonthlySummary, StudentScoreByTeacher
 from attendances.serializers import AttendancePerMonthSerializer
 from group.models import Group
-from students.models import StudentPayment, StudentCharity
+from school_time_table.models import ClassTimeTable
+from students.models import StudentPayment, StudentCharity, Student
 from students.serializers import get_remaining_debt_for_student
 from .models import AttendancePerDay
 from .models import StudentDailyAttendance, GroupMonthlySummary
@@ -428,3 +429,56 @@ class BranchDailyStatsView(APIView):
                          "overall_summary": {"present": branch_present, "absent": branch_absent,
                                              "total": branch_total}},
                         status=status.HTTP_200_OK)
+
+
+class GroupTodayLessonsAPIView(APIView):
+    def get(self, request, group_id):
+        today = date.today()
+
+        lessons = ClassTimeTable.objects.filter(
+            group_id=group_id,
+            date=today
+        ).select_related(
+            "teacher", "subject", "hours", "room"
+        )
+
+        group_students = Student.objects.filter(group_id=group_id)
+
+        result = []
+
+        for lesson in lessons:
+            scores = StudentScoreByTeacher.objects.filter(
+                group_id=group_id,
+                teacher=lesson.teacher,
+                day=today
+            ).select_related("student")
+
+            present_map = {
+                s.student_id: s for s in scores
+            }
+
+            students_data = []
+
+            for student in group_students:
+                score = present_map.get(student.id)
+
+                students_data.append({
+                    "student_id": student.id,
+                    "student_name": student.full_name,
+                    "status": True if score else False,
+                    "homework": score.homework if score else 0,
+                    "activeness": score.activeness if score else 0,
+                    "average": score.average if score else 0,
+                })
+
+            result.append({
+                "lesson_id": lesson.id,
+                "teacher_id": lesson.teacher.id if lesson.teacher else None,
+                "teacher_name": lesson.teacher.full_name if lesson.teacher else None,
+                "subject": lesson.subject.name if lesson.subject else None,
+                "time": lesson.hours.name,
+                "room": lesson.room.name if lesson.room else None,
+                "students": students_data
+            })
+
+        return Response(result)
