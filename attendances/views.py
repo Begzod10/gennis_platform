@@ -455,23 +455,27 @@ class GroupLessonsAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        teacher_ids = StudentScoreByTeacher.objects.filter(
+            group_id=group_id,
+            day=selected_date
+        ).values_list("teacher_id", flat=True).distinct()
+
         lessons = ClassTimeTable.objects.filter(
             group_id=group_id,
-            date=selected_date
-        ).select_related("teacher", "subject", "hours", "room", "teacher__user")
+            date=selected_date,
+            teacher_id__in=teacher_ids
+        ).select_related(
+            "teacher", "teacher__user", "subject", "hours", "room"
+        )
 
         result = []
 
         for lesson in lessons:
-
-            if lesson.teacher:
-                scores = StudentScoreByTeacher.objects.filter(
-                    group_id=group_id,
-                    teacher=lesson.teacher,
-                    day=selected_date
-                ).select_related("student", "student__user")
-            else:
-                scores = StudentScoreByTeacher.objects.none()
+            scores = StudentScoreByTeacher.objects.filter(
+                group_id=group_id,
+                day=selected_date,
+                teacher=lesson.teacher
+            ).select_related("student", "student__user")
 
             score_map = {s.student_id: s for s in scores}
 
@@ -493,11 +497,8 @@ class GroupLessonsAPIView(APIView):
             result.append({
                 "lesson_id": lesson.id,
                 "date": str(selected_date),
-                "teacher_id": lesson.teacher.id if lesson.teacher else None,
-                "teacher_name": (
-                    f"{lesson.teacher.user.name} {lesson.teacher.user.surname}"
-                    if lesson.teacher else None
-                ),
+                "teacher_id": lesson.teacher.id,
+                "teacher_name": f"{lesson.teacher.user.name} {lesson.teacher.user.surname}",
                 "subject": lesson.subject.name if lesson.subject else None,
                 "time": lesson.hours.name if lesson.hours else None,
                 "room": lesson.room.name if lesson.room else None,
@@ -505,4 +506,3 @@ class GroupLessonsAPIView(APIView):
             })
 
         return Response(result, status=status.HTTP_200_OK)
-
