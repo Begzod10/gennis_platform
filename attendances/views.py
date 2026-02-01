@@ -431,13 +431,24 @@ class BranchDailyStatsView(APIView):
                         status=status.HTTP_200_OK)
 
 
-class GroupTodayLessonsAPIView(APIView):
+class GroupLessonsAPIView(APIView):
     def get(self, request, group_id):
-        today = date.today()
+        date_str = request.query_params.get("date")
+
+        if date_str:
+            try:
+                selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            except ValueError:
+                return Response(
+                    {"error": "Date format must be YYYY-MM-DD"},
+                    status=400
+                )
+        else:
+            selected_date = date.today()
 
         lessons = ClassTimeTable.objects.filter(
             group_id=group_id,
-            date=today
+            date=selected_date
         ).select_related(
             "teacher", "subject", "hours", "room"
         )
@@ -450,17 +461,15 @@ class GroupTodayLessonsAPIView(APIView):
             scores = StudentScoreByTeacher.objects.filter(
                 group_id=group_id,
                 teacher=lesson.teacher,
-                day=today
+                day=selected_date
             ).select_related("student")
 
-            present_map = {
-                s.student_id: s for s in scores
-            }
+            score_map = {s.student_id: s for s in scores}
 
             students_data = []
 
             for student in group_students:
-                score = present_map.get(student.id)
+                score = score_map.get(student.id)
 
                 students_data.append({
                     "student_id": student.id,
@@ -478,6 +487,7 @@ class GroupTodayLessonsAPIView(APIView):
                 "subject": lesson.subject.name if lesson.subject else None,
                 "time": lesson.hours.name,
                 "room": lesson.room.name if lesson.room else None,
+                "date": str(selected_date),
                 "students": students_data
             })
 
