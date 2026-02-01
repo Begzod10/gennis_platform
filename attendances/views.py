@@ -15,7 +15,7 @@ from attendances.models import AttendancePerMonth, StudentMonthlySummary, Studen
 from attendances.serializers import AttendancePerMonthSerializer
 from group.models import Group
 from school_time_table.models import ClassTimeTable
-from students.models import StudentPayment, StudentCharity, Student
+from students.models import StudentPayment, StudentCharity
 from students.serializers import get_remaining_debt_for_student
 from .models import AttendancePerDay
 from .models import StudentDailyAttendance, GroupMonthlySummary
@@ -433,6 +433,7 @@ class BranchDailyStatsView(APIView):
 
 class GroupLessonsAPIView(APIView):
     def get(self, request, group_id):
+
         date_str = request.query_params.get("date")
 
         if date_str:
@@ -441,10 +442,20 @@ class GroupLessonsAPIView(APIView):
             except ValueError:
                 return Response(
                     {"error": "Date format must be YYYY-MM-DD"},
-                    status=400
+                    status=status.HTTP_400_BAD_REQUEST
                 )
         else:
             selected_date = date.today()
+
+        try:
+            group = Group.objects.prefetch_related("students").get(id=group_id)
+        except Group.DoesNotExist:
+            return Response(
+                {"error": "Group not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        group_students = group.students.all()
 
         lessons = ClassTimeTable.objects.filter(
             group_id=group_id,
@@ -453,9 +464,8 @@ class GroupLessonsAPIView(APIView):
             "teacher", "subject", "hours", "room"
         )
 
-        group_students = Student.objects.filter(group_id=group_id)
-
         result = []
+
 
         for lesson in lessons:
             scores = StudentScoreByTeacher.objects.filter(
@@ -482,13 +492,13 @@ class GroupLessonsAPIView(APIView):
 
             result.append({
                 "lesson_id": lesson.id,
+                "date": str(selected_date),
                 "teacher_id": lesson.teacher.id if lesson.teacher else None,
                 "teacher_name": lesson.teacher.full_name if lesson.teacher else None,
                 "subject": lesson.subject.name if lesson.subject else None,
-                "time": lesson.hours.name,
+                "time": lesson.hours.name if lesson.hours else None,
                 "room": lesson.room.name if lesson.room else None,
-                "date": str(selected_date),
                 "students": students_data
             })
 
-        return Response(result)
+        return Response(result, status=status.HTTP_200_OK)
