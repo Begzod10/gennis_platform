@@ -455,9 +455,18 @@ class GroupLessonsAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        teacher_ids = StudentScoreByTeacher.objects.filter(
+            group_id=group_id,
+            day=selected_date
+        ).values_list("teacher_id", flat=True).distinct()
+
+        if not teacher_ids:
+            return Response([], status=status.HTTP_200_OK)
+
         lessons = ClassTimeTable.objects.filter(
             group_id=group_id,
-            date=selected_date
+            date=selected_date,
+            teacher_id__in=teacher_ids
         ).select_related(
             "teacher", "subject", "hours", "room"
         )
