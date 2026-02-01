@@ -458,22 +458,20 @@ class GroupLessonsAPIView(APIView):
         lessons = ClassTimeTable.objects.filter(
             group_id=group_id,
             date=selected_date
-        ).select_related(
-            "teacher", "subject", "hours", "room"
-        )
+        ).select_related("subject", "hours", "room")
 
         result = []
-
 
         for lesson in lessons:
             scores = StudentScoreByTeacher.objects.filter(
                 group_id=group_id,
-                teacher=lesson.teacher,
                 day=selected_date
-            ).select_related("student")
-            teacher = scores.first().teacher if scores.exists() else None
+            ).select_related("student", "student__user", "teacher", "teacher__user")
 
+            # student_id -> score
             score_map = {s.student_id: s for s in scores}
+
+            teacher = scores.first().teacher if scores.exists() else None
 
             students_data = []
 
@@ -505,4 +503,5 @@ class GroupLessonsAPIView(APIView):
             })
 
         return Response(result, status=status.HTTP_200_OK)
+
 
