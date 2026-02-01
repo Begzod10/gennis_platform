@@ -464,12 +464,14 @@ class GroupLessonsAPIView(APIView):
 
         result = []
 
+
         for lesson in lessons:
             scores = StudentScoreByTeacher.objects.filter(
                 group_id=group_id,
                 teacher=lesson.teacher,
                 day=selected_date
             ).select_related("student")
+            teacher = scores.first().teacher if scores.exists() else None
 
             score_map = {s.student_id: s for s in scores}
 
@@ -491,10 +493,10 @@ class GroupLessonsAPIView(APIView):
             result.append({
                 "lesson_id": lesson.id,
                 "date": str(selected_date),
-                "teacher_id": lesson.teacher.id if lesson.teacher else None,
+                "teacher_id": teacher.id if teacher else None,
                 "teacher_name": (
-                    f"{lesson.teacher.user.name} {lesson.teacher.user.surname}"
-                    if lesson.teacher else None
+                    f"{teacher.user.name} {teacher.user.surname}"
+                    if teacher else None
                 ),
                 "subject": lesson.subject.name if lesson.subject else None,
                 "time": lesson.hours.name if lesson.hours else None,
