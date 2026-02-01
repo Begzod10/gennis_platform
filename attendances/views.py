@@ -494,7 +494,7 @@ class GroupLessonsAPIView(APIView):
                 "lesson_id": lesson.id,
                 "date": str(selected_date),
                 "teacher_id": lesson.teacher.id if lesson.teacher else None,
-                "teacher_name": lesson.teacher.user.name + "" + lesson.teacher.user.surname if lesson.teacher else None,
+                "teacher_name": lesson.teacher.user.name + " " + lesson.teacher.user.surname if lesson.teacher else None,
                 "subject": lesson.subject.name if lesson.subject else None,
                 "time": lesson.hours.name if lesson.hours else None,
                 "room": lesson.room.name if lesson.room else None,
