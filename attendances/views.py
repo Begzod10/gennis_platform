@@ -458,20 +458,22 @@ class GroupLessonsAPIView(APIView):
         lessons = ClassTimeTable.objects.filter(
             group_id=group_id,
             date=selected_date
-        ).select_related("subject", "hours", "room")
+        ).select_related("teacher", "subject", "hours", "room", "teacher__user")
 
         result = []
 
         for lesson in lessons:
-            scores = StudentScoreByTeacher.objects.filter(
-                group_id=group_id,
-                day=selected_date
-            ).select_related("student", "student__user", "teacher", "teacher__user")
 
-            # student_id -> score
+            if lesson.teacher:
+                scores = StudentScoreByTeacher.objects.filter(
+                    group_id=group_id,
+                    teacher=lesson.teacher,
+                    day=selected_date
+                ).select_related("student", "student__user")
+            else:
+                scores = StudentScoreByTeacher.objects.none()
+
             score_map = {s.student_id: s for s in scores}
-
-            teacher = scores.first().teacher if scores.exists() else None
 
             students_data = []
 
@@ -491,10 +493,10 @@ class GroupLessonsAPIView(APIView):
             result.append({
                 "lesson_id": lesson.id,
                 "date": str(selected_date),
-                "teacher_id": teacher.id if teacher else None,
+                "teacher_id": lesson.teacher.id if lesson.teacher else None,
                 "teacher_name": (
-                    f"{teacher.user.name} {teacher.user.surname}"
-                    if teacher else None
+                    f"{lesson.teacher.user.name} {lesson.teacher.user.surname}"
+                    if lesson.teacher else None
                 ),
                 "subject": lesson.subject.name if lesson.subject else None,
                 "time": lesson.hours.name if lesson.hours else None,
@@ -503,5 +505,4 @@ class GroupLessonsAPIView(APIView):
             })
 
         return Response(result, status=status.HTTP_200_OK)
-
 
