@@ -25,3 +25,4 @@ class ClassTimeTable(models.Model):
     name = models.CharField()
     students = models.ManyToManyField('students.Student', related_name='class_time_table')
     date = models.DateField(null=True)
+    classes = models.JSONField(null=True)

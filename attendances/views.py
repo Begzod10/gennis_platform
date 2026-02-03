@@ -11,9 +11,10 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from attendances.models import AttendancePerMonth, StudentMonthlySummary
+from attendances.models import AttendancePerMonth, StudentMonthlySummary, StudentScoreByTeacher
 from attendances.serializers import AttendancePerMonthSerializer
 from group.models import Group
+from school_time_table.models import ClassTimeTable
 from students.models import StudentPayment, StudentCharity
 from students.serializers import get_remaining_debt_for_student
 from .models import AttendancePerDay
@@ -428,3 +429,80 @@ class BranchDailyStatsView(APIView):
                          "overall_summary": {"present": branch_present, "absent": branch_absent,
                                              "total": branch_total}},
                         status=status.HTTP_200_OK)
+
+
+class GroupLessonsAPIView(APIView):
+    def get(self, request, group_id):
+
+        date_str = request.query_params.get("date")
+
+        if date_str:
+            try:
+                selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            except ValueError:
+                return Response(
+                    {"error": "Date format must be YYYY-MM-DD"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            selected_date = date.today()
+
+        try:
+            group = Group.objects.prefetch_related("students__user").get(id=group_id)
+        except Group.DoesNotExist:
+            return Response(
+                {"error": "Group not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        teacher_ids = StudentScoreByTeacher.objects.filter(
+            group_id=group_id,
+            day=selected_date
+        ).values_list("teacher_id", flat=True).distinct()
+
+        lessons = ClassTimeTable.objects.filter(
+            group_id=group_id,
+            date=selected_date,
+            teacher_id__in=teacher_ids
+        ).select_related(
+            "teacher", "teacher__user", "subject", "hours", "room"
+        )
+
+        result = []
+
+        for lesson in lessons:
+            scores = StudentScoreByTeacher.objects.filter(
+                group_id=group_id,
+                day=selected_date,
+                teacher=lesson.teacher
+            ).select_related("student", "student__user")
+
+            score_map = {s.student_id: s for s in scores}
+
+            students_data = []
+
+            for student in group.students.all():
+                user = student.user
+                score = score_map.get(student.id)
+
+                students_data.append({
+                    "student_id": student.id,
+                    "student_name": f"{user.name} {user.surname}",
+                    "status": score.status if score else False,
+                    "homework": score.homework if score else 0,
+                    "activeness": score.activeness if score else 0,
+                    "average": score.average if score else 0,
+                })
+
+            result.append({
+                "lesson_id": lesson.id,
+                "date": str(selected_date),
+                "teacher_id": lesson.teacher.id,
+                "teacher_name": f"{lesson.teacher.user.name} {lesson.teacher.user.surname}",
+                "subject": lesson.subject.name if lesson.subject else None,
+                "time": lesson.hours.name if lesson.hours else None,
+                "room": lesson.room.name if lesson.room else None,
+                "students": students_data
+            })
+
+        return Response(result, status=status.HTTP_200_OK)

@@ -16,9 +16,10 @@ class MobileMissionListAPIView(ListAPIView):
     serializer_class = MobileMissionSerializer
 
     def get_queryset(self):
-        user_id = self.request.query_params.get("user")
+        user_id = int(self.request.query_params.get("user_id"))
+        print(user_id)
         user = CustomUser.objects.get(pk=user_id)
-
+        print(user)
         qs = (
             Mission.objects
             .filter(executor=user)
@@ -47,10 +48,8 @@ class MobileMissionDetailAPIView(RetrieveAPIView):
 
 
 class MobileMissionStatusAPIView(UpdateAPIView):
+    queryset = Mission.objects.all()
     serializer_class = MobileMissionStatusSerializer
-
-    def get_queryset(self):
-        return Mission.objects.filter(executor=self.request.user)
 
     def perform_update(self, serializer):
         mission = serializer.save()
@@ -74,8 +73,9 @@ class MobileMissionStatusAPIView(UpdateAPIView):
 class MobileMissionCommentAPIView(generics.ListCreateAPIView):
 
     def get_queryset(self):
-        mission_id = self.kwargs["mission_id"]
-        user = self.request.user
+        mission_id = int(self.kwargs["mission_id"])
+        user_id = int(self.request.query_params.get("user_id"))
+        user = CustomUser.objects.get(pk=user_id)
 
         return MissionComment.objects.filter(
             mission_id=mission_id,
@@ -89,7 +89,7 @@ class MobileMissionCommentAPIView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         mission_id = self.kwargs["mission_id"]
-        user_id = self.request.query_params.get("user")
+        user_id = int(self.request.query_params.get("user_id"))
         user = CustomUser.objects.get(pk=user_id)
         mission = get_object_or_404(
             Mission,
@@ -106,7 +106,8 @@ class MobileMissionCommentAPIView(generics.ListCreateAPIView):
         send_notification(
             user=mission.creator,
             mission=mission,
-            message=f"{user.get_full_name()} taskga comment yozdi"
+            message=f"{user.get_full_name()} taskga comment yozdi",
+            role="creator"
         )
 
 
@@ -115,7 +116,7 @@ class UserNotificationsAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         role = "executor"
-        user_id = self.request.query_params.get("user_id")
+        user_id = int(self.request.query_params.get("user_id"))
 
         today = date.today()
         if role == "executor" and user_id:
