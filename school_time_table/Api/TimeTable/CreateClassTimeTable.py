@@ -105,9 +105,9 @@ class ClassTimeTableLessonsView(APIView):
         teacher_id = request.query_params.get('teacher')
         student_id = request.query_params.get('student')
         which_week = request.query_params.get('which_week')
-        rooms = Room.objects.filter(deleted=True).all()
-        for room in rooms:
-            lesson = ClassTimeTable.objects.filter(room_id=room.id).delete()
+        # rooms = Room.objects.filter(deleted=True).all()
+        # for room in rooms:
+        #     lesson = ClassTimeTable.objects.filter(room_id=room.id).delete()
         if not branch_id:
             return Response({'lesson': None, 'msg': 'Branch not found'})
         branch = Branch.objects.get(id=branch_id)
