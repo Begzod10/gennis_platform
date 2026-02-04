@@ -453,7 +453,7 @@ class GroupListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Group
-        fields = ["id", "class_number", "color", "class_type", "price", "subjects", "status_class_type"]
+        fields = ["id", "class_number", "color", "class_type", "price", "subjects", "status_class_type",'overall_hours']
     def get_overall_hours(self, obj):
         hours =0
         for i in obj.subjects.all():
