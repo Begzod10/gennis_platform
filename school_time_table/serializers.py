@@ -1,4 +1,5 @@
 from datetime import date, timedelta, datetime
+from django.db.models import Q
 import requests
 from rest_framework import serializers
 from django.db.models import F, IntegerField
@@ -75,7 +76,11 @@ class ClassTimeTableCreateUpdateSerializers(serializers.ModelSerializer):
         students = group.students.all() if group else (flow.students.all() if flow else [])
         subject = subject or (flow.subject if flow else None)
 
-        class_time_table = ClassTimeTable.objects.create(**validated_data)
+        print(flow)
+        if flow:
+            class_time_table = ClassTimeTable.objects.create(**validated_data, classes=flow.classes)
+        else:
+            class_time_table = ClassTimeTable.objects.create(**validated_data)
         if students:
             class_time_table.students.add(*students)
 
@@ -384,7 +389,12 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                 if week:
                     qs = qs.filter(week=week)  # int-based week
                 if group_id:
-                    qs = qs.filter(group_id=group_id)
+                    group_id = int(group_id)
+                    qs = qs.filter(
+                        Q(group_id=group_id) |
+                        Q(classes__contains=[group_id])
+                    )
+
                 if teacher_id:
                     qs = qs.filter(teacher_id=teacher_id)
                 if student_id:
