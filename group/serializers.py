@@ -448,10 +448,17 @@ class GroupListSerializer(serializers.ModelSerializer):
     class_type = serializers.CharField(source="class_type.name", read_only=True, allow_null=True)
     subjects = GroupSubjectSerializer(source="group_subjects", many=True, read_only=True)
     status_class_type = serializers.BooleanField(read_only=True)
+    overall_hours = serializers.SerializerMethodField(read_only=True)
+
 
     class Meta:
         model = Group
         fields = ["id", "class_number", "color", "class_type", "price", "subjects", "status_class_type"]
+    def get_overall_hours(self, obj):
+        hours =0
+        for i in obj.subjects.all():
+            hours += i.hours
+        return hours
 
 # class GroupListSerializer(serializers.ModelSerializer):
 #     class_number = serializers.CharField(required=False, source='class_number.number')
