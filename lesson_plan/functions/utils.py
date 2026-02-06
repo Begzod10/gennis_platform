@@ -38,9 +38,10 @@ def number_of_days_in_month(year, month):
 def weekday_from_date(day_list, month, year, week_list):
     return [days for days in day_list if day_name[date(year, month, days).weekday()] in week_list]
 
+
 @shared_task()
 def update_lesson_plan(group_id):
-
+    print(group_id)
     time_table_group = ClassTimeTable.objects.filter(group_id=group_id).order_by('id')
 
     allowed_weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']

@@ -2,12 +2,13 @@ from django.utils import timezone
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
+from rest_framework.views import APIView
 from permissions.response import QueryParamFilterMixin
 from teachers.models import TeacherAttendance, Teacher, TeacherSalaryType
 from teachers.serializers import TeacherAttendanceListSerializers, TeacherSerializerRead, \
     TeacherSalaryTypeSerializerRead
 from teachers.serializer.lists import ActiveListTeacherSerializerTime
+from teachers.services.teacher_rating import CATEGORY_MAP
 
 
 class TeacherAttendanceListView(generics.ListAPIView):
@@ -45,7 +46,6 @@ class TeacherAttendanceRetrieveView(generics.ListAPIView):
             qs = qs.filter(day__day=day)
 
         return qs
-
 
 
 class TeachersForBranches(generics.ListAPIView):
@@ -86,3 +86,21 @@ class SalaryType(QueryParamFilterMixin, generics.ListCreateAPIView):
     }
     serializer_class = TeacherSalaryTypeSerializerRead
     queryset = TeacherSalaryType.objects.all()
+
+
+class TeacherRatingAPIView(APIView):
+
+    def get(self, request):
+        branch_id = request.query_params.get('branch')
+        category = request.query_params.get('category')
+        year = request.query_params.get('year')
+        month = request.query_params.get('month')
+        year = int(year) if year else None
+        month = int(month) if month else None
+
+        if category not in CATEGORY_MAP:
+            return Response({"detail": "Invalid category"}, status=400)
+
+        data = CATEGORY_MAP[category](branch_id, year, month)
+
+        return Response(data)

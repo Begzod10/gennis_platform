@@ -7,6 +7,8 @@ from lesson_plan.models import LessonPlan
 from lesson_plan.serializers import LessonPlanGetSerializer
 from school_time_table.models import ClassTimeTable
 
+from lesson_plan.functions.utils import update_lesson_plan
+
 
 class GetLessonPlanView(generics.RetrieveAPIView):
     serializer_class = LessonPlanGetSerializer
@@ -40,6 +42,7 @@ class LessonPlanListView(generics.ListAPIView):
 
     def get_queryset(self):
         group_id = self.kwargs['group_id']
+        # update_lesson_plan(374)
         group = ClassTimeTable.objects.get(id=group_id)
         group_id = group.group.id
         date = self.kwargs.get('date')
@@ -55,4 +58,4 @@ class LessonPlanListView(generics.ListAPIView):
         years = sorted(list(set([lp.date.year for lp in queryset])))
 
         return Response({"month_list": months, "years_list": years, "month": months[0] if months else None,
-            "year": years[0] if years else None, "days": days})
+                         "year": years[0] if years else None, "days": days})

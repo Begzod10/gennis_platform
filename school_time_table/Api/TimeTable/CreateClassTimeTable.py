@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, date
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo  # Python 3.9+
 from group.models import Group, GroupSubjects, GroupSubjectsCount
+from rooms.models import Room
 from ...models import ClassTimeTable
 from ...serializers import ClassTimeTableCreateUpdateSerializers, ClassTimeTableReadSerializers, \
     ClassTimeTableTest2Serializer, ClassTimeTableForClassSerializer2
@@ -104,7 +105,9 @@ class ClassTimeTableLessonsView(APIView):
         teacher_id = request.query_params.get('teacher')
         student_id = request.query_params.get('student')
         which_week = request.query_params.get('which_week')
-
+        # rooms = Room.objects.filter(deleted=True).all()
+        # for room in rooms:
+        #     lesson = ClassTimeTable.objects.filter(room_id=room.id).delete()
         if not branch_id:
             return Response({'lesson': None, 'msg': 'Branch not found'})
         branch = Branch.objects.get(id=branch_id)
@@ -152,7 +155,7 @@ class ClassTimeTableLessonsView(APIView):
 
         data = {
             'time_tables': serializer.get_time_tables(None),
-            'hours_list': serializer.get_hours_list(None)
+            'hours_list': serializer.get_hours_list(None),
         }
         return Response(data)
 
@@ -251,7 +254,8 @@ class CheckClassTimeTable(APIView):
             lesson = ClassTimeTable.objects.filter(date=date, teacher_id=checked_id, hours_id=hour).first()
             if lesson:
                 if lesson.room:
-                    lesson_for_this_room = ClassTimeTable.objects.filter(date=date, room_id=lesson.room, hours_id=hour).first()
+                    lesson_for_this_room = ClassTimeTable.objects.filter(date=date, room_id=lesson.room,
+                                                                         hours_id=hour).first()
                     if lesson_for_this_room:
                         if lesson_for_this_room.room.deleted:
                             lesson_for_this_room.delete()

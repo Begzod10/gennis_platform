@@ -414,6 +414,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                         'id': lesson.subject.id,
                         'name': lesson.subject.name
                     } if lesson.subject else None
+                    print(lesson.id)
 
                     lesson_info = {
                         'id': lesson.id,

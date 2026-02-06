@@ -17,7 +17,7 @@ from teachers.Api.write import (
 from .Api.requests.crud import TeacherRequestViewSet
 from .Api.createdeleteupdate import TeacherAttendanceCreateView, TeacherAttendanceDestroyView
 from .Api.get import TeacherAttendanceListView, TeacherAttendanceRetrieveView, TeachersForBranches, TeachersForSubject, \
-    SalaryType, TeachersForSubjectForTimeTable
+    SalaryType, TeachersForSubjectForTimeTable, TeacherRatingAPIView
 from .views import GetGroupStudents
 
 app_name = 'Teachers'
@@ -76,4 +76,6 @@ urlpatterns = [
     path('get_balance/<int:user_id>/', GetTeacherBalance.as_view()),
     path('teacher-requests/', teacher_request_list, name='teacher-request-list'),
     path('teacher-requests/<int:pk>/', teacher_request_detail, name='teacher-request-detail'),
+
+    path('teacher-rating/', TeacherRatingAPIView.as_view(), name='teacher-rating'),
 ]
