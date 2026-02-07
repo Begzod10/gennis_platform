@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'classes.apps.ClassesConfig',
     'books.apps.BooksConfig',
     'observation.apps.ObservationConfig',
+    'rest_framework',
     'corsheaders',
     'school_time_table.apps.SchoolTimeTableConfig',
     'djoser',
@@ -75,7 +76,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "tasks.middlewear.RecurringTaskMiddleware",
+    # "tasks.middlewear.RecurringTaskMiddleware",
 ]
 
 ROOT_URLCONF = 'gennis_platform.urls'
@@ -211,5 +212,5 @@ MEDIA_ROOT = BASE_DIR / 'media/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # SILKY_PYTHON_PROFILER = True
 CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "http://127.0.0.1:8000", "https://school.gennis.uz",
-                        "http://localhost:3000", "http://0.0.0.0:8000"]
-CORS_ALLOW_CREDENTIALS = True
+                        "http://localhost:3000", "http://0.0.0.0:8000", "http://100.81.196.80:3000",
+                        'http://100.94.144.113:8000',  'http://100.124.167.36:3000']

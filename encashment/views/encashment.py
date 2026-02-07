@@ -292,7 +292,7 @@ class GetSchoolStudents(APIView):
                 month_date__year=current_year,
                 month_date__month=current_month,
                 student__user__branch_id=branch_id,
-                group__deleted=False
+                # group__deleted=False
             )
             .annotate(
                 is_active=Exists(is_active_in_group),
