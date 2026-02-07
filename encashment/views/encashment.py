@@ -276,7 +276,7 @@ class GetSchoolStudents(APIView):
         is_active_in_group = Group.objects.filter(
             id=OuterRef('group_id'),
             students=OuterRef('student_id'),
-            deleted=False
+            # deleted=False
         )
 
         last_deleted_group = DeletedStudent.objects.filter(
