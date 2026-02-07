@@ -281,7 +281,7 @@ class GetSchoolStudents(APIView):
 
         last_deleted_group = DeletedStudent.objects.filter(
             student_id=OuterRef('student_id'),
-            deleted=False,
+            # deleted=False,
             deleted_date__year=current_year,
             deleted_date__month__gte=current_month
         ).order_by('-id').values('group_id')[:1]
