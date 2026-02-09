@@ -276,14 +276,13 @@ class GetSchoolStudents(APIView):
         is_active_in_group = Group.objects.filter(
             id=OuterRef('group_id'),
             students=OuterRef('student_id'),
-            deleted=False
+            # deleted=False
         )
 
         last_deleted_group = DeletedStudent.objects.filter(
             student_id=OuterRef('student_id'),
-            deleted=False,
-            deleted_date__year=current_year,
-            deleted_date__month__gte=current_month
+            # deleted=False,
+            deleted_date__gte=date(current_year, current_month, 1)
         ).order_by('-id').values('group_id')[:1]
 
         attendances = (
@@ -292,7 +291,7 @@ class GetSchoolStudents(APIView):
                 month_date__year=current_year,
                 month_date__month=current_month,
                 student__user__branch_id=branch_id,
-                group__deleted=False
+                # group__deleted=False
             )
             .annotate(
                 is_active=Exists(is_active_in_group),
@@ -449,6 +448,7 @@ class GetSchoolStudents(APIView):
         data['total_with_discount'] = total_debt - (total_discount + total_donation)
 
         return data
+
     def get(self, request, *args, **kwargs):
         branch = request.query_params.get('branch')
         data = self.get_class_data(branch)

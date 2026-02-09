@@ -59,24 +59,25 @@ def update_lesson_plan(group_id):
     plan_days = weekday_from_date(list(range(1, number_days + 1)), current_month, current_year, week_list)
 
     group = get_object_or_404(Group, id=group_id)
-    current_date = datetime.now()
-    start_next_week = current_date + timedelta(days=(7 - current_date.weekday()))
-    end_next_week = start_next_week + timedelta(days=6)
+    if group:
+        current_date = datetime.now()
+        start_next_week = current_date + timedelta(days=(7 - current_date.weekday()))
+        end_next_week = start_next_week + timedelta(days=6)
 
-    valid_days = []
-    for day in plan_days:
-        date_get = date(current_year, current_month, day)
-        if start_next_week.date() <= date_get <= end_next_week.date():
-            weekday = date_get.strftime('%A')
-            if weekday in allowed_weekdays:
-                valid_days.append(day)
+        valid_days = []
+        for day in plan_days:
+            date_get = date(current_year, current_month, day)
+            if start_next_week.date() <= date_get <= end_next_week.date():
+                weekday = date_get.strftime('%A')
+                if weekday in allowed_weekdays:
+                    valid_days.append(day)
 
-    for day in valid_days:
-        date_get = date(current_year, current_month, day)
-        teachers = group.teacher.all()
-        for teacher in teachers:
-            exist = LessonPlan.objects.filter(date=date_get, group_id=group_id, teacher_id=teacher.id).exists()
-            if not exist:
-                LessonPlan.objects.create(group_id=group_id, teacher_id=teacher.id, date=date_get)
+        for day in valid_days:
+            date_get = date(current_year, current_month, day)
+            teachers = group.teacher.all()
+            for teacher in teachers:
+                exist = LessonPlan.objects.filter(date=date_get, group_id=group_id, teacher_id=teacher.id).exists()
+                if not exist:
+                    LessonPlan.objects.create(group_id=group_id, teacher_id=teacher.id, date=date_get)
 
     return True
