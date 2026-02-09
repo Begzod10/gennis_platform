@@ -4,6 +4,7 @@ from group.models import Group
 from teachers.models import Teacher
 from students.models import Student
 
+
 class LessonPlan(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE)
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
@@ -19,5 +20,5 @@ class LessonPlan(models.Model):
 
 class LessonPlanStudents(models.Model):
     lesson_plan = models.ForeignKey(LessonPlan, on_delete=models.CASCADE)
-    student = models.ForeignKey(Student,on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
     comment = models.TextField()

@@ -1,14 +1,68 @@
-from django.db.models import Sum, Q, Value
+from django.db.models import Count, Q, F, Case, When, Value, FloatField, ExpressionWrapper, Sum, IntegerField
 from teachers.models import Teacher
 from observation.models import TeacherObservationDay
 from django.db.models.functions import Coalesce
+from datetime import date
+import calendar
 
 
-def get_lesson_plan_stat(teacher_id: int):
-    """
-    Hozircha bo'sh, keyin to'ldiramiz
-    """
-    return 0
+def get_lesson_plan_ranking(branch_id, year=None, month=None):
+    today = date.today()
+
+    date_filter = Q()
+    year = int(year) if year else today.year
+    month = int(month) if month else today.month
+
+    if year == today.year and month == today.month:
+        # hozirgi oy → bugungacha
+        date_filter &= Q(lessonplan__date__year=year)
+        date_filter &= Q(lessonplan__date__month=month)
+        date_filter &= Q(lessonplan__date__lte=today)
+    else:
+        # oldingi oy → to‘liq oy
+        date_filter &= Q(lessonplan__date__year=year)
+        date_filter &= Q(lessonplan__date__month=month)
+
+    teachers = (
+        Teacher.objects
+        .filter(
+            user__branch_id=branch_id,
+            deleted=False
+        )
+        .select_related('user')
+        .annotate(
+            total_plans=Count(
+                'lessonplan',
+                filter=date_filter,
+                distinct=True
+            ),
+            done_plans=Count(
+                'lessonplan',
+                filter=date_filter & ~Q(lessonplan__objective__isnull=True),
+                distinct=True
+            )
+        )
+        .annotate(
+            percent=Case(
+                When(total_plans=0, then=Value(0)),
+                default=F('done_plans') * 100 / F('total_plans'),
+                output_field=IntegerField()
+            )
+        )
+        .order_by('-percent')
+    )
+
+    return [
+        {
+            "id": t.id,
+            "name": t.user.name,
+            "surname": t.user.surname,
+            "percent": t.percent,
+            "total": t.total_plans,
+            "done": t.done_plans
+        }
+        for t in teachers
+    ]
 
 
 def get_observation_ranking(branch_id, year=None, month=None):
@@ -52,5 +106,5 @@ def get_observation_ranking(branch_id, year=None, month=None):
 
 CATEGORY_MAP = {
     "observation": get_observation_ranking,
-    "lesson_plan": get_lesson_plan_stat,
+    "lesson_plan": get_lesson_plan_ranking,
 }
