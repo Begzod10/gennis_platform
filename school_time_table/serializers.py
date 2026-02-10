@@ -776,7 +776,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                 subjects.append({
                     "hourIndex": hour_index,
                     "classes": class_indexes,
-                    "groups": groups_data,
+                    "groups": None,
 
                     "name": lesson_obj.subject.name if lesson_obj.subject else lesson_obj.flow.name,
                     "is_flow": is_flow,
