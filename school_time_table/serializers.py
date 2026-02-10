@@ -661,7 +661,6 @@ class ClassTimeTableForClassSerializer(serializers.Serializer):
 #         ]
 
 
-
 from collections import defaultdict
 from datetime import date, timedelta
 from rest_framework import serializers
@@ -679,18 +678,13 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
         groups = Group.objects.filter(
             branch=branch,
             deleted=False
-        ).select_related(
-            'class_number',
-            'color'
-        ).order_by('class_number__number')
+        ).select_related('class_number', 'color').order_by('class_number__number')
 
-        # HOURS
         hours_list = [
             f"{h.start_time.strftime('%H:%M')}-{h.end_time.strftime('%H:%M')}"
             for h in hours
         ]
 
-        # CLASSES
         classes = []
         group_index_map = {}
 
@@ -705,7 +699,6 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
 
         for hour_index, hour in enumerate(hours):
 
-            # sana
             if week and date_ls is None:
                 today = date.today()
                 shift = week.order - today.isoweekday()
@@ -740,21 +733,23 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                     )
 
                 for lesson in lessons:
-                    # ❗ ENDI SUBJECT YO‘Q BO‘LSA HAM TASHLAMAYMIZ
                     if not lesson.subject and not lesson.flow:
                         continue
 
-                    key = (
-                        lesson.subject.id if lesson.subject else f"flow-{lesson.flow.id}",
-                        lesson.flow.id if lesson.flow else None
-                    )
+                    # 🔥 TO‘G‘RI KEY
+                    if lesson.flow:
+                        key = ("flow", lesson.flow.id)
+                    else:
+                        key = (
+                            "lesson",
+                            lesson.subject.id if lesson.subject else None,
+                            lesson.teacher.id if lesson.teacher else None,
+                            lesson.room.id if lesson.room else None,
+                        )
 
                     hour_lessons[key].append((lesson, group))
 
             for _, lesson_group_list in hour_lessons.items():
-                if not lesson_group_list:
-                    continue
-
                 lesson_obj = lesson_group_list[0][0]
                 is_flow = bool(lesson_obj.flow)
 
@@ -765,12 +760,10 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                 class_indexes = [
                     group_index_map[g_id]
                     for g_id in involved_group_ids
-                    if g_id in group_index_map
                 ]
 
-                # groups faqat 2+ group bo‘lsa
                 groups_data = None
-                if len(class_indexes) > 1:
+                if is_flow or len(class_indexes) > 1:
                     flow_groups = Group.objects.filter(
                         id__in=involved_group_ids
                     ).select_related('class_number', 'color')
@@ -783,9 +776,8 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                 subjects.append({
                     "hourIndex": hour_index,
                     "classes": class_indexes,
-                    "groups": None,
+                    "groups": groups_data,
 
-                    # 🔥 FAN YO‘Q BO‘LSA → FLOW NOMI
                     "name": lesson_obj.subject.name if lesson_obj.subject else lesson_obj.flow.name,
                     "is_flow": is_flow,
 
