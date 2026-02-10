@@ -102,21 +102,42 @@ class StudentAssignmentView(views.APIView):
         group_id = kwargs.get('group_id')
         test_id = kwargs.get('test_id')
 
-        group = get_object_or_404(Group.objects.prefetch_related('students__user'), id=group_id)
+        group = get_object_or_404(
+            Group.objects.prefetch_related('students__user'),
+            id=group_id
+        )
 
-        tests = Assignment.objects.filter(student__in=group.students.all(), test_id=test_id)
+        tests = Assignment.objects.filter(
+            student__in=group.students.all(),
+            test_id=test_id
+        )
 
         test_map = {t.student_id: t for t in tests}
 
         result = []
         for student in group.students.all():
             assignment = test_map.get(student.id)
-            result.append({"id": student.id, "name": student.user.name, "surname": student.user.surname,
-                           "assignment": {"id": assignment.id, "percentage": assignment.percentage,
-                                          "date": assignment.date} if assignment else None})
+
+            if assignment:
+                assignment_data = {
+                    "id": assignment.id,
+                    "percentage": assignment.percentage,
+                    "date": assignment.date,
+                    "is_editable": False
+                }
+            else:
+                assignment_data = {
+                    "is_editable": True
+                }
+
+            result.append({
+                "id": student.id,
+                "name": student.user.name,
+                "surname": student.user.surname,
+                "assignment": assignment_data
+            })
 
         return response.Response(result, status=status.HTTP_200_OK)
-
 
 class AssignmentCreateView(views.APIView):
     def post(self, request, *args, **kwargs):
