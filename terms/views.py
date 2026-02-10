@@ -123,7 +123,7 @@ class StudentAssignmentView(views.APIView):
                     "id": assignment.id,
                     "percentage": assignment.percentage,
                     "date": assignment.date,
-                    "is_editable": False
+                    "is_editable": assignment.percentage == 0
                 }
             else:
                 assignment_data = {
@@ -139,9 +139,11 @@ class StudentAssignmentView(views.APIView):
 
         return response.Response(result, status=status.HTTP_200_OK)
 
+
 class AssignmentCreateView(views.APIView):
     def post(self, request, *args, **kwargs):
         data = request.data
+        print(data)
 
         if not isinstance(data, list):
             return response.Response({"error": "Request body list bo'lishi kerak"}, status=status.HTTP_400_BAD_REQUEST)
