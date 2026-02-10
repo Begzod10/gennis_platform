@@ -659,9 +659,12 @@ class ClassTimeTableForClassSerializer(serializers.Serializer):
 #             }
 #             for hour in hours
 #         ]
+
+
+
+from collections import defaultdict
 from datetime import date, timedelta
 from rest_framework import serializers
-from collections import defaultdict
 
 class ClassTimeTableForClassSerializer2(serializers.Serializer):
     time_tables = serializers.SerializerMethodField()
@@ -681,17 +684,13 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
             'color'
         ).order_by('class_number__number')
 
-        # -----------------------------
         # HOURS
-        # -----------------------------
         hours_list = [
             f"{h.start_time.strftime('%H:%M')}-{h.end_time.strftime('%H:%M')}"
             for h in hours
         ]
 
-        # -----------------------------
         # CLASSES
-        # -----------------------------
         classes = []
         group_index_map = {}
 
@@ -702,9 +701,6 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
             })
             group_index_map[g.id] = idx
 
-        # -----------------------------
-        # SUBJECTS
-        # -----------------------------
         subjects = []
 
         for hour_index, hour in enumerate(hours):
@@ -717,12 +713,10 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
             else:
                 lesson_date = date_ls
 
-            # hour bo‘yicha barcha darslarni yig‘amiz
             hour_lessons = defaultdict(list)
 
             for group in groups:
 
-                # oddiy darslar
                 lessons = list(
                     group.classtimetable_set.filter(
                         date=lesson_date,
@@ -733,7 +727,6 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                     )
                 )
 
-                # flow darslar
                 for student in group.students.all():
                     lessons += list(
                         student.class_time_table.filter(
@@ -747,63 +740,64 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                     )
 
                 for lesson in lessons:
-                    if not lesson.subject:
+                    # ❗ ENDI SUBJECT YO‘Q BO‘LSA HAM TASHLAMAYMIZ
+                    if not lesson.subject and not lesson.flow:
                         continue
 
-                    hour_lessons[(lesson.subject.id, lesson.flow.id if lesson.flow else None)].append(
-                        (lesson, group)
+                    key = (
+                        lesson.subject.id if lesson.subject else f"flow-{lesson.flow.id}",
+                        lesson.flow.id if lesson.flow else None
                     )
 
-            # -----------------------------
-            # SUBJECT OBJECTLAR
-            # -----------------------------
-            for _, lesson_group_list in hour_lessons.items():
+                    hour_lessons[key].append((lesson, group))
 
+            for _, lesson_group_list in hour_lessons.items():
                 if not lesson_group_list:
                     continue
 
                 lesson_obj = lesson_group_list[0][0]
                 is_flow = bool(lesson_obj.flow)
 
-                # nechta group qatnashyapti
                 involved_group_ids = list({
                     g.id for _, g in lesson_group_list
                 })
 
-                # classes
                 class_indexes = [
                     group_index_map[g_id]
                     for g_id in involved_group_ids
                     if g_id in group_index_map
                 ]
 
-                # groups faqat 2+ dars bo‘lsa
+                # groups faqat 2+ group bo‘lsa
                 groups_data = None
-                if len(lesson_group_list) > 1 or len(class_indexes) > 1:
+                if len(class_indexes) > 1:
                     flow_groups = Group.objects.filter(
                         id__in=involved_group_ids
                     ).select_related('class_number', 'color')
 
                     groups_data = [
-                        {
-                            "name": f"{g.class_number.number}-{g.color.name}"
-                        }
+                        {"name": f"{g.class_number.number}-{g.color.name}"}
                         for g in flow_groups
                     ]
 
                 subjects.append({
                     "hourIndex": hour_index,
                     "classes": class_indexes,
-                    "groups": None,
-                    "name": lesson_obj.subject.name,
+                    "groups": groups_data,
+
+                    # 🔥 FAN YO‘Q BO‘LSA → FLOW NOMI
+                    "name": lesson_obj.subject.name if lesson_obj.subject else lesson_obj.flow.name,
                     "is_flow": is_flow,
+
                     "subject": {
                         "name": lesson_obj.subject.name
-                    },
+                    } if lesson_obj.subject else None,
+
                     "teacher": {
                         "name": lesson_obj.teacher.user.name
                         if lesson_obj.teacher else None
                     },
+
                     "room": {
                         "name": lesson_obj.room.name
                         if lesson_obj.room else None
