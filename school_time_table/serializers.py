@@ -783,7 +783,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                 subjects.append({
                     "hourIndex": hour_index,
                     "classes": class_indexes,
-                    "groups": groups_data,
+                    "groups": None,
 
                     # 🔥 FAN YO‘Q BO‘LSA → FLOW NOMI
                     "name": lesson_obj.subject.name if lesson_obj.subject else lesson_obj.flow.name,
