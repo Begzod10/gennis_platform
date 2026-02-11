@@ -17,62 +17,70 @@ jobs:
           script: |
             DEPLOY_TIME=$(date "+%Y-%m-%d %H:%M:%S")
             CONTRIBUTOR="${{ github.actor }}"
+            COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+            COMMIT_SHA="${{ github.sha }}"
+            COMMIT_SHORT_SHA=$(echo "$COMMIT_SHA" | cut -c1-7)
             
-            # Navigate to project directory
             cd /home/turon/
             source venv/bin/activate
             cd backend
             
-            # Save old requirements hash
             if [ -f requirements.txt ]; then
-              OLD_REQ_HASH=$(md5sum requirements.txt | cut -d' ' -f1)
+              cp requirements.txt /tmp/old_requirements.txt
             else
-              OLD_REQ_HASH=""
+              touch /tmp/old_requirements.txt
             fi
             
-            # Pull latest code
             echo "📥 Pulling latest code..."
             GIT_OUTPUT=$(git pull origin master 2>&1) || {
               echo "❌ Git pull failed!"
               exit 1
             }
             
-            # Check if requirements changed
             if [ -f requirements.txt ]; then
-              NEW_REQ_HASH=$(md5sum requirements.txt | cut -d' ' -f1)
+              NEW_PACKAGES=$(comm -13 <(sort /tmp/old_requirements.txt) <(sort requirements.txt) 2>/dev/null)
+              REMOVED_PACKAGES=$(comm -23 <(sort /tmp/old_requirements.txt) <(sort requirements.txt) 2>/dev/null)
+              
+              if [ -n "$NEW_PACKAGES" ] || [ -n "$REMOVED_PACKAGES" ]; then
+                echo "📦 Requirements changed, installing..."
+                
+                if [ -n "$NEW_PACKAGES" ]; then
+                  echo "Installing new/updated packages:"
+                  echo "$NEW_PACKAGES" | while read package; do
+                    if [ -n "$package" ]; then
+                      pip install "$package" --upgrade 2>&1
+                    fi
+                  done
+                fi
+                
+                REQUIREMENTS_OUTPUT="New/Updated:$NEW_PACKAGES  Removed: $REMOVED_PACKAGES"
+                REQUIREMENTS_INSTALLED="✅ Dependencies updated"
+              else
+                echo "⏭️  Requirements unchanged, skipping..."
+                REQUIREMENTS_OUTPUT="No changes detected"
+                REQUIREMENTS_INSTALLED="⏭️  Skipped (no changes)"
+              fi
             else
-              NEW_REQ_HASH=""
+              REQUIREMENTS_OUTPUT="No requirements.txt found"
+              REQUIREMENTS_INSTALLED="⚠️  No requirements file"
             fi
             
-            # Install dependencies only if changed
-            if [ "$OLD_REQ_HASH" != "$NEW_REQ_HASH" ]; then
-              echo "📦 Requirements changed, installing dependencies..."
-              REQUIREMENTS_OUTPUT=$(pip install -r requirements.txt 2>&1)
-              REQUIREMENTS_INSTALLED="✅ Dependencies updated"
-            else
-              echo "⏭️  Requirements unchanged, skipping..."
-              REQUIREMENTS_OUTPUT="No changes detected"
-              REQUIREMENTS_INSTALLED="⏭️  Skipped (no changes)"
-            fi
+            # Cleanup temp file
+            rm -f /tmp/old_requirements.txt
             
-            # Run migrations
             echo "🔄 Running migrations..."
             MAKEMIGRATIONS_OUTPUT=$(python manage.py makemigrations 2>&1)
             MIGRATE_OUTPUT=$(python manage.py migrate 2>&1)
             
-            # Restart services
             echo "🔄 Restarting services..."
             sudo systemctl restart turon_platform
             sudo systemctl restart celery
             
-            # Wait for services to start
             sleep 5
             
-            # Check service status
             PLATFORM_STATUS=$(systemctl is-active turon_platform 2>&1)
             CELERY_STATUS=$(systemctl is-active celery 2>&1)
             
-            # Check API health
             API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://school.gennis.uz/api/Branch/branch_list/)
             if [ "$API_STATUS" = "200" ]; then
               API_MESSAGE="✅ API OK"
@@ -80,36 +88,35 @@ jobs:
               API_MESSAGE="❌ API ERROR (HTTP $API_STATUS)"
             fi
             
-            # HTML escape function
             html_escape() {
               echo "$1" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/"/\&quot;/g'
             }
             
+            SAFE_COMMIT=$(html_escape "$COMMIT_MESSAGE")
             SAFE_GIT=$(html_escape "$GIT_OUTPUT")
             SAFE_REQUIREMENTS=$(html_escape "$REQUIREMENTS_OUTPUT")
             SAFE_MAKEMIGRATIONS=$(html_escape "$MAKEMIGRATIONS_OUTPUT")
             SAFE_MIGRATE=$(html_escape "$MIGRATE_OUTPUT")
             
-            # Platform status emoji
             if [ "$PLATFORM_STATUS" = "active" ]; then
               PLATFORM_EMOJI="✅"
             else
               PLATFORM_EMOJI="❌"
             fi
             
-            # Celery status emoji
             if [ "$CELERY_STATUS" = "active" ]; then
               CELERY_EMOJI="✅"
             else
               CELERY_EMOJI="❌"
             fi
             
-            # Create deployment message
             {
               echo "<b>🚀 Production Deploy</b>"
               echo ""
               echo "🕒 <b>Time:</b> $DEPLOY_TIME"
               echo "👤 <b>Contributor:</b> $CONTRIBUTOR"
+              echo "📝 <b>Commit:</b> <code>$COMMIT_SHORT_SHA</code>"
+              echo "💬 <b>Message:</b> $SAFE_COMMIT"
               echo ""
               echo "<b>📊 Status:</b>"
               echo "$PLATFORM_EMOJI <b>Platform:</b> $PLATFORM_STATUS"
@@ -129,13 +136,11 @@ jobs:
               echo "<pre>$SAFE_MIGRATE</pre>"
             } > /tmp/deploy_message.txt
             
-            # Send to Telegram
             curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
               -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
               -d parse_mode=HTML \
               --data-urlencode text@/tmp/deploy_message.txt
             
-            # Cleanup
             rm -f /tmp/deploy_message.txt
             
             echo "✅ Deployment completed successfully!"
