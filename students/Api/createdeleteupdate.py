@@ -7,11 +7,14 @@ from rest_framework.response import Response
 
 from permissions.response import CustomResponseMixin
 from students.models import DeletedStudent, StudentPayment, StudentCharity, StudentHistoryGroups, DeletedNewStudent, \
-    Student
+    Student, StudentExamResult
 from students.serializers import DeletedStudentSerializer, StudentPaymentSerializer, StudentCharitySerializer, \
-    StudentHistoryGroupsSerializer, StudentSerializer, StudentListSerializer, get_remaining_debt_for_student
+    StudentHistoryGroupsSerializer, StudentSerializer, StudentListSerializer, get_remaining_debt_for_student, \
+    StudentExamResultReadSerializer, StudentExamResultWriteSerializer
 
 from pprint import pprint
+
+
 class StudentCreateView(CustomResponseMixin, generics.CreateAPIView):
     # permission_classes = [IsAuthenticated]
 
@@ -198,3 +201,72 @@ class CreateDiscountForSchool(generics.GenericAPIView):
         get_remaining_debt_for_student(student_id)
 
         return Response({"msg": "Chegirma muvaffaqiyatli yaratildi!"}, status=status.HTTP_200_OK)
+
+
+class StudentExamResultAPIView(generics.ListCreateAPIView):
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return StudentExamResultReadSerializer
+        return StudentExamResultWriteSerializer
+
+    def get_queryset(self):
+        qs = StudentExamResult.objects.select_related(
+            "student__user",
+            "teacher__user",
+            "group",
+            "subject",
+        )
+
+        teacher = self.request.GET.get("teacher")
+        group = self.request.GET.get("group")
+        student = self.request.GET.get("student")
+        subject = self.request.GET.get("subject")
+        year = self.request.GET.get("year")
+        month = self.request.GET.get("month")
+
+        if teacher:
+            qs = qs.filter(teacher_id=teacher)
+
+        if group:
+            qs = qs.filter(group_id=group)
+
+        if student:
+            qs = qs.filter(student_id=student)
+
+        if subject:
+            qs = qs.filter(subject_id=subject)
+
+        if year:
+            qs = qs.filter(datetime__year=int(year))
+
+        if month:
+            qs = qs.filter(datetime__month=int(month))
+
+        return qs.order_by("-datetime")
+
+
+class StudentExamResultDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = StudentExamResult.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return StudentExamResultReadSerializer
+        return StudentExamResultWriteSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            {"detail": "Deleted successfully"},
+            status=status.HTTP_200_OK
+        )
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)

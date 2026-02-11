@@ -48,6 +48,43 @@ class Student(models.Model):
         return f"{self.user.name} {self.user.surname} {self.id}"
 
 
+class StudentExamResult(models.Model):
+    title = models.CharField(max_length=255)  # Final, Midterm, Mock va hk
+
+    group = models.ForeignKey(
+        'group.Group',
+        on_delete=models.CASCADE,
+        related_name="exam_results"
+    )
+
+    teacher = models.ForeignKey(
+        Teacher,
+        on_delete=models.CASCADE,
+        related_name="exam_results"
+    )
+
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.CASCADE,
+        related_name="exam_results"
+    )
+
+    subject = models.ForeignKey(
+        Subject,
+        on_delete=models.CASCADE,
+        related_name="exam_results"
+    )
+
+    score = models.FloatField(default=0)
+
+    datetime = models.DateTimeField()
+
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-datetime"]
+
+
 class StudentCharity(models.Model):
     charity_sum = models.IntegerField()
     name = models.CharField(max_length=200, blank=True, null=True)
