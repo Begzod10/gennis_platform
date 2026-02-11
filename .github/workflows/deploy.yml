@@ -19,62 +19,57 @@ jobs:
           port: 22
           script: |
 
-            echo "🚀 DEPLOY STARTED"
             DEPLOY_TIME=$(date "+%Y-%m-%d %H:%M:%S")
             CONTRIBUTOR="${{ github.actor }}"
 
             cd /home/turon/
+
             source venv/bin/activate
 
-
-            echo "📥 Pulling latest code..."
             GIT_OUTPUT=$(git pull origin master 2>&1)
 
-            echo "🔄 Restarting services..."
-            sudo systemctl restart turon_platform
-            sudo systemctl restart celery
+            sudo systemctl restart turon_platform 2>&1
+            sudo systemctl restart celery 2>&1
 
-            PLATFORM_STATUS=$(systemctl is-active turon_platform)
-            CELERY_STATUS=$(systemctl is-active celery)
+            PLATFORM_STATUS=$(systemctl is-active turon_platform 2>&1)
+            CELERY_STATUS=$(systemctl is-active celery 2>&1)
 
-            echo "🐍 Activating venv..."
-
-            echo "📦 Running makemigrations..."
             MAKEMIGRATIONS_OUTPUT=$(python manage.py makemigrations 2>&1)
-
-            echo "📦 Running migrate..."
             MIGRATE_OUTPUT=$(python manage.py migrate 2>&1)
 
-            echo "🌐 Checking API..."
             API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://school.gennis.uz/api/Branch/branch_list/)
 
-            MESSAGE="🕒 Deploy time: $DEPLOY_TIME
-👤 Contributor: $CONTRIBUTOR
+            if [ "$API_STATUS" = "200" ]; then
+              API_MESSAGE="✅ API OK"
+            else
+              API_MESSAGE="❌ API ERROR ($API_STATUS)"
+            fi
 
-📥 Git Pull:
-  $GIT_OUTPUT
+            # HTML safe qilish
+            SAFE_MAKEMIGRATIONS=$(echo "$MAKEMIGRATIONS_OUTPUT" | sed 's/&/&amp;/g; s/</&lt;/g; s/>/&gt;/g')
+            SAFE_MIGRATE=$(echo "$MIGRATE_OUTPUT" | sed 's/&/&amp;/g; s/</&lt;/g; s/>/&gt;/g')
 
-🔧 Platform: $PLATFORM_STATUS
-🔧 Celery: $CELERY_STATUS
+            cat <<EOF > /tmp/deploy_message.txt
+<b>🚀 Production Deploy</b>
 
-📦 Makemigrations:
-  $MAKEMIGRATIONS_OUTPUT
+🕒 <b>Time:</b> $DEPLOY_TIME
+👤 <b>Contributor:</b> $CONTRIBUTOR
 
-📦 Migrate:
-  $MIGRATE_OUTPUT
+<b>Platform:</b> $PLATFORM_STATUS
+<b>Celery:</b> $CELERY_STATUS
+<b>API:</b> $API_STATUS
+$API_MESSAGE
 
-🌐 API Status: $API_STATUS"
-  
-  if [ "$API_STATUS" = "200" ]; then
-  MESSAGE="$MESSAGE
-  ✅ API OK"
-  else
-  MESSAGE="$MESSAGE
-  ❌ API ERROR ($API_STATUS)"
-  fi
-  
-  echo "📨 Sending Telegram message..."
-  
-  curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
-  -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-  -d text="$MESSAGE"
+<b>Makemigrations:</b>
+<pre>$SAFE_MAKEMIGRATIONS</pre>
+
+<b>Migrate:</b>
+<pre>$SAFE_MIGRATE</pre>
+EOF
+
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+              -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+              -d parse_mode=HTML \
+              --data-urlencode text@/tmp/deploy_message.txt
+
+            rm -f /tmp/deploy_message.txt
