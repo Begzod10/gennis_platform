@@ -15,14 +15,13 @@ jobs:
           password: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
           script: |
-            set -e  # Exit on error
-            
             DEPLOY_TIME=$(date "+%Y-%m-%d %H:%M:%S")
             CONTRIBUTOR="${{ github.actor }}"
             
             # Navigate to project directory
             cd /home/turon/
             source venv/bin/activate
+            cd backend
             
             # Save old requirements hash
             if [ -f requirements.txt ]; then
@@ -33,7 +32,10 @@ jobs:
             
             # Pull latest code
             echo "📥 Pulling latest code..."
-            GIT_OUTPUT=$(git pull origin master 2>&1)
+            GIT_OUTPUT=$(git pull origin master 2>&1) || {
+              echo "❌ Git pull failed!"
+              exit 1
+            }
             
             # Check if requirements changed
             if [ -f requirements.txt ]; then
@@ -57,9 +59,6 @@ jobs:
             echo "🔄 Running migrations..."
             MAKEMIGRATIONS_OUTPUT=$(python manage.py makemigrations 2>&1)
             MIGRATE_OUTPUT=$(python manage.py migrate 2>&1)
-            
-            # Collect static files (if needed)
-            # python manage.py collectstatic --noinput
             
             # Restart services
             echo "🔄 Restarting services..."
