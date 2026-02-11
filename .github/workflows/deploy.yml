@@ -1,14 +1,11 @@
 name: Production Deploy
-
 on:
   push:
     branches:
       - master
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Deploy to Server via SSH
         uses: appleboy/ssh-action@v0.1.10
@@ -18,58 +15,103 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
           script: |
-
+            set -e  # Exit on error
+            
             DEPLOY_TIME=$(date "+%Y-%m-%d %H:%M:%S")
             CONTRIBUTOR="${{ github.actor }}"
-
+            
+            # Navigate to project directory
             cd /home/turon/
-
             source venv/bin/activate
-
+            
+            # Pull latest code
+            echo "📥 Pulling latest code..."
             GIT_OUTPUT=$(git pull origin master 2>&1)
-
-            sudo systemctl restart turon_platform 2>&1
-            sudo systemctl restart celery 2>&1
-
-            PLATFORM_STATUS=$(systemctl is-active turon_platform 2>&1)
-            CELERY_STATUS=$(systemctl is-active celery 2>&1)
-
+            
+            # Install dependencies
+            echo "📦 Installing dependencies..."
+            pip install -r requirements.txt --quiet
+            
+            # Run migrations
+            echo "🔄 Running migrations..."
             MAKEMIGRATIONS_OUTPUT=$(python manage.py makemigrations 2>&1)
             MIGRATE_OUTPUT=$(python manage.py migrate 2>&1)
-
+            
+            # Collect static files (if needed)
+            # python manage.py collectstatic --noinput
+            
+            # Restart services
+            echo "🔄 Restarting services..."
+            sudo systemctl restart turon_platform
+            sudo systemctl restart celery
+            
+            # Wait for services to start
+            sleep 5
+            
+            # Check service status
+            PLATFORM_STATUS=$(systemctl is-active turon_platform 2>&1)
+            CELERY_STATUS=$(systemctl is-active celery 2>&1)
+            
+            # Check API health
             API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://school.gennis.uz/api/Branch/branch_list/)
-
             if [ "$API_STATUS" = "200" ]; then
               API_MESSAGE="✅ API OK"
             else
-              API_MESSAGE="❌ API ERROR ($API_STATUS)"
+              API_MESSAGE="❌ API ERROR (HTTP $API_STATUS)"
             fi
-
-            # HTML safe qilish
-            SAFE_MAKEMIGRATIONS=$(echo "$MAKEMIGRATIONS_OUTPUT" | sed 's/&/&amp;/g; s/</&lt;/g; s/>/&gt;/g')
-            SAFE_MIGRATE=$(echo "$MIGRATE_OUTPUT" | sed 's/&/&amp;/g; s/</&lt;/g; s/>/&gt;/g')
-
+            
+            # HTML escape function
+            html_escape() {
+              echo "$1" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/"/\&quot;/g'
+            }
+            
+            SAFE_GIT=$(html_escape "$GIT_OUTPUT")
+            SAFE_MAKEMIGRATIONS=$(html_escape "$MAKEMIGRATIONS_OUTPUT")
+            SAFE_MIGRATE=$(html_escape "$MIGRATE_OUTPUT")
+            
+            # Platform status emoji
+            if [ "$PLATFORM_STATUS" = "active" ]; then
+              PLATFORM_EMOJI="✅"
+            else
+              PLATFORM_EMOJI="❌"
+            fi
+            
+            # Celery status emoji
+            if [ "$CELERY_STATUS" = "active" ]; then
+              CELERY_EMOJI="✅"
+            else
+              CELERY_EMOJI="❌"
+            fi
+            
+            # Create deployment message
             cat <<EOF > /tmp/deploy_message.txt
 <b>🚀 Production Deploy</b>
 
 🕒 <b>Time:</b> $DEPLOY_TIME
 👤 <b>Contributor:</b> $CONTRIBUTOR
 
-<b>Platform:</b> $PLATFORM_STATUS
-<b>Celery:</b> $CELERY_STATUS
-<b>API:</b> $API_STATUS
+<b>📊 Status:</b>
+$PLATFORM_EMOJI <b>Platform:</b> $PLATFORM_STATUS
+$CELERY_EMOJI <b>Celery:</b> $CELERY_STATUS
 $API_MESSAGE
 
-<b>Makemigrations:</b>
+<b>📥 Git Pull:</b>
+<pre>$SAFE_GIT</pre>
+
+<b>🔄 Makemigrations:</b>
 <pre>$SAFE_MAKEMIGRATIONS</pre>
 
-<b>Migrate:</b>
+<b>💾 Migrate:</b>
 <pre>$SAFE_MIGRATE</pre>
 EOF
-
+            
+            # Send to Telegram
             curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
               -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
               -d parse_mode=HTML \
               --data-urlencode text@/tmp/deploy_message.txt
-
+            
+            # Cleanup
             rm -f /tmp/deploy_message.txt
+            
+            echo "✅ Deployment completed successfully!"
