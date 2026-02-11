@@ -582,12 +582,12 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                 else:
                     lesson = group.classtimetable_set.filter(date=date_ls, hours=hour, branch=branch).order_by(
                         'hours__order').first()
-                flow_class_time_table = None
+                flow_class_time_tables = None
                 for student in group.students.all():
-                    flow_class_time_table = student.class_time_table.filter(date=date_ls, hours=hour, branch=branch,
+                    flow_class_time_tables = student.class_time_table.filter(date=date_ls, hours=hour, branch=branch,
                                                                             flow__isnull=False).order_by(
-                        'hours__order').first()
-                    if flow_class_time_table:
+                        'hours__order').all()
+                    if flow_class_time_tables:
                         break
 
                 if lesson:
@@ -612,40 +612,43 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                     }
 
                     info['lessons'].append(lesson_info)
-                elif flow_class_time_table:
-                    flow_info = {'id': flow_class_time_table.flow.id, 'name': flow_class_time_table.flow.name,
-                                 'classes': flow_class_time_table.flow.classes} if flow_class_time_table.flow else None
-                    teacher_info = {'id': flow_class_time_table.teacher.id,
-                                    'name': flow_class_time_table.teacher.user.name,
-                                    'surname': flow_class_time_table.teacher.user.surname} if flow_class_time_table.teacher else None
-                    subject_info = {'id': flow_class_time_table.subject.id,
-                                    'name': flow_class_time_table.subject.name} if flow_class_time_table.subject else None
-                    room_info = {'id': flow_class_time_table.room.id,
-                                 'name': flow_class_time_table.room.name} if flow_class_time_table.room else None
-                    info['lessons'].append({
-                        'id': flow_class_time_table.id,
-                        'status': flow_class_time_table.hours == hour,
-                        'is_flow': True,
-                        'group': flow_info,
-                        'room': room_info,
-                        'teacher': teacher_info,
-                        'subject': subject_info,
-                        'hours': hour.id,
-                        'date': flow_class_time_table.date.isoformat() if flow_class_time_table.date else None
-                    })
-                else:
-                    info['lessons'].append({
-                        'group': {},
-                        'status': False,
-                        'hours': hour.id,
-                        'teacher': {},
-                        'subject': {},
-                        'room': {},
-                        'is_flow': False,
-                        'date': ''
-                    })
+                elif flow_class_time_tables:
+                    for flow_class_time_table in flow_class_time_tables:
+                        flow_info = {
+                            'id': flow_class_time_table.flow.id,
+                            'name': flow_class_time_table.flow.name,
+                            'classes': flow_class_time_table.flow.classes
+                        } if flow_class_time_table.flow else None
 
-            time_tables.append(info)
+                        teacher_info = {
+                            'id': flow_class_time_table.teacher.id,
+                            'name': flow_class_time_table.teacher.user.name,
+                            'surname': flow_class_time_table.teacher.user.surname
+                        } if flow_class_time_table.teacher else None
+
+                        subject_info = {
+                            'id': flow_class_time_table.subject.id,
+                            'name': flow_class_time_table.subject.name
+                        } if flow_class_time_table.subject else None
+
+                        room_info = {
+                            'id': flow_class_time_table.room.id,
+                            'name': flow_class_time_table.room.name
+                        } if flow_class_time_table.room else None
+
+                        info['lessons'].append({
+                            'id': flow_class_time_table.id,
+                            'status': flow_class_time_table.hours == hour,
+                            'is_flow': True,
+                            'group': flow_info,
+                            'room': room_info,
+                            'teacher': teacher_info,
+                            'subject': subject_info,
+                            'hours': hour.id,
+                            'date': flow_class_time_table.date.isoformat() if flow_class_time_table.date else None
+                        })
+
+        time_tables.append(info)
         return time_tables
 
     def get_hours_list(self, obj):
