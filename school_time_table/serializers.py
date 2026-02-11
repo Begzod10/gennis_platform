@@ -577,7 +577,6 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
 
             for hour in hours:
 
-                # ---------- GROUP LESSON ----------
                 if week and date_ls is None:
                     today = date.today()
                     today_weekday = today.isoweekday()
@@ -603,7 +602,6 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
 
                 lesson = lesson.first()
 
-                # ---------- FLOW LESSONS (ALL) ----------
                 flow_class_time_tables = []
 
                 for student in group.students.all():
@@ -619,7 +617,6 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                     if qs.exists():
                         flow_class_time_tables.extend(qs)
 
-                # ---------- PRIORITY: GROUP LESSON ----------
                 if lesson:
 
                     group_info = {
@@ -661,7 +658,6 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                         'date': lesson.date.isoformat() if lesson.date else None
                     })
 
-                # ---------- FLOW LESSONS ----------
                 elif flow_class_time_tables:
 
                     for flow_lesson in flow_class_time_tables:
@@ -699,7 +695,6 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                             'date': flow_lesson.date.isoformat() if flow_lesson.date else None
                         })
 
-                # ---------- EMPTY SLOT ----------
                 else:
                     info['lessons'].append({
                         'group': {},
@@ -715,3 +710,16 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
             time_tables.append(info)
 
         return time_tables
+
+    def get_hours_list(self, obj):
+        hours = Hours.objects.all().order_by('order')
+        return [
+            {
+                'id': hour.id,
+                'name': hour.name,
+                'start_time': hour.start_time.strftime('%H:%M'),
+                'end_time': hour.end_time.strftime('%H:%M'),
+            }
+            for hour in hours
+        ]
+
