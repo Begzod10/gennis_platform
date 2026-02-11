@@ -559,9 +559,14 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
         date_ls = self.context['date']
         branch = self.context['branch']
         week = self.context['week']
+
         hours = Hours.objects.all().order_by('order')
         time_tables = []
-        groups = Group.objects.filter(branch=branch, deleted=False).all().order_by('class_number__number')
+        groups = Group.objects.filter(branch=branch, deleted=False) \
+            .select_related('class_number', 'color') \
+            .prefetch_related('students__class_time_table') \
+            .order_by('class_number__number')
+
         for group in groups:
             info = {
                 'id': group.id,
@@ -571,68 +576,125 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
             }
 
             for hour in hours:
-                if week and date_ls == None:
+
+                if week and date_ls is None:
                     today = date.today()
                     today_weekday = today.isoweekday()
                     shift_days = week.order - today_weekday
                     week_day_date = today + timedelta(days=shift_days)
-                    lesson = group.classtimetable_set.filter(date=week_day_date, hours=hour, branch=branch,
-                                                             week=week).order_by(
-                        'hours__order').first()
+
+                    lesson = group.classtimetable_set.filter(
+                        date=week_day_date,
+                        hours=hour,
+                        branch=branch,
+                        week=week
+                    ).select_related(
+                        'teacher__user', 'subject', 'room', 'flow'
+                    ).order_by('hours__order')
                 else:
-                    lesson = group.classtimetable_set.filter(date=date_ls, hours=hour, branch=branch).order_by(
-                        'hours__order').first()
-                flow_class_time_table = None
+                    lesson = group.classtimetable_set.filter(
+                        date=date_ls,
+                        hours=hour,
+                        branch=branch
+                    ).select_related(
+                        'teacher__user', 'subject', 'room', 'flow'
+                    ).order_by('hours__order')
+
+                lesson = lesson.first()
+
+                flow_class_time_tables = []
+
                 for student in group.students.all():
-                    flow_class_time_table = student.class_time_table.filter(date=date_ls, hours=hour, branch=branch,
-                                                                            flow__isnull=False).order_by(
-                        'hours__order').first()
-                    if flow_class_time_table:
-                        break
+                    qs = student.class_time_table.filter(
+                        date=date_ls,
+                        hours=hour,
+                        branch=branch,
+                        flow__isnull=False
+                    ).select_related(
+                        'teacher__user', 'subject', 'room', 'flow'
+                    )
+
+                    if qs.exists():
+                        flow_class_time_tables.extend(qs)
 
                 if lesson:
-                    group_info = {'id': group.id,
-                                  'name': f'{group.class_number.number}-{group.color.name}'} if lesson.group else None
-                    flow_info = {'id': lesson.flow.id, 'name': lesson.flow.name,
-                                 'classes': lesson.flow.classes} if lesson.flow else None
-                    teacher_info = {'id': lesson.teacher.id, 'name': lesson.teacher.user.name,
-                                    'surname': lesson.teacher.user.surname} if lesson.teacher else None
-                    subject_info = {'id': lesson.subject.id, 'name': lesson.subject.name} if lesson.subject else None
-                    room_info = {'id': lesson.room.id, 'name': lesson.room.name} if lesson.room else None
-                    lesson_info = {
+
+                    group_info = {
+                        'id': group.id,
+                        'name': f'{group.class_number.number}-{group.color.name}'
+                    } if lesson.group else None
+
+                    flow_info = {
+                        'id': lesson.flow.id,
+                        'name': lesson.flow.name,
+                        'classes': lesson.flow.classes
+                    } if lesson.flow else None
+
+                    teacher_info = {
+                        'id': lesson.teacher.id,
+                        'name': lesson.teacher.user.name,
+                        'surname': lesson.teacher.user.surname
+                    } if lesson.teacher else None
+
+                    subject_info = {
+                        'id': lesson.subject.id,
+                        'name': lesson.subject.name
+                    } if lesson.subject else None
+
+                    room_info = {
+                        'id': lesson.room.id,
+                        'name': lesson.room.name
+                    } if lesson.room else None
+
+                    info['lessons'].append({
                         'id': lesson.id,
                         'status': lesson.hours == hour,
-                        'is_flow': True if lesson.flow else False,
-                        'group': flow_info if lesson.group == None else group_info,
+                        'is_flow': bool(lesson.flow),
+                        'group': flow_info if lesson.group is None else group_info,
                         'room': room_info,
                         'teacher': teacher_info,
                         'subject': subject_info,
                         'hours': hour.id,
                         'date': lesson.date.isoformat() if lesson.date else None
-                    }
-
-                    info['lessons'].append(lesson_info)
-                elif flow_class_time_table:
-                    flow_info = {'id': flow_class_time_table.flow.id, 'name': flow_class_time_table.flow.name,
-                                 'classes': flow_class_time_table.flow.classes} if flow_class_time_table.flow else None
-                    teacher_info = {'id': flow_class_time_table.teacher.id,
-                                    'name': flow_class_time_table.teacher.user.name,
-                                    'surname': flow_class_time_table.teacher.user.surname} if flow_class_time_table.teacher else None
-                    subject_info = {'id': flow_class_time_table.subject.id,
-                                    'name': flow_class_time_table.subject.name} if flow_class_time_table.subject else None
-                    room_info = {'id': flow_class_time_table.room.id,
-                                 'name': flow_class_time_table.room.name} if flow_class_time_table.room else None
-                    info['lessons'].append({
-                        'id': flow_class_time_table.id,
-                        'status': flow_class_time_table.hours == hour,
-                        'is_flow': True,
-                        'group': flow_info,
-                        'room': room_info,
-                        'teacher': teacher_info,
-                        'subject': subject_info,
-                        'hours': hour.id,
-                        'date': flow_class_time_table.date.isoformat() if flow_class_time_table.date else None
                     })
+
+                elif flow_class_time_tables:
+
+                    for flow_lesson in flow_class_time_tables:
+                        flow_info = {
+                            'id': flow_lesson.flow.id,
+                            'name': flow_lesson.flow.name,
+                            'classes': flow_lesson.flow.classes
+                        } if flow_lesson.flow else None
+
+                        teacher_info = {
+                            'id': flow_lesson.teacher.id,
+                            'name': flow_lesson.teacher.user.name,
+                            'surname': flow_lesson.teacher.user.surname
+                        } if flow_lesson.teacher else None
+
+                        subject_info = {
+                            'id': flow_lesson.subject.id,
+                            'name': flow_lesson.subject.name
+                        } if flow_lesson.subject else None
+
+                        room_info = {
+                            'id': flow_lesson.room.id,
+                            'name': flow_lesson.room.name
+                        } if flow_lesson.room else None
+
+                        info['lessons'].append({
+                            'id': flow_lesson.id,
+                            'status': flow_lesson.hours == hour,
+                            'is_flow': True,
+                            'group': flow_info,
+                            'room': room_info,
+                            'teacher': teacher_info,
+                            'subject': subject_info,
+                            'hours': hour.id,
+                            'date': flow_lesson.date.isoformat() if flow_lesson.date else None
+                        })
+
                 else:
                     info['lessons'].append({
                         'group': {},
@@ -646,6 +708,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
                     })
 
             time_tables.append(info)
+
         return time_tables
 
     def get_hours_list(self, obj):
@@ -659,3 +722,4 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
             }
             for hour in hours
         ]
+

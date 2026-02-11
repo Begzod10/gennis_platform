@@ -1,4 +1,4 @@
-import os
+yimport os
 from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
@@ -6,21 +6,19 @@ from dotenv import load_dotenv
 load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'adsda')
+SECRET_KEY = os.getenv('SECRET_KEY')
 from celery.schedules import crontab
 
 classroom_server = os.getenv('CLASSROOM_SERVER')
-# classroom_server = "http://192.168.1.11:5001"
 gennis_server = os.getenv('GENNIS_SERVER')
 
-DEBUG = os.getenv('DEBUG', False)
+DEBUG = True
 
-# ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = ['school.gennis.uz', 'localhost', '127.0.0.1']
 
 INSTALLED_APPS = [
-    # "silk",
-    'unfold',
+    # 'unfold'
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -48,7 +46,6 @@ INSTALLED_APPS = [
     'classes.apps.ClassesConfig',
     'books.apps.BooksConfig',
     'observation.apps.ObservationConfig',
-    'rest_framework',
     'corsheaders',
     'school_time_table.apps.SchoolTimeTableConfig',
     'djoser',
@@ -60,14 +57,9 @@ INSTALLED_APPS = [
     "mobile.apps.MobileConfig",
     'django_filters',
     'ui',
-    'terms',
-    'parents',
-    'apps.investor.apps.InvestorConfig',
-    'maintenance.apps.MaintenanceConfig',
 ]
 
 MIDDLEWARE = [
-    # 'silk.middleware.SilkyMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -76,7 +68,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # "tasks.middlewear.RecurringTaskMiddleware",
 ]
 
 ROOT_URLCONF = 'gennis_platform.urls'
@@ -121,13 +112,10 @@ AUTH_USER_MODEL = 'user.CustomUser'
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    # 'PAGE_SIZE': 10,  # number of items per page
+    'PAGE_SIZE': 10,  # number of items per page
 
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
-    ],
-    'DEFAULT_FILTER_BACKENDS': [
-        'django_filters.rest_framework.DjangoFilterBackend'
     ],
 
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -135,12 +123,13 @@ REST_FRAMEWORK = {
     ],
 }
 
+
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
-    'AUTH_HEADER_TYPES': ('JWT', "Bearer"),
+    'AUTH_HEADER_TYPES': ('JWT',),
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
 }
@@ -150,46 +139,6 @@ CELERY_BEAT_SCHEDULE = {
         "task": "group.tasks.update_class_task",
         "schedule": crontab(minute=0, hour=0, day_of_month="10", month_of_year="8"),
     },
-
-    # Run every 1st day of every month at 00:00
-    "update-students-debts": {
-        "task": "students.tasks.update_student_debt",
-        "schedule": crontab(minute=0, hour=0, day_of_month="1"),  # month_of_year="*" is optional
-        # If you really want “every 2 months” etc, use:
-        # "schedule": crontab(minute=0, hour=0, day_of_month="1", month_of_year="*/2"),
-    },
-
-    # Every Saturday at 00:00
-    "update-school-time-table": {
-        "task": "school_time_table.tasks.update_school_time_table_task",
-        "schedule": crontab(minute=0, hour=0, day_of_week="sunday"),
-        # "schedule": crontab(minute="*/1"),
-    },
-
-    # Daily at 21:00
-    "investor_report_daily": {
-        "task": "apps.investor.tasks.snapshot_investor_month",
-        "schedule": crontab(minute=0, hour=21),
-    },
-    "lesson_plan": {
-        "task": "lesson_plan.tasks.create_lesson_plans",
-        "schedule": crontab(minute=0, hour=0),
-        # "schedule": crontab(minute="*/1"),  # 21:00 every day
-
-    },
-    "daily_summary_task": {
-        "task": "encashment.tasks.daily_summary",
-        "schedule": crontab(minute=0, hour=20),
-        # "schedule": crontab(minute="*/1"),
-
-    },
-    # "update_deleted_students_debts": {
-    #     "task": "students.tasks.update_deleted_students_debts",
-    #     # "schedule": crontab(minute=0, hour=0, day_of_month="1"),
-    #     "schedule": crontab(minute="*/1")
-    #
-    # },
-
 }
 
 CELERY_BROKER_URL = "redis://localhost:6379/0"
@@ -201,16 +150,10 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-STATIC_URL = '/static_admin/'
-STATIC_ROOT = BASE_DIR / 'static'
-STATICFILES_DIRS = [BASE_DIR / "staticfiles"]
-
+STATIC_URL = '/static/'
+STATIC_ROOT = '/home/ubuntu/gennis_website/gennis_platform/static/'
 MEDIA_URL = '/media/'
 
 MEDIA_ROOT = BASE_DIR / 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-# SILKY_PYTHON_PROFILER = True
-CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "http://127.0.0.1:8000", "https://school.gennis.uz",
-                        "http://localhost:3000", "http://0.0.0.0:8000", "http://100.81.196.80:3000",
-                        'http://100.94.144.113:8000', 'http://100.124.167.36:3000']
