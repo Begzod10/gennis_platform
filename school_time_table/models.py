@@ -8,6 +8,8 @@ class Hours(models.Model):
     end_time = models.TimeField()
     name = models.CharField()
     order = models.IntegerField()
+    branch = models.ForeignKey('branch.Branch', on_delete=models.CASCADE,null=True)
+    old_id = models.IntegerField(null=True)
 
     def __str__(self):
         return self.start_time

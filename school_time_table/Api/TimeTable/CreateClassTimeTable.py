@@ -62,13 +62,18 @@ class ClassesFlows(generics.ListAPIView):
     def get_queryset(self):
         type = self.request.query_params.get('type')
         branch_id = self.request.query_params.get('branch')
+        teacher_id =self.request.query_params.get('teacher')
         queryset = None
         if type == 'flow':
             queryset = Flow.objects.filter(branch_id=branch_id)
+            if teacher_id is not None:
+                queryset = queryset.filter(teacher_id=teacher_id)
 
         if type == 'group':
             queryset = Group.objects.filter(class_number__isnull=False, branch_id=branch_id, deleted=False).order_by(
                 'class_number__number')
+            if teacher_id is not None:
+                queryset = queryset.filter(teacher__in=teacher_id)
         return queryset
 
     def get_serializer_class(self):
