@@ -5,6 +5,7 @@ from branch.models import Branch
 from payments.models import PaymentTypes
 from subjects.models import Subject
 from system.models import System
+from parents.models import Parent
 
 
 class TeacherSalaryType(models.Model):
@@ -145,3 +146,21 @@ class TeacherRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     deleted = models.BooleanField(default=False)
+
+
+class SatisfactionSurvey(models.Model):
+    STATUS_CHOICES = (
+        ("good", "Qoniqarli"),
+        ("average", "Ortacha"),
+        ("bad", "Qoniqarsiz"),
+    )
+
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    student = models.ForeignKey('students.Student', on_delete=models.CASCADE, null=True, blank=True)
+    parent = models.ForeignKey(Parent, on_delete=models.CASCADE, null=True, blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    score = models.IntegerField(default=0)
+
+    text = models.TextField(null=True, blank=True)
+    datetime = models.DateTimeField()

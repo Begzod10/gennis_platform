@@ -15,7 +15,7 @@ from subjects.serializers import Subject
 from subjects.serializers import SubjectLevelSerializer, SubjectSerializer
 from system.models import System
 from system.serializers import SystemSerializers
-from teachers.models import TeacherGroupStatistics, Teacher
+from teachers.models import TeacherGroupStatistics, Teacher, SatisfactionSurvey
 from user.serializers import UserSerializerWrite, UserSerializerRead
 from .models import (TeacherAttendance)
 from .models import (TeacherSalaryList, TeacherSalary, TeacherSalaryType)
@@ -111,7 +111,7 @@ class TeacherAttendanceListSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = TeacherAttendance
-        fields = ['id', 'day','entry_time','leave_time']
+        fields = ['id', 'day', 'entry_time', 'leave_time']
 
 
 class TeacherGroupStatisticsSerializers(serializers.ModelSerializer):
@@ -364,3 +364,40 @@ class TeacherSalaryListCreateSerializers(serializers.ModelSerializer):
         instance.comment = validated_data.get('comment', instance.comment)
         instance.save()
         return instance
+
+
+STATUS_SCORE_MAP = {
+    "good": 5,
+    "average": 3,
+    "bad": 1,
+}
+
+
+class SatisfactionSurveyWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SatisfactionSurvey
+        fields = "__all__"
+
+    def create(self, validated_data):
+        validated_data["score"] = STATUS_SCORE_MAP.get(validated_data["status"], 0)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if "status" in validated_data:
+            validated_data["score"] = STATUS_SCORE_MAP.get(validated_data["status"], 0)
+        return super().update(instance, validated_data)
+
+
+class SatisfactionSurveyReadSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.CharField(source="teacher.user.name", read_only=True)
+    teacher_surname = serializers.CharField(source="teacher.user.surname", read_only=True)
+
+    student_name = serializers.CharField(source="student.user.name", read_only=True)
+    student_surname = serializers.CharField(source="student.user.surname", read_only=True)
+
+    parent_name = serializers.CharField(source="parent.user.name", read_only=True)
+    parent_surname = serializers.CharField(source="parent.user.surname", read_only=True)
+
+    class Meta:
+        model = SatisfactionSurvey
+        fields = "__all__"
