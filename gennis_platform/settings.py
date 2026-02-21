@@ -213,4 +213,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # SILKY_PYTHON_PROFILER = True
 CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "http://127.0.0.1:8000", "https://school.gennis.uz",
                         "http://localhost:3000", "http://0.0.0.0:8000", "http://100.81.196.80:3000",
-                        'http://100.94.144.113:8000',  'http://100.124.167.36:3000']
+                        'http://100.94.144.113:8000', 'http://100.124.167.36:3000']

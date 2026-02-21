@@ -4,7 +4,8 @@ from .Api.createdeleteupdate import StudentCreateView, StudentCharityCreateView,
     StudentPaymentCreateView, \
     StudentDestroyView, StudentCharityUpdateView, StudentPaymentUpdateView, StudentCharityDestroyView, \
     StudentPaymentDestroyView, StudentUpdateView, StudentHistoryGroupsCreateView, StudentHistoryGroupsDestroyView, \
-    StudentHistoryGroupsUpdateView, DeletedStudentDestroy, CreateDiscountForSchool
+    StudentHistoryGroupsUpdateView, DeletedStudentDestroy, CreateDiscountForSchool, StudentExamResultAPIView, \
+    StudentExamResultDetailAPIView
 from .Api.get import SchoolStudents
 from .Api.get import StudentCharityAPIView, StudentPaymentAPIView, StudentHistoryGroupsAPIView, \
     StudentCharityListAPIView, StudentPaymentListAPIView, StudentHistoryGroupsListAPIView, StudentRetrieveAPIView, \
@@ -78,4 +79,13 @@ urlpatterns = [
     path('get_balance/<int:user_id>/', GetStudentBalance.as_view()),
     path('update_student_class_number/', StudentClassNumberUpdateView.as_view()),
     path('change_date_deleted_student/', ChangeDateDeletedStudent.as_view()),
+
+    path(
+        "student-exam-results/",
+        StudentExamResultAPIView.as_view()
+    ),
+    path(
+        "student-exam-results/<int:pk>/",
+        StudentExamResultDetailAPIView.as_view()
+    ),
 ]

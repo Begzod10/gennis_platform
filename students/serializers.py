@@ -17,7 +17,8 @@ from subjects.serializers import SubjectSerializer
 from teachers.models import TeacherGroupStatistics, TeacherBlackSalary, Teacher
 from teachers.serializers import TeacherSerializer, TeacherSerializerRead
 from user.serializers import UserSerializerWrite, UserSerializerRead
-from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent, DeletedNewStudent)
+from .models import (Student, StudentHistoryGroups, StudentCharity, StudentPayment, DeletedStudent, DeletedNewStudent,
+                     StudentExamResult)
 
 
 class StudentSerializer(serializers.ModelSerializer):
@@ -439,11 +440,11 @@ class StudentPaymentListSerializer(serializers.ModelSerializer):
     payment_type = serializers.SerializerMethodField(required=False)
     payment_sum = serializers.IntegerField(required=False)
     status = serializers.BooleanField(required=False, source='deleted')
-    attendance =serializers.SerializerMethodField()
+    attendance = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentPayment
-        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'added_data', 'date','attendance']
+        fields = ['id', 'student', 'payment_type', 'payment_sum', 'status', 'added_data', 'date', 'attendance']
 
     def get_payment_type(self, obj):
         info = {
@@ -558,3 +559,52 @@ class StudentClassNumberSerializer(serializers.ModelSerializer):
             get_student.save()
 
         return {"msg": "O'quvchilar sinf raqami o'zgartirildi"}
+
+
+class StudentExamResultWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentExamResult
+        fields = [
+            "id",
+            "title",
+            "group",
+            "teacher",
+            "student",
+            "subject",
+            "score",
+            "datetime",
+        ]
+
+
+class StudentExamResultReadSerializer(serializers.ModelSerializer):
+    student_name = serializers.CharField(source="student.user.name", read_only=True)
+    student_surname = serializers.CharField(source="student.user.surname", read_only=True)
+
+    teacher_name = serializers.CharField(source="teacher.user.name", read_only=True)
+    teacher_surname = serializers.CharField(source="teacher.user.surname", read_only=True)
+
+    group_name = serializers.CharField(source="group.name", read_only=True)
+    subject_name = serializers.CharField(source="subject.name", read_only=True)
+
+    class Meta:
+        model = StudentExamResult
+        fields = [
+            "id",
+            "title",
+            "score",
+            "datetime",
+
+            "student",
+            "student_name",
+            "student_surname",
+
+            "teacher",
+            "teacher_name",
+            "teacher_surname",
+
+            "group",
+            "group_name",
+
+            "subject",
+            "subject_name",
+        ]

@@ -19,6 +19,7 @@ from .Api.createdeleteupdate import TeacherAttendanceCreateView, TeacherAttendan
 from .Api.get import TeacherAttendanceListView, TeacherAttendanceRetrieveView, TeachersForBranches, TeachersForSubject, \
     SalaryType, TeachersForSubjectForTimeTable, TeacherRatingAPIView
 from .views import GetGroupStudents
+from teachers.Api.satisfaction.views import SatisfactionSurveyAPIView, SatisfactionSurveyDetailAPIView
 
 app_name = 'Teachers'
 
@@ -78,4 +79,8 @@ urlpatterns = [
     path('teacher-requests/<int:pk>/', teacher_request_detail, name='teacher-request-detail'),
 
     path('teacher-rating/', TeacherRatingAPIView.as_view(), name='teacher-rating'),
+
+    path('teacher-satisfaction/', SatisfactionSurveyAPIView.as_view(), name='teacher-satisfaction'),
+    path('teacher-satisfaction/<int:pk>/', SatisfactionSurveyDetailAPIView.as_view(),
+         name='teacher-satisfaction-detail'),
 ]
