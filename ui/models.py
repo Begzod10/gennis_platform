@@ -1,34 +1,30 @@
+from django.core.validators import FileExtensionValidator
 from django.db import models
-from django.db.models.signals import post_migrate
-from django.dispatch import receiver
 
 
-class FrontedPageType(models.Model):
-    name = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.name
-
-
-@receiver(post_migrate)
-def create_fronted_types(sender, **kwargs):
-    default_values = [{"name": "gallery"}, {"name": "programs"}, {"name": "student_profile"}, {"name": "news"},
-                      {"name": "vission_missoin"}, {"name": "extra_curricular"}, {"name": "curricular"},
-                      {"name": "intro"}, {"name": "certificates"}, {'name': 'intro_2'},{'name':'contact'}]
-    for value in default_values:
-        FrontedPageType.objects.get_or_create(**value)
-
-
-class FrontedPage(models.Model):
-    name = models.CharField(max_length=100, null=True)
-    type = models.ForeignKey(FrontedPageType, on_delete=models.SET_NULL, null=True)
-    description = models.TextField(null=True)
-    date = models.DateField(null=True)
+class Vacancy(models.Model):
+    name = models.CharField(max_length=255, null=True)
+    email = models.EmailField(null=True)
+    phone = models.CharField(max_length=255, null=True)
+    letter = models.CharField(max_length=255, null=True)
+    cv = models.FileField(
+        upload_to='vacancy/files',
+        null=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=['pdf', 'doc', 'docx'])
+        ]
+    )
 
     def __str__(self):
         return self.name
 
+class Message(models.Model):
+    name = models.CharField(max_length=255, null=True)
+    email = models.EmailField(null=True)
+    message = models.TextField(null=True)
+    organization = models.CharField(max_length=255, null=True)
+    phone = models.CharField(max_length=255, null=True)
+    enquiry_type = models.CharField(max_length=255, null=True)
 
-class FrontedPageImage(models.Model):
-    page = models.ForeignKey(FrontedPage, on_delete=models.SET_NULL, null=True)
-    image = models.ImageField(null=True, blank=True, upload_to='fronted_pages/')
+    def __str__(self):
+        return f"Message from {self.name} ({self.email})"

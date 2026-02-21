@@ -1,10 +1,8 @@
-from rest_framework.routers import DefaultRouter
+from django.urls import path
+from .views import VacancyListCreateAPIView, MessageListCreateAPIView
 
-from .views import FrontedPageTypeViewSet, FrontedPageViewSet, FrontedPageImageViewSet
+urlpatterns = [
+    path('vacancies/', VacancyListCreateAPIView.as_view(), name='vacancy-list-create'),
+    path('messages/', MessageListCreateAPIView.as_view(), name='message-list-create'),
 
-router = DefaultRouter()
-router.register(r'fronted-page-types', FrontedPageTypeViewSet, basename='frontedpagetype')
-router.register(r'fronted-pages', FrontedPageViewSet, basename='frontedpage')
-router.register(r'fronted-page-images', FrontedPageImageViewSet, basename='frontedpageimage')
-
-urlpatterns = router.urls
+]
