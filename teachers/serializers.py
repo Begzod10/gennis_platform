@@ -15,7 +15,7 @@ from subjects.serializers import Subject
 from subjects.serializers import SubjectLevelSerializer, SubjectSerializer
 from system.models import System
 from system.serializers import SystemSerializers
-from teachers.models import TeacherGroupStatistics, Teacher, SatisfactionSurvey
+from teachers.models import TeacherGroupStatistics, Teacher, SatisfactionSurvey, TeacherContribution
 from user.serializers import UserSerializerWrite, UserSerializerRead
 from .models import (TeacherAttendance)
 from .models import (TeacherSalaryList, TeacherSalary, TeacherSalaryType)
@@ -400,4 +400,22 @@ class SatisfactionSurveyReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SatisfactionSurvey
+        fields = "__all__"
+
+
+class TeacherContributionWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TeacherContribution
+        fields = "__all__"
+
+
+class TeacherContributionReadSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.CharField(source="teacher.user.name", read_only=True)
+    teacher_surname = serializers.CharField(source="teacher.user.surname", read_only=True)
+
+    given_by_name = serializers.CharField(source="user.name", read_only=True)
+    given_by_surname = serializers.CharField(source="user.surname", read_only=True)
+
+    class Meta:
+        model = TeacherContribution
         fields = "__all__"

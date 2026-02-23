@@ -164,3 +164,30 @@ class SatisfactionSurvey(models.Model):
 
     text = models.TextField(null=True, blank=True)
     datetime = models.DateTimeField()
+
+
+# models.py
+
+class TeacherContribution(models.Model):
+
+    teacher = models.ForeignKey(
+        Teacher,
+        on_delete=models.CASCADE,
+        related_name="contributions"
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="given_contributions"
+    )
+
+    score = models.IntegerField()
+    text = models.TextField(null=True, blank=True)
+
+    datetime = models.DateTimeField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-datetime"]

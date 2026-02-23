@@ -20,6 +20,7 @@ from .Api.get import TeacherAttendanceListView, TeacherAttendanceRetrieveView, T
     SalaryType, TeachersForSubjectForTimeTable, TeacherRatingAPIView
 from .views import GetGroupStudents
 from teachers.Api.satisfaction.views import SatisfactionSurveyAPIView, SatisfactionSurveyDetailAPIView
+from teachers.Api.contribution.views import TeacherContributionAPIView, TeacherContributionDetailAPIView
 
 app_name = 'Teachers'
 
@@ -83,4 +84,8 @@ urlpatterns = [
     path('teacher-satisfaction/', SatisfactionSurveyAPIView.as_view(), name='teacher-satisfaction'),
     path('teacher-satisfaction/<int:pk>/', SatisfactionSurveyDetailAPIView.as_view(),
          name='teacher-satisfaction-detail'),
+
+    path('teacher-contributions/', TeacherContributionAPIView.as_view(), name='teacher-contributions'),
+    path('teacher-contributions/<int:pk>/', TeacherContributionDetailAPIView.as_view(),
+         name='teacher-contributions-detail'),
 ]
