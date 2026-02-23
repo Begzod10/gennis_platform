@@ -3,10 +3,12 @@ from django.db import models
 from group.models import Group
 from students.models import Student
 from teachers.models import Teacher
+from flows.models import Flow
 
 
 class LessonPlan(models.Model):
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.SET_NULL, null=True)
+    flow = models.ForeignKey(Flow, on_delete=models.SET_NULL, null=True)
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     date = models.DateField()
     objective = models.TextField(null=True, blank=True)
