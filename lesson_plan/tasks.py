@@ -1,14 +1,29 @@
+from datetime import timedelta, datetime
+
 from celery import shared_task
 
-from lesson_plan.functions.utils import update_lesson_plan
+from lesson_plan.models import LessonPlan
 from school_time_table.models import ClassTimeTable
 
 
 @shared_task()
 def create_lesson_plans():
-    class_time_tables = ClassTimeTable.objects.distinct()
+    now = datetime.now()
+    start_next_week = now + timedelta(days=(7 - now.weekday()))
+    end_next_week = start_next_week + timedelta(days=6)
 
-    for table in class_time_tables:
-        update_lesson_plan.delay(group_id=table.group_id)
-    for table in class_time_tables:
-        update_lesson_plan.delay(flow_id=table.flow_id)
+    timetable_qs = (
+        ClassTimeTable.objects
+        .filter(date__range=[start_next_week.date(), end_next_week.date()])
+        .select_related("teacher")
+    )
+
+    for timetable in timetable_qs:
+        if not timetable.teacher:
+            continue
+
+        LessonPlan.objects.get_or_create(
+            group_id=timetable.group_id,
+            teacher_id=timetable.teacher_id,
+            date=timetable.date
+        )
