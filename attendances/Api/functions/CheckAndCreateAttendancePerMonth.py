@@ -7,7 +7,6 @@ from tasks.models import TaskStatistics, TaskStudent
 from teachers.models import TeacherBlackSalary
 from teachers.models import TeacherSalary
 from .CalculateGroupOverallAttendance import calculate_group_attendances
-from lesson_plan.functions.utils import update_lesson_plan
 import requests
 def check_and_create_attendance_per_month(group_id, students, date):
     group = Group.objects.get(pk=group_id)
@@ -53,7 +52,7 @@ def check_and_create_attendance_per_month(group_id, students, date):
             debt_per_day = group.price / 13
         else:
             debt_per_day = (group.price / 13) - charity_per_day
-        update_lesson_plan(group_id=group_id)
+        # update_lesson_plan(group_id=group_id)
         AttendancePerDay.objects.create(
             group_id=group_id,
             student_id=student['id'],

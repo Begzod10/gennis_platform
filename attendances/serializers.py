@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from rest_framework import serializers
 
 from group.serializers import GroupSerializer
-from lesson_plan.functions.utils import update_lesson_plan
 from students.models import Student
 from students.serializers import StudentSerializer
 from tasks.models import TaskStatistics, TaskStudent
@@ -114,7 +113,7 @@ class AttendancePerDayCreateUpdateSerializer(serializers.ModelSerializer):
                 debt_per_day = group.price / 13
             else:
                 debt_per_day = (group.price / 13) - charity_per_day
-            update_lesson_plan(group_id=group.id)
+            # update_lesson_plan(group_id=group.id)
             nonlocal attendance_per_day
             attendance_per_day = AttendancePerDay.objects.create(
                 group_id=group.id,
@@ -222,7 +221,7 @@ class AttendancePerDayCreateUpdateSerializerSchool(serializers.ModelSerializer):
 
         errors = []
         created_instances = []
-        update_lesson_plan(group_id=group.id)
+        # update_lesson_plan(group_id=group.id)
 
         for student in students:
             student_data = Student.objects.get(pk=student['id'])

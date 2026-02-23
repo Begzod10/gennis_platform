@@ -1,8 +1,8 @@
 from django.db import models
 
 from group.models import Group
-from teachers.models import Teacher
 from students.models import Student
+from teachers.models import Teacher
 
 
 class LessonPlan(models.Model):
@@ -16,6 +16,9 @@ class LessonPlan(models.Model):
     activities = models.TextField(null=True, blank=True)
     resources = models.TextField(null=True, blank=True)
     updated = models.DateField(null=True)
+
+    class Meta:
+        unique_together = ("group", "teacher", "date")
 
 
 class LessonPlanStudents(models.Model):

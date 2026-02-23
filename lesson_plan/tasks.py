@@ -6,15 +6,15 @@ from lesson_plan.models import LessonPlan
 from school_time_table.models import ClassTimeTable
 
 
-@shared_task()
+@shared_task
 def create_lesson_plans():
     now = datetime.now()
-    start_next_week = now + timedelta(days=(7 - now.weekday()))
-    end_next_week = start_next_week + timedelta(days=6)
+    start_date = now.date()
+    end_date = start_date + timedelta(days=8)
 
     timetable_qs = (
         ClassTimeTable.objects
-        .filter(date__range=[start_next_week.date(), end_next_week.date()])
+        .filter(date__range=[start_date, end_date])
         .select_related("teacher")
     )
 
