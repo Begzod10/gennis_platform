@@ -9,4 +9,6 @@ def create_lesson_plans():
     class_time_tables = ClassTimeTable.objects.distinct()
 
     for table in class_time_tables:
-        update_lesson_plan.delay(table.group_id)
+        update_lesson_plan.delay(group_id=table.group_id)
+    for table in class_time_tables:
+        update_lesson_plan.delay(flow_id=table.flow_id)

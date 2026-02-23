@@ -40,44 +40,39 @@ def weekday_from_date(day_list, month, year, week_list):
 
 
 @shared_task()
-def update_lesson_plan(group_id):
-    print(group_id)
-    time_table_group = ClassTimeTable.objects.filter(group_id=group_id).order_by('id')
+def update_lesson_plan(group_id=None, flow_id=None):
+    if not group_id and not flow_id:
+        raise ValueError("group_id yoki flow_id berilishi kerak")
 
-    allowed_weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    now = datetime.now()
+    start_next_week = now + timedelta(days=(7 - now.weekday()))
+    end_next_week = start_next_week + timedelta(days=6)
 
-    week_list = [
-        time_table.date.strftime('%A')
-        for time_table in time_table_group
-        if time_table.date.strftime('%A') in allowed_weekdays
-    ]
+    filters = {}
 
-    current_year = datetime.now().year
-    current_month = datetime.now().month
+    if group_id:
+        filters["group_id"] = group_id
 
-    number_days = number_of_days_in_month(current_year, current_month)
-    plan_days = weekday_from_date(list(range(1, number_days + 1)), current_month, current_year, week_list)
+    if flow_id:
+        filters["flow_id"] = flow_id
 
-    group = get_object_or_404(Group, id=group_id)
-    if group:
-        current_date = datetime.now()
-        start_next_week = current_date + timedelta(days=(7 - current_date.weekday()))
-        end_next_week = start_next_week + timedelta(days=6)
+    timetable_qs = (
+        ClassTimeTable.objects
+        .filter(
+            date__range=[start_next_week.date(), end_next_week.date()],
+            **filters
+        )
+        .select_related("teacher")
+    )
 
-        valid_days = []
-        for day in plan_days:
-            date_get = date(current_year, current_month, day)
-            if start_next_week.date() <= date_get <= end_next_week.date():
-                weekday = date_get.strftime('%A')
-                if weekday in allowed_weekdays:
-                    valid_days.append(day)
+    for timetable in timetable_qs:
+        if not timetable.teacher:
+            continue
 
-        for day in valid_days:
-            date_get = date(current_year, current_month, day)
-            teachers = group.teacher.all()
-            for teacher in teachers:
-                exist = LessonPlan.objects.filter(date=date_get, group_id=group_id, teacher_id=teacher.id).exists()
-                if not exist:
-                    LessonPlan.objects.create(group_id=group_id, teacher_id=teacher.id, date=date_get)
+        LessonPlan.objects.get_or_create(
+            group_id=timetable.group_id,
+            teacher_id=timetable.teacher_id,
+            date=timetable.date
+        )
 
     return True

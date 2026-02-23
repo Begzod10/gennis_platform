@@ -53,7 +53,7 @@ def check_and_create_attendance_per_month(group_id, students, date):
             debt_per_day = group.price / 13
         else:
             debt_per_day = (group.price / 13) - charity_per_day
-        update_lesson_plan(group_id)
+        update_lesson_plan(group_id=group_id)
         AttendancePerDay.objects.create(
             group_id=group_id,
             student_id=student['id'],
