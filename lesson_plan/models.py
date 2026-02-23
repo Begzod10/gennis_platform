@@ -17,8 +17,8 @@ class LessonPlan(models.Model):
     resources = models.TextField(null=True, blank=True)
     updated = models.DateField(null=True)
 
-    class Meta:
-        unique_together = ("group", "teacher", "date")
+    # class Meta:
+    #     unique_together = ("group", "teacher", "date")
 
 
 class LessonPlanStudents(models.Model):
