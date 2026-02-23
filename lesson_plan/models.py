@@ -19,9 +19,6 @@ class LessonPlan(models.Model):
     resources = models.TextField(null=True, blank=True)
     updated = models.DateField(null=True)
 
-    # class Meta:
-    #     unique_together = ("group", "teacher", "date")
-
 
 class LessonPlanStudents(models.Model):
     lesson_plan = models.ForeignKey(LessonPlan, on_delete=models.CASCADE)
