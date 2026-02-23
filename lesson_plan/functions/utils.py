@@ -1,12 +1,4 @@
-from calendar import monthrange, day_name
-from datetime import datetime, timedelta, date
-
 from celery import shared_task
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-
-from lesson_plan.models import LessonPlan, Group
-from school_time_table.models import ClassTimeTable
 
 
 def number_of_days_in_month(year, month):
@@ -22,10 +14,7 @@ def weekday_from_date(day_list, month, year, week_list):
 from calendar import monthrange, day_name
 from datetime import datetime, timedelta, date
 
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-
-from lesson_plan.models import LessonPlan, Group
+from lesson_plan.models import LessonPlan
 from school_time_table.models import ClassTimeTable
 
 
