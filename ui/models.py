@@ -14,6 +14,7 @@ class Vacancy(models.Model):
             FileExtensionValidator(allowed_extensions=['pdf', 'doc', 'docx'])
         ]
     )
+    date = models.DateField(null=True,auto_now_add=True)
 
     def __str__(self):
         return self.name
@@ -25,6 +26,14 @@ class Message(models.Model):
     organization = models.CharField(max_length=255, null=True)
     phone = models.CharField(max_length=255, null=True)
     enquiry_type = models.CharField(max_length=255, null=True)
+    date = models.DateField(null=True,auto_now_add=True)
 
     def __str__(self):
         return f"Message from {self.name} ({self.email})"
+
+class News(models.Model):
+    title = models.CharField(max_length=255, null=True)
+    date = models.DateField(null=True)
+    content = models.TextField(null=True)
+    image = models.ImageField()
+
