@@ -169,7 +169,6 @@ class SatisfactionSurvey(models.Model):
 # models.py
 
 class TeacherContribution(models.Model):
-
     teacher = models.ForeignKey(
         Teacher,
         on_delete=models.CASCADE,
@@ -191,3 +190,21 @@ class TeacherContribution(models.Model):
 
     class Meta:
         ordering = ["-datetime"]
+
+
+class TeacherProfessionalism(models.Model):
+    teacher = models.ForeignKey(
+        "teachers.Teacher",
+        on_delete=models.CASCADE,
+        related_name="professionalism"
+    )
+    user = models.ForeignKey(  # kim baho qo‘ygan
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+    score = models.IntegerField()
+    text = models.TextField(null=True, blank=True)
+    datetime = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.teacher} - {self.score}"

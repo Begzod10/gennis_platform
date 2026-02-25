@@ -1,4 +1,4 @@
-from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from ui.models import Vacancy, Message, News
@@ -28,3 +28,11 @@ class NewsListCreateAPIView(ListCreateAPIView):
         if self.request.method == 'POST':
             return [IsAuthenticated()]
         return [AllowAny()]
+
+class NewsDetailAPIView(RetrieveUpdateDestroyAPIView):
+    queryset = News.objects.all().order_by('-id')
+    serializer_class = NewsSerializer
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]

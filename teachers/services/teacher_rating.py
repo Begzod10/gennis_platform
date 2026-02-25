@@ -247,10 +247,59 @@ def get_contribution_ranking(branch_id=None, year=None, month=None):
     ]
 
 
+def get_professionalism_ranking(branch_id=None, year=None, month=None):
+    filters = Q()
+
+    if branch_id:
+        filters &= Q(user__branch_id=int(branch_id))
+
+    today = date.today()
+    year = int(year) if year else today.year
+    month = int(month) if month else today.month
+    if year and month:
+        year = int(year)
+        month = int(month)
+
+        if year == today.year and month == today.month:
+            filters &= Q(
+                professionalism__datetime__year=year,
+                professionalism__datetime__month=month,
+                professionalism__datetime__day__lte=today.day
+            )
+        else:
+            filters &= Q(
+                professionalism__datetime__year=year,
+                professionalism__datetime__month=month
+            )
+
+    teachers = (
+        Teacher.objects
+        .filter(filters)
+        .select_related("user")
+        .annotate(
+            ball=Avg("professionalism__score"),
+            count=Count("professionalism")
+        )
+        .order_by("-ball")
+    )
+
+    return [
+        {
+            "id": t.id,
+            "name": t.user.name,
+            "surname": t.user.surname,
+            "ball": round(t.ball, 2) if t.ball else 0,
+            "count": t.count or 0,
+        }
+        for t in teachers
+    ]
+
+
 CATEGORY_MAP = {
     "observation": get_observation_ranking,
     "lesson_plan": get_lesson_plan_ranking,
     "student_results": get_student_results_ranking,
     "satisfaction": get_satisfaction_ranking,
     "contribution": get_contribution_ranking,
+    "professionalism": get_professionalism_ranking,
 }
