@@ -108,7 +108,6 @@ class TeacherObserveView(APIView):
 
         return Response({
             "observation_tools": data,
-            "old_current_dates": old_current_dates(group_id, observation=True)
         })
 
 
