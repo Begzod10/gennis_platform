@@ -12,6 +12,7 @@ from observation.models import ObservationInfo, ObservationOptions, TeacherObser
 from observation.serializers import ObservationInfoSerializers, ObservationOptionsSerializers
 from observation.uitils import old_current_dates
 from school_time_table.models import ClassTimeTable
+from teachers.models import Teacher
 
 
 class ObservationInfoList(generics.ListAPIView):
@@ -122,7 +123,7 @@ class TeacherObserveGroupView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        if not hasattr(request.user, "teacher"):
+        if Teacher.objects.filter(teacher_id=request.user.teacher.id).exists():
             return Response(
                 {"detail": "Teacher mavjud emas"},
                 status=status.HTTP_400_BAD_REQUEST
