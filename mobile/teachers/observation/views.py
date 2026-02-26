@@ -1,6 +1,7 @@
+from datetime import date
 from datetime import datetime
 
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -9,6 +10,7 @@ from rest_framework.views import APIView
 from observation.functions.creat_observation import creat_observation_info, creat_observation_options
 from observation.models import ObservationInfo, ObservationOptions, TeacherObservationDay, TeacherObservation
 from observation.serializers import ObservationInfoSerializers, ObservationOptionsSerializers
+from observation.uitils import old_current_dates
 from school_time_table.models import ClassTimeTable
 
 
@@ -107,3 +109,76 @@ class TeacherObserveView(APIView):
             "observation_tools": data,
             "old_current_dates": old_current_dates(group_id, observation=True)
         })
+
+
+class TeacherObserveGroupView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+
+        if not request.user.observer:
+            return Response(
+                {"detail": "Ruxsat yo'q"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if not hasattr(request.user, "teacher"):
+            return Response(
+                {"detail": "Teacher mavjud emas"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        day = request.query_params.get('day')
+        month = request.query_params.get('month')
+        year = request.query_params.get('year')
+
+        try:
+            if day and month:
+                year = int(year) if year else date.today().year
+                today = date(int(year), int(month), int(day))
+            elif not day and not month and not year:
+                today = date.today()
+            else:
+                return Response(
+                    {"detail": "To'liq sana yuboring (day, month, year)"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except (ValueError, TypeError):
+            return Response(
+                {"detail": "Noto'g'ri sana formati"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        groups = ClassTimeTable.objects.select_related(
+            'group',
+            'group__class_number',
+            'group__class_type',
+            'subject',
+            'teacher__user',
+            'flow'
+        ).filter(
+            teacher_id=request.user.teacher.id,
+            date=today
+        )
+
+        data = []
+
+        for obj in groups:
+            name = None
+            if obj.group:
+                if obj.group.name:
+                    name = obj.group.name
+                elif obj.group.class_number and obj.group.class_type:
+                    name = f"{obj.group.class_number.number} {obj.group.class_type.name}"
+
+            data.append({
+                "id": obj.id,
+                "name": name,
+                "subject": obj.subject.name if obj.subject else None,
+                "teacher": f"{obj.teacher.user.name} {obj.teacher.user.surname}" if obj.teacher else None,
+                "flow": obj.flow.name if obj.flow else None,
+                "type": "flow" if obj.flow else "group",
+                "is_flow": bool(obj.flow),
+            })
+
+        return Response({"groups": data, "old_current_dates": old_current_dates(0, observation=True)})
