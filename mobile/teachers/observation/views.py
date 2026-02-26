@@ -123,7 +123,7 @@ class TeacherObserveGroupView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
         teacher =Teacher.objects.filter(user=request.user).first()
-        if teacher:
+        if not teacher:
             return Response(
                 {"detail": "Teacher mavjud emas"},
                 status=status.HTTP_400_BAD_REQUEST
