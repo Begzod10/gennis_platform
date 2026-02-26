@@ -122,8 +122,8 @@ class TeacherObserveGroupView(APIView):
                 {"detail": "Ruxsat yo'q"},
                 status=status.HTTP_403_FORBIDDEN
             )
-
-        if Teacher.objects.filter(teacher_id=request.user.teacher.id).exists():
+        teacher =Teacher.objects.filter(user=request.user).first()
+        if teacher:
             return Response(
                 {"detail": "Teacher mavjud emas"},
                 status=status.HTTP_400_BAD_REQUEST
@@ -158,7 +158,6 @@ class TeacherObserveGroupView(APIView):
             'teacher__user',
             'flow'
         ).filter(
-            teacher_id=request.user.teacher.id,
             date=today
         )
 
