@@ -16,7 +16,7 @@ from subjects.serializers import SubjectLevelSerializer, SubjectSerializer
 from system.models import System
 from system.serializers import SystemSerializers
 from teachers.models import TeacherGroupStatistics, Teacher, SatisfactionSurvey, TeacherContribution, \
-    TeacherProfessionalism
+    TeacherProfessionalism, PDParticipant, ProfessionalDevelopment
 from user.serializers import UserSerializerWrite, UserSerializerRead
 from .models import (TeacherAttendance)
 from .models import (TeacherSalaryList, TeacherSalary, TeacherSalaryType)
@@ -440,3 +440,58 @@ class TeacherProfessionalismReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherProfessionalism
         fields = "__all__"
+
+
+class PDWriteSerializer(serializers.ModelSerializer):
+    participants = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True
+    )
+
+    class Meta:
+        model = ProfessionalDevelopment
+        fields = [
+            "title",
+            "speaker",
+            "datetime",
+            "description",
+            "participants",
+            "created_by"
+        ]
+
+    def create(self, validated_data):
+        participants_ids = validated_data.pop("participants")
+        validated_data["created_by"] = validated_data.get('created_by')
+
+        pd = ProfessionalDevelopment.objects.create(**validated_data)
+
+        for teacher_id in participants_ids:
+            PDParticipant.objects.create(
+                pd=pd,
+                teacher_id=teacher_id,
+                marked_by=validated_data.get('created_by')
+            )
+
+        return pd
+
+
+class PDReadSerializer(serializers.ModelSerializer):
+    speaker_name = serializers.CharField(source="speaker.user.name", read_only=True)
+
+    participants = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProfessionalDevelopment
+        fields = "__all__"
+
+    def get_participants(self, obj):
+        return [
+            {
+                'id': p.id,
+                "teacher_id": p.teacher.id,
+                "name": p.teacher.user.name,
+                "surname": p.teacher.user.surname,
+                "status": p.status
+            }
+            for p in obj.participants.select_related("teacher__user")
+        ]

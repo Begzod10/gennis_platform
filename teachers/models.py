@@ -208,3 +208,67 @@ class TeacherProfessionalism(models.Model):
 
     def __str__(self):
         return f"{self.teacher} - {self.score}"
+
+
+class ProfessionalDevelopment(models.Model):
+    title = models.CharField(max_length=255)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="created_pds"
+    )
+
+    speaker = models.ForeignKey(
+        "teachers.Teacher",
+        on_delete=models.CASCADE,
+        related_name="speaker_pds"
+    )
+
+    date = models.DateField()
+    datetime = models.DateTimeField()
+
+    description = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date"]
+
+
+class PDParticipant(models.Model):
+    STATUS_CHOICES = (
+        ("attended", "Attended"),
+        ("absent", "Absent"),
+        ("pending", "Pending"),
+    )
+
+    pd = models.ForeignKey(
+        ProfessionalDevelopment,
+        on_delete=models.CASCADE,
+        related_name="participants"
+    )
+
+    teacher = models.ForeignKey(
+        "teachers.Teacher",
+        on_delete=models.CASCADE,
+        related_name="pd_participations"
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="pending"
+    )
+
+    marked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("pd", "teacher")

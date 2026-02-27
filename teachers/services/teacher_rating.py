@@ -1,5 +1,5 @@
 from django.db.models import Count, Q, F, Case, When, Value, FloatField, ExpressionWrapper, Sum, IntegerField, Avg
-from teachers.models import Teacher
+from teachers.models import Teacher, PDParticipant, ProfessionalDevelopment
 from observation.models import TeacherObservationDay
 from django.db.models.functions import Coalesce
 from datetime import date
@@ -295,6 +295,41 @@ def get_professionalism_ranking(branch_id=None, year=None, month=None):
     ]
 
 
+def get_pd_statistics(teacher_id, year=None, month=None):
+    filters = Q()
+
+    if year:
+        filters &= Q(pd__date__year=int(year))
+
+    if month:
+        filters &= Q(pd__date__month=int(month))
+
+    attended = PDParticipant.objects.filter(
+        filters,
+        teacher_id=teacher_id,
+        status="attended"
+    ).count()
+
+    absent = PDParticipant.objects.filter(
+        filters,
+        teacher_id=teacher_id,
+        status="absent"
+    ).count()
+
+    speaker_count = ProfessionalDevelopment.objects.filter(
+        Q(speaker_id=teacher_id) &
+        (Q(date__year=int(year)) if year else Q()) &
+        (Q(date__month=int(month)) if month else Q())
+    ).count()
+
+    return {
+        "teacher_id": teacher_id,
+        "speaker_pd_count": speaker_count,
+        "attended_pd_count": attended,
+        "absent_pd_count": absent,
+    }
+
+
 CATEGORY_MAP = {
     "observation": get_observation_ranking,
     "lesson_plan": get_lesson_plan_ranking,
@@ -302,4 +337,5 @@ CATEGORY_MAP = {
     "satisfaction": get_satisfaction_ranking,
     "contribution": get_contribution_ranking,
     "professionalism": get_professionalism_ranking,
+    "pd": get_pd_statistics,
 }
