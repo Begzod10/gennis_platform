@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'ui',
     'terms',
     'parents',
+    'parties',
     'apps.investor.apps.InvestorConfig',
     'maintenance.apps.MaintenanceConfig',
 ]
