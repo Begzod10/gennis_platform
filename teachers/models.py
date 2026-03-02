@@ -225,7 +225,7 @@ class ProfessionalDevelopment(models.Model):
         related_name="speaker_pds"
     )
 
-    date = models.DateField()
+    # date = models.DateField()
     datetime = models.DateTimeField()
 
     description = models.TextField(blank=True, null=True)
@@ -233,7 +233,7 @@ class ProfessionalDevelopment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-date"]
+        ordering = ["-datetime"]
 
 
 class PDParticipant(models.Model):
