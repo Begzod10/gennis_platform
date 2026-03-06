@@ -495,3 +495,10 @@ class PDReadSerializer(serializers.ModelSerializer):
             }
             for p in obj.participants.select_related("teacher__user")
         ]
+
+
+class PDParticipantStatusSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PDParticipant
+        fields = ["status"]

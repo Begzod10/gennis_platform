@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework import generics
 from teachers.models import PDParticipant, ProfessionalDevelopment
-from teachers.serializers import PDReadSerializer, PDWriteSerializer
+from teachers.serializers import PDReadSerializer, PDWriteSerializer, PDParticipantStatusSerializer
 
 
 class PDAPIView(generics.ListCreateAPIView):
