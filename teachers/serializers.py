@@ -474,6 +474,27 @@ class PDWriteSerializer(serializers.ModelSerializer):
 
         return pd
 
+    def update(self, instance, validated_data):
+        participants = validated_data.pop("participants", None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+
+        if participants is not None:
+            PDParticipant.objects.filter(pd=instance).delete()
+
+            PDParticipant.objects.bulk_create([
+                PDParticipant(
+                    pd=instance,
+                    teacher_id=teacher_id
+                )
+                for teacher_id in participants
+            ])
+
+        return instance
+
 
 class PDReadSerializer(serializers.ModelSerializer):
     speaker_name = serializers.CharField(source="speaker.user.name", read_only=True)
