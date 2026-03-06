@@ -318,8 +318,8 @@ def get_pd_statistics(teacher_id, year=None, month=None):
 
     speaker_count = ProfessionalDevelopment.objects.filter(
         Q(speaker_id=teacher_id) &
-        (Q(date__year=int(year)) if year else Q()) &
-        (Q(date__month=int(month)) if month else Q())
+        (Q(datetime__year=int(year)) if year else Q()) &
+        (Q(datetime__month=int(month)) if month else Q())
     ).count()
 
     return {
