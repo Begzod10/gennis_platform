@@ -49,6 +49,7 @@ class PDDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
 class PDParticipantUpdateAPIView(generics.UpdateAPIView):
     queryset = PDParticipant.objects.all()
+    serializer_class = PDParticipantStatusSerializer
     fields = ["status"]
 
     def perform_update(self, serializer):
