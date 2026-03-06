@@ -299,10 +299,10 @@ def get_pd_statistics(teacher_id, year=None, month=None):
     filters = Q()
 
     if year:
-        filters &= Q(pd__date__year=int(year))
+        filters &= Q(pd__datetime__year=int(year))
 
     if month:
-        filters &= Q(pd__date__month=int(month))
+        filters &= Q(pd__datetime__month=int(month))
 
     attended = PDParticipant.objects.filter(
         filters,
