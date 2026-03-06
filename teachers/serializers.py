@@ -477,6 +477,7 @@ class PDWriteSerializer(serializers.ModelSerializer):
 
 class PDReadSerializer(serializers.ModelSerializer):
     speaker_name = serializers.CharField(source="speaker.user.name", read_only=True)
+    speaker_surname = serializers.CharField(source="speaker.user.surname", read_only=True)
 
     participants = serializers.SerializerMethodField()
 
@@ -498,7 +499,6 @@ class PDReadSerializer(serializers.ModelSerializer):
 
 
 class PDParticipantStatusSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = PDParticipant
         fields = ["status"]
