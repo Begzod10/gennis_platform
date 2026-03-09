@@ -1,5 +1,5 @@
 from django.db.models import Count, Q, F, Case, When, Value, FloatField, ExpressionWrapper, Sum, IntegerField, Avg
-from teachers.models import Teacher, PDParticipant, ProfessionalDevelopment
+from teachers.models import Teacher, PDParticipant, ProfessionalDevelopment, ProfessionalConduct
 from observation.models import TeacherObservationDay
 from django.db.models.functions import Coalesce
 from datetime import date
@@ -330,6 +330,49 @@ def get_pd_statistics(teacher_id, year=None, month=None):
     }
 
 
+def conduct_rating(branch_id=None, year=None, month=None):
+    qs = ProfessionalConduct.objects.select_related("teacher")
+
+    if branch_id:
+        qs = qs.filter(teacher__branch_id=branch_id)
+
+    if year:
+        qs = qs.filter(datetime__year=year)
+
+    if month:
+        qs = qs.filter(datetime__month=month)
+
+    teachers = qs.values(
+        "teacher_id",
+        "teacher__user__first_name",
+        "teacher__user__last_name"
+    ).annotate(
+        good=Count("id", filter=Q(status="good")),
+        average=Count("id", filter=Q(status="average")),
+        bad=Count("id", filter=Q(status="bad"))
+    )
+
+    result = []
+
+    for t in teachers:
+        rating = (
+                t["good"] * 3 +
+                t["average"] * 2 +
+                t["bad"] * 1
+        )
+
+        result.append({
+            "teacher_id": t["teacher_id"],
+            "name": f'{t["teacher__user_name"]} {t["teacher__user_surname"]}',
+            "good": t["good"],
+            "average": t["average"],
+            "bad": t["bad"],
+            "rating": rating
+        })
+
+    return sorted(result, key=lambda x: x["rating"], reverse=True)
+
+
 CATEGORY_MAP = {
     "observation": get_observation_ranking,
     "lesson_plan": get_lesson_plan_ranking,
@@ -338,4 +381,5 @@ CATEGORY_MAP = {
     "contribution": get_contribution_ranking,
     "professionalism": get_professionalism_ranking,
     "pd": get_pd_statistics,
+    "conduct": conduct_rating,
 }

@@ -16,7 +16,7 @@ from subjects.serializers import SubjectLevelSerializer, SubjectSerializer
 from system.models import System
 from system.serializers import SystemSerializers
 from teachers.models import TeacherGroupStatistics, Teacher, SatisfactionSurvey, TeacherContribution, \
-    TeacherProfessionalism, PDParticipant, ProfessionalDevelopment
+    TeacherProfessionalism, PDParticipant, ProfessionalDevelopment, ProfessionalConduct
 from user.serializers import UserSerializerWrite, UserSerializerRead
 from .models import (TeacherAttendance)
 from .models import (TeacherSalaryList, TeacherSalary, TeacherSalaryType)
@@ -523,3 +523,32 @@ class PDParticipantStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = PDParticipant
         fields = ["status"]
+
+
+class ConductWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProfessionalConduct
+        fields = [
+            "id",
+            "teacher",
+            "status",
+            "datetime",
+            "comment"
+        ]
+
+
+class ConductReadSerializer(serializers.ModelSerializer):
+    teacher = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProfessionalConduct
+        fields = [
+            "id",
+            "teacher",
+            "status",
+            "datetime",
+            "comment"
+        ]
+
+    def get_teacher(self, obj):
+        return f'{obj.teacher.user.name} {obj.teacher.user.surname}'
