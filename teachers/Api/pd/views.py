@@ -1,5 +1,6 @@
 from rest_framework.response import Response
 from rest_framework import generics
+from django.db.models import Q
 from teachers.models import PDParticipant, ProfessionalDevelopment
 from teachers.serializers import PDReadSerializer, PDWriteSerializer, PDParticipantStatusSerializer
 
@@ -20,6 +21,7 @@ class PDAPIView(generics.ListCreateAPIView):
 
         speaker = self.request.GET.get("speaker")
         teacher = self.request.GET.get("teacher")
+        branch = self.request.GET.get("branch")
         year = self.request.GET.get("year")
         month = self.request.GET.get("month")
 
@@ -28,6 +30,12 @@ class PDAPIView(generics.ListCreateAPIView):
 
         if teacher:
             qs = qs.filter(participants__teacher_id=teacher)
+
+        if branch:
+            qs = qs.filter(
+                Q(speaker__branch_id=branch) |
+                Q(participants__teacher__branch_id=branch)
+            )
 
         if year:
             qs = qs.filter(datetime__year=int(year))
