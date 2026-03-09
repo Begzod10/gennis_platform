@@ -331,7 +331,7 @@ def pd_rating(branch_id=None, year=None, month=None):
 
         result.append({
             "teacher_id": t["teacher_id"],
-            "name": f"{t['teacher__user__first_name']} {t['teacher__user__last_name']}",
+            "name": f"{t['teacher__user__name']} {t['teacher__user__surname']}",
             "speaker_pd_count": speaker_count,
             "attended_pd_count": t["attended"],
             "absent_pd_count": t["absent"],
