@@ -534,7 +534,6 @@ class ConductWriteSerializer(serializers.ModelSerializer):
             "status",
             "datetime",
             "comment",
-            "created_by"
         ]
 
 
