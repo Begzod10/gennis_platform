@@ -344,8 +344,8 @@ def conduct_rating(branch_id=None, year=None, month=None):
 
     teachers = qs.values(
         "teacher_id",
-        "teacher__user__first_name",
-        "teacher__user__last_name"
+        "teacher__user__name",
+        "teacher__user__surname"
     ).annotate(
         good=Count("id", filter=Q(status="good")),
         average=Count("id", filter=Q(status="average")),
