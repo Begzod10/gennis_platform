@@ -334,7 +334,7 @@ def conduct_rating(branch_id=None, year=None, month=None):
     qs = ProfessionalConduct.objects.select_related("teacher")
 
     if branch_id:
-        qs = qs.filter(teacher__branch_id=branch_id)
+        qs = qs.filter(teacher__user__branch_id=branch_id)
 
     if year:
         qs = qs.filter(datetime__year=year)
