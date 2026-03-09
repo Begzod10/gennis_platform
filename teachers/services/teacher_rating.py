@@ -295,7 +295,8 @@ def get_professionalism_ranking(branch_id=None, year=None, month=None):
     ]
 
 
-def get_pd_statistics(teacher_id, year=None, month=None):
+def pd_rating(branch_id=None, year=None, month=None):
+
     filters = Q()
 
     if year:
@@ -304,30 +305,39 @@ def get_pd_statistics(teacher_id, year=None, month=None):
     if month:
         filters &= Q(pd__datetime__month=int(month))
 
-    attended = PDParticipant.objects.filter(
-        filters,
-        teacher_id=teacher_id,
-        status="attended"
-    ).count()
+    qs = PDParticipant.objects.filter(filters)
 
-    absent = PDParticipant.objects.filter(
-        filters,
-        teacher_id=teacher_id,
-        status="absent"
-    ).count()
+    if branch_id:
+        qs = qs.filter(teacher__branch_id=branch_id)
 
-    speaker_count = ProfessionalDevelopment.objects.filter(
-        Q(speaker_id=teacher_id) &
-        (Q(datetime__year=int(year)) if year else Q()) &
-        (Q(datetime__month=int(month)) if month else Q())
-    ).count()
+    teachers = qs.values(
+        "teacher_id",
+        "teacher__user__first_name",
+        "teacher__user__last_name"
+    ).annotate(
+        attended=Count("id", filter=Q(status="attended")),
+        absent=Count("id", filter=Q(status="absent")),
+    )
 
-    return {
-        "teacher_id": teacher_id,
-        "speaker_pd_count": speaker_count,
-        "attended_pd_count": attended,
-        "absent_pd_count": absent,
-    }
+    result = []
+
+    for t in teachers:
+
+        speaker_count = ProfessionalDevelopment.objects.filter(
+            speaker_id=t["teacher_id"],
+            **({"datetime__year": year} if year else {}),
+            **({"datetime__month": month} if month else {})
+        ).count()
+
+        result.append({
+            "teacher_id": t["teacher_id"],
+            "name": f"{t['teacher__user__first_name']} {t['teacher__user__last_name']}",
+            "speaker_pd_count": speaker_count,
+            "attended_pd_count": t["attended"],
+            "absent_pd_count": t["absent"],
+        })
+
+    return result
 
 
 def conduct_rating(branch_id=None, year=None, month=None):
