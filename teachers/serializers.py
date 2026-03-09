@@ -533,7 +533,8 @@ class ConductWriteSerializer(serializers.ModelSerializer):
             "teacher",
             "status",
             "datetime",
-            "comment"
+            "comment",
+            "created_by"
         ]
 
 
@@ -547,7 +548,8 @@ class ConductReadSerializer(serializers.ModelSerializer):
             "teacher",
             "status",
             "datetime",
-            "comment"
+            "comment",
+            "created_by"
         ]
 
     def get_teacher(self, obj):
