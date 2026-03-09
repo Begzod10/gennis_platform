@@ -33,10 +33,8 @@ class PDAPIView(generics.ListCreateAPIView):
 
         if branch:
             qs = qs.filter(
-                Q(speaker__branch_id=branch) |
-                Q(participants__teacher__branch_id=branch)
+                Q(participants__teacher__user__branch_id=branch)
             )
-
         if year:
             qs = qs.filter(datetime__year=int(year))
 
