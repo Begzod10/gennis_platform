@@ -312,8 +312,8 @@ def pd_rating(branch_id=None, year=None, month=None):
 
     teachers = qs.values(
         "teacher_id",
-        "teacher__user__first_name",
-        "teacher__user__last_name"
+        "teacher__user__name",
+        "teacher__user__surname"
     ).annotate(
         attended=Count("id", filter=Q(status="attended")),
         absent=Count("id", filter=Q(status="absent")),
