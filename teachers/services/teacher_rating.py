@@ -363,7 +363,7 @@ def conduct_rating(branch_id=None, year=None, month=None):
 
         result.append({
             "teacher_id": t["teacher_id"],
-            "name": f'{t["teacher__user_name"]} {t["teacher__user_surname"]}',
+            "name": f'{t["teacher__user__name"]} {t["teacher__user__surname"]}',
             "good": t["good"],
             "average": t["average"],
             "bad": t["bad"],
