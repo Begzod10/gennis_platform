@@ -308,7 +308,7 @@ def pd_rating(branch_id=None, year=None, month=None):
     qs = PDParticipant.objects.filter(filters)
 
     if branch_id:
-        qs = qs.filter(teacher__branch_id=branch_id)
+        qs = qs.filter(teacher__user__branch_id=branch_id)
 
     teachers = qs.values(
         "teacher_id",
