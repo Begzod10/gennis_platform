@@ -46,6 +46,11 @@ class PDDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
             return PDReadSerializer
         return PDWriteSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({"detail": "Deleted"}, status=200)
+
 
 class PDParticipantUpdateAPIView(generics.UpdateAPIView):
     queryset = PDParticipant.objects.all()

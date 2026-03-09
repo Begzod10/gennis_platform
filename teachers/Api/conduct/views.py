@@ -47,3 +47,8 @@ class ConductDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method == "GET":
             return ConductReadSerializer
         return ConductWriteSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({"detail": "Deleted"}, status=200)
