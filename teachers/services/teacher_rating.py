@@ -390,6 +390,6 @@ CATEGORY_MAP = {
     "satisfaction": get_satisfaction_ranking,
     "contribution": get_contribution_ranking,
     "professionalism": get_professionalism_ranking,
-    "pd": get_pd_statistics,
+    "pd": pd_rating,
     "conduct": conduct_rating,
 }
