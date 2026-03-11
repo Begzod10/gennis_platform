@@ -560,18 +560,23 @@ class ResponsivenessWriteSerializer(serializers.ModelSerializer):
         model = ResponsivenessFeedback
         fields = "__all__"
 
-    def create(self, validated_data):
-
-        status = validated_data["status"]
-
+    def set_ball(self, status):
         if status == "good":
-            validated_data["ball"] = 3
+            return 3
         elif status == "average":
-            validated_data["ball"] = 2
-        else:
-            validated_data["ball"] = 1
+            return 2
+        return 1
 
+    def create(self, validated_data):
+        validated_data["ball"] = self.set_ball(validated_data["status"])
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+
+        status = validated_data.get("status", instance.status)
+        validated_data["ball"] = self.set_ball(status)
+
+        return super().update(instance, validated_data)
 
 
 class ResponsivenessReadSerializer(serializers.ModelSerializer):
