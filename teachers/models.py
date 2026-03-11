@@ -315,7 +315,7 @@ class ResponsivenessFeedback(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
-    ball = models.IntegerField()
+    ball = models.IntegerField(null=True)
 
     comment = models.TextField(null=True, blank=True)
 
