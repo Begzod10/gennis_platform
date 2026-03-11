@@ -302,3 +302,21 @@ class ProfessionalConduct(models.Model):
     comment = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class ResponsivenessFeedback(models.Model):
+    STATUS_CHOICES = (
+        ("good", "Good"),
+        ("average", "Average"),
+        ("bad", "Bad"),
+    )
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    ball = models.IntegerField()
+
+    comment = models.TextField(null=True, blank=True)
+
+    datetime = models.DateTimeField(auto_now_add=True)

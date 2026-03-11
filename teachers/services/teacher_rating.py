@@ -1,5 +1,5 @@
 from django.db.models import Count, Q, F, Case, When, Value, FloatField, ExpressionWrapper, Sum, IntegerField, Avg
-from teachers.models import Teacher, PDParticipant, ProfessionalDevelopment, ProfessionalConduct
+from teachers.models import Teacher, PDParticipant, ProfessionalDevelopment, ProfessionalConduct, ResponsivenessFeedback
 from observation.models import TeacherObservationDay
 from django.db.models.functions import Coalesce
 from datetime import date
@@ -296,7 +296,6 @@ def get_professionalism_ranking(branch_id=None, year=None, month=None):
 
 
 def pd_rating(branch_id=None, year=None, month=None):
-
     filters = Q()
 
     if year:
@@ -322,7 +321,6 @@ def pd_rating(branch_id=None, year=None, month=None):
     result = []
 
     for t in teachers:
-
         speaker_count = ProfessionalDevelopment.objects.filter(
             speaker_id=t["teacher_id"],
             **({"datetime__year": year} if year else {}),
@@ -383,6 +381,50 @@ def conduct_rating(branch_id=None, year=None, month=None):
     return sorted(result, key=lambda x: x["rating"], reverse=True)
 
 
+def responsiveness_rating(branch_id=None, year=None, month=None):
+    qs = ResponsivenessFeedback.objects.select_related("teacher__user")
+
+    if branch_id:
+        qs = qs.filter(teacher__user__branch_id=branch_id)
+
+    if year:
+        qs = qs.filter(datetime__year=year)
+
+    if month:
+        qs = qs.filter(datetime__month=month)
+
+    teachers = qs.values(
+        "teacher_id",
+        "teacher__user__name",
+        "teacher__user__surname"
+    ).annotate(
+        good=Count("id", filter=Q(status="good")),
+        average=Count("id", filter=Q(status="average")),
+        bad=Count("id", filter=Q(status="bad"))
+    )
+
+    result = []
+
+    for t in teachers:
+        rating = (
+                t["good"] * 3 +
+                t["average"] * 2 +
+                t["bad"] * 1
+        )
+
+        result.append({
+            "teacher_id": t["teacher_id"],
+            "name": t["teacher__user__name"],
+            "surname": t["teacher__user__surname"],
+            "good": t["good"],
+            "average": t["average"],
+            "bad": t["bad"],
+            "rating": rating
+        })
+
+    return sorted(result, key=lambda x: x["rating"], reverse=True)
+
+
 CATEGORY_MAP = {
     "observation": get_observation_ranking,
     "lesson_plan": get_lesson_plan_ranking,
@@ -392,4 +434,5 @@ CATEGORY_MAP = {
     "professionalism": get_professionalism_ranking,
     "pd": pd_rating,
     "conduct": conduct_rating,
+    "responsiveness": responsiveness_rating,
 }

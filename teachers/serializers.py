@@ -16,7 +16,7 @@ from subjects.serializers import SubjectLevelSerializer, SubjectSerializer
 from system.models import System
 from system.serializers import SystemSerializers
 from teachers.models import TeacherGroupStatistics, Teacher, SatisfactionSurvey, TeacherContribution, \
-    TeacherProfessionalism, PDParticipant, ProfessionalDevelopment, ProfessionalConduct
+    TeacherProfessionalism, PDParticipant, ProfessionalDevelopment, ProfessionalConduct, ResponsivenessFeedback
 from user.serializers import UserSerializerWrite, UserSerializerRead
 from .models import (TeacherAttendance)
 from .models import (TeacherSalaryList, TeacherSalary, TeacherSalaryType)
@@ -553,3 +553,37 @@ class ConductReadSerializer(serializers.ModelSerializer):
 
     def get_teacher(self, obj):
         return f'{obj.teacher.user.name} {obj.teacher.user.surname}'
+
+
+class ResponsivenessWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ResponsivenessFeedback
+        fields = "__all__"
+
+    def create(self, validated_data):
+
+        status = validated_data["status"]
+
+        if status == "good":
+            validated_data["ball"] = 3
+        elif status == "average":
+            validated_data["ball"] = 2
+        else:
+            validated_data["ball"] = 1
+
+        return super().create(validated_data)
+
+
+class ResponsivenessReadSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.SerializerMethodField()
+    creator_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ResponsivenessFeedback
+        fields = "__all__"
+
+    def get_teacher_name(self, obj):
+        return f'{obj.teacher.user.name} {obj.teacher.user.surname}'
+
+    def get_creator_name(self, obj):
+        return f'{obj.user.name} {obj.user.surname}'
