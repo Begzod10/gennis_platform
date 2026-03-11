@@ -225,7 +225,6 @@ class ProfessionalDevelopment(models.Model):
         related_name="speaker_pds"
     )
 
-    # date = models.DateField()
     datetime = models.DateTimeField()
 
     description = models.TextField(blank=True, null=True)
@@ -272,3 +271,52 @@ class PDParticipant(models.Model):
 
     class Meta:
         unique_together = ("pd", "teacher")
+
+
+class ProfessionalConduct(models.Model):
+    STATUS_CHOICES = (
+        ("good", "Good"),
+        ("average", "Average"),
+        ("bad", "Bad"),
+    )
+
+    teacher = models.ForeignKey(
+        Teacher,
+        on_delete=models.CASCADE,
+        related_name="conducts"
+    )
+
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES
+    )
+
+    datetime = models.DateTimeField()
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+
+    comment = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class ResponsivenessFeedback(models.Model):
+    STATUS_CHOICES = (
+        ("good", "Good"),
+        ("average", "Average"),
+        ("bad", "Bad"),
+    )
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    ball = models.IntegerField(null=True)
+
+    comment = models.TextField(null=True, blank=True)
+
+    datetime = models.DateTimeField(auto_now_add=True)

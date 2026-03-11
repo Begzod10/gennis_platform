@@ -1,7 +1,8 @@
 from rest_framework.response import Response
 from rest_framework import generics
+from django.db.models import Q
 from teachers.models import PDParticipant, ProfessionalDevelopment
-from teachers.serializers import PDReadSerializer, PDWriteSerializer
+from teachers.serializers import PDReadSerializer, PDWriteSerializer, PDParticipantStatusSerializer
 
 
 class PDAPIView(generics.ListCreateAPIView):
@@ -20,6 +21,7 @@ class PDAPIView(generics.ListCreateAPIView):
 
         speaker = self.request.GET.get("speaker")
         teacher = self.request.GET.get("teacher")
+        branch = self.request.GET.get("branch")
         year = self.request.GET.get("year")
         month = self.request.GET.get("month")
 
@@ -29,6 +31,10 @@ class PDAPIView(generics.ListCreateAPIView):
         if teacher:
             qs = qs.filter(participants__teacher_id=teacher)
 
+        if branch:
+            qs = qs.filter(
+                Q(participants__teacher__user__branch_id=branch)
+            )
         if year:
             qs = qs.filter(datetime__year=int(year))
 
@@ -46,9 +52,15 @@ class PDDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
             return PDReadSerializer
         return PDWriteSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({"detail": "Deleted"}, status=200)
+
 
 class PDParticipantUpdateAPIView(generics.UpdateAPIView):
     queryset = PDParticipant.objects.all()
+    serializer_class = PDParticipantStatusSerializer
     fields = ["status"]
 
     def perform_update(self, serializer):

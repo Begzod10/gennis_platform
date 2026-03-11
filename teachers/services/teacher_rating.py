@@ -1,5 +1,5 @@
 from django.db.models import Count, Q, F, Case, When, Value, FloatField, ExpressionWrapper, Sum, IntegerField, Avg
-from teachers.models import Teacher, PDParticipant, ProfessionalDevelopment
+from teachers.models import Teacher, PDParticipant, ProfessionalDevelopment, ProfessionalConduct, ResponsivenessFeedback
 from observation.models import TeacherObservationDay
 from django.db.models.functions import Coalesce
 from datetime import date
@@ -295,39 +295,134 @@ def get_professionalism_ranking(branch_id=None, year=None, month=None):
     ]
 
 
-def get_pd_statistics(teacher_id, year=None, month=None):
+def pd_rating(branch_id=None, year=None, month=None):
     filters = Q()
 
     if year:
-        filters &= Q(pd__date__year=int(year))
+        filters &= Q(pd__datetime__year=int(year))
 
     if month:
-        filters &= Q(pd__date__month=int(month))
+        filters &= Q(pd__datetime__month=int(month))
 
-    attended = PDParticipant.objects.filter(
-        filters,
-        teacher_id=teacher_id,
-        status="attended"
-    ).count()
+    qs = PDParticipant.objects.filter(filters)
 
-    absent = PDParticipant.objects.filter(
-        filters,
-        teacher_id=teacher_id,
-        status="absent"
-    ).count()
+    if branch_id:
+        qs = qs.filter(teacher__user__branch_id=branch_id)
 
-    speaker_count = ProfessionalDevelopment.objects.filter(
-        Q(speaker_id=teacher_id) &
-        (Q(date__year=int(year)) if year else Q()) &
-        (Q(date__month=int(month)) if month else Q())
-    ).count()
+    teachers = qs.values(
+        "teacher_id",
+        "teacher__user__name",
+        "teacher__user__surname"
+    ).annotate(
+        attended=Count("id", filter=Q(status="attended")),
+        absent=Count("id", filter=Q(status="absent")),
+    )
 
-    return {
-        "teacher_id": teacher_id,
-        "speaker_pd_count": speaker_count,
-        "attended_pd_count": attended,
-        "absent_pd_count": absent,
-    }
+    result = []
+
+    for t in teachers:
+        speaker_count = ProfessionalDevelopment.objects.filter(
+            speaker_id=t["teacher_id"],
+            **({"datetime__year": year} if year else {}),
+            **({"datetime__month": month} if month else {})
+        ).count()
+
+        result.append({
+            "teacher_id": t["teacher_id"],
+            "name": f"{t['teacher__user__name']} {t['teacher__user__surname']}",
+            "speaker_pd_count": speaker_count,
+            "attended_pd_count": t["attended"],
+            "absent_pd_count": t["absent"],
+        })
+
+    return result
+
+
+def conduct_rating(branch_id=None, year=None, month=None):
+    qs = ProfessionalConduct.objects.select_related("teacher")
+
+    if branch_id:
+        qs = qs.filter(teacher__user__branch_id=branch_id)
+
+    if year:
+        qs = qs.filter(datetime__year=year)
+
+    if month:
+        qs = qs.filter(datetime__month=month)
+
+    teachers = qs.values(
+        "teacher_id",
+        "teacher__user__name",
+        "teacher__user__surname"
+    ).annotate(
+        good=Count("id", filter=Q(status="good")),
+        average=Count("id", filter=Q(status="average")),
+        bad=Count("id", filter=Q(status="bad"))
+    )
+
+    result = []
+
+    for t in teachers:
+        rating = (
+                t["good"] * 3 +
+                t["average"] * 2 +
+                t["bad"] * 1
+        )
+
+        result.append({
+            "teacher_id": t["teacher_id"],
+            "name": f'{t["teacher__user__name"]} {t["teacher__user__surname"]}',
+            "good": t["good"],
+            "average": t["average"],
+            "bad": t["bad"],
+            "rating": rating
+        })
+
+    return sorted(result, key=lambda x: x["rating"], reverse=True)
+
+
+def responsiveness_rating(branch_id=None, year=None, month=None):
+    qs = ResponsivenessFeedback.objects.select_related("teacher__user")
+
+    if branch_id:
+        qs = qs.filter(teacher__user__branch_id=branch_id)
+
+    if year:
+        qs = qs.filter(datetime__year=year)
+
+    if month:
+        qs = qs.filter(datetime__month=month)
+
+    teachers = qs.values(
+        "teacher_id",
+        "teacher__user__name",
+        "teacher__user__surname"
+    ).annotate(
+        good=Count("id", filter=Q(status="good")),
+        average=Count("id", filter=Q(status="average")),
+        bad=Count("id", filter=Q(status="bad"))
+    )
+
+    result = []
+
+    for t in teachers:
+        rating = (
+                t["good"] * 3 +
+                t["average"] * 2 +
+                t["bad"] * 1
+        )
+
+        result.append({
+            "teacher_id": t["teacher_id"],
+            "name": t["teacher__user__name"],
+            "surname": t["teacher__user__surname"],
+            "good": t["good"],
+            "average": t["average"],
+            "bad": t["bad"],
+            "rating": rating
+        })
+
+    return sorted(result, key=lambda x: x["rating"], reverse=True)
 
 
 CATEGORY_MAP = {
@@ -337,5 +432,7 @@ CATEGORY_MAP = {
     "satisfaction": get_satisfaction_ranking,
     "contribution": get_contribution_ranking,
     "professionalism": get_professionalism_ranking,
-    "pd": get_pd_statistics,
+    "pd": pd_rating,
+    "conduct": conduct_rating,
+    "responsiveness": responsiveness_rating,
 }
