@@ -9,7 +9,7 @@ class System(models.Model):
     """ center, school, institute ... """
     name = models.CharField(max_length=255)
     number = models.IntegerField()
-    test = models.CharField(max_length=255)
+    test = models.CharField(max_length=255, default='test')
 
 
 @receiver(post_migrate)
