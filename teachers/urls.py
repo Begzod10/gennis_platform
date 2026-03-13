@@ -25,6 +25,7 @@ from teachers.Api.professionalism.views import TeacherProfessionalismAPIView, Te
 from teachers.Api.pd.views import PDParticipantUpdateAPIView, PDAPIView, PDDetailAPIView
 from teachers.Api.conduct.views import ConductAPIView, ConductDetailAPIView
 from teachers.Api.feedback.views import ResponsivenessAPIView, ResponsivenessDetailAPIView
+from teachers.Api.collaboration.views import TeamCollaborationAPIView, TeamCollaborationDetailAPIView
 
 app_name = 'Teachers'
 
@@ -110,4 +111,8 @@ urlpatterns = [
     path('teacher-feedback/', ResponsivenessAPIView.as_view(), name='teacher-feedback'),
     path('teacher-feedback/<int:pk>/', ResponsivenessDetailAPIView.as_view(),
          name='teacher-feedback-detail'),
+
+    path('teacher-collaboration/', TeamCollaborationAPIView.as_view(), name='teacher-collaboration'),
+    path('teacher-collaboration/<int:pk>/', TeamCollaborationDetailAPIView.as_view(),
+         name='teacher-collaboration-detail'),
 ]
