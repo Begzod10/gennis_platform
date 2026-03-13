@@ -320,3 +320,21 @@ class ResponsivenessFeedback(models.Model):
     comment = models.TextField(null=True, blank=True)
 
     datetime = models.DateTimeField()
+
+
+class TeamCollaboration(models.Model):
+    STATUS_CHOICES = (
+        ("good", "Good"),
+        ("average", "Average"),
+        ("bad", "Bad"),
+    )
+
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    ball = models.IntegerField()
+
+    comment = models.TextField(null=True, blank=True)
+
+    datetime = models.DateTimeField()
