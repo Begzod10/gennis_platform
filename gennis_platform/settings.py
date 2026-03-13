@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'parties',
     'apps.investor.apps.InvestorConfig',
     'maintenance.apps.MaintenanceConfig',
+    "report",
 ]
 
 MIDDLEWARE = [

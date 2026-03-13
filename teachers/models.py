@@ -208,3 +208,115 @@ class TeacherProfessionalism(models.Model):
 
     def __str__(self):
         return f"{self.teacher} - {self.score}"
+
+
+class ProfessionalDevelopment(models.Model):
+    title = models.CharField(max_length=255)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="created_pds"
+    )
+
+    speaker = models.ForeignKey(
+        "teachers.Teacher",
+        on_delete=models.CASCADE,
+        related_name="speaker_pds"
+    )
+
+    datetime = models.DateTimeField()
+
+    description = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-datetime"]
+
+
+class PDParticipant(models.Model):
+    STATUS_CHOICES = (
+        ("attended", "Attended"),
+        ("absent", "Absent"),
+        ("pending", "Pending"),
+    )
+
+    pd = models.ForeignKey(
+        ProfessionalDevelopment,
+        on_delete=models.CASCADE,
+        related_name="participants"
+    )
+
+    teacher = models.ForeignKey(
+        "teachers.Teacher",
+        on_delete=models.CASCADE,
+        related_name="pd_participations"
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="pending"
+    )
+
+    marked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("pd", "teacher")
+
+
+class ProfessionalConduct(models.Model):
+    STATUS_CHOICES = (
+        ("good", "Good"),
+        ("average", "Average"),
+        ("bad", "Bad"),
+    )
+
+    teacher = models.ForeignKey(
+        Teacher,
+        on_delete=models.CASCADE,
+        related_name="conducts"
+    )
+
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES
+    )
+
+    datetime = models.DateTimeField()
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+
+    comment = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class ResponsivenessFeedback(models.Model):
+    STATUS_CHOICES = (
+        ("good", "Good"),
+        ("average", "Average"),
+        ("bad", "Bad"),
+    )
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    ball = models.IntegerField(null=True)
+
+    comment = models.TextField(null=True, blank=True)
+
+    datetime = models.DateTimeField(auto_now_add=True)

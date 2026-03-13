@@ -16,7 +16,7 @@ from subjects.serializers import SubjectLevelSerializer, SubjectSerializer
 from system.models import System
 from system.serializers import SystemSerializers
 from teachers.models import TeacherGroupStatistics, Teacher, SatisfactionSurvey, TeacherContribution, \
-    TeacherProfessionalism
+    TeacherProfessionalism, PDParticipant, ProfessionalDevelopment, ProfessionalConduct, ResponsivenessFeedback
 from user.serializers import UserSerializerWrite, UserSerializerRead
 from .models import (TeacherAttendance)
 from .models import (TeacherSalaryList, TeacherSalary, TeacherSalaryType)
@@ -440,3 +440,155 @@ class TeacherProfessionalismReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherProfessionalism
         fields = "__all__"
+
+
+class PDWriteSerializer(serializers.ModelSerializer):
+    participants = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True
+    )
+
+    class Meta:
+        model = ProfessionalDevelopment
+        fields = [
+            "title",
+            "speaker",
+            "datetime",
+            "description",
+            "participants",
+            "created_by"
+        ]
+
+    def create(self, validated_data):
+        participants_ids = validated_data.pop("participants")
+        validated_data["created_by"] = validated_data.get('created_by')
+
+        pd = ProfessionalDevelopment.objects.create(**validated_data)
+
+        for teacher_id in participants_ids:
+            PDParticipant.objects.create(
+                pd=pd,
+                teacher_id=teacher_id,
+                marked_by=validated_data.get('created_by')
+            )
+
+        return pd
+
+    def update(self, instance, validated_data):
+        participants = validated_data.pop("participants", None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+
+        if participants is not None:
+            PDParticipant.objects.filter(pd=instance).delete()
+
+            PDParticipant.objects.bulk_create([
+                PDParticipant(
+                    pd=instance,
+                    teacher_id=teacher_id
+                )
+                for teacher_id in participants
+            ])
+
+        return instance
+
+
+class PDReadSerializer(serializers.ModelSerializer):
+    speaker_name = serializers.CharField(source="speaker.user.name", read_only=True)
+    speaker_surname = serializers.CharField(source="speaker.user.surname", read_only=True)
+
+    participants = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProfessionalDevelopment
+        fields = "__all__"
+
+    def get_participants(self, obj):
+        return [
+            {
+                'id': p.id,
+                "teacher_id": p.teacher.id,
+                "name": p.teacher.user.name,
+                "surname": p.teacher.user.surname,
+                "status": p.status
+            }
+            for p in obj.participants.select_related("teacher__user")
+        ]
+
+
+class PDParticipantStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PDParticipant
+        fields = ["status"]
+
+
+class ConductWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProfessionalConduct
+        fields = [
+            "id",
+            "teacher",
+            "status",
+            "datetime",
+            "comment",
+        ]
+
+
+class ConductReadSerializer(serializers.ModelSerializer):
+    teacher = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProfessionalConduct
+        fields = [
+            "id",
+            "teacher",
+            "status",
+            "datetime",
+            "comment",
+            "created_by"
+        ]
+
+    def get_teacher(self, obj):
+        return f'{obj.teacher.user.name} {obj.teacher.user.surname}'
+
+
+class ResponsivenessWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ResponsivenessFeedback
+        fields = "__all__"
+
+    def set_ball(self, status):
+        if status == "good":
+            return 3
+        elif status == "average":
+            return 2
+        return 1
+
+    def create(self, validated_data):
+        validated_data["ball"] = self.set_ball(validated_data["status"])
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+
+        status = validated_data.get("status", instance.status)
+        validated_data["ball"] = self.set_ball(status)
+
+        return super().update(instance, validated_data)
+
+
+class ResponsivenessReadSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.SerializerMethodField()
+    creator_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ResponsivenessFeedback
+        fields = "__all__"
+
+    def get_teacher_name(self, obj):
+        return f'{obj.teacher.user.name} {obj.teacher.user.surname}'
+
+    def get_creator_name(self, obj):
+        return f'{obj.user.name} {obj.user.surname}'

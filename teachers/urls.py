@@ -22,6 +22,9 @@ from .views import GetGroupStudents
 from teachers.Api.satisfaction.views import SatisfactionSurveyAPIView, SatisfactionSurveyDetailAPIView
 from teachers.Api.contribution.views import TeacherContributionAPIView, TeacherContributionDetailAPIView
 from teachers.Api.professionalism.views import TeacherProfessionalismAPIView, TeacherProfessionalismDetailAPIView
+from teachers.Api.pd.views import PDParticipantUpdateAPIView, PDAPIView, PDDetailAPIView
+from teachers.Api.conduct.views import ConductAPIView, ConductDetailAPIView
+from teachers.Api.feedback.views import ResponsivenessAPIView, ResponsivenessDetailAPIView
 
 app_name = 'Teachers'
 
@@ -93,4 +96,18 @@ urlpatterns = [
     path('teacher-professionalism/', TeacherProfessionalismAPIView.as_view(), name='teacher-professionalism'),
     path('teacher-professionalism/<int:pk>/', TeacherProfessionalismDetailAPIView.as_view(),
          name='teacher-professionalism-detail'),
+
+    path('teacher-pd/', PDAPIView.as_view(), name='teacher-pd'),
+    path('teacher-pd/<int:pk>/', PDDetailAPIView.as_view(),
+         name='teacher-pd-detail'),
+    path('teacher-pd-status/<int:pk>/', PDParticipantUpdateAPIView.as_view(),
+         name='teacher-pd-detail-status'),
+
+    path('teacher-conduct/', ConductAPIView.as_view(), name='teacher-conduct'),
+    path('teacher-conduct/<int:pk>/', ConductDetailAPIView.as_view(),
+         name='teacher-conduct-detail'),
+
+    path('teacher-feedback/', ResponsivenessAPIView.as_view(), name='teacher-feedback'),
+    path('teacher-feedback/<int:pk>/', ResponsivenessDetailAPIView.as_view(),
+         name='teacher-feedback-detail'),
 ]

@@ -54,6 +54,7 @@ urlpatterns = [
     path('api/get_group_datas/<int:group_id>/', GetGroupDataAPIView.as_view(), name='get_group_datas'),
     path('api/v1/investor/', include('api.v1.investor.urls')),
     path('api/parties/', include('parties.urls')),
+    path('api/reports/',include('report.urls'))
 
 ]
 
