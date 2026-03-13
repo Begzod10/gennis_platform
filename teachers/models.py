@@ -333,7 +333,7 @@ class TeamCollaboration(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
-    ball = models.IntegerField()
+    ball = models.IntegerField(null=True)
 
     comment = models.TextField(null=True, blank=True)
 
