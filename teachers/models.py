@@ -301,7 +301,7 @@ class ProfessionalConduct(models.Model):
 
     comment = models.TextField(blank=True)
 
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
 
 class ResponsivenessFeedback(models.Model):
