@@ -1244,5 +1244,5 @@ class OneDayReportView(APIView):
             branch_id=branch_id,
             deleted=False
         )
-        data = list(qs.values("name", "surname", "phone"))
+        data = list(qs.values("name",  "phone"))
         return {"count": qs.count(), "data": data}
