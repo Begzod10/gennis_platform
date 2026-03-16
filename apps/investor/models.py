@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Q
+from branch.models import Branch
 
 
 class InvestorMonthlyReport(models.Model):
@@ -70,3 +71,41 @@ class InvestorMonthlyReport(models.Model):
     def __str__(self):
         scope = self.branch.name if self.branch_id else "All branches"
         return f"Investor report {self.month:%Y-%m} – {scope}"
+
+
+class ManagementDividend(models.Model):
+    """Dividend paid out to the management project. Created/synced from gennis_management."""
+    management_id = models.BigIntegerField(unique=True)
+    amount = models.IntegerField()
+    date = models.DateField()
+    description = models.TextField(null=True, blank=True)
+    payment_type = models.CharField(max_length=255, null=True, blank=True)
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True,
+                               related_name='management_dividends')
+    deleted = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'dividend'
+        managed = False
+
+    def __str__(self):
+        return f"Dividend {self.amount} – {self.date}"
+
+
+class ManagementInvestment(models.Model):
+    """Investment received from the management project. Created/synced from gennis_management."""
+    management_id = models.BigIntegerField(unique=True)
+    amount = models.IntegerField()
+    date = models.DateField()
+    description = models.TextField(null=True, blank=True)
+    payment_type = models.CharField(max_length=255, null=True, blank=True)
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True,
+                               related_name='management_investments')
+    deleted = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'management_investment'
+        managed = False
+
+    def __str__(self):
+        return f"Investment {self.amount} – {self.date}"
