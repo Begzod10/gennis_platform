@@ -16,7 +16,8 @@ from subjects.serializers import SubjectLevelSerializer, SubjectSerializer
 from system.models import System
 from system.serializers import SystemSerializers
 from teachers.models import TeacherGroupStatistics, Teacher, SatisfactionSurvey, TeacherContribution, \
-    TeacherProfessionalism, PDParticipant, ProfessionalDevelopment, ProfessionalConduct, ResponsivenessFeedback
+    TeacherProfessionalism, PDParticipant, ProfessionalDevelopment, ProfessionalConduct, ResponsivenessFeedback, \
+    TeamCollaboration
 from user.serializers import UserSerializerWrite, UserSerializerRead
 from .models import (TeacherAttendance)
 from .models import (TeacherSalaryList, TeacherSalary, TeacherSalaryType)
@@ -585,6 +586,45 @@ class ResponsivenessReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ResponsivenessFeedback
+        fields = "__all__"
+
+    def get_teacher_name(self, obj):
+        return f'{obj.teacher.user.name} {obj.teacher.user.surname}'
+
+    def get_creator_name(self, obj):
+        return f'{obj.user.name} {obj.user.surname}'
+
+
+class TeamCollaborationWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TeamCollaboration
+        fields = "__all__"
+
+    def set_ball(self, status):
+        if status == "good":
+            return 3
+        elif status == "average":
+            return 2
+        return 1
+
+    def create(self, validated_data):
+        validated_data["ball"] = self.set_ball(validated_data["status"])
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+
+        status = validated_data.get("status", instance.status)
+        validated_data["ball"] = self.set_ball(status)
+
+        return super().update(instance, validated_data)
+
+
+class TeamCollaborationReadSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.SerializerMethodField()
+    creator_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TeamCollaboration
         fields = "__all__"
 
     def get_teacher_name(self, obj):

@@ -1,10 +1,10 @@
-from rest_framework.routers import DefaultRouter
+from django.urls import path
+from .views import VacancyListCreateAPIView, MessageListCreateAPIView, NewsListCreateAPIView, NewsDetailAPIView
 
-from .views import FrontedPageTypeViewSet, FrontedPageViewSet, FrontedPageImageViewSet
+urlpatterns = [
+    path('vacancies/', VacancyListCreateAPIView.as_view(), name='vacancy-list-create'),
+    path('messages/', MessageListCreateAPIView.as_view(), name='message-list-create'),
+    path('news/', NewsListCreateAPIView.as_view(), name='news-list-create'),
+    path('news/<int:pk>/', NewsDetailAPIView.as_view(), name='news-detail'),
 
-router = DefaultRouter()
-router.register(r'fronted-page-types', FrontedPageTypeViewSet, basename='frontedpagetype')
-router.register(r'fronted-pages', FrontedPageViewSet, basename='frontedpage')
-router.register(r'fronted-page-images', FrontedPageImageViewSet, basename='frontedpageimage')
-
-urlpatterns = router.urls
+]

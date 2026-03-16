@@ -50,5 +50,5 @@ class AddClassesList(QueryParamFilterMixin, generics.ListAPIView):
 class CreateGroupTeacherListView(QueryParamFilterMixin, generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     filter_mappings = {'branch': 'user__branch_id', }
-    queryset = Teacher.objects.all()
+    queryset = Teacher.objects.filter(deleted=False).all()
     serializer_class = TeacherCreateGroupSerializerRead

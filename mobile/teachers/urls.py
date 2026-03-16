@@ -23,4 +23,5 @@ urlpatterns = [
     # path('profile/', TeacherProfileView.as_view(), name='teacher-profile'),
     # path('groups/', GroupListView.as_view(), name='teacher-profile'),
     path('missions/', include('mobile.teachers.missions.urls'), name='missions'),
+    path('observation/', include('mobile.teachers.observation.urls'), name='observation'),
 ]

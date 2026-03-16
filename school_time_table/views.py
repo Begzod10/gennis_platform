@@ -18,8 +18,9 @@ class TimeTableAPIView(APIView):
 
         timetable = []
         current_date = start_date
+        gr = Group.objects.get(pk=pk)
 
-        all_hours = Hours.objects.all().order_by('start_time')
+        all_hours = Hours.objects.filter(branch=gr.branch).order_by('start_time').all()
 
         while current_date <= end_date:
             lessons = ClassTimeTable.objects.filter(date=current_date, group_id=pk).order_by('hours__start_time')
