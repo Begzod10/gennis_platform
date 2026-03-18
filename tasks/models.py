@@ -76,6 +76,7 @@ class Mission(models.Model):
         ("recheck", "Re-check"),
     )
 
+    management_id = models.BigIntegerField(null=True, blank=True, unique=True)
     title = models.CharField(max_length=255)
     final_sc = models.IntegerField(default=0)
 
@@ -84,6 +85,7 @@ class Mission(models.Model):
     category = models.CharField(max_length=50, choices=Category.choices, default=Category.ACADEMIC)
     tags = models.ManyToManyField(Tag, blank=True, related_name="missions")
 
+    creator_name = models.CharField(max_length=255, null=True, blank=True)
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_missions")
     executor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="executed_missions")
     reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,

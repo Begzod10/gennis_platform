@@ -237,6 +237,7 @@ class MissionDetailSerializer(serializers.ModelSerializer):
     finish_date = serializers.DateField(format="%Y-%m-%d", read_only=True)
     redirected_at = serializers.DateTimeField(format="%Y-%m-%d", allow_null=True)
     creator = UserShortSerializer()
+    creator_name = serializers.SerializerMethodField()
     executor = UserShortSerializer()
     reviewer = UserShortSerializer()
     redirected_by = UserShortSerializer()
@@ -252,12 +253,17 @@ class MissionDetailSerializer(serializers.ModelSerializer):
         model = Mission
         fields = [
             "id", "title", "description", "category", "tags",
-            "creator", "executor", "reviewer", "redirected_by", "branch",
+            "creator", "creator_name", "executor", "reviewer", "redirected_by", "branch",
             "start_date", "deadline", "finish_date", "is_redirected", "redirected_at",
             "status", "delay_days", "delay_info",
             "kpi_weight", "penalty_per_day", "is_recurring", "recurring_type",
             "subtasks", "attachments", "comments", "proofs", "created_at", 'final_sc', 'deadline_color'
         ]
+
+    def get_creator_name(self, obj):
+        if obj.creator:
+            return f"{obj.creator.name} {obj.creator.surname}"
+        return None
 
     def get_delay_info(self, obj):
         if not obj.finish_date or not obj.deadline:
