@@ -258,6 +258,9 @@ class MissionCommentSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at", "creator_name"]
 
     def create(self, validated_data):
+        user = validated_data.get('user')
+        if user:
+            validated_data['creator_name'] = f"{user.name} {user.surname}".strip()
         return super().create(validated_data)
 
 
