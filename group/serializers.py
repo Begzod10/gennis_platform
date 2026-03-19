@@ -384,7 +384,6 @@ class GroupSerializer(serializers.ModelSerializer):
 
     def get_color(self, obj):
         from classes.serializers import ClassColorsSerializers
-        from lesson_plan.functions.utils import update_lesson_plan
         # update_lesson_plan(obj.id)
         return ClassColorsSerializers(obj.color).data
 

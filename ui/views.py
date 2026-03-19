@@ -1,37 +1,51 @@
 from rest_framework import status
-from rest_framework import viewsets
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
-from .models import FrontedPageType, FrontedPage, FrontedPageImage
-from .serializers import FrontedPageTypeSerializer, FrontedPageSerializer, FrontedPageImageSerializer
+from ui.models import Vacancy, Message, News
+from ui.serializers import VacancySerializer, MessageSerializer, NewsSerializer
 
 
-class FrontedPageTypeViewSet(viewsets.ModelViewSet):
-    queryset = FrontedPageType.objects.all()
-    serializer_class = FrontedPageTypeSerializer
-    # permission_classes = (IsSmm,)
+class VacancyListCreateAPIView(ListCreateAPIView):
+    queryset = Vacancy.objects.all().order_by('-id')
+    serializer_class = VacancySerializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]
+        return [AllowAny()]
 
 
-class FrontedPageViewSet(viewsets.ModelViewSet):
-    queryset = FrontedPage.objects.all().order_by('id')
-    serializer_class = FrontedPageSerializer
+class MessageListCreateAPIView(ListCreateAPIView):
+    queryset = Message.objects.all().order_by('-id')
+    serializer_class = MessageSerializer
 
-    # permission_classes = (IsSmm,)
-
-    def retrieve(self, request, *args, **kwargs):
-        if kwargs['pk'] != "undefined":
-            instance = FrontedPage.objects.filter(type_id=kwargs['pk']).all()
-            serializer = self.get_serializer(instance, many=True)
-            return Response(serializer.data)
-        return Response({"msg": 'Fronteddan hatolik bo\'ldi id o\'rniga undefined keldi!!!'},
-                        status=status.HTTP_400_BAD_REQUEST)
-
-    def destroy(self, request, *args, **kwargs):
-        response = super().destroy(request, *args, **kwargs)
-        return Response({'message': 'deleted'}, status=status.HTTP_200_OK)
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]
+        return [AllowAny()]
 
 
-class FrontedPageImageViewSet(viewsets.ModelViewSet):
-    queryset = FrontedPageImage.objects.all()
-    serializer_class = FrontedPageImageSerializer
-    # permission_classes = (IsSmm,)
+class NewsListCreateAPIView(ListCreateAPIView):
+    queryset = News.objects.all().order_by('-id')
+    serializer_class = NewsSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAuthenticated()]
+        return [AllowAny()]
+
+
+class NewsDetailAPIView(RetrieveUpdateDestroyAPIView):
+    queryset = News.objects.all().order_by('-id')
+    serializer_class = NewsSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def delete(self, request, *args, **kwargs):
+        super().delete(request, *args, **kwargs)
+        return Response({'msg': 'Deleted'}, status=status.HTTP_200_OK)

@@ -4,7 +4,7 @@ from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from apps.investor.models import InvestorMonthlyReport
+from apps.investor.models import InvestorMonthlyReport, ManagementDividend, ManagementInvestment
 from user.models import CustomUser, CustomAutoGroup
 from rest_framework.permissions import IsAuthenticated
 
@@ -177,3 +177,79 @@ class InvestorReportView(APIView):
                 }
                 datas.append(data)
             return Response(datas, status=status.HTTP_200_OK)
+
+
+class ManagementDividendView(APIView):
+    permission_classes = [IsAuthenticated]
+    """
+    GET /api/v1/investor/dividends/?branch=1&month=3&year=2026
+    Returns dividends paid to the management project.
+    """
+
+    def get(self, request):
+        branch_id = request.query_params.get("branch")
+        month = request.query_params.get("month")
+        year = request.query_params.get("year")
+
+        qs = ManagementDividend.objects.filter(deleted=False)
+        if branch_id:
+            qs = qs.filter(branch_id=branch_id)
+        if month:
+            qs = qs.filter(date__month=month)
+        if year:
+            qs = qs.filter(date__year=year)
+
+        data = [
+            {
+                "id": d.id,
+                "management_id": d.management_id,
+                "amount": d.amount,
+                "date": d.date,
+                "description": d.description,
+                "payment_type": d.payment_type,
+                "branch_id": d.branch_id,
+            }
+            for d in qs.order_by("-date")
+        ]
+        return Response({
+            "total": sum(d["amount"] for d in data),
+            "results": data,
+        }, status=status.HTTP_200_OK)
+
+
+class ManagementInvestmentView(APIView):
+    permission_classes = [IsAuthenticated]
+    """
+    GET /api/v1/investor/investments/?branch=1&month=3&year=2026
+    Returns investments received from the management project.
+    """
+
+    def get(self, request):
+        branch_id = request.query_params.get("branch")
+        month = request.query_params.get("month")
+        year = request.query_params.get("year")
+
+        qs = ManagementInvestment.objects.filter(deleted=False)
+        if branch_id:
+            qs = qs.filter(branch_id=branch_id)
+        if month:
+            qs = qs.filter(date__month=month)
+        if year:
+            qs = qs.filter(date__year=year)
+
+        data = [
+            {
+                "id": i.id,
+                "management_id": i.management_id,
+                "amount": i.amount,
+                "date": i.date,
+                "description": i.description,
+                "payment_type": i.payment_type,
+                "branch_id": i.branch_id,
+            }
+            for i in qs.order_by("-date")
+        ]
+        return Response({
+            "total": sum(i["amount"] for i in data),
+            "results": data,
+        }, status=status.HTTP_200_OK)

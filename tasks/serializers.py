@@ -1,10 +1,62 @@
 # serializers_list.py
 
 # serializer.py
+import logging
 from datetime import datetime, date
 from django.utils import timezone
 
 from rest_framework import serializers
+
+_logger = logging.getLogger(__name__)
+
+
+def _get_management_mission(management_id: int):
+    from .management_models import ManagementMission
+    try:
+        return ManagementMission.objects.using("management").filter(
+            id=management_id, deleted=False
+        ).first()
+    except Exception:
+        return None
+
+
+def _sync_update_to_management(instance):
+    """Sync changed fields back to the management mission (direct DB write)."""
+    if not instance.management_id:
+        return
+    mgmt = _get_management_mission(instance.management_id)
+    if mgmt is None:
+        return
+    try:
+        for attr in [
+            "title", "description", "category", "status",
+            "delay_days", "final_sc", "kpi_weight",
+            "penalty_per_day", "early_bonus_per_day", "max_bonus", "max_penalty",
+        ]:
+            val = getattr(instance, attr, None)
+            if val is not None:
+                setattr(mgmt, attr, val)
+        if instance.deadline:
+            mgmt.deadline = instance.deadline
+        if instance.finish_date:
+            mgmt.finish_date = instance.finish_date
+        mgmt.save(using="management")
+    except Exception as exc:
+        _logger.warning("[management sync] Turon update failed: %s", exc)
+
+
+def _sync_delete_to_management(instance):
+    """Soft-delete the management mission when it is deleted in Turon."""
+    if not instance.management_id:
+        return
+    mgmt = _get_management_mission(instance.management_id)
+    if mgmt is None:
+        return
+    try:
+        mgmt.deleted = True
+        mgmt.save(using="management")
+    except Exception as exc:
+        _logger.warning("[management sync] Turon delete failed: %s", exc)
 
 from branch.serializers import BranchSerializer
 from students.serializers import StudentSerializer, Student
@@ -173,6 +225,7 @@ class MissionCrudSerializer(serializers.ModelSerializer):
         if tags is not None:
             instance.tags.set(tags)
 
+        _sync_update_to_management(instance)
         return instance
 
 
@@ -201,10 +254,13 @@ class MissionCommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MissionComment
-        fields = ["id", "mission", "text", "attachment", "created_at", "user"]
-        read_only_fields = ["created_at"]
+        fields = ["id", "mission", "text", "attachment", "created_at", "user", "creator_name"]
+        read_only_fields = ["created_at", "creator_name"]
 
     def create(self, validated_data):
+        user = validated_data.get('user')
+        if user:
+            validated_data['creator_name'] = f"{user.name} {user.surname}".strip()
         return super().create(validated_data)
 
 
@@ -215,8 +271,8 @@ class MissionCommentDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MissionComment
-        fields = ["id", "mission", "text", "attachment", "created_at", "user"]
-        read_only_fields = ["created_at"]
+        fields = ["id", "mission", "text", "attachment", "created_at", "user", "creator_name"]
+        read_only_fields = ["created_at", "creator_name"]
 
 
 class MissionProofSerializer(serializers.ModelSerializer):
@@ -237,6 +293,7 @@ class MissionDetailSerializer(serializers.ModelSerializer):
     finish_date = serializers.DateField(format="%Y-%m-%d", read_only=True)
     redirected_at = serializers.DateTimeField(format="%Y-%m-%d", allow_null=True)
     creator = UserShortSerializer()
+    creator_name = serializers.SerializerMethodField()
     executor = UserShortSerializer()
     reviewer = UserShortSerializer()
     redirected_by = UserShortSerializer()
@@ -252,12 +309,17 @@ class MissionDetailSerializer(serializers.ModelSerializer):
         model = Mission
         fields = [
             "id", "title", "description", "category", "tags",
-            "creator", "executor", "reviewer", "redirected_by", "branch",
+            "creator", "creator_name", "executor", "reviewer", "reviewer_name", "redirected_by", "branch",
             "start_date", "deadline", "finish_date", "is_redirected", "redirected_at",
             "status", "delay_days", "delay_info",
             "kpi_weight", "penalty_per_day", "is_recurring", "recurring_type",
             "subtasks", "attachments", "comments", "proofs", "created_at", 'final_sc', 'deadline_color'
         ]
+
+    def get_creator_name(self, obj):
+        if obj.creator:
+            return f"{obj.creator.name} {obj.creator.surname}"
+        return None
 
     def get_delay_info(self, obj):
         if not obj.finish_date or not obj.deadline:

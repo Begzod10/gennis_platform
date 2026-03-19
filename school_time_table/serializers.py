@@ -35,7 +35,7 @@ class HoursSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = Hours
-        fields = ['id', 'start_time', 'end_time', 'name', 'order', 'can_delete']
+        fields = ['id', 'start_time', 'end_time', 'name', 'order', 'can_delete','branch']
 
     def get_can_delete(self, obj):
         if obj.classtimetable_set.exists():
@@ -311,7 +311,7 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
             .order_by('sort_order')
         )
 
-        hours = Hours.objects.all().order_by('order')
+        hours = Hours.objects.filter(branch=branch).all().order_by('order')
 
         time_tables = []
         week_days = ['Dushanba', 'Seshanba', 'Chorshanba',
@@ -443,7 +443,8 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
         return rooms_info
 
     def get_hours_list(self, obj):
-        hours = Hours.objects.all().order_by('order')
+        branch = self.context['branch']
+        hours = Hours.objects.filter(branch=branch).all().order_by('order')
         return [
             {
                 'id': hour.id,
@@ -463,7 +464,7 @@ class ClassTimeTableForClassSerializer(serializers.Serializer):
         week = self.context['week']
         branch = self.context['branch']
         group = self.context['group']
-        hours = Hours.objects.all().order_by('order')
+        hours = Hours.objects.filter(branch=branch).all().order_by('order')
         time_tables = []
 
         info = {
@@ -539,7 +540,8 @@ class ClassTimeTableForClassSerializer(serializers.Serializer):
         return time_tables
 
     def get_hours_list(self, obj):
-        hours = Hours.objects.all().order_by('order')
+        branch = self.context['branch']
+        hours = Hours.objects.filter(branch=branch).all().order_by('order')
         return [
             {
                 'id': hour.id,
@@ -560,7 +562,7 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
         branch = self.context['branch']
         week = self.context['week']
 
-        hours = Hours.objects.all().order_by('order')
+        hours = Hours.objects.filter(branch=branch).all().order_by('order')
         time_tables = []
         groups = Group.objects.filter(branch=branch, deleted=False) \
             .select_related('class_number', 'color') \
@@ -712,7 +714,8 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
         return time_tables
 
     def get_hours_list(self, obj):
-        hours = Hours.objects.all().order_by('order')
+        branch = self.context['branch']
+        hours = Hours.objects.filter(branch=branch).all().order_by('order')
         return [
             {
                 'id': hour.id,
@@ -722,4 +725,3 @@ class ClassTimeTableForClassSerializer2(serializers.Serializer):
             }
             for hour in hours
         ]
-

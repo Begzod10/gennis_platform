@@ -5,7 +5,7 @@ from django.utils.timezone import localdate
 from rest_framework.response import Response
 from tasks.filters import MissionFilter
 from tasks.models import Mission
-from tasks.serializers import MissionCrudSerializer, MissionDetailSerializer
+from tasks.serializers import MissionCrudSerializer, MissionDetailSerializer, _sync_delete_to_management
 from rest_framework import generics
 
 
@@ -84,5 +84,6 @@ class MissionDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+        _sync_delete_to_management(instance)
         self.perform_destroy(instance)
         return Response({"detail": "Deleted successfully"}, status=status.HTTP_200_OK)

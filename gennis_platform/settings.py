@@ -62,8 +62,10 @@ INSTALLED_APPS = [
     'ui',
     'terms',
     'parents',
+    'parties',
     'apps.investor.apps.InvestorConfig',
     'maintenance.apps.MaintenanceConfig',
+    "report",
 ]
 
 MIDDLEWARE = [
@@ -110,7 +112,15 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
-    }
+    },
+    'management': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('MANAGEMENT_DB_NAME'),
+        'USER': os.getenv('MANAGEMENT_DB_USER'),
+        'PASSWORD': os.getenv('MANAGEMENT_DB_PASSWORD'),
+        'HOST': os.getenv('MANAGEMENT_DB_HOST'),
+        'PORT': os.getenv('MANAGEMENT_DB_PORT', '5432'),
+    },
 }
 
 # Password validation
@@ -173,8 +183,8 @@ CELERY_BEAT_SCHEDULE = {
     },
     "lesson_plan": {
         "task": "lesson_plan.tasks.create_lesson_plans",
-        "schedule": crontab(minute=0, hour=0),
-        # "schedule": crontab(minute="*/1"),  # 21:00 every day
+        # "schedule": crontab(minute=0, hour=0),
+        "schedule": crontab(minute="*/1"),
 
     },
     "daily_summary_task": {

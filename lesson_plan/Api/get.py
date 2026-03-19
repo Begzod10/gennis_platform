@@ -7,7 +7,6 @@ from lesson_plan.models import LessonPlan
 from lesson_plan.serializers import LessonPlanGetSerializer
 from school_time_table.models import ClassTimeTable
 
-from lesson_plan.functions.utils import update_lesson_plan
 
 
 class GetLessonPlanView(generics.RetrieveAPIView):

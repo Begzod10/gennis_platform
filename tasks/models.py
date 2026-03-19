@@ -76,6 +76,7 @@ class Mission(models.Model):
         ("recheck", "Re-check"),
     )
 
+    management_id = models.BigIntegerField(null=True, blank=True, unique=True)
     title = models.CharField(max_length=255)
     final_sc = models.IntegerField(default=0)
 
@@ -84,10 +85,12 @@ class Mission(models.Model):
     category = models.CharField(max_length=50, choices=Category.choices, default=Category.ACADEMIC)
     tags = models.ManyToManyField(Tag, blank=True, related_name="missions")
 
+    creator_name = models.CharField(max_length=255, null=True, blank=True)
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_missions")
     executor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="executed_missions")
     reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
                                  related_name="reviewed_missions")
+    reviewer_name = models.CharField(max_length=255, null=True, blank=True)
 
     original_executor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -181,35 +184,43 @@ class Mission(models.Model):
 
 
 class MissionSubtask(models.Model):
+    management_id = models.BigIntegerField(null=True, blank=True, unique=True)
     mission = models.ForeignKey(Mission, on_delete=models.CASCADE, related_name="subtasks")
     title = models.CharField(max_length=255)
     is_done = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
+    creator_name = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         ordering = ["order"]
 
 
 class MissionAttachment(models.Model):
+    management_id = models.BigIntegerField(null=True, blank=True, unique=True)
     mission = models.ForeignKey(Mission, on_delete=models.CASCADE, related_name="attachments")
     file = models.FileField(upload_to="mission_attachments/")
     uploaded_at = models.DateTimeField(auto_now_add=True)
     note = models.CharField(max_length=255, null=True, blank=True)
+    creator_name = models.CharField(max_length=255, null=True, blank=True)
 
 
 class MissionComment(models.Model):
+    management_id = models.BigIntegerField(null=True, blank=True, unique=True)
     mission = models.ForeignKey(Mission, on_delete=models.CASCADE, related_name="comments")
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     text = models.TextField()
     attachment = models.FileField(upload_to="mission_comments/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    creator_name = models.CharField(max_length=255, null=True, blank=True)
 
 
 class MissionProof(models.Model):
+    management_id = models.BigIntegerField(null=True, blank=True, unique=True)
     mission = models.ForeignKey(Mission, on_delete=models.CASCADE, related_name="proofs")
     file = models.FileField(upload_to="mission_proofs/")
     comment = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    creator_name = models.CharField(max_length=255, null=True, blank=True)
 
 
 class Notification(models.Model):
