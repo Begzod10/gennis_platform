@@ -309,7 +309,7 @@ class MissionDetailSerializer(serializers.ModelSerializer):
         model = Mission
         fields = [
             "id", "title", "description", "category", "tags",
-            "creator", "creator_name", "executor", "reviewer", "redirected_by", "branch",
+            "creator", "creator_name", "executor", "reviewer", "reviewer_name", "redirected_by", "branch",
             "start_date", "deadline", "finish_date", "is_redirected", "redirected_at",
             "status", "delay_days", "delay_info",
             "kpi_weight", "penalty_per_day", "is_recurring", "recurring_type",
