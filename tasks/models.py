@@ -183,6 +183,7 @@ class Mission(models.Model):
 
 
 class MissionSubtask(models.Model):
+    management_id = models.BigIntegerField(null=True, blank=True, unique=True)
     mission = models.ForeignKey(Mission, on_delete=models.CASCADE, related_name="subtasks")
     title = models.CharField(max_length=255)
     is_done = models.BooleanField(default=False)
@@ -193,6 +194,7 @@ class MissionSubtask(models.Model):
 
 
 class MissionAttachment(models.Model):
+    management_id = models.BigIntegerField(null=True, blank=True, unique=True)
     mission = models.ForeignKey(Mission, on_delete=models.CASCADE, related_name="attachments")
     file = models.FileField(upload_to="mission_attachments/")
     uploaded_at = models.DateTimeField(auto_now_add=True)
@@ -200,14 +202,16 @@ class MissionAttachment(models.Model):
 
 
 class MissionComment(models.Model):
+    management_id = models.BigIntegerField(null=True, blank=True, unique=True)
     mission = models.ForeignKey(Mission, on_delete=models.CASCADE, related_name="comments")
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     text = models.TextField()
     attachment = models.FileField(upload_to="mission_comments/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
 class MissionProof(models.Model):
+    management_id = models.BigIntegerField(null=True, blank=True, unique=True)
     mission = models.ForeignKey(Mission, on_delete=models.CASCADE, related_name="proofs")
     file = models.FileField(upload_to="mission_proofs/")
     comment = models.CharField(max_length=255, null=True, blank=True)
