@@ -90,6 +90,7 @@ class Mission(models.Model):
     executor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="executed_missions")
     reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
                                  related_name="reviewed_missions")
+    reviewer_name = models.CharField(max_length=255, null=True, blank=True)
 
     original_executor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
