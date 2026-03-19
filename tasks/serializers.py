@@ -254,8 +254,8 @@ class MissionCommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MissionComment
-        fields = ["id", "mission", "text", "attachment", "created_at", "user"]
-        read_only_fields = ["created_at"]
+        fields = ["id", "mission", "text", "attachment", "created_at", "user", "creator_name"]
+        read_only_fields = ["created_at", "creator_name"]
 
     def create(self, validated_data):
         return super().create(validated_data)
@@ -268,8 +268,8 @@ class MissionCommentDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MissionComment
-        fields = ["id", "mission", "text", "attachment", "created_at", "user"]
-        read_only_fields = ["created_at"]
+        fields = ["id", "mission", "text", "attachment", "created_at", "user", "creator_name"]
+        read_only_fields = ["created_at", "creator_name"]
 
 
 class MissionProofSerializer(serializers.ModelSerializer):
