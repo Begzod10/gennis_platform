@@ -1,10 +1,62 @@
 # serializers_list.py
 
 # serializer.py
+import logging
 from datetime import datetime, date
 from django.utils import timezone
 
 from rest_framework import serializers
+
+_logger = logging.getLogger(__name__)
+
+
+def _get_management_mission(management_id: int):
+    from .management_models import ManagementMission
+    try:
+        return ManagementMission.objects.using("management").filter(
+            id=management_id, deleted=False
+        ).first()
+    except Exception:
+        return None
+
+
+def _sync_update_to_management(instance):
+    """Sync changed fields back to the management mission (direct DB write)."""
+    if not instance.management_id:
+        return
+    mgmt = _get_management_mission(instance.management_id)
+    if mgmt is None:
+        return
+    try:
+        for attr in [
+            "title", "description", "category", "status",
+            "delay_days", "final_sc", "kpi_weight",
+            "penalty_per_day", "early_bonus_per_day", "max_bonus", "max_penalty",
+        ]:
+            val = getattr(instance, attr, None)
+            if val is not None:
+                setattr(mgmt, attr, val)
+        if instance.deadline:
+            mgmt.deadline = instance.deadline
+        if instance.finish_date:
+            mgmt.finish_date = instance.finish_date
+        mgmt.save(using="management")
+    except Exception as exc:
+        _logger.warning("[management sync] Turon update failed: %s", exc)
+
+
+def _sync_delete_to_management(instance):
+    """Soft-delete the management mission when it is deleted in Turon."""
+    if not instance.management_id:
+        return
+    mgmt = _get_management_mission(instance.management_id)
+    if mgmt is None:
+        return
+    try:
+        mgmt.deleted = True
+        mgmt.save(using="management")
+    except Exception as exc:
+        _logger.warning("[management sync] Turon delete failed: %s", exc)
 
 from branch.serializers import BranchSerializer
 from students.serializers import StudentSerializer, Student
@@ -173,6 +225,7 @@ class MissionCrudSerializer(serializers.ModelSerializer):
         if tags is not None:
             instance.tags.set(tags)
 
+        _sync_update_to_management(instance)
         return instance
 
 

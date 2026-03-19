@@ -188,6 +188,7 @@ class MissionSubtask(models.Model):
     title = models.CharField(max_length=255)
     is_done = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
+    creator_name = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         ordering = ["order"]
@@ -199,6 +200,7 @@ class MissionAttachment(models.Model):
     file = models.FileField(upload_to="mission_attachments/")
     uploaded_at = models.DateTimeField(auto_now_add=True)
     note = models.CharField(max_length=255, null=True, blank=True)
+    creator_name = models.CharField(max_length=255, null=True, blank=True)
 
 
 class MissionComment(models.Model):
@@ -208,6 +210,7 @@ class MissionComment(models.Model):
     text = models.TextField()
     attachment = models.FileField(upload_to="mission_comments/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    creator_name = models.CharField(max_length=255, null=True, blank=True)
 
 
 class MissionProof(models.Model):
@@ -216,6 +219,7 @@ class MissionProof(models.Model):
     file = models.FileField(upload_to="mission_proofs/")
     comment = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    creator_name = models.CharField(max_length=255, null=True, blank=True)
 
 
 class Notification(models.Model):

@@ -112,7 +112,15 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
-    }
+    },
+    'management': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('MANAGEMENT_DB_NAME'),
+        'USER': os.getenv('MANAGEMENT_DB_USER'),
+        'PASSWORD': os.getenv('MANAGEMENT_DB_PASSWORD'),
+        'HOST': os.getenv('MANAGEMENT_DB_HOST'),
+        'PORT': os.getenv('MANAGEMENT_DB_PORT', '5432'),
+    },
 }
 
 # Password validation
