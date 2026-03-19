@@ -101,7 +101,7 @@ class CapitalRetrieveAPIView(generics.RetrieveAPIView):
         return capital
 
 
-class CapitalRetrieveAPIViewOne(generics.RetrieveAPIView):
+class CapitalRetrieveAPIViewOne(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     queryset = Capital.objects.all()
@@ -119,12 +119,15 @@ class CapitalListView(generics.ListAPIView):
         queryset = Capital.objects.all()
         location_id = self.request.query_params.get('location_id', None)
         branch_id = self.request.query_params.get('branch_id', None)
+        category_id = self.request.query_params.get('category', None)
 
         if branch_id is not None:
             queryset = queryset.filter(branch_id=branch_id)
         if location_id is not None:
             queryset = queryset.filter(location_id=location_id)
+        if category_id is not None:
+            queryset = queryset.filter(category_id=category_id)
         serializer = CapitalListSerializers(queryset, many=True)
         for capital in serializer.data:
             creat_capital_term(capital)
-        return Response(serializer.dat)
+        return Response(serializer.data)

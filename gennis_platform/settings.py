@@ -13,7 +13,7 @@ classroom_server = os.getenv('CLASSROOM_SERVER')
 # classroom_server = "http://192.168.1.11:5001"
 gennis_server = os.getenv('GENNIS_SERVER')
 
-DEBUG = os.getenv('DEBUG', False)
+DEBUG = os.getenv('DEBUG', True)
 
 # ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 ALLOWED_HOSTS = ['*']
@@ -105,9 +105,12 @@ WSGI_APPLICATION = 'gennis_platform.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
+        # 'NAME': os.getenv('DB_NAME'),
+        # 'USER': os.getenv('DB_USER'),
+        # 'PASSWORD': os.getenv('DB_PASSWORD'),
+        'NAME': "gennis_platform",
+        'USER': "postgres",
+        'PASSWORD': "123",
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
     }
