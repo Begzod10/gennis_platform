@@ -7,7 +7,7 @@ from .models import CapitalCategory
 from .serializers import (CapitalCategorySerializers)
 
 
-class CreateCapitalCategoryList( generics.ListCreateAPIView):
+class CreateCapitalCategoryList(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     queryset = CapitalCategory.objects.all()
