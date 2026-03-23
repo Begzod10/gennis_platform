@@ -183,8 +183,8 @@ class PartyTaskSerializer(serializers.ModelSerializer):
                 "id": party.id,
                 "name": party.name,
                 "color": party.color,
-                "ball": grade.ball if grade else None,
-                "graded_at": grade.graded_at if grade else None,
+                "ball": grade.ball if grade else 0,
+                "graded_at": grade.graded_at if grade else 0,
             })
 
         return result
