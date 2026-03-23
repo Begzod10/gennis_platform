@@ -1,13 +1,15 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include, re_path
+from django.urls import path, include
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from rest_framework_simplejwt.views import TokenVerifyView
+
+from gennis_platform.schema import OnlyPartiesSchemaGenerator
 from group.gennis.AddToGroupApi import UpdateGroupDataAPIView, GetGroupDataAPIView
 from user.Api.read import GetUserAPIView, SetObserverView
 from user.Api.write import CustomTokenObtainPairView
 from user.views import CustomTokenRefreshView
-
 
 urlpatterns = [
     # path('api/silk/', include('silk.urls', namespace='silk')),
@@ -53,8 +55,17 @@ urlpatterns = [
     path('api/update_group_datas/', UpdateGroupDataAPIView.as_view(), name='update_group_datas'),
     path('api/get_group_datas/<int:group_id>/', GetGroupDataAPIView.as_view(), name='get_group_datas'),
     path('api/v1/investor/', include('api.v1.investor.urls')),
-    path('api/parties/', include('parties.urls')),
-    path('api/reports/',include('report.urls'))
+    path('api/Parties/', include('parties.urls')),
+    path('api/reports/', include('report.urls')),
+    # path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+
+    path(
+        'api/schema/',
+        SpectacularAPIView.as_view(generator_class=OnlyPartiesSchemaGenerator),
+        name='schema'
+    ),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
 ]
 

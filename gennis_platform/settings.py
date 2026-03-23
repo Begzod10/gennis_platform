@@ -21,6 +21,7 @@ ALLOWED_HOSTS = ['*']
 INSTALLED_APPS = [
     # "silk",
     'unfold',
+    'drf_spectacular',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -224,3 +225,27 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "http://127.0.0.1:8000", "https://school.gennis.uz",
                         "http://localhost:3000", "http://0.0.0.0:8000", "http://100.81.196.80:3000",
                         'http://100.94.144.113:8000', 'http://100.124.167.36:3000']
+REST_FRAMEWORK['DEFAULT_SCHEMA_CLASS'] = 'drf_spectacular.openapi.AutoSchema'
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Party System API',
+    'DESCRIPTION': (
+        'Maktab partiya tizimi uchun REST API.\n\n'
+        'Partiyalar, topshiriqlar, reyting va musobaqalarni boshqarish.'
+    ),
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'CONTACT': {'name': 'Backend Team'},
+    'LICENSE': {'name': 'MIT'},
+    'TAGS': [
+        {'name': 'parties', 'description': "Partiyalarni boshqarish"},
+        {'name': 'members', 'description': "Partiya a'zolari"},
+        {'name': 'party-tasks', 'description': 'Topshiriqlar va baholash'},
+        {'name': 'competitions', 'description': 'Musobaqa turlari'},
+        {'name': 'competition-results', 'description': 'Musobaqa natijalari va chorak reytingi'},
+    ],
+    'COMPONENT_SPLIT_REQUEST': True,
+    "DISABLE_ERRORS_AND_WARNINGS": True,
+
+    'SORT_OPERATIONS': False,
+}
