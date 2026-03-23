@@ -62,7 +62,7 @@ from branch.serializers import BranchSerializer
 from students.serializers import StudentSerializer, Student
 from user.models import CustomUser
 from .models import Task, Branch, StudentCallInfo, Group, TaskStudent, TaskStatistics, TaskDailyStatistics, Mission, \
-    MissionSubtask, MissionAttachment, MissionComment, MissionProof, Tag, Notification
+    MissionSubtask, MissionAttachment, MissionComment, MissionProof, Tag, Notification, MissionHistory
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -344,6 +344,16 @@ class MissionDetailSerializer(serializers.ModelSerializer):
             return "yellow"
         else:
             return "green"
+
+
+class MissionHistorySerializer(serializers.ModelSerializer):
+    executor = UserShortSerializer(read_only=True)
+    reviewer = UserShortSerializer(read_only=True)
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
+
+    class Meta:
+        model = MissionHistory
+        fields = ["id", "mission", "executor", "reviewer", "changed_by_name", "note", "created_at"]
 
 
 class NotificationSerializer(serializers.ModelSerializer):
