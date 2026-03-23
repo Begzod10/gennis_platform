@@ -29,6 +29,7 @@ class ManagementMission(models.Model):
 
 
 class ManagementMissionComment(models.Model):
+    id = models.BigAutoField(primary_key=True)
     mission_id = models.BigIntegerField()
     user_id = models.BigIntegerField(null=True, blank=True)
     text = models.TextField()
@@ -43,6 +44,7 @@ class ManagementMissionComment(models.Model):
 
 
 class ManagementMissionAttachment(models.Model):
+    id = models.BigAutoField(primary_key=True)
     mission_id = models.BigIntegerField()
     file = models.CharField(max_length=500)
     note = models.CharField(max_length=255, null=True, blank=True)
@@ -56,6 +58,7 @@ class ManagementMissionAttachment(models.Model):
 
 
 class ManagementMissionProof(models.Model):
+    id = models.BigAutoField(primary_key=True)
     mission_id = models.BigIntegerField()
     file = models.CharField(max_length=500)
     comment = models.CharField(max_length=255, null=True, blank=True)
