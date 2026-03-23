@@ -58,6 +58,63 @@ def _sync_delete_to_management(instance):
     except Exception as exc:
         _logger.warning("[management sync] Turon delete failed: %s", exc)
 
+
+def _sync_comment_to_management(instance):
+    """Create a comment in management DB when created in Turon. Returns management comment id."""
+    from .management_models import ManagementMissionComment
+    if not instance.mission.management_id:
+        return None
+    try:
+        c = ManagementMissionComment(
+            mission_id=instance.mission.management_id,
+            text=instance.text,
+            attachment=instance.attachment.name if instance.attachment else None,
+            creator_name=instance.creator_name,
+        )
+        c.save(using="management")
+        return c.id
+    except Exception as exc:
+        _logger.warning("[management sync] Turon comment create failed: %s", exc)
+        return None
+
+
+def _sync_attachment_to_management(instance):
+    """Create an attachment in management DB when created in Turon. Returns management attachment id."""
+    from .management_models import ManagementMissionAttachment
+    if not instance.mission.management_id:
+        return None
+    try:
+        a = ManagementMissionAttachment(
+            mission_id=instance.mission.management_id,
+            file=instance.file.name if instance.file else "",
+            note=instance.note,
+            creator_name=instance.creator_name,
+        )
+        a.save(using="management")
+        return a.id
+    except Exception as exc:
+        _logger.warning("[management sync] Turon attachment create failed: %s", exc)
+        return None
+
+
+def _sync_proof_to_management(instance):
+    """Create a proof in management DB when created in Turon. Returns management proof id."""
+    from .management_models import ManagementMissionProof
+    if not instance.mission.management_id:
+        return None
+    try:
+        p = ManagementMissionProof(
+            mission_id=instance.mission.management_id,
+            file=instance.file.name if instance.file else "",
+            comment=instance.comment,
+            creator_name=instance.creator_name,
+        )
+        p.save(using="management")
+        return p.id
+    except Exception as exc:
+        _logger.warning("[management sync] Turon proof create failed: %s", exc)
+        return None
+
 from branch.serializers import BranchSerializer
 from students.serializers import StudentSerializer, Student
 from user.models import CustomUser
