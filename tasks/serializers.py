@@ -63,6 +63,7 @@ def _sync_comment_to_management(instance):
     """Create a comment in management DB when created in Turon. Returns management comment id."""
     from .management_models import ManagementMissionComment
     if not instance.mission.management_id:
+        print(f"[management sync] comment skipped: mission {instance.mission_id} has no management_id")
         return None
     try:
         c = ManagementMissionComment(
@@ -74,7 +75,7 @@ def _sync_comment_to_management(instance):
         c.save(using="management")
         return c.id
     except Exception as exc:
-        _logger.warning("[management sync] Turon comment create failed: %s", exc)
+        print(f"[management sync] Turon comment create failed: {exc}")
         return None
 
 
@@ -82,6 +83,7 @@ def _sync_attachment_to_management(instance):
     """Create an attachment in management DB when created in Turon. Returns management attachment id."""
     from .management_models import ManagementMissionAttachment
     if not instance.mission.management_id:
+        print(f"[management sync] attachment skipped: mission {instance.mission_id} has no management_id")
         return None
     try:
         a = ManagementMissionAttachment(
@@ -93,7 +95,7 @@ def _sync_attachment_to_management(instance):
         a.save(using="management")
         return a.id
     except Exception as exc:
-        _logger.warning("[management sync] Turon attachment create failed: %s", exc)
+        print(f"[management sync] Turon attachment create failed: {exc}")
         return None
 
 
@@ -101,6 +103,7 @@ def _sync_proof_to_management(instance):
     """Create a proof in management DB when created in Turon. Returns management proof id."""
     from .management_models import ManagementMissionProof
     if not instance.mission.management_id:
+        print(f"[management sync] proof skipped: mission {instance.mission_id} has no management_id")
         return None
     try:
         p = ManagementMissionProof(
@@ -112,7 +115,7 @@ def _sync_proof_to_management(instance):
         p.save(using="management")
         return p.id
     except Exception as exc:
-        _logger.warning("[management sync] Turon proof create failed: %s", exc)
+        print(f"[management sync] Turon proof create failed: {exc}")
         return None
 
 from branch.serializers import BranchSerializer
