@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 
 class Party(models.Model):
@@ -14,3 +15,4 @@ class PartyTask(models.Model):
     ball = models.IntegerField(null=True, blank=True)
     is_completed = models.BooleanField(default=False)
     parties = models.ManyToManyField(Party)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
