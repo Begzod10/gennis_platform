@@ -5,7 +5,9 @@ from django.utils.timezone import localdate
 from rest_framework.response import Response
 from tasks.filters import MissionFilter
 from tasks.models import Mission
-from tasks.serializers import MissionCrudSerializer, MissionDetailSerializer, _sync_delete_to_management
+from tasks.serializers import MissionCrudSerializer, MissionDetailSerializer, MissionHistorySerializer, _sync_delete_to_management
+from tasks.models import MissionHistory
+from django.shortcuts import get_object_or_404
 from rest_framework import generics
 
 
@@ -71,6 +73,15 @@ class MissionListCreateAPIView(generics.ListCreateAPIView):
             grouped[key]["children"].append(item)
 
         return Response(list(grouped.values()))
+
+
+class MissionHistoryAPIView(generics.ListAPIView):
+    serializer_class = MissionHistorySerializer
+
+    def get_queryset(self):
+        mission_id = self.kwargs["pk"]
+        get_object_or_404(Mission, pk=mission_id)
+        return MissionHistory.objects.filter(mission_id=mission_id).order_by("created_at")
 
 
 class MissionDetailAPIView(generics.RetrieveUpdateDestroyAPIView):

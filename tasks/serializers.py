@@ -58,11 +58,71 @@ def _sync_delete_to_management(instance):
     except Exception as exc:
         _logger.warning("[management sync] Turon delete failed: %s", exc)
 
+
+def _sync_comment_to_management(instance):
+    """Create a comment in management DB when created in Turon. Returns management comment id."""
+    from .management_models import ManagementMissionComment
+    if not instance.mission.management_id:
+        print(f"[management sync] comment skipped: mission {instance.mission_id} has no management_id")
+        return None
+    try:
+        c = ManagementMissionComment(
+            mission_id=instance.mission.management_id,
+            text=instance.text,
+            attachment=instance.attachment.name if instance.attachment else None,
+            creator_name=instance.creator_name,
+        )
+        c.save(using="management")
+        return c.id
+    except Exception as exc:
+        print(f"[management sync] Turon comment create failed: {exc}")
+        return None
+
+
+def _sync_attachment_to_management(instance):
+    """Create an attachment in management DB when created in Turon. Returns management attachment id."""
+    from .management_models import ManagementMissionAttachment
+    if not instance.mission.management_id:
+        print(f"[management sync] attachment skipped: mission {instance.mission_id} has no management_id")
+        return None
+    try:
+        a = ManagementMissionAttachment(
+            mission_id=instance.mission.management_id,
+            file=instance.file.name if instance.file else "",
+            note=instance.note,
+            creator_name=instance.creator_name,
+        )
+        a.save(using="management")
+        return a.id
+    except Exception as exc:
+        print(f"[management sync] Turon attachment create failed: {exc}")
+        return None
+
+
+def _sync_proof_to_management(instance):
+    """Create a proof in management DB when created in Turon. Returns management proof id."""
+    from .management_models import ManagementMissionProof
+    if not instance.mission.management_id:
+        print(f"[management sync] proof skipped: mission {instance.mission_id} has no management_id")
+        return None
+    try:
+        p = ManagementMissionProof(
+            mission_id=instance.mission.management_id,
+            file=instance.file.name if instance.file else "",
+            comment=instance.comment,
+            creator_name=instance.creator_name,
+        )
+        p.save(using="management")
+        return p.id
+    except Exception as exc:
+        print(f"[management sync] Turon proof create failed: {exc}")
+        return None
+
 from branch.serializers import BranchSerializer
 from students.serializers import StudentSerializer, Student
 from user.models import CustomUser
 from .models import Task, Branch, StudentCallInfo, Group, TaskStudent, TaskStatistics, TaskDailyStatistics, Mission, \
-    MissionSubtask, MissionAttachment, MissionComment, MissionProof, Tag, Notification
+    MissionSubtask, MissionAttachment, MissionComment, MissionProof, Tag, Notification, MissionHistory
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -308,7 +368,7 @@ class MissionDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Mission
         fields = [
-            "id", "title", "description", "category", "tags",
+            "id", "management_id", "title", "description", "category", "tags",
             "creator", "creator_name", "executor", "reviewer", "reviewer_name", "redirected_by", "branch",
             "start_date", "deadline", "finish_date", "is_redirected", "redirected_at",
             "status", "delay_days", "delay_info",
@@ -344,6 +404,16 @@ class MissionDetailSerializer(serializers.ModelSerializer):
             return "yellow"
         else:
             return "green"
+
+
+class MissionHistorySerializer(serializers.ModelSerializer):
+    executor = UserShortSerializer(read_only=True)
+    reviewer = UserShortSerializer(read_only=True)
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
+
+    class Meta:
+        model = MissionHistory
+        fields = ["id", "mission", "executor", "reviewer", "changed_by_name", "note", "created_at"]
 
 
 class NotificationSerializer(serializers.ModelSerializer):

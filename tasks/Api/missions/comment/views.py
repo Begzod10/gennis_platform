@@ -2,15 +2,19 @@ from rest_framework import generics, permissions
 from rest_framework import status
 from rest_framework.response import Response
 from tasks.models import MissionComment
-from tasks.serializers import MissionCommentSerializer
+from tasks.serializers import MissionCommentSerializer, _sync_comment_to_management
 
 
 class CommentListCreateAPIView(generics.ListCreateAPIView):
     queryset = MissionComment.objects.all()
     serializer_class = MissionCommentSerializer
 
-    # def perform_create(self, serializer):
-    #     serializer.save(user=self.request.user)
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        mgmt_id = _sync_comment_to_management(instance)
+        if mgmt_id:
+            instance.management_id = mgmt_id
+            instance.save(update_fields=["management_id"])
 
 
 class CommentDetailAPIView(generics.RetrieveUpdateDestroyAPIView):

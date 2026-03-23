@@ -154,8 +154,10 @@ class PartyTaskGradeSerializer(serializers.ModelSerializer):
 
 
 class PartyTaskSerializer(serializers.ModelSerializer):
-    parties_info = PartyInfoSerializer(source='parties', many=True, read_only=True)
-    grades = PartyTaskGradeSerializer(many=True, read_only=True)
+    # parties_info = PartyInfoSerializer(source='parties', many=True, read_only=True)
+    # grades = PartyTaskGradeSerializer(many=True, read_only=True)
+    parties_info = serializers.SerializerMethodField()
+
 
     class Meta:
         model = PartyTask
@@ -164,12 +166,28 @@ class PartyTaskSerializer(serializers.ModelSerializer):
             'is_completed', 'created_at',
             'parties',
             'parties_info',
-            'grades',
         ]
         extra_kwargs = {
             'parties': {'write_only': True, 'required': False},
         }
 
+    def get_parties_info(self, obj):
+        result = []
+
+        grades = {g.party_id: g for g in obj.grades.all()}
+
+        for party in obj.parties.all():
+            grade = grades.get(party.id)
+
+            result.append({
+                "id": party.id,
+                "name": party.name,
+                "color": party.color,
+                "ball": grade.ball if grade else None,
+                "graded_at": grade.graded_at if grade else None,
+            })
+
+        return result
 
 class CompetitionResultSerializer(serializers.ModelSerializer):
     party_name = serializers.CharField(source='party.name', read_only=True)
