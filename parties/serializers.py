@@ -57,11 +57,24 @@ class PartyMemberSerializer(serializers.ModelSerializer):
 
 
 class PartyMemberWriteSerializer(serializers.ModelSerializer):
+    students = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True
+    )
+
     class Meta:
         model = PartyMember
-        fields = ['party', 'student', 'role', 'ball', 'level', 'status', 'is_active']
+        fields = ['party', 'students', 'role', 'ball', 'level', 'status', 'is_active']
 
+    def create(self, validated_data):
+        students = validated_data.pop('students')
 
+        party_members = [
+            PartyMember(student_id=student_id, **validated_data)
+            for student_id in students
+        ]
+
+        return PartyMember.objects.bulk_create(party_members)
 class PartyInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Party

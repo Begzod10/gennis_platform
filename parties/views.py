@@ -1,4 +1,4 @@
-from django.db.models import Sum
+from django.db.models import Sum, Subquery
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -40,6 +40,16 @@ class StudentSelectViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=['get'], url_path='select')
     def select(self, request):
         qs = self.filter_queryset(self.get_queryset())
+
+        party_id = request.query_params.get('party')
+
+        if party_id:
+            subquery = PartyMember.objects.filter(
+                party_id=party_id
+            ).values('student_id')
+
+            qs = qs.exclude(id__in=Subquery(subquery))
+
         return Response(StudentSelectSerializer(qs, many=True).data)
 
 
