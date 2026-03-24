@@ -8,6 +8,7 @@ class Party(models.Model):
     color = models.CharField(max_length=100, null=True, blank=True)
     rating = models.FloatField(default=0.0)
     ball = models.IntegerField(default=0)
+    branch = models.ForeignKey('branch.Branch', on_delete=models.CASCADE, null=True, blank=True)
 
 
     students = models.ManyToManyField(

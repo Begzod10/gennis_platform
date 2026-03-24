@@ -1,4 +1,5 @@
-from django.db.models import Sum, Subquery
+
+from django.db.models import F, Sum, Subquery
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -25,46 +26,97 @@ from .serializers import (
 )
 
 
+
+def _branch_id(request):
+
+    raw = request.query_params.get('branch_id') or request.data.get('branch_id')
+    if raw is not None:
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            pass
+    return None
+
+
+def _distribute_ball_to_members(party_id: int, delta: int) -> None:
+
+    if delta == 0:
+        return
+    PartyMember.objects.filter(
+        party_id=party_id, is_active=True
+    ).update(ball=F('ball') + delta)
+
+
+def _recalc_party_ball(party_id: int) -> None:
+
+    total = (
+        PartyTaskGrade.objects
+        .filter(party_id=party_id)
+        .aggregate(t=Sum('ball'))['t'] or 0
+    )
+    Party.objects.filter(pk=party_id).update(ball=total)
+
+
 class StudentSelectViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Student.objects.all()
+    """O(S) — branch filter bilan O(S/B). Subquery semi-join O(S+K)."""
     serializer_class = StudentSelectSerializer
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ['user__name', 'user__surname']
     filterset_class = StudentFilter
 
+    def get_queryset(self):
+        qs = Student.objects.select_related('user')
+        bid = _branch_id(self.request)
+        if bid:
+            qs = qs.filter(branch_id=bid)
+        return qs
+
     @extend_schema(
         summary="Student select options",
-        description="Frontend `<Select>` uchun `[{id, label, born_date}]` qaytaradi.",
+        description="Frontend `<Select>` uchun `[{id, label, born_date}]`. ?branch_id= filtr.",
+        parameters=[
+            OpenApiParameter('branch_id', OpenApiTypes.INT, description="Filial ID"),
+            OpenApiParameter('party', OpenApiTypes.INT, description="Shu partiyada yo'q studentlar"),
+        ],
         responses={200: StudentSelectSerializer(many=True)},
         tags=['select-options'],
     )
     @action(detail=False, methods=['get'], url_path='select')
     def select(self, request):
         qs = self.filter_queryset(self.get_queryset())
-
         party_id = request.query_params.get('party')
         if party_id:
-            subquery = PartyMember.objects.filter(
+            already_in = PartyMember.objects.filter(
                 party_id=party_id
             ).values('student_id')
-            qs = qs.exclude(id__in=Subquery(subquery))
-
+            qs = qs.exclude(id__in=Subquery(already_in))
         return Response(StudentSelectSerializer(qs, many=True).data)
 
 
+
+
 class GroupSelectViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Group.objects.all()
     serializer_class = GroupSelectSerializer
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ['name', 'color_name']
     filterset_fields = ['branch']
 
+    def get_queryset(self):
+        qs = Group.objects.select_related('class_number', 'color')
+        bid = _branch_id(self.request)
+        if bid:
+            qs = qs.filter(branch_id=bid)
+        return qs
+
     @extend_schema(
         summary="Guruh select options",
         description=(
-            "Frontend `<Select>` uchun `[{id, label}]` qaytaradi.\n\n"
-            "**label logikasi:** `group.name` bo'sh bo'lsa → `class_number + color_name`"
+            "Frontend `<Select>` uchun `[{id, label}]`.\n\n"
+            "**label:** `group.name` bo'sh → `class_number + color_name`. ?branch_id= filtr."
         ),
+        parameters=[
+            OpenApiParameter('branch_id', OpenApiTypes.INT, description="Filial ID"),
+        ],
         responses={200: GroupSelectSerializer(many=True)},
         tags=['select-options'],
     )
@@ -75,29 +127,17 @@ class GroupSelectViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 
-def _distribute_ball_to_members(party: Party, ball: int) -> None:
-    """
-    Berilgan partiyadagi barcha aktiv memberlarga `ball` qiymatini qo'shadi.
-    Ball manfiy bo'lishi mumkin (grade yangilanib kamayganda chiqarish uchun).
-    Member bali 0 dan past ketmasligi uchun max(0, ...) ishlatiladi.
-    """
-    members = PartyMember.objects.filter(party=party, is_active=True)
-    for member in members:
-        member.ball = max(0, member.ball + ball)
-    PartyMember.objects.bulk_update(members, ['ball'])
-
-
-
 @extend_schema_view(
     list=extend_schema(
         summary="Partiyalar ro'yxati",
-        description="Har bir partiyada `display_name`, `members_count`, `wins_count`, `tasks_count`, `groups_count` bo'ladi.",
+        description="?branch_id= filtr. `display_name`, `members_count`, `wins_count`, `tasks_count`, `groups_count`.",
+        parameters=[OpenApiParameter('branch_id', OpenApiTypes.INT, description="Filial ID")],
         responses={200: PartyListSerializer(many=True)},
         tags=['parties'],
     ),
     create=extend_schema(
         summary="Yangi partiya yaratish",
-        description="`students` va `groups` — ID lar massivi.",
+        description="`students`, `groups` — ID massivlari. `branch_id` — query-param yoki body.",
         request=PartyDetailSerializer,
         responses={201: PartyDetailSerializer},
         examples=[
@@ -107,6 +147,7 @@ def _distribute_ball_to_members(party: Party, ball: int) -> None:
                     "name": "Burgut partiyasi",
                     "color": "#10b981",
                     "desc": "Kuchli partiya",
+                    "branch_id": 1,
                     "students": [1, 2, 3],
                     "groups": [5, 6],
                 },
@@ -139,76 +180,105 @@ def _distribute_ball_to_members(party: Party, ball: int) -> None:
     ),
 )
 class PartyViewSet(viewsets.ModelViewSet):
+
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
 
     def get_queryset(self):
-        return (
-            Party.objects
-            .prefetch_related('students', 'groups', 'memberships__student', 'tasks', 'competition_results')
+        qs = Party.objects.prefetch_related(
+            'students',
+            'groups',
+            'memberships__student__user',
+            'tasks',
+            'competition_results',
         )
+        bid = _branch_id(self.request)
+        if bid:
+            qs = qs.filter(branch_id=bid)
+        return qs
 
     def get_serializer_class(self):
         if self.action == 'list':
             return PartyListSerializer
         return PartyDetailSerializer
 
+    def perform_create(self, serializer):
+        bid = _branch_id(self.request)
+        kwargs = {}
+        if bid:
+            kwargs['branch_id'] = bid
+        serializer.save(**kwargs)
+
     @extend_schema(
         summary="Partiya select options",
-        description="Topshiriq modal va musobaqa modali uchun `[{label, value, color}]`.",
+        description="?branch_id= filtr. `[{label, value, color}]`.",
+        parameters=[OpenApiParameter('branch_id', OpenApiTypes.INT, description="Filial ID")],
         responses={200: OpenApiTypes.OBJECT},
         tags=['parties'],
     )
     @action(detail=False, methods=['get'], url_path='select-options')
     def select_options(self, request):
-        data = Party.objects.values('id', 'name', 'color')
+        qs = Party.objects.values('id', 'name', 'color')
+        bid = _branch_id(request)
+        if bid:
+            qs = qs.filter(branch_id=bid)
         return Response([
             {'label': p['name'], 'value': p['id'], 'color': p['color']}
-            for p in data
+            for p in qs
         ])
 
     @extend_schema(
-        summary="Reyting sahifasi — ball bo'yicha tartiblangan",
+        summary="Reyting — ball bo'yicha tartiblangan",
+        parameters=[OpenApiParameter('branch_id', OpenApiTypes.INT, description="Filial ID")],
         responses={200: PartyListSerializer(many=True)},
         tags=['parties'],
     )
     @action(detail=False, methods=['get'], url_path='rating')
     def rating(self, request):
-        qs = Party.objects.order_by('-ball').prefetch_related(
-            'students', 'groups', 'competition_results', 'tasks'
-        )
+        """get_queryset branch filterni o'z ichiga oladi."""
+        qs = self.get_queryset().order_by('-ball')
         return Response(PartyListSerializer(qs, many=True).data)
 
     @extend_schema(
         summary="Partiyaga studentlar qo'shish",
+        description="O(K): 2× IN-query + bitta bulk_create + bitta M2M INSERT.",
         request={'application/json': {'type': 'object', 'properties': {
             'student_ids': {'type': 'array', 'items': {'type': 'integer'}},
         }, 'required': ['student_ids']}},
-        responses={200: OpenApiResponse(description="{'added': [1,2,3]}")},
+        responses={200: OpenApiResponse(description="{'added': [...], 'skipped': [...]}")},
         tags=['parties'],
     )
     @action(detail=True, methods=['post'], url_path='add-students')
     def add_students(self, request, pk=None):
+
         party = self.get_object()
-        student_ids = request.data.get('student_ids', [])
+        student_ids: list[int] = list(request.data.get('student_ids', []))
+        if not student_ids:
+            return Response({'added': [], 'skipped': []})
 
-        added = []
-        for sid in student_ids:
-            try:
-                student = Student.objects.get(id=sid)
-                PartyMember.objects.get_or_create(
-                    party=party, student=student,
-                    defaults={'is_active': True},
-                )
-                party.students.add(student)
-                added.append(sid)
-            except Student.DoesNotExist:
-                pass
+        valid_ids: set[int] = set(
+            Student.objects.filter(id__in=student_ids).values_list('id', flat=True)
+        )
+        already: set[int] = set(
+            PartyMember.objects.filter(
+                party=party, student_id__in=student_ids
+            ).values_list('student_id', flat=True)
+        )
 
-        return Response({'added': added})
+        to_add  = valid_ids - already
+        skipped = set(student_ids) - valid_ids
+
+        if to_add:
+            PartyMember.objects.bulk_create(
+                [PartyMember(party=party, student_id=sid, is_active=True) for sid in to_add],
+                ignore_conflicts=True,
+            )
+            party.students.add(*to_add)
+
+        return Response({'added': list(to_add), 'skipped': list(skipped)})
 
     @extend_schema(
-        summary="Partiyadan studentni chiqarish",
+        summary="Partiyadan studentlarni chiqarish",
         request={'application/json': {'type': 'object', 'properties': {
             'student_ids': {'type': 'array', 'items': {'type': 'integer'}},
         }, 'required': ['student_ids']}},
@@ -217,8 +287,11 @@ class PartyViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=['post'], url_path='remove-students')
     def remove_students(self, request, pk=None):
+        """O(K) — bitta M2M DELETE + bitta UPDATE."""
         party = self.get_object()
-        student_ids = request.data.get('student_ids', [])
+        student_ids: list[int] = request.data.get('student_ids', [])
+        if not student_ids:
+            return Response({'removed': []})
         party.students.remove(*student_ids)
         PartyMember.objects.filter(
             party=party, student_id__in=student_ids
@@ -235,14 +308,15 @@ class PartyViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=['post'], url_path='set-groups')
     def set_groups(self, request, pk=None):
+        """O(G) — .set() DELETE + INSERT."""
         party = self.get_object()
-        group_ids = request.data.get('group_ids', [])
+        group_ids: list[int] = request.data.get('group_ids', [])
         party.groups.set(group_ids)
         return Response({'groups': group_ids})
 
     @extend_schema(
-        summary="A'zo balini o'zgartirish (+10 / -10)",
-        description="`delta` musbat yoki manfiy bo'ladi.",
+        summary="A'zo balini o'zgartirish (+N / -N)",
+        description="`delta` musbat yoki manfiy.",
         request={'application/json': {'type': 'object', 'properties': {
             'member_id': {'type': 'integer'},
             'delta': {'type': 'integer', 'example': 10},
@@ -257,11 +331,12 @@ class PartyViewSet(viewsets.ModelViewSet):
         delta = int(request.data.get('delta', 0))
         try:
             member = PartyMember.objects.get(id=member_id, party=party)
-            member.ball = max(0, member.ball + delta)
-            member.save(update_fields=['ball'])
-            return Response(PartyMemberSerializer(member).data)
         except PartyMember.DoesNotExist:
             return Response({'error': "A'zo topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+        member.ball = max(0, member.ball + delta)
+        member.save(update_fields=['ball'])
+        return Response(PartyMemberSerializer(member).data)
+
 
 
 
@@ -269,8 +344,9 @@ class PartyViewSet(viewsets.ModelViewSet):
     list=extend_schema(
         summary="Barcha a'zolar ro'yxati",
         parameters=[
-            OpenApiParameter('party', OpenApiTypes.INT, description="Partiya ID bo'yicha filter"),
-            OpenApiParameter('student', OpenApiTypes.INT, description="Student ID bo'yicha filter"),
+            OpenApiParameter('branch_id', OpenApiTypes.INT, description="Filial ID"),
+            OpenApiParameter('party', OpenApiTypes.INT, description="Partiya ID"),
+            OpenApiParameter('student', OpenApiTypes.INT, description="Student ID"),
         ],
         tags=['members'],
     ),
@@ -281,7 +357,19 @@ class PartyViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="A'zoni o'chirish", tags=['members']),
 )
 class PartyMemberViewSet(viewsets.ModelViewSet):
-    queryset = PartyMember.objects.select_related('party', 'student').all()
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['party', 'student']
+
+    def get_queryset(self):
+        qs = PartyMember.objects.select_related(
+            'party',
+            'student__user',
+            'student__class_number',
+        )
+        bid = _branch_id(self.request)
+        if bid:
+            qs = qs.filter(party__branch_id=bid)
+        return qs
 
     def get_serializer_class(self):
         if self.action in ('create', 'update', 'partial_update'):
@@ -292,15 +380,16 @@ class PartyMemberViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         objs = serializer.save()
-        read_serializer = PartyMemberSerializer(objs, many=True)
-        return Response(read_serializer.data, status=status.HTTP_201_CREATED)
-
-
+        return Response(
+            PartyMemberSerializer(objs, many=True).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 @extend_schema_view(
     list=extend_schema(
         summary="Topshiriqlar ro'yxati",
-        description="`parties_info` — biriktirilgan partiyalar, `grades` — baholash natijalari.",
+        description="`parties_info` — partiyalar + grade ballari. ?branch_id= filtr.",
+        parameters=[OpenApiParameter('branch_id', OpenApiTypes.INT, description="Filial ID")],
         tags=['party-tasks'],
     ),
     create=extend_schema(
@@ -310,6 +399,7 @@ class PartyMemberViewSet(viewsets.ModelViewSet):
                 "name": "Matematika musobaqa",
                 "ball": 100,
                 "deadline": "2025-06-01",
+                "branch_id": 1,
                 "parties": [1, 2, 3],
             }, request_only=True),
         ],
@@ -321,29 +411,18 @@ class PartyMemberViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Topshiriqni o'chirish", tags=['party-tasks']),
 )
 class PartyTaskViewSet(viewsets.ModelViewSet):
-    queryset = PartyTask.objects.all().prefetch_related('parties', 'grades')
+
     serializer_class = PartyTaskSerializer
 
-
-
-    def _recalc_party_ball(self, party: Party) -> None:
-        """Party.ball = barcha PartyTaskGrade ballari yig'indisi."""
-        total = (
-            PartyTaskGrade.objects
-            .filter(party=party)
-            .aggregate(t=Sum('ball'))['t'] or 0
+    def get_queryset(self):
+        qs = PartyTask.objects.prefetch_related(
+            'parties',
+            'grades__party',
         )
-        party.ball = total
-        party.save(update_fields=['ball'])
-
-    def _apply_grade_delta(self, party: Party, old_ball: int, new_ball: int) -> None:
-        """
-        Grade yangilanganda memberlarga farqni (delta) qo'shadi.
-        Yangi grade bo'lsa old_ball=0, o'chirilsa new_ball=0 bo'ladi.
-        """
-        delta = new_ball - old_ball
-        if delta != 0:
-            _distribute_ball_to_members(party, delta)
+        bid = _branch_id(self.request)
+        if bid:
+            qs = qs.filter(parties__branch_id=bid).distinct()
+        return qs
 
     @extend_schema(
         summary="Bitta partiyaga ball berish",
@@ -363,30 +442,34 @@ class PartyTaskViewSet(viewsets.ModelViewSet):
         if party_id is None or new_ball is None:
             return Response({'error': 'party va ball majburiy'}, status=400)
 
-        try:
-            party = Party.objects.get(id=party_id)
-        except Party.DoesNotExist:
-            return Response({'error': 'Partiya topilmadi'}, status=404)
-
+        party_id = int(party_id)
         new_ball = int(new_ball)
 
-        existing = PartyTaskGrade.objects.filter(task=task, party=party).first()
-        old_ball = existing.ball if existing else 0
+        if not Party.objects.filter(pk=party_id).exists():
+            return Response({'error': 'Partiya topilmadi'}, status=404)
+
+        row = PartyTaskGrade.objects.filter(
+            task=task, party_id=party_id
+        ).values('ball').first()
+        old_ball = row['ball'] if row else 0
 
         grade_obj, created = PartyTaskGrade.objects.update_or_create(
-            task=task, party=party,
+            task=task, party_id=party_id,
             defaults={'ball': new_ball},
         )
 
-        self._apply_grade_delta(party, old_ball, new_ball)
-
-        self._recalc_party_ball(party)
+        _distribute_ball_to_members(party_id, new_ball - old_ball)
+        _recalc_party_ball(party_id)
 
         code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         return Response(PartyTaskGradeSerializer(grade_obj).data, status=code)
 
     @extend_schema(
-        summary="Barcha partiyalarga bir vaqtda ball berish (Saqlash tugmasi)",
+        summary="Barcha partiyalarga bir vaqtda ball berish",
+        description=(
+            "O(K): bitta prefetch → existing grade-lar, keyin K× update_or_create "
+            "+ K× F()-expr UPDATE (distribute) + K× SUM (recalc)."
+        ),
         request={'application/json': {'type': 'object', 'properties': {
             'grades': {'type': 'array', 'items': {'type': 'object', 'properties': {
                 'party': {'type': 'integer'},
@@ -403,43 +486,60 @@ class PartyTaskViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=['post'], url_path='bulk-grade')
     def bulk_grade(self, request, pk=None):
+
         task = self.get_object()
-        grades_data = request.data.get('grades', [])
+        grades_data: list[dict] = request.data.get('grades', [])
+        if not grades_data:
+            return Response([])
+
+        party_ids = []
+        for g in grades_data:
+            try:
+                party_ids.append(int(g['party']))
+            except (KeyError, TypeError, ValueError):
+                pass
+
+        existing_map: dict[int, int] = {
+            row['party_id']: row['ball']
+            for row in PartyTaskGrade.objects.filter(
+                task=task, party_id__in=party_ids
+            ).values('party_id', 'ball')
+        }
+
         results = []
-        parties_to_recalc = set()
+        parties_to_recalc: set[int] = set()
 
         for g in grades_data:
             try:
-                party = Party.objects.get(id=g['party'])
+                party_id = int(g['party'])
                 new_ball = int(g['ball'])
+            except (KeyError, TypeError, ValueError):
+                continue
 
-                # Avvalgi ball
-                existing = PartyTaskGrade.objects.filter(task=task, party=party).first()
-                old_ball = existing.ball if existing else 0
+            old_ball = existing_map.get(party_id, 0)
 
-                grade_obj, _ = PartyTaskGrade.objects.update_or_create(
-                    task=task, party=party,
-                    defaults={'ball': new_ball},
-                )
-                results.append(PartyTaskGradeSerializer(grade_obj).data)
+            grade_obj, _ = PartyTaskGrade.objects.update_or_create(
+                task=task, party_id=party_id,
+                defaults={'ball': new_ball},
+            )
+            results.append(PartyTaskGradeSerializer(grade_obj).data)
 
-                # Memberlarga delta taqsimlash
-                self._apply_grade_delta(party, old_ball, new_ball)
+            _distribute_ball_to_members(party_id, new_ball - old_ball)
+            parties_to_recalc.add(party_id)
 
-                parties_to_recalc.add(party)
-
-            except (Party.DoesNotExist, KeyError, ValueError):
-                pass
-
-        for party in parties_to_recalc:
-            self._recalc_party_ball(party)
+        for pid in parties_to_recalc:
+            _recalc_party_ball(pid)
 
         return Response(results)
 
 
 
 @extend_schema_view(
-    list=extend_schema(summary="Musobaqa turlari", tags=['competitions']),
+    list=extend_schema(
+        summary="Musobaqa turlari",
+        parameters=[OpenApiParameter('branch_id', OpenApiTypes.INT, description="Filial ID")],
+        tags=['competitions'],
+    ),
     create=extend_schema(summary="Yangi musobaqa turi", tags=['competitions']),
     retrieve=extend_schema(summary="Musobaqa batafsil", tags=['competitions']),
     update=extend_schema(summary="Musobaqani yangilash", tags=['competitions']),
@@ -447,8 +547,15 @@ class PartyTaskViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Musobaqani o'chirish", tags=['competitions']),
 )
 class CompetitionViewSet(viewsets.ModelViewSet):
-    queryset = Competition.objects.all().prefetch_related('results')
     serializer_class = CompetitionSerializer
+
+    def get_queryset(self):
+        qs = Competition.objects.prefetch_related('results__party')
+        bid = _branch_id(self.request)
+        if bid:
+
+            qs = qs.filter(results__party__branch_id=bid).distinct()
+        return qs
 
 
 
@@ -456,6 +563,7 @@ class CompetitionViewSet(viewsets.ModelViewSet):
     list=extend_schema(
         summary="Musobaqa natijalari",
         parameters=[
+            OpenApiParameter('branch_id', OpenApiTypes.INT, description="Filial ID"),
             OpenApiParameter('competition', OpenApiTypes.INT, description="Musobaqa ID"),
             OpenApiParameter('quarter', OpenApiTypes.STR, description="1-chorak | 2-chorak | 3-chorak | 4-chorak"),
         ],
@@ -463,6 +571,7 @@ class CompetitionViewSet(viewsets.ModelViewSet):
     ),
     create=extend_schema(
         summary="Natija qo'shish (mode: add | replace)",
+        description="`branch_id` — query-param yoki body.",
         tags=['competition-results'],
     ),
     retrieve=extend_schema(summary="Natija batafsil", tags=['competition-results']),
@@ -471,11 +580,14 @@ class CompetitionViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Natijani o'chirish", tags=['competition-results']),
 )
 class CompetitionResultViewSet(viewsets.ModelViewSet):
-    queryset = CompetitionResult.objects.all()
+
     serializer_class = CompetitionResultSerializer
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = CompetitionResult.objects.select_related('party', 'competition')
+        bid = _branch_id(self.request)
+        if bid:
+            qs = qs.filter(party__branch_id=bid)
         comp_id = self.request.query_params.get('competition')
         quarter = self.request.query_params.get('quarter')
         if comp_id:
@@ -485,49 +597,37 @@ class CompetitionResultViewSet(viewsets.ModelViewSet):
         return qs
 
 
+    @staticmethod
+    def _update_winner(competition_id: int, quarter: str) -> None:
 
-    def _update_winner(self, competition_id: int, quarter: str) -> None:
-        """Chorakdagi eng yuqori ballga ega partiyani g'olib deb belgilaydi."""
-        totals = (
-            CompetitionResult.objects
-            .filter(competition_id=competition_id, quarter=quarter)
-            .values('party_id')
+        base = CompetitionResult.objects.filter(
+            competition_id=competition_id, quarter=quarter
+        )
+        top = (
+            base.values('party_id')
             .annotate(total=Sum('ball'))
             .order_by('-total')
+            .first()
         )
-        CompetitionResult.objects.filter(
-            competition_id=competition_id, quarter=quarter
-        ).update(is_winner=False)
-        if totals:
-            CompetitionResult.objects.filter(
-                competition_id=competition_id,
-                quarter=quarter,
-                party_id=totals[0]['party_id'],
-            ).update(is_winner=True)
-
-    def _apply_competition_delta(self, party: Party, old_ball: int, new_ball: int) -> None:
-        """
-        CompetitionResult yaratilganda yoki yangilanganda memberlarga
-        farq (delta) ball taqsimlaydi.
-        """
-        delta = new_ball - old_ball
-        if delta != 0:
-            _distribute_ball_to_members(party, delta)
-
-
+        base.update(is_winner=False)
+        if top:
+            base.filter(party_id=top['party_id']).update(is_winner=True)
 
     def create(self, request, *args, **kwargs):
-        comp_id = request.data.get('competition')
+
+        comp_id  = request.data.get('competition')
         party_id = request.data.get('party')
-        quarter = request.data.get('quarter')
+        quarter  = request.data.get('quarter')
         new_ball = int(request.data.get('ball', 0))
-        note = request.data.get('note', '')
-        mode = request.data.get('mode', 'add')
+        note     = request.data.get('note', '')
+        mode     = request.data.get('mode', 'add')
 
         try:
-            party = Party.objects.get(id=party_id)
+            Party.objects.get(pk=party_id)
         except Party.DoesNotExist:
             return Response({'error': 'Partiya topilmadi'}, status=404)
+
+        party_id = int(party_id)
 
         existing = CompetitionResult.objects.filter(
             competition_id=comp_id,
@@ -536,35 +636,35 @@ class CompetitionResultViewSet(viewsets.ModelViewSet):
         ).first()
 
         if existing:
-            old_ball = existing.ball
-            if mode == 'add':
-                final_ball = existing.ball + new_ball
-            else:
-                # replace
-                final_ball = new_ball
-
+            old_ball   = existing.ball
+            final_ball = old_ball + new_ball if mode == 'add' else new_ball
             existing.ball = final_ball
             if note:
                 existing.note = note
-            existing.save()
+            existing.save(update_fields=['ball', 'note'])
 
-            self._apply_competition_delta(party, old_ball, final_ball)
-
+            _distribute_ball_to_members(party_id, final_ball - old_ball)
             self._update_winner(comp_id, quarter)
-            return Response(CompetitionResultSerializer(existing).data, status=200)
+            return Response(
+                CompetitionResultSerializer(existing).data,
+                status=status.HTTP_200_OK,
+            )
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         result = serializer.save()
 
-        self._apply_competition_delta(party, 0, new_ball)
-
+        _distribute_ball_to_members(party_id, new_ball)
         self._update_winner(comp_id, quarter)
-        return Response(CompetitionResultSerializer(result).data, status=201)
+        return Response(
+            CompetitionResultSerializer(result).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     @extend_schema(
         summary="Chorak bo'yicha umumiy reyting",
         parameters=[
+            OpenApiParameter('branch_id', OpenApiTypes.INT, description="Filial ID"),
             OpenApiParameter('quarter', OpenApiTypes.STR, description="Ixtiyoriy chorak filteri"),
         ],
         responses={200: OpenApiTypes.OBJECT},
@@ -572,10 +672,8 @@ class CompetitionResultViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=['get'], url_path='quarter-summary')
     def quarter_summary(self, request):
-        quarter = request.query_params.get('quarter')
-        qs = CompetitionResult.objects.all()
-        if quarter:
-            qs = qs.filter(quarter=quarter)
+
+        qs = self.get_queryset()
         summary = (
             qs.values('party_id', 'party__name', 'party__color', 'quarter')
             .annotate(total=Sum('ball'))
