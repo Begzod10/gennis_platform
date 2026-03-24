@@ -40,11 +40,12 @@ class GroupSelectSerializer(serializers.ModelSerializer):
 class PartyMemberSerializer(serializers.ModelSerializer):
     student_name = serializers.SerializerMethodField()
     student_class = serializers.SerializerMethodField()
+    party_name = serializers.CharField(source='party.name', read_only=True)
 
     class Meta:
         model = PartyMember
         fields = [
-            'id', 'party', 'student',
+            'id', 'party','party_name', 'student',
             'student_name', 'student_class',
             'role', 'ball', 'level', 'status', 'is_active', 'joined_at',
         ]
