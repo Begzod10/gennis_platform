@@ -50,7 +50,7 @@ class PartyMemberSerializer(serializers.ModelSerializer):
         ]
 
     def get_student_name(self, obj):
-        return f"{obj.student.first_name} {obj.student.last_name}"
+        return f"{obj.student.user.name} {obj.student.user.surname}"
 
     def get_student_class(self, obj):
         return getattr(obj.student, 'class_number', None) or "—"
