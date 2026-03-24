@@ -270,17 +270,15 @@ class PartyMemberViewSet(viewsets.ModelViewSet):
             return PartyMemberWriteSerializer
         return PartyMemberSerializer
 
-    def get_queryset(self):
-        qs = super().get_queryset()
-        party_id = self.request.query_params.get('party')
-        student_id = self.request.query_params.get('student')
-        if party_id:
-            qs = qs.filter(party_id=party_id)
-        if student_id:
-            qs = qs.filter(student_id=student_id)
-        return qs
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
+        objs = serializer.save()
 
+        read_serializer = PartyMemberSerializer(objs, many=True)
+
+        return Response(read_serializer.data, status=status.HTTP_201_CREATED)
 @extend_schema_view(
     list=extend_schema(
         summary="Topshiriqlar ro'yxati",
