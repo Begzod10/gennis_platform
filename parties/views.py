@@ -58,7 +58,6 @@ def _recalc_party_ball(party_id: int) -> None:
 
 
 class StudentSelectViewSet(viewsets.ReadOnlyModelViewSet):
-    """O(S) — branch filter bilan O(S/B). Subquery semi-join O(S+K)."""
     serializer_class = StudentSelectSerializer
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ['user__name', 'user__surname']
@@ -68,7 +67,7 @@ class StudentSelectViewSet(viewsets.ReadOnlyModelViewSet):
         qs = Student.objects.select_related('user')
         bid = _branch_id(self.request)
         if bid:
-            qs = qs.filter(branch_id=bid)
+            qs = qs.filter(user__branch__id=bid)
         return qs
 
     @extend_schema(
