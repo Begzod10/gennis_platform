@@ -53,8 +53,7 @@ class PartyMemberSerializer(serializers.ModelSerializer):
         return f"{obj.student.user.name} {obj.student.user.surname}"
 
     def get_student_class(self, obj):
-        return getattr(obj.student, 'class_number', None) or "—"
-
+        return getattr(obj.student.class_number, 'number', "—")
 
 class PartyMemberWriteSerializer(serializers.ModelSerializer):
     students = serializers.ListField(
