@@ -118,6 +118,128 @@ def _sync_proof_to_management(instance):
         print(f"[management sync] Turon proof create failed: {exc}")
         return None
 
+def _sync_comment_update_to_management(management_id, text=None, attachment=None):
+    from .management_models import ManagementMissionComment
+    try:
+        c = ManagementMissionComment.objects.using("management").filter(id=management_id).first()
+        if not c:
+            return
+        if text is not None:
+            c.text = text
+        if attachment is not None:
+            c.attachment = attachment
+        c.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon comment update failed: {exc}")
+
+
+def _sync_comment_delete_to_management(management_id):
+    from .management_models import ManagementMissionComment
+    try:
+        c = ManagementMissionComment.objects.using("management").filter(id=management_id).first()
+        if c:
+            c.deleted = True
+            c.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon comment delete failed: {exc}")
+
+
+def _sync_attachment_update_to_management(management_id, file=None, note=None):
+    from .management_models import ManagementMissionAttachment
+    try:
+        a = ManagementMissionAttachment.objects.using("management").filter(id=management_id).first()
+        if not a:
+            return
+        if file is not None:
+            a.file = file
+        if note is not None:
+            a.note = note
+        a.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon attachment update failed: {exc}")
+
+
+def _sync_attachment_delete_to_management(management_id):
+    from .management_models import ManagementMissionAttachment
+    try:
+        a = ManagementMissionAttachment.objects.using("management").filter(id=management_id).first()
+        if a:
+            a.deleted = True
+            a.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon attachment delete failed: {exc}")
+
+
+def _sync_proof_update_to_management(management_id, file=None, comment=None):
+    from .management_models import ManagementMissionProof
+    try:
+        p = ManagementMissionProof.objects.using("management").filter(id=management_id).first()
+        if not p:
+            return
+        if file is not None:
+            p.file = file
+        if comment is not None:
+            p.comment = comment
+        p.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon proof update failed: {exc}")
+
+
+def _sync_proof_delete_to_management(management_id):
+    from .management_models import ManagementMissionProof
+    try:
+        p = ManagementMissionProof.objects.using("management").filter(id=management_id).first()
+        if p:
+            p.deleted = True
+            p.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon proof delete failed: {exc}")
+
+
+def _sync_subtask_to_management(instance):
+    from .management_models import ManagementMissionSubtask
+    if not instance.mission.management_id:
+        return None
+    try:
+        st = ManagementMissionSubtask(
+            mission_id=instance.mission.management_id,
+            title=instance.title,
+            is_done=instance.is_done,
+            order=instance.order,
+        )
+        st.save(using="management")
+        return st.id
+    except Exception as exc:
+        print(f"[management sync] Turon subtask create failed: {exc}")
+        return None
+
+
+def _sync_subtask_update_to_management(management_id, title=None, is_done=None):
+    from .management_models import ManagementMissionSubtask
+    try:
+        st = ManagementMissionSubtask.objects.using("management").filter(id=management_id).first()
+        if not st:
+            return
+        if title is not None:
+            st.title = title
+        if is_done is not None:
+            st.is_done = is_done
+        st.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon subtask update failed: {exc}")
+
+
+def _sync_subtask_delete_to_management(management_id):
+    from .management_models import ManagementMissionSubtask
+    try:
+        st = ManagementMissionSubtask.objects.using("management").filter(id=management_id).first()
+        if st:
+            st.deleted = True
+            st.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon subtask delete failed: {exc}")
+
+
 from branch.serializers import BranchSerializer
 from students.serializers import StudentSerializer, Student
 from user.models import CustomUser
