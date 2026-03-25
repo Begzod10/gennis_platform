@@ -40,6 +40,8 @@ def _sync_update_to_management(instance):
             mgmt.deadline = instance.deadline
         if instance.finish_date:
             mgmt.finish_date = instance.finish_date
+        if instance.executor_id:
+            mgmt.turon_executor_id = instance.executor_id
         mgmt.save(using="management")
     except Exception as exc:
         _logger.warning("[management sync] Turon update failed: %s", exc)
@@ -410,8 +412,9 @@ class MissionCrudSerializer(serializers.ModelSerializer):
 
         if executor_ids:
             new_executor = executor_ids[0]
+            instance.executor = new_executor
             instance.is_redirected = True
-            instance.redirected_by_id = new_executor.id
+            instance.redirected_by = old_executor
             instance.redirected_at = timezone.now()
         else:
             instance.is_redirected = False
