@@ -196,6 +196,25 @@ def _sync_proof_delete_to_management(management_id):
         print(f"[management sync] Turon proof delete failed: {exc}")
 
 
+def _sync_history_to_management(mission_management_id, turon_executor_id=None, turon_executor_name=None,
+                               turon_reviewer_id=None, turon_reviewer_name=None, note=None):
+    from .management_models import ManagementMissionHistory
+    try:
+        h = ManagementMissionHistory(
+            mission_id=mission_management_id,
+            turon_executor_id=turon_executor_id,
+            turon_executor_name=turon_executor_name,
+            turon_reviewer_id=turon_reviewer_id,
+            turon_reviewer_name=turon_reviewer_name,
+            note=note,
+        )
+        h.save(using="management")
+        return h.id
+    except Exception as exc:
+        print(f"[management sync] Turon history create failed: {exc}")
+        return None
+
+
 def _sync_subtask_to_management(instance):
     from .management_models import ManagementMissionSubtask
     if not instance.mission.management_id:
@@ -385,6 +404,10 @@ class MissionCrudSerializer(serializers.ModelSerializer):
 
         executor_ids = validated_data.pop("executor_ids", None)
 
+        old_executor = instance.executor
+        old_reviewer = instance.reviewer
+        new_executor = None
+
         if executor_ids:
             new_executor = executor_ids[0]
             instance.is_redirected = True
@@ -406,6 +429,41 @@ class MissionCrudSerializer(serializers.ModelSerializer):
 
         if tags is not None:
             instance.tags.set(tags)
+
+        if new_executor and new_executor != old_executor:
+            old_name = f"{old_executor.name} {old_executor.surname}".strip() if old_executor else None
+            new_name = f"{new_executor.name} {new_executor.surname}".strip() if new_executor else None
+            MissionHistory.objects.create(
+                mission=instance,
+                executor=new_executor,
+                changed_by_name=old_name,
+                note=f"Redirected to {new_name}",
+            )
+            if instance.management_id:
+                _sync_history_to_management(
+                    mission_management_id=instance.management_id,
+                    turon_executor_id=new_executor.id,
+                    turon_executor_name=new_name,
+                    note=f"Redirected by {old_name}",
+                )
+
+        new_reviewer = instance.reviewer
+        if new_reviewer != old_reviewer:
+            old_reviewer_name = f"{old_reviewer.name} {old_reviewer.surname}".strip() if old_reviewer else None
+            new_reviewer_name = f"{new_reviewer.name} {new_reviewer.surname}".strip() if new_reviewer else None
+            MissionHistory.objects.create(
+                mission=instance,
+                reviewer=new_reviewer,
+                changed_by_name=old_reviewer_name,
+                note=f"Reviewer changed to {new_reviewer_name}",
+            )
+            if instance.management_id:
+                _sync_history_to_management(
+                    mission_management_id=instance.management_id,
+                    turon_reviewer_id=new_reviewer.id if new_reviewer else None,
+                    turon_reviewer_name=new_reviewer_name,
+                    note=f"Reviewer changed by {old_reviewer_name}",
+                )
 
         _sync_update_to_management(instance)
         return instance
