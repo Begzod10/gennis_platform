@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from tasks.models import MissionAttachment
 from tasks.serializers import MissionAttachmentSerializer, _sync_attachment_to_management, _sync_attachment_update_to_management, _sync_attachment_delete_to_management
+from django.conf import settings
 
 
 class AttachmentListCreateAPIView(generics.ListCreateAPIView):
@@ -26,7 +27,7 @@ class AttachmentDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
         if instance.management_id:
             _sync_attachment_update_to_management(
                 management_id=instance.management_id,
-                file=instance.file.name if instance.file else None,
+                file=f"{settings.BASE_URL}/media/{instance.file.name}" if instance.file else None,
                 note=instance.note,
             )
 

@@ -68,10 +68,12 @@ def _sync_comment_to_management(instance):
         print(f"[management sync] comment skipped: mission {instance.mission_id} has no management_id")
         return None
     try:
+        from django.conf import settings as django_settings
+        attachment_url = f"{django_settings.BASE_URL}/media/{instance.attachment.name}" if instance.attachment else None
         c = ManagementMissionComment(
             mission_id=instance.mission.management_id,
             text=instance.text,
-            attachment=instance.attachment.name if instance.attachment else None,
+            attachment=attachment_url,
             creator_name=instance.creator_name,
         )
         c.save(using="management")
@@ -88,9 +90,11 @@ def _sync_attachment_to_management(instance):
         print(f"[management sync] attachment skipped: mission {instance.mission_id} has no management_id")
         return None
     try:
+        from django.conf import settings as django_settings
+        file_url = f"{django_settings.BASE_URL}/media/{instance.file.name}" if instance.file else ""
         a = ManagementMissionAttachment(
             mission_id=instance.mission.management_id,
-            file=instance.file.name if instance.file else "",
+            file=file_url,
             note=instance.note,
             creator_name=instance.creator_name,
         )
@@ -108,9 +112,11 @@ def _sync_proof_to_management(instance):
         print(f"[management sync] proof skipped: mission {instance.mission_id} has no management_id")
         return None
     try:
+        from django.conf import settings as django_settings
+        file_url = f"{django_settings.BASE_URL}/media/{instance.file.name}" if instance.file else ""
         p = ManagementMissionProof(
             mission_id=instance.mission.management_id,
-            file=instance.file.name if instance.file else "",
+            file=file_url,
             comment=instance.comment,
             creator_name=instance.creator_name,
         )

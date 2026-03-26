@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from tasks.models import MissionProof
 from tasks.serializers import MissionProofSerializer, _sync_proof_to_management, _sync_proof_update_to_management, _sync_proof_delete_to_management
+from django.conf import settings
 
 
 class ProofListCreateAPIView(generics.ListCreateAPIView):
@@ -26,7 +27,7 @@ class ProofDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
         if instance.management_id:
             _sync_proof_update_to_management(
                 management_id=instance.management_id,
-                file=instance.file.name if instance.file else None,
+                file=f"{settings.BASE_URL}/media/{instance.file.name}" if instance.file else None,
                 comment=instance.comment,
             )
 

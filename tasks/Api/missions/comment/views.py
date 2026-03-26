@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from tasks.models import MissionComment
 from tasks.serializers import MissionCommentSerializer, _sync_comment_to_management, _sync_comment_update_to_management, _sync_comment_delete_to_management
+from django.conf import settings
 
 
 class CommentListCreateAPIView(generics.ListCreateAPIView):
@@ -27,7 +28,7 @@ class CommentDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
             _sync_comment_update_to_management(
                 management_id=instance.management_id,
                 text=instance.text,
-                attachment=instance.attachment.name if instance.attachment else None,
+                attachment=f"{settings.BASE_URL}/media/{instance.attachment.name}" if instance.attachment else None,
             )
 
     def destroy(self, request, *args, **kwargs):

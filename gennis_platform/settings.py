@@ -12,6 +12,7 @@ from celery.schedules import crontab
 classroom_server = os.getenv('CLASSROOM_SERVER')
 # classroom_server = "http://192.168.1.11:5001"
 gennis_server = os.getenv('GENNIS_SERVER')
+BASE_URL = os.getenv('BASE_URL', 'http://localhost:8000')
 
 DEBUG = os.getenv('DEBUG', True)
 
