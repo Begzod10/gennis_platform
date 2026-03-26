@@ -27,7 +27,7 @@ class ProofDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
         if instance.management_id:
             _sync_proof_update_to_management(
                 management_id=instance.management_id,
-                file=f"{settings.BASE_URL}/media/{instance.file.name}" if instance.file else None,
+                file=instance.file.name if instance.file and instance.file.name and (instance.file.name.startswith("http://") or instance.file.name.startswith("https://")) else (f"{settings.BASE_URL}/media/{instance.file.name}" if instance.file else None),
                 comment=instance.comment,
             )
 

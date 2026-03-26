@@ -10,6 +10,17 @@ from rest_framework import serializers
 _logger = logging.getLogger(__name__)
 
 
+class SmartFileField(serializers.FileField):
+    """FileField that returns full external URLs as-is instead of prepending MEDIA_URL."""
+    def to_representation(self, value):
+        if not value:
+            return None
+        name = value.name if hasattr(value, 'name') else str(value)
+        if name and (name.startswith("http://") or name.startswith("https://")):
+            return name
+        return super().to_representation(value)
+
+
 def _get_management_mission(management_id: int):
     from .management_models import ManagementMission
     try:
@@ -69,7 +80,11 @@ def _sync_comment_to_management(instance):
         return None
     try:
         from django.conf import settings as django_settings
-        attachment_url = f"{django_settings.BASE_URL}/media/{instance.attachment.name}" if instance.attachment else None
+        _att = instance.attachment.name if instance.attachment else None
+        if _att and (_att.startswith("http://") or _att.startswith("https://")):
+            attachment_url = _att
+        else:
+            attachment_url = f"{django_settings.BASE_URL}/media/{_att}" if _att else None
         c = ManagementMissionComment(
             mission_id=instance.mission.management_id,
             text=instance.text,
@@ -91,7 +106,11 @@ def _sync_attachment_to_management(instance):
         return None
     try:
         from django.conf import settings as django_settings
-        file_url = f"{django_settings.BASE_URL}/media/{instance.file.name}" if instance.file else ""
+        _fn = instance.file.name if instance.file else ""
+        if _fn and (_fn.startswith("http://") or _fn.startswith("https://")):
+            file_url = _fn
+        else:
+            file_url = f"{django_settings.BASE_URL}/media/{_fn}" if _fn else ""
         a = ManagementMissionAttachment(
             mission_id=instance.mission.management_id,
             file=file_url,
@@ -113,7 +132,11 @@ def _sync_proof_to_management(instance):
         return None
     try:
         from django.conf import settings as django_settings
-        file_url = f"{django_settings.BASE_URL}/media/{instance.file.name}" if instance.file else ""
+        _fn = instance.file.name if instance.file else ""
+        if _fn and (_fn.startswith("http://") or _fn.startswith("https://")):
+            file_url = _fn
+        else:
+            file_url = f"{django_settings.BASE_URL}/media/{_fn}" if _fn else ""
         p = ManagementMissionProof(
             mission_id=instance.mission.management_id,
             file=file_url,
@@ -488,7 +511,7 @@ class MissionSubtaskSerializer(serializers.ModelSerializer):
 
 class MissionAttachmentSerializer(serializers.ModelSerializer):
     mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
-    file = serializers.FileField(required=False, allow_null=True)
+    file = SmartFileField(required=False, allow_null=True)
     uploaded_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
 
     class Meta:
@@ -499,6 +522,7 @@ class MissionAttachmentSerializer(serializers.ModelSerializer):
 
 class MissionCommentSerializer(serializers.ModelSerializer):
     mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
+    attachment = SmartFileField(required=False, allow_null=True)
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
 
     class Meta:
@@ -515,6 +539,7 @@ class MissionCommentSerializer(serializers.ModelSerializer):
 
 class MissionCommentDetailSerializer(serializers.ModelSerializer):
     mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
+    attachment = SmartFileField(required=False, allow_null=True)
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
     user = UserShortSerializer()
 
@@ -526,7 +551,7 @@ class MissionCommentDetailSerializer(serializers.ModelSerializer):
 
 class MissionProofSerializer(serializers.ModelSerializer):
     mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
-    file = serializers.FileField(required=False, allow_null=True)
+    file = SmartFileField(required=False, allow_null=True)
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
 
     class Meta:

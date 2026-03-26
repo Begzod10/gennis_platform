@@ -28,7 +28,7 @@ class CommentDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
             _sync_comment_update_to_management(
                 management_id=instance.management_id,
                 text=instance.text,
-                attachment=f"{settings.BASE_URL}/media/{instance.attachment.name}" if instance.attachment else None,
+                attachment=instance.attachment.name if instance.attachment and instance.attachment.name and (instance.attachment.name.startswith("http://") or instance.attachment.name.startswith("https://")) else (f"{settings.BASE_URL}/media/{instance.attachment.name}" if instance.attachment else None),
             )
 
     def destroy(self, request, *args, **kwargs):
