@@ -1,8 +1,7 @@
 from datetime import date
-
-from django.db import models
 from django.utils import timezone
 
+from django.db import models
 
 
 class Term(models.Model):
