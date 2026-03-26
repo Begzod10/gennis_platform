@@ -10,6 +10,17 @@ from rest_framework import serializers
 _logger = logging.getLogger(__name__)
 
 
+class SmartFileField(serializers.FileField):
+    """FileField that returns full external URLs as-is instead of prepending MEDIA_URL."""
+    def to_representation(self, value):
+        if not value:
+            return None
+        name = value.name if hasattr(value, 'name') else str(value)
+        if name and (name.startswith("http://") or name.startswith("https://")):
+            return name
+        return super().to_representation(value)
+
+
 def _get_management_mission(management_id: int):
     from .management_models import ManagementMission
     try:
@@ -40,6 +51,8 @@ def _sync_update_to_management(instance):
             mgmt.deadline = instance.deadline
         if instance.finish_date:
             mgmt.finish_date = instance.finish_date
+        if instance.executor_id:
+            mgmt.turon_executor_id = instance.executor_id
         mgmt.save(using="management")
     except Exception as exc:
         _logger.warning("[management sync] Turon update failed: %s", exc)
@@ -66,10 +79,16 @@ def _sync_comment_to_management(instance):
         print(f"[management sync] comment skipped: mission {instance.mission_id} has no management_id")
         return None
     try:
+        from django.conf import settings as django_settings
+        _att = instance.attachment.name if instance.attachment else None
+        if _att and (_att.startswith("http://") or _att.startswith("https://")):
+            attachment_url = _att
+        else:
+            attachment_url = f"{django_settings.BASE_URL}/media/{_att}" if _att else None
         c = ManagementMissionComment(
             mission_id=instance.mission.management_id,
             text=instance.text,
-            attachment=instance.attachment.name if instance.attachment else None,
+            attachment=attachment_url,
             creator_name=instance.creator_name,
         )
         c.save(using="management")
@@ -86,9 +105,15 @@ def _sync_attachment_to_management(instance):
         print(f"[management sync] attachment skipped: mission {instance.mission_id} has no management_id")
         return None
     try:
+        from django.conf import settings as django_settings
+        _fn = instance.file.name if instance.file else ""
+        if _fn and (_fn.startswith("http://") or _fn.startswith("https://")):
+            file_url = _fn
+        else:
+            file_url = f"{django_settings.BASE_URL}/media/{_fn}" if _fn else ""
         a = ManagementMissionAttachment(
             mission_id=instance.mission.management_id,
-            file=instance.file.name if instance.file else "",
+            file=file_url,
             note=instance.note,
             creator_name=instance.creator_name,
         )
@@ -106,9 +131,15 @@ def _sync_proof_to_management(instance):
         print(f"[management sync] proof skipped: mission {instance.mission_id} has no management_id")
         return None
     try:
+        from django.conf import settings as django_settings
+        _fn = instance.file.name if instance.file else ""
+        if _fn and (_fn.startswith("http://") or _fn.startswith("https://")):
+            file_url = _fn
+        else:
+            file_url = f"{django_settings.BASE_URL}/media/{_fn}" if _fn else ""
         p = ManagementMissionProof(
             mission_id=instance.mission.management_id,
-            file=instance.file.name if instance.file else "",
+            file=file_url,
             comment=instance.comment,
             creator_name=instance.creator_name,
         )
@@ -117,6 +148,147 @@ def _sync_proof_to_management(instance):
     except Exception as exc:
         print(f"[management sync] Turon proof create failed: {exc}")
         return None
+
+def _sync_comment_update_to_management(management_id, text=None, attachment=None):
+    from .management_models import ManagementMissionComment
+    try:
+        c = ManagementMissionComment.objects.using("management").filter(id=management_id).first()
+        if not c:
+            return
+        if text is not None:
+            c.text = text
+        if attachment is not None:
+            c.attachment = attachment
+        c.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon comment update failed: {exc}")
+
+
+def _sync_comment_delete_to_management(management_id):
+    from .management_models import ManagementMissionComment
+    try:
+        c = ManagementMissionComment.objects.using("management").filter(id=management_id).first()
+        if c:
+            c.deleted = True
+            c.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon comment delete failed: {exc}")
+
+
+def _sync_attachment_update_to_management(management_id, file=None, note=None):
+    from .management_models import ManagementMissionAttachment
+    try:
+        a = ManagementMissionAttachment.objects.using("management").filter(id=management_id).first()
+        if not a:
+            return
+        if file is not None:
+            a.file = file
+        if note is not None:
+            a.note = note
+        a.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon attachment update failed: {exc}")
+
+
+def _sync_attachment_delete_to_management(management_id):
+    from .management_models import ManagementMissionAttachment
+    try:
+        a = ManagementMissionAttachment.objects.using("management").filter(id=management_id).first()
+        if a:
+            a.deleted = True
+            a.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon attachment delete failed: {exc}")
+
+
+def _sync_proof_update_to_management(management_id, file=None, comment=None):
+    from .management_models import ManagementMissionProof
+    try:
+        p = ManagementMissionProof.objects.using("management").filter(id=management_id).first()
+        if not p:
+            return
+        if file is not None:
+            p.file = file
+        if comment is not None:
+            p.comment = comment
+        p.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon proof update failed: {exc}")
+
+
+def _sync_proof_delete_to_management(management_id):
+    from .management_models import ManagementMissionProof
+    try:
+        p = ManagementMissionProof.objects.using("management").filter(id=management_id).first()
+        if p:
+            p.deleted = True
+            p.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon proof delete failed: {exc}")
+
+
+def _sync_history_to_management(mission_management_id, turon_executor_id=None, turon_executor_name=None,
+                               turon_reviewer_id=None, turon_reviewer_name=None, note=None):
+    from .management_models import ManagementMissionHistory
+    try:
+        h = ManagementMissionHistory(
+            mission_id=mission_management_id,
+            turon_executor_id=turon_executor_id,
+            turon_executor_name=turon_executor_name,
+            turon_reviewer_id=turon_reviewer_id,
+            turon_reviewer_name=turon_reviewer_name,
+            note=note,
+        )
+        h.save(using="management")
+        return h.id
+    except Exception as exc:
+        print(f"[management sync] Turon history create failed: {exc}")
+        return None
+
+
+def _sync_subtask_to_management(instance):
+    from .management_models import ManagementMissionSubtask
+    if not instance.mission.management_id:
+        return None
+    try:
+        st = ManagementMissionSubtask(
+            mission_id=instance.mission.management_id,
+            title=instance.title,
+            is_done=instance.is_done,
+            order=instance.order,
+        )
+        st.save(using="management")
+        return st.id
+    except Exception as exc:
+        print(f"[management sync] Turon subtask create failed: {exc}")
+        return None
+
+
+def _sync_subtask_update_to_management(management_id, title=None, is_done=None):
+    from .management_models import ManagementMissionSubtask
+    try:
+        st = ManagementMissionSubtask.objects.using("management").filter(id=management_id).first()
+        if not st:
+            return
+        if title is not None:
+            st.title = title
+        if is_done is not None:
+            st.is_done = is_done
+        st.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon subtask update failed: {exc}")
+
+
+def _sync_subtask_delete_to_management(management_id):
+    from .management_models import ManagementMissionSubtask
+    try:
+        st = ManagementMissionSubtask.objects.using("management").filter(id=management_id).first()
+        if st:
+            st.deleted = True
+            st.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon subtask delete failed: {exc}")
+
 
 from branch.serializers import BranchSerializer
 from students.serializers import StudentSerializer, Student
@@ -263,10 +435,15 @@ class MissionCrudSerializer(serializers.ModelSerializer):
 
         executor_ids = validated_data.pop("executor_ids", None)
 
+        old_executor = instance.executor
+        old_reviewer = instance.reviewer
+        new_executor = None
+
         if executor_ids:
             new_executor = executor_ids[0]
+            instance.executor = new_executor
             instance.is_redirected = True
-            instance.redirected_by_id = new_executor.id
+            instance.redirected_by = old_executor
             instance.redirected_at = timezone.now()
         else:
             instance.is_redirected = False
@@ -285,6 +462,41 @@ class MissionCrudSerializer(serializers.ModelSerializer):
         if tags is not None:
             instance.tags.set(tags)
 
+        if new_executor and new_executor != old_executor:
+            old_name = f"{old_executor.name} {old_executor.surname}".strip() if old_executor else None
+            new_name = f"{new_executor.name} {new_executor.surname}".strip() if new_executor else None
+            MissionHistory.objects.create(
+                mission=instance,
+                executor=new_executor,
+                changed_by_name=old_name,
+                note=f"Redirected to {new_name}",
+            )
+            if instance.management_id:
+                _sync_history_to_management(
+                    mission_management_id=instance.management_id,
+                    turon_executor_id=new_executor.id,
+                    turon_executor_name=new_name,
+                    note=f"Redirected by {old_name}",
+                )
+
+        new_reviewer = instance.reviewer
+        if new_reviewer != old_reviewer:
+            old_reviewer_name = f"{old_reviewer.name} {old_reviewer.surname}".strip() if old_reviewer else None
+            new_reviewer_name = f"{new_reviewer.name} {new_reviewer.surname}".strip() if new_reviewer else None
+            MissionHistory.objects.create(
+                mission=instance,
+                reviewer=new_reviewer,
+                changed_by_name=old_reviewer_name,
+                note=f"Reviewer changed to {new_reviewer_name}",
+            )
+            if instance.management_id:
+                _sync_history_to_management(
+                    mission_management_id=instance.management_id,
+                    turon_reviewer_id=new_reviewer.id if new_reviewer else None,
+                    turon_reviewer_name=new_reviewer_name,
+                    note=f"Reviewer changed by {old_reviewer_name}",
+                )
+
         _sync_update_to_management(instance)
         return instance
 
@@ -299,7 +511,7 @@ class MissionSubtaskSerializer(serializers.ModelSerializer):
 
 class MissionAttachmentSerializer(serializers.ModelSerializer):
     mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
-    file = serializers.FileField(required=False, allow_null=True)
+    file = SmartFileField(required=False, allow_null=True)
     uploaded_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
 
     class Meta:
@@ -310,6 +522,7 @@ class MissionAttachmentSerializer(serializers.ModelSerializer):
 
 class MissionCommentSerializer(serializers.ModelSerializer):
     mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
+    attachment = SmartFileField(required=False, allow_null=True)
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
 
     class Meta:
@@ -326,6 +539,7 @@ class MissionCommentSerializer(serializers.ModelSerializer):
 
 class MissionCommentDetailSerializer(serializers.ModelSerializer):
     mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
+    attachment = SmartFileField(required=False, allow_null=True)
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
     user = UserShortSerializer()
 
@@ -337,7 +551,7 @@ class MissionCommentDetailSerializer(serializers.ModelSerializer):
 
 class MissionProofSerializer(serializers.ModelSerializer):
     mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
-    file = serializers.FileField(required=False, allow_null=True)
+    file = SmartFileField(required=False, allow_null=True)
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
 
     class Meta:

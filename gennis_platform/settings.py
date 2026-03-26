@@ -12,6 +12,7 @@ from celery.schedules import crontab
 classroom_server = os.getenv('CLASSROOM_SERVER')
 # classroom_server = "http://192.168.1.11:5001"
 gennis_server = os.getenv('GENNIS_SERVER')
+BASE_URL = os.getenv('BASE_URL', 'http://localhost:8000')
 
 DEBUG = os.getenv('DEBUG', True)
 
@@ -223,6 +224,7 @@ MEDIA_ROOT = BASE_DIR / 'media/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # SILKY_PYTHON_PROFILER = True
 CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "http://127.0.0.1:8000", "https://school.gennis.uz",
+                        "https://office.gennis.uz",
                         "http://localhost:3000", "http://0.0.0.0:8000", "http://100.81.196.80:3000",
                         'http://100.94.144.113:8000', 'http://100.124.167.36:3000']
 REST_FRAMEWORK['DEFAULT_SCHEMA_CLASS'] = 'drf_spectacular.openapi.AutoSchema'
