@@ -208,7 +208,7 @@ class TermsByGroup(views.APIView):
 
             for subj_id, subj_data in subjects_data.items():
                 if subj_data["count"] > 0:
-                    subj_data["average_result"] = round(subj_data["total_result"] / subj_data["count"], 2)
+                    subj_data["average_result"] = round(subj_data["total_result"] , 2)
                 del subj_data["total_result"]
                 del subj_data["count"]
 
