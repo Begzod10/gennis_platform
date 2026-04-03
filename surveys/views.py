@@ -78,7 +78,7 @@ def get_surveys_excluding_completed(user):
 
 class AdminSurveyListCreateView(generics.ListCreateAPIView):
 
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -98,7 +98,7 @@ class AdminSurveyListCreateView(generics.ListCreateAPIView):
 
 class AdminSurveyDetailView(generics.RetrieveUpdateDestroyAPIView):
 
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated]
     queryset = Survey.objects.all()
 
     def get_serializer_class(self):
@@ -109,7 +109,7 @@ class AdminSurveyDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class AdminSurveySubmissionsView(generics.ListAPIView):
 
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated]
     serializer_class = SurveySubmissionListSerializer
 
     def get_queryset(self):
@@ -128,7 +128,7 @@ class AdminSurveySubmissionsView(generics.ListAPIView):
 
 class AdminSubmissionDetailView(generics.RetrieveAPIView):
 
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated]
     queryset = SurveySubmission.objects.all()
     serializer_class = SurveySubmissionDetailSerializer
 
