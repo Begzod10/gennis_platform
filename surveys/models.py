@@ -13,7 +13,7 @@ class Survey(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     target_role = models.CharField(max_length=20, choices=TARGET_CHOICES, default='all')
-    deadline = models.DateField()
+    deadline = models.DateTimeField()
     is_active = models.BooleanField(default=True)
     is_anonymous = models.BooleanField(default=True)
     created_by = models.ForeignKey(
