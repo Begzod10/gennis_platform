@@ -97,7 +97,6 @@ class AdminSurveyListCreateView(generics.ListCreateAPIView):
 
 
 class AdminSurveyDetailView(generics.RetrieveUpdateDestroyAPIView):
-
     permission_classes = [IsAuthenticated]
     queryset = Survey.objects.all()
 
@@ -106,6 +105,13 @@ class AdminSurveyDetailView(generics.RetrieveUpdateDestroyAPIView):
             return SurveyAdminUpdateSerializer
         return SurveyAdminDetailSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            {"detail": "success deleted"},
+            status=status.HTTP_200_OK
+        )
 
 class AdminSurveySubmissionsView(generics.ListAPIView):
 
