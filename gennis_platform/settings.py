@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     'apps.investor.apps.InvestorConfig',
     'maintenance.apps.MaintenanceConfig',
     "report",
+    'surveys'
 ]
 
 MIDDLEWARE = [
