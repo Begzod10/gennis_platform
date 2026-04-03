@@ -86,7 +86,7 @@ class Mission(models.Model):
     tags = models.ManyToManyField(Tag, blank=True, related_name="missions")
 
     creator_name = models.CharField(max_length=255, null=True, blank=True)
-    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_missions")
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="created_missions")
     executor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="executed_missions")
     reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
                                  related_name="reviewed_missions")
@@ -221,6 +221,29 @@ class MissionProof(models.Model):
     comment = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     creator_name = models.CharField(max_length=255, null=True, blank=True)
+
+
+class MissionHistory(models.Model):
+    management_id = models.BigIntegerField(null=True, blank=True, unique=True)
+    mission = models.ForeignKey(Mission, on_delete=models.CASCADE, related_name="history")
+    executor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name="mission_history_as_executor")
+    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name="mission_history_as_reviewer")
+    management_executor_id = models.BigIntegerField(null=True, blank=True, default=None)
+    management_executor_name = models.CharField(max_length=255, null=True, blank=True, default=None)
+    management_reviewer_id = models.BigIntegerField(null=True, blank=True, default=None)
+    management_reviewer_name = models.CharField(max_length=255, null=True, blank=True, default=None)
+    gennis_executor_id = models.IntegerField(null=True, blank=True, default=None)
+    gennis_executor_name = models.CharField(max_length=255, null=True, blank=True, default=None)
+    gennis_reviewer_id = models.IntegerField(null=True, blank=True, default=None)
+    gennis_reviewer_name = models.CharField(max_length=255, null=True, blank=True, default=None)
+    changed_by_name = models.CharField(max_length=255, null=True, blank=True, default=None)
+    note = models.CharField(max_length=500, null=True, blank=True, default=None)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
 
 
 class Notification(models.Model):

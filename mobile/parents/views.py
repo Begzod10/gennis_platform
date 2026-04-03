@@ -265,13 +265,13 @@ class TermsByChildren(APIView):
 
         for subject_id, subj_data in subjects_data.items():
             if subj_data["count"] > 0:
-                subj_data["average_result"] = round(subj_data["total_result"] / subj_data["count"], 2)
+                subj_data["average_result"] = subj_data["total_result"]
             del subj_data["count"]
             del subj_data["total_result"]
             response_data["subjects"].append(subj_data)
 
         if count_all > 0:
             response_data["total_result"] = round(total_result_all, 2)
-            response_data["average_result"] = round(total_result_all / count_all, 2)
+            response_data["average_result"] = total_result_all
 
         return Response(response_data, status=status.HTTP_200_OK)

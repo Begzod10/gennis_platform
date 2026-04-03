@@ -2,7 +2,7 @@ from django.urls import path, include, re_path
 from tasks.Api.createdelteupdate import TaskCreateView, TaskUpdateView, TaskDestroyView, StudentCallInfoCreateView, \
     StudentCallInfoUpdateView, StudentCallInfoDestroyView
 from tasks.Api.get import TaskRetrieveView, TaskListView, CallListView, CallRetrieveView, CreateTask
-from tasks.Api.missions.views import MissionDetailAPIView, MissionListCreateAPIView
+from tasks.Api.missions.views import MissionDetailAPIView, MissionListCreateAPIView, MissionHistoryAPIView
 from tasks.Api.missions.subtasks.views import SubtaskListCreateAPIView, SubtaskDetailAPIView
 from tasks.Api.missions.comment.views import CommentDetailAPIView, CommentListCreateAPIView
 from tasks.Api.missions.attachment.views import AttachmentDetailAPIView, AttachmentListCreateAPIView
@@ -25,6 +25,7 @@ urlpatterns = [
 
     path("missions/", MissionListCreateAPIView.as_view()),
     path("missions/<int:pk>/", MissionDetailAPIView.as_view()),
+    path("missions/<int:pk>/history/", MissionHistoryAPIView.as_view()),
 
     path("subtasks/", SubtaskListCreateAPIView.as_view()),
     path("subtasks/<int:pk>/", SubtaskDetailAPIView.as_view()),

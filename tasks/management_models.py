@@ -26,3 +26,75 @@ class ManagementMission(models.Model):
         managed = False
         db_table = "mission"
         app_label = "tasks"
+
+
+class ManagementMissionComment(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    mission_id = models.BigIntegerField()
+    user_id = models.BigIntegerField(null=True, blank=True)
+    text = models.TextField()
+    attachment = models.CharField(max_length=500, null=True, blank=True)
+    creator_name = models.CharField(max_length=255, null=True, blank=True)
+    deleted = models.BooleanField(default=False)
+
+    class Meta:
+        managed = False
+        db_table = "mission_comment"
+        app_label = "tasks"
+
+
+class ManagementMissionAttachment(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    mission_id = models.BigIntegerField()
+    file = models.CharField(max_length=500)
+    note = models.CharField(max_length=255, null=True, blank=True)
+    creator_name = models.CharField(max_length=255, null=True, blank=True)
+    deleted = models.BooleanField(default=False)
+
+    class Meta:
+        managed = False
+        db_table = "mission_attachment"
+        app_label = "tasks"
+
+
+class ManagementMissionProof(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    mission_id = models.BigIntegerField()
+    file = models.CharField(max_length=500)
+    comment = models.CharField(max_length=255, null=True, blank=True)
+    creator_name = models.CharField(max_length=255, null=True, blank=True)
+    deleted = models.BooleanField(default=False)
+
+    class Meta:
+        managed = False
+        db_table = "mission_proof"
+        app_label = "tasks"
+
+
+class ManagementMissionHistory(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    mission_id = models.BigIntegerField()
+    turon_executor_id = models.BigIntegerField(null=True, blank=True)
+    turon_executor_name = models.CharField(max_length=255, null=True, blank=True)
+    turon_reviewer_id = models.BigIntegerField(null=True, blank=True)
+    turon_reviewer_name = models.CharField(max_length=255, null=True, blank=True)
+    note = models.CharField(max_length=500, null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = "mission_history"
+        app_label = "tasks"
+
+
+class ManagementMissionSubtask(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    mission_id = models.BigIntegerField()
+    title = models.CharField(max_length=255)
+    is_done = models.BooleanField(default=False)
+    order = models.IntegerField(default=0)
+    deleted = models.BooleanField(default=False)
+
+    class Meta:
+        managed = False
+        db_table = "mission_subtask"
+        app_label = "tasks"
