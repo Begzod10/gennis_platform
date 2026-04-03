@@ -4,7 +4,7 @@ class OnlyPartiesSchemaGenerator(SchemaGenerator):
     def get_schema(self, request=None, public=False):
         schema = super().get_schema(request, public)
 
-        allowed_prefix = "/api/Parties/"
+        allowed_prefix = "/api/surveys/"
 
         filtered_paths = {
             path: path_item
