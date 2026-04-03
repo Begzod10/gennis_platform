@@ -1,8 +1,8 @@
 from django.utils import timezone
-from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from rest_framework.response import Response
+from rest_framework import generics, status
 from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from .models import Survey, SurveySubmission, SurveyAnswer
 from .serializers import (
@@ -16,6 +16,7 @@ from .serializers import (
     SurveySubmissionListSerializer,
     SurveySubmissionDetailSerializer,
 )
+
 
 
 def get_role_info(user):
@@ -61,7 +62,9 @@ from django.db.models import Q as models_Q
 
 
 def get_surveys_excluding_completed(user):
+
     qs = get_available_surveys(user)
+
 
     completed_ids = SurveySubmission.objects.filter(
         respondent=user,
@@ -72,7 +75,9 @@ def get_surveys_excluding_completed(user):
     return qs
 
 
+
 class AdminSurveyListCreateView(generics.ListCreateAPIView):
+
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get_serializer_class(self):
@@ -92,6 +97,7 @@ class AdminSurveyListCreateView(generics.ListCreateAPIView):
 
 
 class AdminSurveyDetailView(generics.RetrieveUpdateDestroyAPIView):
+
     permission_classes = [IsAuthenticated, IsAdminUser]
     queryset = Survey.objects.all()
 
@@ -102,6 +108,7 @@ class AdminSurveyDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class AdminSurveySubmissionsView(generics.ListAPIView):
+
     permission_classes = [IsAuthenticated, IsAdminUser]
     serializer_class = SurveySubmissionListSerializer
 
@@ -120,12 +127,14 @@ class AdminSurveySubmissionsView(generics.ListAPIView):
 
 
 class AdminSubmissionDetailView(generics.RetrieveAPIView):
+
     permission_classes = [IsAuthenticated, IsAdminUser]
     queryset = SurveySubmission.objects.all()
     serializer_class = SurveySubmissionDetailSerializer
 
 
 class AdminSurveyStatisticsView(APIView):
+
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get(self, request, pk):
@@ -143,10 +152,11 @@ class AdminSurveyStatisticsView(APIView):
             except Teacher.DoesNotExist:
                 return Response({'detail': "O'qituvchi topilmadi."}, status=404)
 
-        return Response(_build_statistics(survey, teacher_filter=teacher))
+        return Response(_build_statistics_with_ai(survey, teacher_filter=teacher))
 
 
 class MobileSurveyListView(APIView):
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -171,6 +181,7 @@ class MobileSurveyListView(APIView):
 
 
 class MobileSurveyDetailView(APIView):
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
@@ -184,7 +195,9 @@ class MobileSurveyDetailView(APIView):
         return Response({'success': True, 'data': serializer.data})
 
 
+
 class MobileTeacherListForSurveyView(APIView):
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
@@ -250,7 +263,10 @@ class MobileTeacherListForSurveyView(APIView):
         return Response({'success': True, 'data': result})
 
 
+
+
 class MobileSurveySubmitView(APIView):
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
@@ -266,6 +282,7 @@ class MobileSurveySubmitView(APIView):
 
         role_info = get_role_info(user)
 
+        # Teacher o'zini to'ldira olmaydi (target_teacher = o'zi bo'lsa)
         teacher_id = request.data.get('teacher_id')
         if role_info.get('role') == 'teacher' and teacher_id:
             current_teacher = role_info.get('teacher')
@@ -288,7 +305,10 @@ class MobileSurveySubmitView(APIView):
         return Response({'success': False, 'errors': serializer.errors}, status=400)
 
 
+
+
 class MobileMyStatisticsView(APIView):
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -313,7 +333,7 @@ class MobileMyStatisticsView(APIView):
         surveys_data = []
         for survey in surveys_qs:
             s_submissions = submissions.filter(survey=survey)
-            stats = _build_statistics(survey, teacher_filter=teacher)
+            stats = _build_statistics_with_ai(survey, teacher_filter=teacher)
             surveys_data.append({
                 'survey_id': survey.id,
                 'survey_title': survey.title,
@@ -326,6 +346,8 @@ class MobileMyStatisticsView(APIView):
             'overall_score': overall_score,
             'surveys': surveys_data,
         })
+
+
 
 
 def _compute_overall_score(submissions):
@@ -399,6 +421,87 @@ def _build_statistics(survey, teacher_filter=None):
             q_stat['stats'] = {
                 'total_answers': q_answers.exclude(value='').count(),
                 'ai_summary': None,
+            }
+
+        questions_data.append(q_stat)
+
+    return {
+        'survey_id': survey.id,
+        'survey_title': survey.title,
+        'total_responses': submissions.count(),
+        'questions': questions_data,
+    }
+
+
+def _build_statistics_with_ai(survey, teacher_filter=None):
+
+    from .utils import analyze_short_answers
+
+    submissions = SurveySubmission.objects.filter(survey=survey)
+    if teacher_filter:
+        submissions = submissions.filter(target_teacher=teacher_filter)
+
+    answers_qs = SurveyAnswer.objects.filter(submission__in=submissions)
+    questions_data = []
+
+    for q in survey.questions.prefetch_related('options').order_by('order'):
+        q_answers = answers_qs.filter(question=q)
+        q_stat = {'question_id': q.id, 'text': q.text, 'type': q.type, 'stats': {}}
+
+        if q.type == 'yes_no':
+            yes = q_answers.filter(value='yes').count()
+            no = q_answers.filter(value='no').count()
+            total = yes + no
+            q_stat['stats'] = {
+                'yes_count': yes,
+                'no_count': no,
+                'yes_percentage': round(yes / total * 100, 1) if total else 0,
+            }
+
+        elif q.type == 'star':
+            values = []
+            dist = {str(i): 0 for i in range(1, 6)}
+            for a in q_answers:
+                try:
+                    v = int(a.value)
+                    if 1 <= v <= 5:
+                        values.append(v)
+                        dist[str(v)] += 1
+                except (ValueError, TypeError):
+                    pass
+            q_stat['stats'] = {
+                'average': round(sum(values) / len(values), 2) if values else 0,
+                'distribution': dist,
+            }
+
+        elif q.type == 'test':
+            total = q_answers.count()
+            options_stat = []
+            for opt in q.options.all():
+                cnt = q_answers.filter(value=str(opt.id)).count()
+                options_stat.append({
+                    'id': opt.id,
+                    'text': opt.text,
+                    'count': cnt,
+                    'percentage': round(cnt / total * 100, 1) if total else 0,
+                })
+            q_stat['stats'] = {'options': options_stat}
+
+        elif q.type == 'short_answer':
+            text_answers = list(
+                q_answers.exclude(value='').values_list('value', flat=True)
+            )
+            total_answers = len(text_answers)
+
+            if total_answers > 0:
+                ai_result = analyze_short_answers(q.text, text_answers)
+            else:
+                ai_result = {'ai_summary': None, 'sentiment': {'positive': 0, 'neutral': 0, 'negative': 0}}
+
+            q_stat['stats'] = {
+                'total_answers': total_answers,
+                'ai_summary': ai_result['ai_summary'],
+                'sentiment': ai_result['sentiment'],
             }
 
         questions_data.append(q_stat)
