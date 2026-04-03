@@ -1,5 +1,4 @@
-from django.urls import path
-
+from django.urls import path, include, re_path
 from tasks.Api.createdelteupdate import TaskCreateView, TaskUpdateView, TaskDestroyView, StudentCallInfoCreateView, \
     StudentCallInfoUpdateView, StudentCallInfoDestroyView
 from tasks.Api.get import TaskRetrieveView, TaskListView, CallListView, CallRetrieveView, CreateTask
@@ -44,5 +43,5 @@ urlpatterns = [
 
     path("notifications/", UserNotificationsAPIView.as_view()),
     path("notifications/<int:pk>/", NotificationDetailAPIView.as_view()),
-
+    path('admin/', include('tasks.admin.urls')),
 ]
