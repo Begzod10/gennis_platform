@@ -13,7 +13,7 @@ class Survey(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     target_role = models.CharField(max_length=20, choices=TARGET_CHOICES, default='all')
-    deadline = models.DateTimeField()
+    deadline = models.DateField()
     is_active = models.BooleanField(default=True)
     is_anonymous = models.BooleanField(default=True)
     created_by = models.ForeignKey(
@@ -29,7 +29,7 @@ class Survey(models.Model):
         blank=True,
         related_name='surveys'
     )
-    created_at = models.DateField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-created_at']
