@@ -13,11 +13,6 @@ class DebtorsAPIView(APIView):
         today = now().date()
         branch_id = request.query_params.get('branch')
 
-        active_users = CustomAutoGroup.objects.filter(
-            deleted=False,
-            user__isnull=False
-        ).values_list('user_id', flat=True)
-
         queryset = AttendancePerMonth.objects.filter(
             month_date__lte=today,
             status=False
@@ -25,9 +20,7 @@ class DebtorsAPIView(APIView):
 
         if branch_id:
             queryset = queryset.filter(
-                student__user__branch_id=branch_id,
-                student__user__id__in=active_users
-            )
+                student__user__branch_id=branch_id, student__user__deleted=False)
 
         debts = (
             queryset
