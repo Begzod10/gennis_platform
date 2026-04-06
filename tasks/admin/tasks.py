@@ -101,3 +101,58 @@ class CreateCallLogAPIView(APIView):
         )
 
         return Response({"message": "Saved"})
+
+
+class TodayCallsAPIView(APIView):
+    def get(self, request):
+        today = now().date()
+        category = request.query_params.get('category')
+        branch_id = request.query_params.get('branch_id')
+
+        qs = CallLog.objects.filter(called_at__date=today)
+
+        if category:
+            qs = qs.filter(category=category)
+
+        if branch_id:
+            qs = qs.filter(
+                Q(student__user__branch_id=branch_id) |
+                Q(lead__branch_id=branch_id)
+            )
+
+        qs = qs.select_related('student__user', 'lead')
+
+        result = []
+
+        for item in qs:
+            data = {
+                "category": item.category,
+                "status": item.status,
+                "comment": item.comment,
+                "audio": item.audio.url if item.audio else None,
+                "next_call_date": item.next_call_date,
+                "called_at": item.called_at,
+            }
+
+            if item.category in ['debtor', 'new_student'] and item.student:
+                user = item.student.user
+
+                data.update({
+                    "full_name": f"{user.name} {user.surname}",
+                    "phone": user.phone,
+                    "parent_phone": item.student.parents_number,
+                })
+
+            elif item.category == 'lead' and item.lead:
+                data.update({
+                    "full_name": item.lead.name,
+                    "phone": item.lead.phone,
+                    "parent_phone": None,
+                })
+
+            result.append(data)
+
+        return Response({
+            "count": qs.count(),
+            "results": result
+        })
