@@ -168,3 +168,31 @@ class StudentSubjectCount(models.Model):
     class_time_table = models.ForeignKey('school_time_table.ClassTimeTable', on_delete=models.CASCADE, null=True,
                                          related_name='student_subject_count')
     date = models.DateField()
+
+
+class CallLog(models.Model):
+    CATEGORY_CHOICES = (
+        ('debtor', 'Debtor'),
+        ('lead', 'Lead'),
+        ('new_student', 'New Student'),
+    )
+
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True, blank=True)
+    lead = models.ForeignKey('lead.Lead', on_delete=models.CASCADE, null=True, blank=True)
+
+    comment = models.TextField(null=True, blank=True)
+
+    called_at = models.DateTimeField(auto_now_add=True)
+    next_call_date = models.DateField(null=True, blank=True)
+
+    audio = models.FileField(upload_to='call_records/', null=True, blank=True)
+
+    STATUS_CHOICES = (
+        ('answered', 'Answered'),
+        ('not_answered', 'Not answered'),
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+
+    created_at = models.DateTimeField(auto_now_add=True)
