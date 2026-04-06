@@ -20,8 +20,9 @@ class DebtorsAPIView(APIView):
 
         if branch_id:
             queryset = queryset.filter(
-                student__user__branch_id=branch_id,
-                student__user__customautogroup__deleted=False
+                student__user__branch_id=branch_id,).filter(
+                Q(student__deleted_student_student__isnull=True) |
+                Q(student__deleted_student_student__deleted=False)
             ).distinct()
 
         debts = (
