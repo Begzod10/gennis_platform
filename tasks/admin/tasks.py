@@ -18,7 +18,7 @@ class DebtorsAPIView(APIView):
 
         if branch_id:
             queryset = queryset.filter(student__user__branch_id=branch_id,
-                                       student__user__custom_permission__deleted=False)
+                                       student__user__customautogroup_set__deleted=False)
 
         debts = (
             queryset
