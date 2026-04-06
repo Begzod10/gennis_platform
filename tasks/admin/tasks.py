@@ -74,7 +74,7 @@ class DebtorsAPIView(APIView):
 
 class CreateCallLogAPIView(APIView):
     def post(self, request):
-        student_id = request.data.get('student_id')
+        category = request.data.get('category')
         status = request.data.get('status')
 
         today = now().date()
@@ -82,13 +82,18 @@ class CreateCallLogAPIView(APIView):
         comment = request.data.get('comment')
         next_call_date = request.data.get('next_call_date')
 
+        student_id = request.data.get('student_id')
+        lead_id = request.data.get('lead_id')
+
         # 🔥 AUTO LOGIC
         if status == 'not_answered':
             comment = "tel ko'tarmadi"
             next_call_date = today + timedelta(days=1)
 
-        CallLog.objects.create(
-            student_id=student_id,
+        obj = CallLog.objects.create(
+            category=category,
+            student_id=student_id if category != 'lead' else None,
+            lead_id=lead_id if category == 'lead' else None,
             status=status,
             comment=comment,
             next_call_date=next_call_date,
