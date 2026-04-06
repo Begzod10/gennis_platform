@@ -13,10 +13,10 @@ class DebtorsAPIView(APIView):
         today = now().date()
         branch_id = request.query_params.get('branch')
 
-        custom_group_qs = CustomAutoGroup.objects.filter(
-            user=OuterRef('student__user'),
-            deleted=False
-        )
+        active_users = CustomAutoGroup.objects.filter(
+            deleted=False,
+            user__isnull=False
+        ).values_list('user_id', flat=True)
 
         queryset = AttendancePerMonth.objects.filter(
             month_date__lte=today,
@@ -25,11 +25,8 @@ class DebtorsAPIView(APIView):
 
         if branch_id:
             queryset = queryset.filter(
-                student__user__branch_id=branch_id
-            ).annotate(
-                has_active_group=Exists(custom_group_qs)
-            ).filter(
-                has_active_group=True
+                student__user__branch_id=branch_id,
+                student__user__id__in=active_users
             )
 
         debts = (
