@@ -1,9 +1,11 @@
 from django.utils.timezone import now
+from django.db.models import OuterRef, Exists
 from django.db.models import Count, Sum, Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from attendances.models import AttendancePerMonth
 from students.models import Student
+from user.models import CustomAutoGroup
 
 
 class DebtorsAPIView(APIView):
@@ -11,14 +13,24 @@ class DebtorsAPIView(APIView):
         today = now().date()
         branch_id = request.query_params.get('branch')
 
+        custom_group_qs = CustomAutoGroup.objects.filter(
+            user=OuterRef('student__user'),
+            deleted=False
+        )
+
         queryset = AttendancePerMonth.objects.filter(
             month_date__lte=today,
             status=False
         )
 
         if branch_id:
-            queryset = queryset.filter(student__user__branch_id=branch_id,
-                                       student__user__customautogroup_set__deleted=False)
+            queryset = queryset.filter(
+                student__user__branch_id=branch_id
+            ).annotate(
+                has_active_group=Exists(custom_group_qs)
+            ).filter(
+                has_active_group=True
+            )
 
         debts = (
             queryset
