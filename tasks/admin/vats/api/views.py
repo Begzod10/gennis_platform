@@ -1,27 +1,39 @@
+import asyncio
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from datetime import datetime
+from django.views import View
+import json
+from django.http import JsonResponse
+from asgiref.sync import sync_to_async
 from tasks.admin.vats.services.process import VatsProcess
 from students.models import CallLog
 from tasks.admin.vats import settings
 
 
-class CallAPIView(APIView):
+class CallAsyncView(View):
 
     async def post(self, request):
-        user = request.data.get("user")
-        phone = request.data.get("phone")
+        try:
+            body = json.loads(request.body)
+        except:
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
 
-        student_id = request.data.get("student_id")
-        comment = request.data.get("comment")
-        category = request.data.get("category")
+        user = body.get("user")
+        phone = body.get("phone")
+        student_id = body.get("student_id")
+        comment = body.get("comment")
+        category = body.get("category")
 
         vats = VatsProcess()
+
+        # ✅ async VATS call
         result = await vats.call(user, phone)
 
         callid = result.get("callid")
 
-        call = CallLog.objects.create(
+        # ❗ ORM ni async qilish
+        call = await sync_to_async(CallLog.objects.create)(
             vats_call_id=callid,
             vats_phone=phone,
             vats_user=user,
@@ -31,29 +43,32 @@ class CallAPIView(APIView):
             status="not_answered"
         )
 
-        return Response({
+        return JsonResponse({
             "callid": callid,
             "id": call.id
         })
 
 
-class VatsWebhookAPIView(APIView):
+class VatsWebhookAsyncView(View):
 
-    def post(self, request):
-        data = request.data
+    async def post(self, request):
+        try:
+            data = json.loads(request.body)
+        except:
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
 
-        # 🔐 SECURITY
+        # 🔐 token check
         if data.get("crm_token") != settings.VATS_CRM_TOKEN:
-            return Response({"error": "unauthorized"}, status=403)
+            return JsonResponse({"error": "unauthorized"}, status=403)
 
         if data.get("cmd") == "history":
 
             callid = data.get("callid")
 
             try:
-                call = CallLog.objects.get(vats_call_id=callid)
+                call = await sync_to_async(CallLog.objects.get)(vats_call_id=callid)
             except CallLog.DoesNotExist:
-                return Response({"error": "not found"}, status=404)
+                return JsonResponse({"error": "not found"}, status=404)
 
             call.vats_status = data.get("status")
             call.vats_duration = data.get("duration")
@@ -62,17 +77,17 @@ class VatsWebhookAPIView(APIView):
             call.vats_user = data.get("user")
             call.vats_type = data.get("type")
             call.audio_url = data.get("link")
-            settings.save_audio(call)
+
             start = data.get("start")
             if start:
                 call.vats_start = datetime.strptime(start, "%Y%m%dT%H%M%SZ")
 
-            # status mapping
             if data.get("status") == "Success":
                 call.status = "answered"
             else:
                 call.status = "not_answered"
 
-            call.save()
+            # ❗ save ham async
+            await sync_to_async(call.save)()
 
-        return Response({"ok": True})
+        return JsonResponse({"ok": True})
