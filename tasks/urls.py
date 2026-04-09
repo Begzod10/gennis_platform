@@ -44,5 +44,5 @@ urlpatterns = [
 
     path("notifications/", UserNotificationsAPIView.as_view()),
     path("notifications/<int:pk>/", NotificationDetailAPIView.as_view()),
-    # path('admin/', include('tasks.admin.urls')),
+    path('admin/', include('tasks.admin.urls')),
 ]
