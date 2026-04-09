@@ -26,7 +26,7 @@ from rest_framework_simplejwt.views import TokenVerifyView
 
 from gennis_platform.schema import OnlyPartiesSchemaGenerator
 from group.gennis.AddToGroupApi import UpdateGroupDataAPIView, GetGroupDataAPIView
-from tasks.admin.vats.api.views import VatsWebhookAPIView
+from tasks.admin.vats.api.views import VatsWebhookAsyncView
 from user.Api.read import GetUserAPIView, SetObserverView
 from user.Api.write import CustomTokenObtainPairView
 from user.views import CustomTokenRefreshView
@@ -79,7 +79,7 @@ urlpatterns = [
     path('api/reports/', include('report.urls')),
     path('api/surveys/', include('surveys.urls')),
     path('api/call/', include('tasks.admin.urls')),
-    path("api/vats/webhook/", VatsWebhookAPIView.as_view()),
+    path("api/vats/webhook/", VatsWebhookAsyncView.as_view()),
     # path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
 
     path(
