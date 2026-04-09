@@ -1,0 +1,647 @@
+# serializers_list.py
+
+# serializer.py
+import logging
+from datetime import datetime, date
+from django.utils import timezone
+
+from rest_framework import serializers
+
+_logger = logging.getLogger(__name__)
+
+
+class SmartFileField(serializers.FileField):
+    """FileField that returns full external URLs as-is instead of prepending MEDIA_URL."""
+    def to_representation(self, value):
+        if not value:
+            return None
+        name = value.name if hasattr(value, 'name') else str(value)
+        if name and (name.startswith("http://") or name.startswith("https://")):
+            return name
+        return super().to_representation(value)
+
+
+def _get_management_mission(management_id: int):
+    from .management_models import ManagementMission
+    try:
+        return ManagementMission.objects.using("management").filter(
+            id=management_id, deleted=False
+        ).first()
+    except Exception:
+        return None
+
+
+def _sync_update_to_management(instance):
+    """Sync changed fields back to the management mission (direct DB write)."""
+    if not instance.management_id:
+        return
+    mgmt = _get_management_mission(instance.management_id)
+    if mgmt is None:
+        return
+    try:
+        for attr in [
+            "title", "description", "category", "status",
+            "delay_days", "final_sc", "kpi_weight",
+            "penalty_per_day", "early_bonus_per_day", "max_bonus", "max_penalty",
+        ]:
+            val = getattr(instance, attr, None)
+            if val is not None:
+                setattr(mgmt, attr, val)
+        if instance.deadline:
+            mgmt.deadline = instance.deadline
+        if instance.finish_date:
+            mgmt.finish_date = instance.finish_date
+        if instance.executor_id:
+            mgmt.turon_executor_id = instance.executor_id
+        mgmt.save(using="management")
+    except Exception as exc:
+        _logger.warning("[management sync] Turon update failed: %s", exc)
+
+
+def _sync_delete_to_management(instance):
+    """Soft-delete the management mission when it is deleted in Turon."""
+    if not instance.management_id:
+        return
+    mgmt = _get_management_mission(instance.management_id)
+    if mgmt is None:
+        return
+    try:
+        mgmt.deleted = True
+        mgmt.save(using="management")
+    except Exception as exc:
+        _logger.warning("[management sync] Turon delete failed: %s", exc)
+
+
+def _sync_comment_to_management(instance):
+    """Create a comment in management DB when created in Turon. Returns management comment id."""
+    from .management_models import ManagementMissionComment
+    if not instance.mission.management_id:
+        print(f"[management sync] comment skipped: mission {instance.mission_id} has no management_id")
+        return None
+    try:
+        from django.conf import settings as django_settings
+        _att = instance.attachment.name if instance.attachment else None
+        if _att and (_att.startswith("http://") or _att.startswith("https://")):
+            attachment_url = _att
+        else:
+            attachment_url = f"{django_settings.BASE_URL}/media/{_att}" if _att else None
+        c = ManagementMissionComment(
+            mission_id=instance.mission.management_id,
+            text=instance.text,
+            attachment=attachment_url,
+            creator_name=instance.creator_name,
+        )
+        c.save(using="management")
+        return c.id
+    except Exception as exc:
+        print(f"[management sync] Turon comment create failed: {exc}")
+        return None
+
+
+def _sync_attachment_to_management(instance):
+    """Create an attachment in management DB when created in Turon. Returns management attachment id."""
+    from .management_models import ManagementMissionAttachment
+    if not instance.mission.management_id:
+        print(f"[management sync] attachment skipped: mission {instance.mission_id} has no management_id")
+        return None
+    try:
+        from django.conf import settings as django_settings
+        _fn = instance.file.name if instance.file else ""
+        if _fn and (_fn.startswith("http://") or _fn.startswith("https://")):
+            file_url = _fn
+        else:
+            file_url = f"{django_settings.BASE_URL}/media/{_fn}" if _fn else ""
+        a = ManagementMissionAttachment(
+            mission_id=instance.mission.management_id,
+            file=file_url,
+            note=instance.note,
+            creator_name=instance.creator_name,
+        )
+        a.save(using="management")
+        return a.id
+    except Exception as exc:
+        print(f"[management sync] Turon attachment create failed: {exc}")
+        return None
+
+
+def _sync_proof_to_management(instance):
+    """Create a proof in management DB when created in Turon. Returns management proof id."""
+    from .management_models import ManagementMissionProof
+    if not instance.mission.management_id:
+        print(f"[management sync] proof skipped: mission {instance.mission_id} has no management_id")
+        return None
+    try:
+        from django.conf import settings as django_settings
+        _fn = instance.file.name if instance.file else ""
+        if _fn and (_fn.startswith("http://") or _fn.startswith("https://")):
+            file_url = _fn
+        else:
+            file_url = f"{django_settings.BASE_URL}/media/{_fn}" if _fn else ""
+        p = ManagementMissionProof(
+            mission_id=instance.mission.management_id,
+            file=file_url,
+            comment=instance.comment,
+            creator_name=instance.creator_name,
+        )
+        p.save(using="management")
+        return p.id
+    except Exception as exc:
+        print(f"[management sync] Turon proof create failed: {exc}")
+        return None
+
+def _sync_comment_update_to_management(management_id, text=None, attachment=None):
+    from .management_models import ManagementMissionComment
+    try:
+        c = ManagementMissionComment.objects.using("management").filter(id=management_id).first()
+        if not c:
+            return
+        if text is not None:
+            c.text = text
+        if attachment is not None:
+            c.attachment = attachment
+        c.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon comment update failed: {exc}")
+
+
+def _sync_comment_delete_to_management(management_id):
+    from .management_models import ManagementMissionComment
+    try:
+        c = ManagementMissionComment.objects.using("management").filter(id=management_id).first()
+        if c:
+            c.deleted = True
+            c.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon comment delete failed: {exc}")
+
+
+def _sync_attachment_update_to_management(management_id, file=None, note=None):
+    from .management_models import ManagementMissionAttachment
+    try:
+        a = ManagementMissionAttachment.objects.using("management").filter(id=management_id).first()
+        if not a:
+            return
+        if file is not None:
+            a.file = file
+        if note is not None:
+            a.note = note
+        a.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon attachment update failed: {exc}")
+
+
+def _sync_attachment_delete_to_management(management_id):
+    from .management_models import ManagementMissionAttachment
+    try:
+        a = ManagementMissionAttachment.objects.using("management").filter(id=management_id).first()
+        if a:
+            a.deleted = True
+            a.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon attachment delete failed: {exc}")
+
+
+def _sync_proof_update_to_management(management_id, file=None, comment=None):
+    from .management_models import ManagementMissionProof
+    try:
+        p = ManagementMissionProof.objects.using("management").filter(id=management_id).first()
+        if not p:
+            return
+        if file is not None:
+            p.file = file
+        if comment is not None:
+            p.comment = comment
+        p.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon proof update failed: {exc}")
+
+
+def _sync_proof_delete_to_management(management_id):
+    from .management_models import ManagementMissionProof
+    try:
+        p = ManagementMissionProof.objects.using("management").filter(id=management_id).first()
+        if p:
+            p.deleted = True
+            p.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon proof delete failed: {exc}")
+
+
+def _sync_history_to_management(mission_management_id, turon_executor_id=None, turon_executor_name=None,
+                               turon_reviewer_id=None, turon_reviewer_name=None, note=None):
+    from .management_models import ManagementMissionHistory
+    try:
+        h = ManagementMissionHistory(
+            mission_id=mission_management_id,
+            turon_executor_id=turon_executor_id,
+            turon_executor_name=turon_executor_name,
+            turon_reviewer_id=turon_reviewer_id,
+            turon_reviewer_name=turon_reviewer_name,
+            note=note,
+        )
+        h.save(using="management")
+        return h.id
+    except Exception as exc:
+        print(f"[management sync] Turon history create failed: {exc}")
+        return None
+
+
+def _sync_subtask_to_management(instance):
+    from .management_models import ManagementMissionSubtask
+    if not instance.mission.management_id:
+        return None
+    try:
+        st = ManagementMissionSubtask(
+            mission_id=instance.mission.management_id,
+            title=instance.title,
+            is_done=instance.is_done,
+            order=instance.order,
+        )
+        st.save(using="management")
+        return st.id
+    except Exception as exc:
+        print(f"[management sync] Turon subtask create failed: {exc}")
+        return None
+
+
+def _sync_subtask_update_to_management(management_id, title=None, is_done=None):
+    from .management_models import ManagementMissionSubtask
+    try:
+        st = ManagementMissionSubtask.objects.using("management").filter(id=management_id).first()
+        if not st:
+            return
+        if title is not None:
+            st.title = title
+        if is_done is not None:
+            st.is_done = is_done
+        st.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon subtask update failed: {exc}")
+
+
+def _sync_subtask_delete_to_management(management_id):
+    from .management_models import ManagementMissionSubtask
+    try:
+        st = ManagementMissionSubtask.objects.using("management").filter(id=management_id).first()
+        if st:
+            st.deleted = True
+            st.save(using="management")
+    except Exception as exc:
+        print(f"[management sync] Turon subtask delete failed: {exc}")
+
+
+from branch.serializers import BranchSerializer
+from students.serializers import StudentSerializer, Student
+from user.models import CustomUser
+from .models import Task, Branch, StudentCallInfo, Group, TaskStudent, TaskStatistics, TaskDailyStatistics, Mission, \
+    MissionSubtask, MissionAttachment, MissionComment, MissionProof, Tag, Notification, MissionHistory
+
+
+class TaskSerializer(serializers.ModelSerializer):
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
+    auth_group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
+
+    class Meta:
+        model = Task
+        fields = ['id', 'name', 'auth_group', 'branch']
+
+
+class TaskGetSerializer(serializers.ModelSerializer):
+    branch = BranchSerializer(read_only=True)
+
+    class Meta:
+        model = Task
+        fields = ['id', 'name', 'auth_group', 'branch']
+
+
+class StudentCallInfoCreateUpdateDeleteSerializers(serializers.ModelSerializer):
+    task = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all())
+    student_tasks = serializers.PrimaryKeyRelatedField(queryset=TaskStudent.objects.all())
+    student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
+
+    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
+
+    class Meta:
+        model = StudentCallInfo
+        fields = ['id', 'student_tasks', 'student', 'task', 'delay_date', 'comment', 'user']
+
+    def save(self, **kwargs):
+        student_tasks = self.validated_data.get('student_tasks')
+        student = student_tasks
+        student.status = True
+        student.save()
+
+        student_call_info = super().save(**kwargs)
+
+        # Updating TaskStatistics
+        task_statistics = TaskStatistics.objects.get(task=student_call_info.task, day=datetime.now())
+        task_statistics.progress_num -= 1
+        task_statistics.completed_num += 1
+        total_students = task_statistics.completed_num + task_statistics.progress_num
+        task_statistics.percentage = (
+                (task_statistics.completed_num / total_students) * 100) if total_students > 0 else 0
+
+        task_statistics.save()
+
+        # Updating TaskDailyStatistics
+        daily_statistics = TaskStatistics.objects.filter(day=task_statistics.day, user=student_call_info.user).all()
+        i = 0
+        percentage = 0
+        completed = 0
+        for daily_statistic in daily_statistics:
+            i += 1
+            percentage += daily_statistic.percentage
+            if daily_statistic.percentage == 100:
+                completed += 1
+
+        daily_statisticss = TaskDailyStatistics.objects.get(day=task_statistics.day, user=student_call_info.user)
+        daily_statisticss.progress_num = i - completed
+        daily_statisticss.completed_num = completed
+        daily_statisticss.percentage = percentage / i if i > 0 else 0
+        daily_statisticss.save()
+
+        return student_call_info
+
+
+class StudentCallInfoGetSerializers(serializers.ModelSerializer):
+    task = TaskSerializer(read_only=True)
+    student = StudentSerializer(read_only=True)
+
+    class Meta:
+        model = StudentCallInfo
+        fields = '__all__'
+
+
+class UserShortSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CustomUser
+        fields = ["id", "full_name"]
+
+    def get_full_name(self, obj):
+        return f"{obj.name} {obj.surname}"
+
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ["id", "name"]
+
+
+class MissionCrudSerializer(serializers.ModelSerializer):
+    creator = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
+    executor_ids = serializers.ListField(
+        child=serializers.PrimaryKeyRelatedField(
+            queryset=CustomUser.objects.all()
+        ),
+        write_only=True
+    )
+    reviewer = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), allow_null=True, required=False)
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), allow_null=True, required=False)
+    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True, required=False)
+
+    class Meta:
+        model = Mission
+        fields = [
+            "id", "title", "description", 'creator',
+            "category", "tags",
+            "executor_ids", "redirected_by_id", "reviewer", "branch",
+            "deadline", "status", "is_redirected",
+            "kpi_weight", "penalty_per_day",
+            "is_recurring", "recurring_type", 'final_sc'
+        ]
+
+    def create(self, validated_data):
+        executor_ids = validated_data.pop("executor_ids")
+        tags = validated_data.pop("tags", [])
+
+        missions = []
+
+        for executor in executor_ids:
+            mission = Mission.objects.create(
+                executor=executor,
+                **validated_data
+            )
+            if tags:
+                mission.tags.set(tags)
+
+            missions.append(mission)
+
+        return missions  # 👈 LIST qaytaramiz
+
+    def update(self, instance, validated_data):
+        tags = validated_data.pop("tags", None)
+
+        executor_ids = validated_data.pop("executor_ids", None)
+
+        old_executor = instance.executor
+        old_reviewer = instance.reviewer
+        new_executor = None
+
+        if executor_ids:
+            new_executor = executor_ids[0]
+            instance.executor = new_executor
+            instance.is_redirected = True
+            instance.redirected_by = old_executor
+            instance.redirected_at = timezone.now()
+        else:
+            instance.is_redirected = False
+            instance.redirected_by = None
+            instance.redirected_at = None
+
+        status = validated_data.get("status", instance.status)
+
+        if status == "completed" and not instance.finish_date:
+            instance.finish_date = timezone.now().date()
+            instance.calculate_delay_days()
+            instance.final_sc = instance.final_score()
+
+        instance = super().update(instance, validated_data)
+
+        if tags is not None:
+            instance.tags.set(tags)
+
+        if new_executor and new_executor != old_executor:
+            old_name = f"{old_executor.name} {old_executor.surname}".strip() if old_executor else None
+            new_name = f"{new_executor.name} {new_executor.surname}".strip() if new_executor else None
+            MissionHistory.objects.create(
+                mission=instance,
+                executor=new_executor,
+                changed_by_name=old_name,
+                note=f"Redirected to {new_name}",
+            )
+            if instance.management_id:
+                _sync_history_to_management(
+                    mission_management_id=instance.management_id,
+                    turon_executor_id=new_executor.id,
+                    turon_executor_name=new_name,
+                    note=f"Redirected by {old_name}",
+                )
+
+        new_reviewer = instance.reviewer
+        if new_reviewer != old_reviewer:
+            old_reviewer_name = f"{old_reviewer.name} {old_reviewer.surname}".strip() if old_reviewer else None
+            new_reviewer_name = f"{new_reviewer.name} {new_reviewer.surname}".strip() if new_reviewer else None
+            MissionHistory.objects.create(
+                mission=instance,
+                reviewer=new_reviewer,
+                changed_by_name=old_reviewer_name,
+                note=f"Reviewer changed to {new_reviewer_name}",
+            )
+            if instance.management_id:
+                _sync_history_to_management(
+                    mission_management_id=instance.management_id,
+                    turon_reviewer_id=new_reviewer.id if new_reviewer else None,
+                    turon_reviewer_name=new_reviewer_name,
+                    note=f"Reviewer changed by {old_reviewer_name}",
+                )
+
+        _sync_update_to_management(instance)
+        return instance
+
+
+class MissionSubtaskSerializer(serializers.ModelSerializer):
+    mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
+
+    class Meta:
+        model = MissionSubtask
+        fields = ["id", "mission", "title", "is_done", "order"]
+
+
+class MissionAttachmentSerializer(serializers.ModelSerializer):
+    mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
+    file = SmartFileField(required=False, allow_null=True)
+    uploaded_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
+
+    class Meta:
+        model = MissionAttachment
+        fields = ["id", "mission", "file", "note", "uploaded_at"]
+        read_only_fields = ["uploaded_at"]
+
+
+class MissionCommentSerializer(serializers.ModelSerializer):
+    mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
+    attachment = SmartFileField(required=False, allow_null=True)
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
+
+    class Meta:
+        model = MissionComment
+        fields = ["id", "mission", "text", "attachment", "created_at", "user", "creator_name"]
+        read_only_fields = ["created_at", "creator_name"]
+
+    def create(self, validated_data):
+        user = validated_data.get('user')
+        if user:
+            validated_data['creator_name'] = f"{user.name} {user.surname}".strip()
+        return super().create(validated_data)
+
+
+class MissionCommentDetailSerializer(serializers.ModelSerializer):
+    mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
+    attachment = SmartFileField(required=False, allow_null=True)
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
+    user = UserShortSerializer()
+
+    class Meta:
+        model = MissionComment
+        fields = ["id", "mission", "text", "attachment", "created_at", "user", "creator_name"]
+        read_only_fields = ["created_at", "creator_name"]
+
+
+class MissionProofSerializer(serializers.ModelSerializer):
+    mission = serializers.PrimaryKeyRelatedField(queryset=Mission.objects.all())
+    file = SmartFileField(required=False, allow_null=True)
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
+
+    class Meta:
+        model = MissionProof
+        fields = ["id", "mission", "file", "comment", "created_at"]
+        read_only_fields = ["created_at"]
+
+
+class MissionDetailSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
+    start_date = serializers.DateField(format="%Y-%m-%d", read_only=True)
+    deadline = serializers.DateField(format="%Y-%m-%d", read_only=True)
+    finish_date = serializers.DateField(format="%Y-%m-%d", read_only=True)
+    redirected_at = serializers.DateTimeField(format="%Y-%m-%d", allow_null=True)
+    creator = UserShortSerializer()
+    creator_name = serializers.SerializerMethodField()
+    executor = UserShortSerializer()
+    reviewer = UserShortSerializer()
+    redirected_by = UserShortSerializer()
+    subtasks = MissionSubtaskSerializer(many=True, read_only=True)
+    attachments = MissionAttachmentSerializer(many=True, read_only=True)
+    comments = MissionCommentDetailSerializer(many=True, read_only=True)
+    proofs = MissionProofSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    delay_info = serializers.SerializerMethodField()
+    deadline_color = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Mission
+        fields = [
+            "id", "management_id", "title", "description", "category", "tags",
+            "creator", "creator_name", "executor", "reviewer", "reviewer_name", "redirected_by", "branch",
+            "start_date", "deadline", "finish_date", "is_redirected", "redirected_at",
+            "status", "delay_days", "delay_info",
+            "kpi_weight", "penalty_per_day", "is_recurring", "recurring_type",
+            "subtasks", "attachments", "comments", "proofs", "created_at", 'final_sc', 'deadline_color'
+        ]
+
+    def get_creator_name(self, obj):
+        if obj.creator:
+            return f"{obj.creator.name} {obj.creator.surname}"
+        return None
+
+    def get_delay_info(self, obj):
+        if not obj.finish_date or not obj.deadline:
+            return None
+        diff_days = (obj.finish_date - obj.deadline).days
+        if diff_days < 0:
+            return f"{abs(diff_days)} kun erta tugatildi"
+        elif diff_days > 0:
+            return f"{diff_days} kun kech tugatildi"
+        return "o‘z vaqtida tugatildi"
+
+    def get_deadline_color(self, obj):
+        if not obj.deadline:
+            return "grey"
+
+        today = date.today()
+        remaining_days = (obj.deadline - today).days
+
+        if remaining_days <= 1:
+            return "red"
+        elif 2 <= remaining_days <= 4:
+            return "yellow"
+        else:
+            return "green"
+
+
+class MissionHistorySerializer(serializers.ModelSerializer):
+    executor = UserShortSerializer(read_only=True)
+    reviewer = UserShortSerializer(read_only=True)
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
+
+    class Meta:
+        model = MissionHistory
+        fields = ["id", "mission", "executor", "reviewer", "changed_by_name", "note", "created_at"]
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M", read_only=True)
+    deadline = serializers.DateField(format="%Y-%m-%d", read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = [
+            "id",
+            "message",
+            "role",
+            "mission",
+            "deadline",
+            "is_read",
+            "created_at",
+        ]
