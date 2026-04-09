@@ -9,5 +9,5 @@ from tasks.admin.vats.api.views import CallAPIView
 
 urlpatterns = [
     path("debtors/", DebtorsAPIView.as_view()),
-    path("/", CallAPIView.as_view()),
+    path("calls/", CallAPIView.as_view()),
 ]
