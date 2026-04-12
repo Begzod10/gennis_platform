@@ -398,8 +398,12 @@ class ClassTimeTableTest2Serializer(serializers.Serializer):
                 if teacher_id:
                     qs = qs.filter(teacher_id=teacher_id)
                 if student_id:
-                    qs = qs.filter(group__students__id=student_id)
-
+                    if student_id:
+                        qs = qs.filter(
+                            Q(group__students__id=student_id) |
+                            Q(flow__students__id=student_id) |
+                            Q(students__id=student_id)
+                        ).distinct()
                 lesson = qs.order_by('hours__order').first()
 
                 if lesson:
