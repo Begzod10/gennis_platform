@@ -1,3 +1,22 @@
+"""
+URL configuration for gennis_platform project.
+
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/4.2/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.urls import include, path
+    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+"""
+from django.contrib import admin
+from django.urls import path
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -7,6 +26,7 @@ from rest_framework_simplejwt.views import TokenVerifyView
 
 from gennis_platform.schema import OnlyPartiesSchemaGenerator
 from group.gennis.AddToGroupApi import UpdateGroupDataAPIView, GetGroupDataAPIView
+from tasks.admin.vats.api.views import VatsWebhookAsyncView
 from user.Api.read import GetUserAPIView, SetObserverView
 from user.Api.write import CustomTokenObtainPairView
 from user.views import CustomTokenRefreshView
@@ -58,6 +78,8 @@ urlpatterns = [
     path('api/Parties/', include('parties.urls')),
     path('api/reports/', include('report.urls')),
     path('api/surveys/', include('surveys.urls')),
+    path('api/call/', include('tasks.admin.urls')),
+    path("api/vats/webhook/", VatsWebhookAsyncView.as_view()),
     # path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
 
     path(

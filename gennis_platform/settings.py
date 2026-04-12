@@ -14,6 +14,7 @@ classroom_server = os.getenv('CLASSROOM_SERVER')
 gennis_server = os.getenv('GENNIS_SERVER')
 BASE_URL = os.getenv('BASE_URL', 'http://localhost:8000')
 
+
 DEBUG = os.getenv('DEBUG', True)
 
 # ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")

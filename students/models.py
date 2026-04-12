@@ -168,3 +168,51 @@ class StudentSubjectCount(models.Model):
     class_time_table = models.ForeignKey('school_time_table.ClassTimeTable', on_delete=models.CASCADE, null=True,
                                          related_name='student_subject_count')
     date = models.DateField()
+
+
+class CallLog(models.Model):
+    CATEGORY_CHOICES = (
+        ('debtor', 'Debtor'),
+        ('lead', 'Lead'),
+        ('new_student', 'New Student'),
+    )
+
+    STATUS_CHOICES = (
+        ('answered', 'Answered'),
+        ('not_answered', 'Not answered'),
+    )
+
+    # VATS tomonidan kelgan ma'lumotlar
+    vats_call_id = models.CharField(max_length=100, null=True, blank=True, unique=True,
+                                    help_text="VATS'dan kelgan callid")
+    vats_status = models.CharField(max_length=50, null=True, blank=True,
+                                   help_text="VATS call statusi: Success, missed, Cancel, Busy...")
+    vats_duration = models.PositiveIntegerField(null=True, blank=True, help_text="Suhbat davomiyligi (soniya)")
+    vats_wait = models.PositiveIntegerField(null=True, blank=True, help_text="Kutish vaqti (soniya)")
+    vats_phone = models.CharField(max_length=30, null=True, blank=True, help_text="Mijoz telefon raqami (VATS'dan)")
+    vats_user = models.CharField(max_length=100, null=True, blank=True, help_text="VATS xodim identifikatori")
+    vats_start = models.DateTimeField(null=True, blank=True, help_text="VATS'da qo'ng'iroq boshlangan vaqt")
+    vats_type = models.CharField(max_length=10, null=True, blank=True, help_text="in yoki out")
+
+    # CRM uchun ma'lumotlar
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    student = models.ForeignKey('students.Student', on_delete=models.CASCADE, null=True, blank=True)
+    lead = models.ForeignKey('lead.Lead', on_delete=models.CASCADE, null=True, blank=True)
+
+    comment = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+
+    called_at = models.DateTimeField(auto_now_add=True)
+    next_call_date = models.DateField(null=True, blank=True)
+
+    # Audio - VATS'dan link yoki mahalliy fayl
+    audio = models.FileField(upload_to='call_records/', null=True, blank=True)
+    audio_url = models.URLField(null=True, blank=True, help_text="VATS'dan kelgan audio havolasi")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.category} | {self.status} | {self.called_at.strftime('%d.%m.%Y %H:%M')}"
