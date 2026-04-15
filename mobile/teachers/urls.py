@@ -3,6 +3,11 @@ from django.urls import path, include
 from .views import TeacherGroupProfileView, TeacherProfileView, SalaryYearsView, TeacherSalaryView, TeacherClassesView, \
     StudentScoreView, TeacherTodayAttendance, TeacherDashboardView, TeacherGetLessonPlanView, \
     TeacherChangeLessonPlanView, TeacherTimeTableView
+from .lesson_plan_file_views import (
+    MobileLessonPlanFileUploadView,
+    MobileLessonPlanFileStatusView,
+    MobileLessonPlanFileListView,
+)
 
 app_name = 'teachers'
 urlpatterns = [
@@ -25,4 +30,9 @@ urlpatterns = [
     # path('groups/', GroupListView.as_view(), name='teacher-profile'),
     path('missions/', include('mobile.teachers.missions.urls'), name='missions'),
     path('observation/', include('mobile.teachers.observation.urls'), name='observation'),
+
+    # Lesson plan file upload + AI review
+    path('lesson-plan/file/upload/', MobileLessonPlanFileUploadView.as_view(), name='mobile-lp-upload'),
+    path('lesson-plan/file/<int:pk>/', MobileLessonPlanFileStatusView.as_view(), name='mobile-lp-status'),
+    path('lesson-plan/file/', MobileLessonPlanFileListView.as_view(), name='mobile-lp-list'),
 ]
