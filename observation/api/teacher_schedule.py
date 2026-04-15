@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -51,16 +52,21 @@ def _schedule_entry(entry: TeacherObservationSchedule) -> dict:
 # ---------------------------------------------------------------------------
 
 class GenerateObservationScheduleView(APIView):
-    """
-    POST /observation/schedule/generate/
-    Body: { branch_id, start_date (YYYY-MM-DD) }
-
-    Enqueues a Celery task that builds the full observation cycle.
-    Returns the task_id immediately; poll /observation/schedule/task/<task_id>/
-    to check progress.
-    """
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        request={"application/json": {"type": "object", "properties": {
+            "branch_id": {"type": "integer", "example": 1},
+            "start_date": {"type": "string", "example": "2026-04-21"},
+        }, "required": ["branch_id", "start_date"]}},
+        responses={202: dict},
+        examples=[
+            OpenApiExample("Request", value={"branch_id": 1, "start_date": "2026-04-21"}, request_only=True),
+            OpenApiExample("Response", value={"task_id": "abc-123", "detail": "Schedule generation started."}, response_only=True),
+        ],
+        summary="Generate observation schedule for a branch",
+        tags=["observation-schedule"],
+    )
     def post(self, request):
         from observation.tasks import generate_observation_schedule_task
 
@@ -98,14 +104,18 @@ class GenerateObservationScheduleView(APIView):
 # ---------------------------------------------------------------------------
 
 class ScheduleTaskStatusView(APIView):
-    """
-    GET /observation/schedule/task/<task_id>/
-
-    Returns Celery task state and result once finished.
-    States: PENDING | STARTED | SUCCESS | FAILURE
-    """
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        responses={200: dict},
+        examples=[
+            OpenApiExample("Pending", value={"task_id": "abc-123", "state": "PENDING"}, response_only=True),
+            OpenApiExample("Success", value={"task_id": "abc-123", "state": "SUCCESS", "result": {"created": 40}}, response_only=True),
+            OpenApiExample("Failure", value={"task_id": "abc-123", "state": "FAILURE", "detail": "Branch not found."}, response_only=True),
+        ],
+        summary="Check Celery task status",
+        tags=["observation-schedule"],
+    )
     def get(self, request, task_id):
         from celery.result import AsyncResult
         result = AsyncResult(task_id)
@@ -125,14 +135,28 @@ class ScheduleTaskStatusView(APIView):
 # ---------------------------------------------------------------------------
 
 class CurrentWeekScheduleView(APIView):
-    """
-    GET /observation/schedule/current_week/?branch_id=X&teacher_id=X
-
-    Returns the two teachers that `teacher_id` must observe this week
-    based on the latest active cycle for the branch.
-    """
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("branch_id", int, description="Branch ID"),
+            OpenApiParameter("teacher_id", int, description="Observer teacher ID"),
+        ],
+        responses={200: dict},
+        examples=[
+            OpenApiExample("Response", value={
+                "cycle_id": 1, "current_week": 2,
+                "schedule": [
+                    {"id": 5, "week": 2, "is_completed": False,
+                     "observer": {"id": 3, "name": "Ali", "surname": "Valiev"},
+                     "observed_teacher": {"id": 7, "name": "Jasur", "surname": "Toshev"},
+                     "time_table": {"id": 12, "name": "Matematika 9A"}, "observation_day_id": None},
+                ]
+            }, response_only=True),
+        ],
+        summary="Current week schedule for a teacher",
+        tags=["observation-schedule"],
+    )
     def get(self, request):
         branch_id = request.query_params.get("branch_id")
         teacher_id = request.query_params.get("teacher_id")
@@ -171,14 +195,35 @@ class CurrentWeekScheduleView(APIView):
 # ---------------------------------------------------------------------------
 
 class TeacherScheduleListView(APIView):
-    """
-    GET /observation/schedule/?branch_id=X&teacher_id=X[&cycle_id=X]
-
-    Returns the full schedule (all weeks) for the given observer teacher.
-    Grouped by week.
-    """
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("branch_id", int, description="Branch ID"),
+            OpenApiParameter("teacher_id", int, description="Observer teacher ID"),
+            OpenApiParameter("cycle_id", int, description="Cycle ID (optional, defaults to latest)"),
+        ],
+        responses={200: dict},
+        examples=[
+            OpenApiExample("Response", value={
+                "cycle_id": 1, "start_date": "2026-04-21", "current_week": 2,
+                "weeks": [
+                    {"week": 1, "week_start": "2026-04-21", "is_current": False,
+                     "entries": [{"id": 1, "week": 1, "is_completed": True,
+                                  "observer": {"id": 3, "name": "Ali", "surname": "Valiev"},
+                                  "observed_teacher": {"id": 7, "name": "Jasur", "surname": "Toshev"},
+                                  "time_table": {"id": 12, "name": "Matematika 9A"}, "observation_day_id": 5}]},
+                    {"week": 2, "week_start": "2026-04-28", "is_current": True,
+                     "entries": [{"id": 5, "week": 2, "is_completed": False,
+                                  "observer": {"id": 3, "name": "Ali", "surname": "Valiev"},
+                                  "observed_teacher": {"id": 9, "name": "Malika", "surname": "Yusupova"},
+                                  "time_table": {"id": 18, "name": "Ingliz tili 8B"}, "observation_day_id": None}]},
+                ]
+            }, response_only=True),
+        ],
+        summary="Full observation schedule (all weeks) for a teacher",
+        tags=["observation-schedule"],
+    )
     def get(self, request):
         branch_id = request.query_params.get("branch_id")
         teacher_id = request.query_params.get("teacher_id")
@@ -235,15 +280,25 @@ class TeacherScheduleListView(APIView):
 # ---------------------------------------------------------------------------
 
 class CompleteObservationScheduleView(APIView):
-    """
-    PATCH /observation/schedule/<id>/complete/
-    Body (optional): { observation_day_id }
-
-    Marks a schedule entry as completed and optionally links it to a
-    TeacherObservationDay record.
-    """
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        request={"application/json": {"type": "object", "properties": {
+            "observation_day_id": {"type": "integer", "example": 9},
+        }}},
+        responses={200: dict},
+        examples=[
+            OpenApiExample("Request", value={"observation_day_id": 9}, request_only=True),
+            OpenApiExample("Response", value={
+                "id": 5, "week": 2, "is_completed": True,
+                "observer": {"id": 3, "name": "Ali", "surname": "Valiev"},
+                "observed_teacher": {"id": 7, "name": "Jasur", "surname": "Toshev"},
+                "time_table": {"id": 12, "name": "Matematika 9A"}, "observation_day_id": 9
+            }, response_only=True),
+        ],
+        summary="Mark observation schedule entry as completed",
+        tags=["observation-schedule"],
+    )
     def patch(self, request, pk):
         entry = get_object_or_404(
             TeacherObservationSchedule.objects.select_related(
@@ -267,15 +322,20 @@ class CompleteObservationScheduleView(APIView):
 # ---------------------------------------------------------------------------
 
 class TestGenerateScheduleView(APIView):
-    """
-    POST /observation/schedule/test_generate/
-    Body: { branch_id }
-
-    Fires test_generate_observation_schedule_task which uses this week's Monday
-    as start_date. Lets you verify current_week returns data immediately.
-    """
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        request={"application/json": {"type": "object", "properties": {
+            "branch_id": {"type": "integer", "example": 1},
+        }, "required": ["branch_id"]}},
+        responses={202: dict},
+        examples=[
+            OpenApiExample("Request", value={"branch_id": 1}, request_only=True),
+            OpenApiExample("Response", value={"task_id": "def-456", "detail": "Test schedule generation started."}, response_only=True),
+        ],
+        summary="Test generate schedule using current week's Monday as start_date",
+        tags=["observation-schedule"],
+    )
     def post(self, request):
         from observation.tasks import test_generate_observation_schedule_task
 
@@ -291,13 +351,22 @@ class TestGenerateScheduleView(APIView):
 
 
 class ObservationCycleListView(APIView):
-    """
-    GET /observation/schedule/cycles/?branch_id=X
-
-    Lists all generated cycles for the branch, newest first.
-    """
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        parameters=[OpenApiParameter("branch_id", int, description="Branch ID")],
+        responses={200: dict},
+        examples=[
+            OpenApiExample("Response", value=[
+                {"id": 1, "branch_id": 1, "start_date": "2026-04-21", "created_at": "2026-04-21T08:00:00Z",
+                 "total_schedules": 40, "completed": 12},
+                {"id": 2, "branch_id": 1, "start_date": "2026-01-06", "created_at": "2026-01-06T08:00:00Z",
+                 "total_schedules": 38, "completed": 38},
+            ], response_only=True),
+        ],
+        summary="List all observation cycles for a branch",
+        tags=["observation-schedule"],
+    )
     def get(self, request):
         branch_id = request.query_params.get("branch_id")
         if not branch_id:
@@ -324,14 +393,33 @@ class ObservationCycleListView(APIView):
 # ---------------------------------------------------------------------------
 
 class BranchScheduleView(APIView):
-    """
-    GET /observation/schedule/branch/?branch_id=X[&week=N&cycle_id=X]
-
-    Returns every observer's assignments for the requested week (defaults to
-    the current week). Useful for admin/management overview.
-    """
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("branch_id", int, description="Branch ID"),
+            OpenApiParameter("week", int, description="Week number (default: current week)"),
+            OpenApiParameter("cycle_id", int, description="Cycle ID (optional, defaults to latest)"),
+        ],
+        responses={200: dict},
+        examples=[
+            OpenApiExample("Response", value={
+                "cycle_id": 1, "start_date": "2026-04-21", "current_week": 2, "week": 2,
+                "week_start": "2026-04-28",
+                "observers": [
+                    {"observer": {"id": 3, "name": "Ali", "surname": "Valiev"},
+                     "assignments": [
+                         {"id": 5, "week": 2, "is_completed": False,
+                          "observer": {"id": 3, "name": "Ali", "surname": "Valiev"},
+                          "observed_teacher": {"id": 7, "name": "Jasur", "surname": "Toshev"},
+                          "time_table": {"id": 12, "name": "Matematika 9A"}, "observation_day_id": None},
+                     ]},
+                ]
+            }, response_only=True),
+        ],
+        summary="Branch-wide schedule — all observers for a week",
+        tags=["observation-schedule"],
+    )
     def get(self, request):
         branch_id = request.query_params.get("branch_id")
         if not branch_id:
