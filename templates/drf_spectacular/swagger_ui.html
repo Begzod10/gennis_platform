@@ -167,8 +167,6 @@
 </script>
 <script>
 (function () {
-  const schemaUrl = "{{ schema_url|escapejs }}";
-
   function buildSidebar(tags) {
     const list = document.getElementById('tag-list');
     if (!tags || tags.length === 0) {
@@ -177,17 +175,16 @@
     }
 
     list.innerHTML = tags.map(tag => `
-      <a class="tag-item" href="#" data-tag="${tag.name}">
+      <a class="tag-item" href="#" data-tag="${tag}">
         <span class="tag-dot"></span>
-        <span>${tag.name}</span>
+        <span>${tag}</span>
       </a>
     `).join('');
 
     list.querySelectorAll('.tag-item').forEach(item => {
       item.addEventListener('click', function (e) {
         e.preventDefault();
-        const tagName = this.dataset.tag;
-        scrollToTag(tagName);
+        scrollToTag(this.dataset.tag);
         list.querySelectorAll('.tag-item').forEach(i => i.classList.remove('active'));
         this.classList.add('active');
       });
@@ -195,54 +192,75 @@
   }
 
   function scrollToTag(tagName) {
-    // Swagger UI renders tag sections with an id like "operations-tag-<TagName>"
-    // Also try the section heading text
     const main = document.getElementById('main');
-    const headings = main.querySelectorAll('.opblock-tag-section h3, .opblock-tag');
+    // Swagger UI renders <span data-tag="TagName"> inside the section header
+    const tagEl = main.querySelector(`[data-tag="${tagName}"]`);
+    if (tagEl) {
+      tagEl.closest('.opblock-tag-section, section')
+        ? tagEl.closest('.opblock-tag-section, section').scrollIntoView({ behavior: 'smooth', block: 'start' })
+        : tagEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    // fallback: match visible heading text
+    const headings = main.querySelectorAll('.opblock-tag');
     for (const el of headings) {
-      if (el.textContent.trim().toLowerCase() === tagName.toLowerCase()) {
+      if (el.textContent.trim().toLowerCase().startsWith(tagName.toLowerCase())) {
         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
     }
-    // fallback: find by data-tag or id
-    const section = main.querySelector(`[data-tag="${tagName}"], #operations-tag-${tagName}`);
-    if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function filterTags(query) {
     document.querySelectorAll('.tag-item').forEach(item => {
-      const name = item.dataset.tag.toLowerCase();
-      item.style.display = name.includes(query.toLowerCase()) ? '' : 'none';
+      item.style.display = item.dataset.tag.toLowerCase().includes(query.toLowerCase()) ? '' : 'none';
     });
   }
 
-  // Fetch schema and build sidebar
-  fetch(schemaUrl)
-    .then(r => r.json())
-    .then(schema => {
-      const tags = schema.tags || [];
-      // If no top-level tags, derive from paths
-      if (tags.length === 0) {
-        const tagSet = new Set();
-        Object.values(schema.paths || {}).forEach(methods => {
-          Object.values(methods).forEach(op => {
-            (op.tags || []).forEach(t => tagSet.add(t));
-          });
-        });
-        tagSet.forEach(name => tags.push({ name }));
+  // Poll the Swagger UI redux store until the spec is loaded, then build sidebar
+  function tryBuildFromUI(attempts) {
+    attempts = attempts || 0;
+    if (attempts > 60) return; // give up after ~6s
+
+    try {
+      const state = ui.getState();
+      const json = state.getIn(['spec', 'json']);
+      if (!json) throw new Error('not ready');
+
+      const tagSet = new Set();
+
+      // Prefer top-level tags array
+      const topTags = json.get ? json.get('tags') : json.tags;
+      if (topTags && topTags.size > 0) {
+        topTags.forEach(t => tagSet.add(t.get ? t.get('name') : t.name));
       }
-      tags.sort((a, b) => a.name.localeCompare(b.name));
+
+      // Derive from paths as fallback
+      if (tagSet.size === 0) {
+        const paths = json.get ? json.get('paths') : json.paths;
+        if (paths) {
+          const pathsObj = paths.toJS ? paths.toJS() : paths;
+          Object.values(pathsObj).forEach(methods => {
+            Object.values(methods).forEach(op => {
+              if (op && op.tags) op.tags.forEach(t => tagSet.add(t));
+            });
+          });
+        }
+      }
+
+      const tags = Array.from(tagSet).sort((a, b) => a.localeCompare(b));
       buildSidebar(tags);
-    })
-    .catch(() => {
-      document.getElementById('tag-list').innerHTML =
-        '<div style="padding:12px 16px;font-size:12px;color:#f93e3e;">Failed to load schema</div>';
-    });
+    } catch (_) {
+      setTimeout(() => tryBuildFromUI(attempts + 1), 100);
+    }
+  }
 
   document.getElementById('search-input').addEventListener('input', function () {
     filterTags(this.value);
   });
+
+  // Start polling after SwaggerUIBundle initialises
+  setTimeout(() => tryBuildFromUI(0), 300);
 })();
 </script>
 </body>
