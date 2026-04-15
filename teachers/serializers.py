@@ -161,37 +161,70 @@ class TeacherSerializerRead(serializers.ModelSerializer):
     user = UserSerializerRead(read_only=True)
     subject = SubjectSerializer(many=True)
     teacher_salary_type = TeacherSalaryTypeSerializerRead(read_only=True)
-    group = GroupSerializerTeachers(many=True, source='group_set')
-    calculate = serializers.SerializerMethodField(read_only=True, required=False, allow_null=True)
-    status = serializers.SerializerMethodField()
+
+    group = serializers.SerializerMethodField()
     flow = serializers.SerializerMethodField()
+
+    calculate = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+
     face_id = serializers.CharField(source='user.face_id', read_only=True)
 
     class Meta:
         model = Teacher
         fields = "__all__"
 
-    def get_calculate(self, obj):
-        from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
-        teacher = Teacher.objects.get(user=obj.user)
-        if teacher:
-            if teacher.user.branch.location.system.name == 'school':
-                calculate_teacher_salary(obj)
+    def _get_week_range(self):
+        from datetime import date, timedelta
 
-    def get_status(self, obj):
-        flows = Flow.objects.filter(teacher=obj).exists()
-        group = Group.objects.filter(teacher=obj).exists()
-        if flows or group:
-            return False
-        else:
-            return True
+        today = date.today()
+        start_week = today - timedelta(days=today.weekday())
+        end_week = start_week + timedelta(days=6)
+        return start_week, end_week
+
+    def _get_timetable(self, obj):
+        from school_time_table.models import ClassTimeTable
+
+        start_week, end_week = self._get_week_range()
+
+        return ClassTimeTable.objects.filter(
+            teacher=obj,
+            date__range=[start_week, end_week]
+        ).select_related('group', 'flow')
+
+    def get_group(self, obj):
+        timetables = self._get_timetable(obj)
+
+        groups = {t.group for t in timetables if t.group}
+
+        if not groups:
+            return None
+
+        return GroupSerializerTeachers(groups, many=True).data
 
     def get_flow(self, obj):
-        flows = Flow.objects.filter(teacher=obj).all()
         from flows.serializers import FlowForTeacherProfile
-        if not flows.exists():
+
+        timetables = self._get_timetable(obj)
+
+        flows = {t.flow for t in timetables if t.flow}
+
+        if not flows:
             return None
+
         return FlowForTeacherProfile(flows, many=True).data
+
+    def get_calculate(self, obj):
+        from .functions.school.CalculateTeacherSalary import calculate_teacher_salary
+
+        if obj.user.branch.location.system.name == 'school':
+            return calculate_teacher_salary(obj)
+
+        return None
+
+    def get_status(self, obj):
+        timetables = self._get_timetable(obj)
+        return not timetables.exists()
 
 
 class TeacherSalaryReadSerializers(serializers.ModelSerializer):
