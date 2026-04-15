@@ -6,7 +6,8 @@ from .api.get import ObservationDayRetrieveAPIView, ObservationDayListView, Obse
     ObservationStatisticsListView, TeacherObserveView, ObservedGroupAPIView, ObservedGroupInfoAPIView, \
     ObservedGroupClassroomAPIView, ObservedGroupInfoClassroomAPIView
 from .api.createdeleteupdate import ObservationDayCreateView, ObservationDayUpdateView, ObservationDayDestroyView, \
-    ObservationStatisticsCreateView, ObservationStatisticsUpdateView, ObservationStatisticsDestroyView
+    ObservationStatisticsCreateView, ObservationStatisticsUpdateView, ObservationStatisticsDestroyView, \
+    TeacherObservationDayDestroyView
 from .api.teacher_schedule import (
     GenerateObservationScheduleView,
     ScheduleTaskStatusView,
@@ -31,6 +32,7 @@ urlpatterns = [
     path('observation_day_create/', ObservationDayCreateView.as_view(), name='observation-day-create'),
     path('observation_day_update/<int:pk>/', ObservationDayUpdateView.as_view(), name='observation-day-update'),
     path('observation_day_delete/<int:pk>/', ObservationDayDestroyView.as_view(), name='observation-day-delete'),
+    path('teacher_observation_day_delete/<int:pk>/', TeacherObservationDayDestroyView.as_view(), name='teacher-observation-day-delete'),
     path('observation_day/<int:pk>/', ObservationDayRetrieveAPIView.as_view(), name='observation-day'),
     path('observation_day_list/', ObservationDayListView.as_view(), name='observation-day-list'),
     path('observation_info/', ObservationInfoList.as_view(), name='observation-info-list'),

@@ -236,6 +236,7 @@ class ObservedGroupInfoAPIView(APIView):
                 observation_list.append(info)
 
         return Response({
+            "observation_id": teacher_observation_day.id if teacher_observation_day else None,
             "info": observation_list,
             "observation_options": list(ObservationOptions.objects.all().values("id", "name", "value")),
             "average": average,
@@ -260,7 +261,10 @@ class ObservedGroupInfoAPIView(APIView):
             date=date, time_table_id=group_id
         ).select_related("user").first()
 
+        observation_id = None
+
         if teacher_observation_day:
+            observation_id = teacher_observation_day.id
             average = teacher_observation_day.average
             observer["name"] = teacher_observation_day.user.first_name if teacher_observation_day.user else ""
             observer["surname"] = teacher_observation_day.user.last_name if teacher_observation_day.user else ""
@@ -299,6 +303,7 @@ class ObservedGroupInfoAPIView(APIView):
                 observation_list.append(info)
 
         return Response({
+            "observation_id": observation_id,
             "info": observation_list,
             "observation_options": list(ObservationOptions.objects.all().values("id", "name", "value")),
             "average": average,
