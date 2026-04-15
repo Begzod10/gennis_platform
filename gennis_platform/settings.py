@@ -232,24 +232,13 @@ CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "http://127.0.0.1:8000", "https
 REST_FRAMEWORK['DEFAULT_SCHEMA_CLASS'] = 'drf_spectacular.openapi.AutoSchema'
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Party System API',
-    'DESCRIPTION': (
-        'Maktab partiya tizimi uchun REST API.\n\n'
-        'Partiyalar, topshiriqlar, reyting va musobaqalarni boshqarish.'
-    ),
+    'TITLE': 'Turon Platform API',
+    'DESCRIPTION': 'Turon platformasi uchun to\'liq REST API.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'CONTACT': {'name': 'Backend Team'},
     'LICENSE': {'name': 'MIT'},
-    'TAGS': [
-        {'name': 'parties', 'description': "Partiyalarni boshqarish"},
-        {'name': 'members', 'description': "Partiya a'zolari"},
-        {'name': 'party-tasks', 'description': 'Topshiriqlar va baholash'},
-        {'name': 'competitions', 'description': 'Musobaqa turlari'},
-        {'name': 'competition-results', 'description': 'Musobaqa natijalari va chorak reytingi'},
-    ],
     'COMPONENT_SPLIT_REQUEST': True,
-    "DISABLE_ERRORS_AND_WARNINGS": True,
-
+    'DISABLE_ERRORS_AND_WARNINGS': True,
     'SORT_OPERATIONS': False,
 }

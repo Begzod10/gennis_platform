@@ -7,6 +7,16 @@ from .api.get import ObservationDayRetrieveAPIView, ObservationDayListView, Obse
     ObservedGroupClassroomAPIView, ObservedGroupInfoClassroomAPIView
 from .api.createdeleteupdate import ObservationDayCreateView, ObservationDayUpdateView, ObservationDayDestroyView, \
     ObservationStatisticsCreateView, ObservationStatisticsUpdateView, ObservationStatisticsDestroyView
+from .api.teacher_schedule import (
+    GenerateObservationScheduleView,
+    ScheduleTaskStatusView,
+    CurrentWeekScheduleView,
+    TeacherScheduleListView,
+    CompleteObservationScheduleView,
+    ObservationCycleListView,
+    BranchScheduleView,
+    TestGenerateScheduleView,
+)
 
 urlpatterns = [
     path('observation_statistics_create/', ObservationStatisticsCreateView.as_view(),
@@ -33,9 +43,20 @@ urlpatterns = [
     path('observed_group/<int:group_id>/', ObservedGroupAPIView.as_view(), name='observed_group_current'),
     path('observed_group/<int:group_id>/<str:date>/', ObservedGroupAPIView.as_view(), name='observed_group_by_date'),
     path('observed_group_info/<int:group_id>/', ObservedGroupInfoAPIView.as_view(), name='observed_group_info'),
+    path('observed_group_info/<int:group_id>/<int:observation_id>/', ObservedGroupInfoAPIView.as_view(), name='observed_group_info_by_id'),
+
     path("observed_group_classroom/<int:group_id>/", ObservedGroupClassroomAPIView.as_view()),
     path("observed_group_classroom/<int:group_id>/<str:date>/", ObservedGroupClassroomAPIView.as_view()),
     path('observed_group_info_classroom/<int:time_table_id>/', ObservedGroupInfoClassroomAPIView.as_view(),
          name='observed_group_info_classroom'),
 
+    # Teacher-to-teacher observation schedule
+    path('schedule/generate/', GenerateObservationScheduleView.as_view(), name='schedule-generate'),
+    path('schedule/test_generate/', TestGenerateScheduleView.as_view(), name='schedule-test-generate'),
+    path('schedule/task/<str:task_id>/', ScheduleTaskStatusView.as_view(), name='schedule-task-status'),
+    path('schedule/cycles/', ObservationCycleListView.as_view(), name='schedule-cycles'),
+    path('schedule/branch/', BranchScheduleView.as_view(), name='schedule-branch'),
+    path('schedule/current_week/', CurrentWeekScheduleView.as_view(), name='schedule-current-week'),
+    path('schedule/', TeacherScheduleListView.as_view(), name='schedule-list'),
+    path('schedule/<int:pk>/complete/', CompleteObservationScheduleView.as_view(), name='schedule-complete'),
 ]

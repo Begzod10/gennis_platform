@@ -61,3 +61,30 @@ class TeacherObservation(models.Model):
     observation_options = models.ForeignKey(ObservationOptions, on_delete=models.CASCADE)
     comment = models.TextField(null=True, blank=True)
     observation_day = models.ForeignKey(TeacherObservationDay, on_delete=models.CASCADE)
+
+
+class TeacherObservationCycle(models.Model):
+    """Tracks one full observation cycle for a branch (all teachers observe all others)."""
+    branch = models.ForeignKey('branch.Branch', on_delete=models.CASCADE, related_name='observation_cycles')
+    start_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class TeacherObservationSchedule(models.Model):
+    """One entry = one teacher (observer) must observe one other teacher (observed) in a given week."""
+    cycle = models.ForeignKey(TeacherObservationCycle, on_delete=models.CASCADE, related_name='schedules')
+    observer = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='outgoing_schedules')
+    observed_teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='incoming_schedules')
+    week = models.PositiveIntegerField()
+    time_table = models.ForeignKey(ClassTimeTable, on_delete=models.SET_NULL, null=True, blank=True)
+    is_completed = models.BooleanField(default=False)
+    observation_day = models.ForeignKey(
+        TeacherObservationDay, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    class Meta:
+        ordering = ['observer', 'week', 'id']
+        unique_together = ['cycle', 'observer', 'observed_teacher']

@@ -147,4 +147,18 @@ def update_school_time_table_task():
     print(f"✅ Created lessons: {created_count}")
     print(f"⏭️ Skipped duplicates: {skipped_count}")
 
+    # Trigger observation schedule generation for every branch that had new lessons
+    if created_count > 0:
+        from observation.tasks import generate_observation_schedules_for_branches
+
+        next_monday = monday + timedelta(days=7)
+        branch_ids = list(
+            source_lessons.values_list("branch_id", flat=True).distinct()
+        )
+        generate_observation_schedules_for_branches.delay(
+            branch_ids=branch_ids,
+            next_monday_str=next_monday.isoformat(),
+        )
+        print(f"📅 Observation schedule tasks queued for branches: {branch_ids}")
+
     return f"{created_count} created, {skipped_count} skipped (cloned for next 6 days with monthly counts)"
