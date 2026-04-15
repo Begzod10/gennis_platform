@@ -18,7 +18,7 @@ from lesson_plan.models import LessonPlan, LessonPlanStudents
 from lesson_plan.serializers import LessonPlanGetSerializer, LessonPlanSerializer
 from mobile.models import TeacherDashboard
 from mobile.teachers.serializers import TeacherDashboardSerializer, TeacherLessonPlanGetSerializer
-from school_time_table.models import ClassTimeTable
+from school_time_table.models import ClassTimeTable, Hours
 from teachers.models import Teacher, TeacherSalary
 
 
@@ -670,3 +670,161 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
             })
 
         return Response(data)
+
+
+class TeacherTimeTableView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        which_week = request.query_params.get('which_week', 'current')
+
+        try:
+            teacher = Teacher.objects.select_related('user').prefetch_related('branches').get(user=request.user)
+        except Teacher.DoesNotExist:
+            return Response(
+                {'error': 'Siz teacher emassiz'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        branch_ids = list(teacher.branches.values_list('id', flat=True))
+
+        if not branch_ids:
+            return Response(
+                {'error': 'Sizning profilingizda branch topilmadi'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        today = localdate()
+        start_of_week = today - timedelta(days=today.weekday())
+
+        if which_week == 'prev':
+            start_of_week -= timedelta(days=7)
+        elif which_week == 'next':
+            start_of_week += timedelta(days=7)
+
+        end_of_week = start_of_week + timedelta(days=6)
+
+        hours_qs = Hours.objects.filter(branch_id__in=branch_ids).order_by('order')
+        hours_map = {
+            h.id: {
+                'id': h.id,
+                'name': h.name,
+                'start_time': h.start_time.strftime('%H:%M'),
+                'end_time': h.end_time.strftime('%H:%M'),
+                'order': h.order,
+            }
+            for h in hours_qs
+        }
+
+        lessons = (
+            ClassTimeTable.objects
+            .filter(
+                branch_id__in=branch_ids,
+                teacher=teacher,
+                date__gte=start_of_week,
+                date__lte=end_of_week,
+            )
+            .select_related(
+                'hours', 'room', 'subject', 'teacher__user',
+                'group__class_number', 'group__color', 'flow',
+                'branch'
+            )
+            .order_by('date', 'hours__order')
+        )
+
+        week_days_names = [
+            'Dushanba', 'Seshanba', 'Chorshanba',
+            'Payshanba', 'Juma', 'Shanba', 'Yakshanba'
+        ]
+
+        days_data = {}
+        for i in range(7):
+            day_date = start_of_week + timedelta(days=i)
+            date_str = day_date.strftime('%Y-%m-%d')
+            days_data[date_str] = {
+                'date': date_str,
+                'weekday': week_days_names[day_date.weekday()],
+                'lessons': []
+            }
+
+        for lesson in lessons:
+            date_str = lesson.date.strftime('%Y-%m-%d')
+            if date_str not in days_data:
+                continue
+
+            hour_info = hours_map.get(lesson.hours_id, {})
+
+            if lesson.flow:
+                group_info = {
+                    'id': lesson.flow.id,
+                    'name': lesson.flow.name,
+                    'type': 'flow',
+                    'classes': lesson.flow.classes,
+                }
+            elif lesson.group:
+                group_name = lesson.group.name
+                if lesson.group.class_number and lesson.group.color:
+                    group_name = f"{lesson.group.class_number.number}-{lesson.group.color.name}"
+                group_info = {
+                    'id': lesson.group.id,
+                    'name': group_name,
+                    'type': 'group',
+                }
+            else:
+                group_info = None
+
+            lesson_data = {
+                'id': lesson.id,
+                'time': f"{hour_info.get('start_time', '')} - {hour_info.get('end_time', '')}",
+                'hour': hour_info,
+                'subject': {
+                    'id': lesson.subject.id,
+                    'name': lesson.subject.name,
+                } if lesson.subject else None,
+                'room': {
+                    'id': lesson.room.id,
+                    'name': lesson.room.name,
+                } if lesson.room else None,
+                'group': group_info,
+                'branch': {
+                    'id': lesson.branch.id,
+                    'name': lesson.branch.name,
+                } if lesson.branch else None,
+                'is_flow': bool(lesson.flow),
+                'students_count': lesson.students.count(),
+            }
+
+            days_data[date_str]['lessons'].append(lesson_data)
+
+        schedule = list(days_data.values())
+
+        total_lessons = sum(len(d['lessons']) for d in schedule)
+        active_days = sum(1 for d in schedule if d['lessons'])
+
+        teacher_info = {
+            'id': teacher.id,
+            'name': teacher.user.name,
+            'surname': teacher.user.surname,
+        }
+
+        branches_info = [
+            {'id': b.id, 'name': b.name}
+            for b in teacher.branches.all()
+        ]
+
+        return Response({
+            'teacher': teacher_info,
+            'branches': branches_info,
+            'week_range': {
+                'start': start_of_week.strftime('%Y-%m-%d'),
+                'end': end_of_week.strftime('%Y-%m-%d'),
+            },
+            'summary': {
+                'total_lessons': total_lessons,
+                'active_days': active_days,
+            },
+            'hours_list': list(hours_map.values()),
+            'schedule': schedule,
+        })
+
