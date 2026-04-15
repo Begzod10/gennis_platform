@@ -61,4 +61,4 @@ class TeacherObservationDayDestroyView(APIView):
         obj = get_object_or_404(TeacherObservationDay, pk=pk)
         TeacherObservation.objects.filter(observation_day=obj).delete()
         obj.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"success": True}, status=status.HTTP_200_OK)
