@@ -133,6 +133,11 @@ class TeacherObserveView(APIView):
             teacher_observation_day.average = avg
             teacher_observation_day.save()
 
+        from observation.api.get import _complete_schedule_entry
+        observer_teacher = Teacher.objects.filter(user=request.user, deleted=False).first()
+        if observer_teacher and group.teacher:
+            _complete_schedule_entry(observer_teacher, group.teacher, teacher_observation_day)
+
         return Response({"msg": "Teacher has been observed", "success": True})
 
     @extend_schema(

@@ -13,6 +13,37 @@ from teachers.models import Teacher
 from observation.models import TeacherObservationDay, TeacherObservation, ObservationInfo, ObservationOptions
 from django.utils.timezone import now
 from datetime import datetime
+
+
+def _complete_schedule_entry(observer_teacher, observed_teacher, observation_day):
+    """
+    Find the open TeacherObservationSchedule entry for this observer→observed_teacher
+    pair in the latest cycle and mark it completed, linking the observation_day.
+    """
+    from observation.models import TeacherObservationCycle, TeacherObservationSchedule
+
+    branch = observer_teacher.branches.first()
+    if not branch:
+        return
+
+    cycle = (
+        TeacherObservationCycle.objects
+        .filter(branch=branch)
+        .order_by('-created_at')
+        .first()
+    )
+    if not cycle:
+        return
+
+    entry = (
+        TeacherObservationSchedule.objects
+        .filter(cycle=cycle, observer=observer_teacher, observed_teacher=observed_teacher, is_completed=False)
+        .first()
+    )
+    if entry:
+        entry.is_completed = True
+        entry.observation_day = observation_day
+        entry.save(update_fields=['is_completed', 'observation_day'])
 class ObservationStatisticsRetrieveAPIView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -110,6 +141,10 @@ class TeacherObserveView(APIView):
             avg = round(result / observation_infos)
             teacher_observation_day.average = avg
             teacher_observation_day.save()
+
+        observer_teacher = Teacher.objects.filter(user=user, deleted=False).first()
+        if observer_teacher and group.teacher:
+            _complete_schedule_entry(observer_teacher, group.teacher, teacher_observation_day)
 
         return Response({"msg": "Teacher has been observed", "success": True})
 
