@@ -81,6 +81,6 @@ class TeacherLessonPlanGetSerializer(serializers.ModelSerializer):
             return obj.group.students.all()
 
         if obj.flow_id:
-            return obj.flow.student_set.all()
+            return obj.flow.students.all().distinct()
 
         return []
