@@ -8,6 +8,7 @@ from .api.get import ObservationDayRetrieveAPIView, ObservationDayListView, Obse
 from .api.createdeleteupdate import ObservationDayCreateView, ObservationDayUpdateView, ObservationDayDestroyView, \
     ObservationStatisticsCreateView, ObservationStatisticsUpdateView, ObservationStatisticsDestroyView, \
     TeacherObservationDayDestroyView
+from .api.statistics import TeacherStatsView
 from .api.teacher_schedule import (
     GenerateObservationScheduleView,
     ScheduleTaskStatusView,
@@ -61,4 +62,7 @@ urlpatterns = [
     path('schedule/current_week/', CurrentWeekScheduleView.as_view(), name='schedule-current-week'),
     path('schedule/', TeacherScheduleListView.as_view(), name='schedule-list'),
     path('schedule/<int:pk>/complete/', CompleteObservationScheduleView.as_view(), name='schedule-complete'),
+
+    # Statistics
+    path('teacher_stats/', TeacherStatsView.as_view(), name='teacher-stats'),
 ]
