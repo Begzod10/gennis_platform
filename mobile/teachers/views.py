@@ -639,16 +639,17 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
 
         friday = monday + timedelta(days=4)
 
-        group_ids = ClassTimeTable.objects.filter(
-            teacher=teacher
-        ).values_list("group_id", flat=True).distinct()
+        timetable = ClassTimeTable.objects.filter(teacher=teacher)
+
+        group_ids = timetable.values_list("group_id", flat=True).distinct()
+        flow_ids = timetable.values_list("flow_id", flat=True).distinct()
 
         return LessonPlan.objects.filter(
             teacher=teacher,
-            group_id__in=group_ids,
             date__range=[monday, friday]
-        ).select_related("group")
-
+        ).filter(
+            Q(group_id__in=group_ids) | Q(flow_id__in=flow_ids)
+        ).select_related("group", "flow")
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
