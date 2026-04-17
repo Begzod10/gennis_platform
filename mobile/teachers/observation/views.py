@@ -1,6 +1,7 @@
 from datetime import date
 from datetime import datetime
 
+from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
 from rest_framework import generics, status
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
@@ -44,6 +45,55 @@ class ObservationOptionsList(generics.ListAPIView):
 class TeacherObserveView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("group_id", int, location=OpenApiParameter.PATH, description="ClassTimeTable (group) ID"),
+        ],
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "day": {"type": "integer", "example": 15},
+                    "month": {"type": "integer", "example": 4},
+                    "year": {"type": "integer", "example": 2026},
+                    "list": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "integer", "description": "ObservationInfo ID", "example": 1},
+                                "value": {"type": "integer", "description": "ObservationOptions ID", "example": 3},
+                                "comment": {"type": "string", "example": "Yaxshi tushuntirildi"},
+                            },
+                        },
+                    },
+                },
+            }
+        },
+        responses={200: dict},
+        examples=[
+            OpenApiExample(
+                "Request body",
+                value={
+                    "day": 15,
+                    "month": 4,
+                    "year": 2026,
+                    "list": [
+                        {"id": 1, "value": 3, "comment": "Yaxshi tushuntirildi"},
+                        {"id": 2, "value": 5, "comment": ""},
+                    ],
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Response",
+                value={"msg": "Teacher has been observed", "success": True},
+                response_only=True,
+            ),
+        ],
+        summary="Submit observation for a teacher's class",
+        tags=["mobile-observation"],
+    )
     def post(self, request, group_id):
         user = request.user
         group = get_object_or_404(ClassTimeTable, id=group_id)
@@ -83,8 +133,33 @@ class TeacherObserveView(APIView):
             teacher_observation_day.average = avg
             teacher_observation_day.save()
 
+        from observation.api.get import _complete_schedule_entry
+        observer_teacher = Teacher.objects.filter(user=request.user, deleted=False).first()
+        if observer_teacher and group.teacher:
+            _complete_schedule_entry(observer_teacher, group.teacher, teacher_observation_day)
+
         return Response({"msg": "Teacher has been observed", "success": True})
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("group_id", int, location=OpenApiParameter.PATH, description="ClassTimeTable (group) ID"),
+        ],
+        responses={200: dict},
+        examples=[
+            OpenApiExample(
+                "Response",
+                value={
+                    "observation_tools": [
+                        {"id": 7, "date": "2026-04-15", "average": 82, "teacher": 4, "group": 12},
+                        {"id": 8, "date": "2026-04-10", "average": 75, "teacher": 4, "group": 12},
+                    ]
+                },
+                response_only=True,
+            )
+        ],
+        summary="List observations for a teacher's class",
+        tags=["mobile-observation"],
+    )
     def get(self, request, group_id):
         from observation.uitils import old_current_dates
 

@@ -78,7 +78,7 @@ def get_surveys_excluding_completed(user):
 
 class AdminSurveyListCreateView(generics.ListCreateAPIView):
 
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -97,8 +97,7 @@ class AdminSurveyListCreateView(generics.ListCreateAPIView):
 
 
 class AdminSurveyDetailView(generics.RetrieveUpdateDestroyAPIView):
-
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated]
     queryset = Survey.objects.all()
 
     def get_serializer_class(self):
@@ -106,10 +105,17 @@ class AdminSurveyDetailView(generics.RetrieveUpdateDestroyAPIView):
             return SurveyAdminUpdateSerializer
         return SurveyAdminDetailSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            {"detail": "success deleted"},
+            status=status.HTTP_200_OK
+        )
 
 class AdminSurveySubmissionsView(generics.ListAPIView):
 
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated]
     serializer_class = SurveySubmissionListSerializer
 
     def get_queryset(self):
@@ -128,14 +134,14 @@ class AdminSurveySubmissionsView(generics.ListAPIView):
 
 class AdminSubmissionDetailView(generics.RetrieveAPIView):
 
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated]
     queryset = SurveySubmission.objects.all()
     serializer_class = SurveySubmissionDetailSerializer
 
 
 class AdminSurveyStatisticsView(APIView):
 
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         try:

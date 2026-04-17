@@ -2,7 +2,12 @@ from django.urls import path, include
 
 from .views import TeacherGroupProfileView, TeacherProfileView, SalaryYearsView, TeacherSalaryView, TeacherClassesView, \
     StudentScoreView, TeacherTodayAttendance, TeacherDashboardView, TeacherGetLessonPlanView, \
-    TeacherChangeLessonPlanView
+    TeacherChangeLessonPlanView, TeacherTimeTableView
+from .lesson_plan_file_views import (
+    MobileLessonPlanFileUploadView,
+    MobileLessonPlanFileStatusView,
+    MobileLessonPlanFileListView,
+)
 
 app_name = 'teachers'
 urlpatterns = [
@@ -14,6 +19,7 @@ urlpatterns = [
     path('student-score/', StudentScoreView.as_view(), name='student-score'),
     path("teacher/today-attendance/", TeacherTodayAttendance.as_view(), name="teacher-today-attendance"),
     path("teacher/dashboard/", TeacherDashboardView.as_view(), name="teacher-dashboard"),
+    path("teacher/timetable/", TeacherTimeTableView.as_view(), name="teacher-timetable"),
 
     path("teacher/lesson-plan/", TeacherGetLessonPlanView.as_view()),
     path('teacher/change_lesson_plan/<int:pk>/', TeacherChangeLessonPlanView.as_view(), name='change_lesson_plan'),
@@ -24,4 +30,9 @@ urlpatterns = [
     # path('groups/', GroupListView.as_view(), name='teacher-profile'),
     path('missions/', include('mobile.teachers.missions.urls'), name='missions'),
     path('observation/', include('mobile.teachers.observation.urls'), name='observation'),
+
+    # Lesson plan file upload + AI review
+    path('lesson-plan/file/upload/', MobileLessonPlanFileUploadView.as_view(), name='mobile-lp-upload'),
+    path('lesson-plan/file/<int:pk>/', MobileLessonPlanFileStatusView.as_view(), name='mobile-lp-status'),
+    path('lesson-plan/file/', MobileLessonPlanFileListView.as_view(), name='mobile-lp-list'),
 ]

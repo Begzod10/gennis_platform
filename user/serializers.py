@@ -343,7 +343,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'username': user.username,
                 'father_name': user.father_name,
                 'password': password,
-                'balance': teacher_salary.remaining_salary if teacher_salary.remaining_salary else teacher_salary.total_salary,
+                'balance': (teacher_salary.remaining_salary if teacher_salary.remaining_salary else teacher_salary.total_salary) if teacher_salary else 0,
                 "teacher_id": teacher.id,
                 'role': 'teacher',
                 'birth_date': user.birth_date.isoformat() if user.birth_date else None,

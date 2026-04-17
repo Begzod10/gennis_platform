@@ -44,8 +44,39 @@ class UserDetailView(generics.RetrieveAPIView):
     serializer_class = UserSerializerRead
 
     def retrieve(self, request, *args, **kwargs):
+        from teachers.models import Teacher
+
         user = self.get_object()
         user_data = self.get_serializer(user).data
+
+        teacher = Teacher.objects.filter(user=user, deleted=False).select_related(
+            'teacher_salary_type', 'class_type'
+        ).prefetch_related('subject', 'branches').first()
+
+        if teacher and teacher.subject.exists():
+            user_data['role'] = 'teacher'
+            user_data['teacher'] = {
+                'id': teacher.id,
+                'subjects': [{'id': s.id, 'name': s.name} for s in teacher.subject.all()],
+                'branches': [{'id': b.id, 'name': b.name} for b in teacher.branches.all()],
+                'color': teacher.color,
+                'salary_percentage': teacher.salary_percentage,
+                'working_hours': teacher.working_hours,
+                'class_salary': teacher.class_salary,
+                'teacher_salary_type': {
+                    'id': teacher.teacher_salary_type.id,
+                    'name': teacher.teacher_salary_type.name,
+                    'salary': teacher.teacher_salary_type.salary,
+                } if teacher.teacher_salary_type else None,
+                'class_type': {
+                    'id': teacher.class_type.id,
+                    'name': teacher.class_type.name,
+                } if teacher.class_type else None,
+            }
+        else:
+            user_data['role'] = None
+            user_data['teacher'] = None
+
         return Response(user_data)
 
 

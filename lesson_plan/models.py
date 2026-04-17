@@ -24,3 +24,25 @@ class LessonPlanStudents(models.Model):
     lesson_plan = models.ForeignKey(LessonPlan, on_delete=models.CASCADE)
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     comment = models.TextField()
+
+
+class LessonPlanFile(models.Model):
+    class Status(models.TextChoices):
+        PENDING   = 'pending',   'Kutilmoqda'
+        CHECKING  = 'checking',  'Tekshirilmoqda'
+        DONE      = 'done',      'Baholandi'
+        FAILED    = 'failed',    'Xatolik'
+
+    teacher   = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='lesson_plan_files')
+    term      = models.ForeignKey('terms.Term', on_delete=models.CASCADE, related_name='lesson_plan_files')
+    file      = models.FileField(upload_to='lesson_plan_files/%Y/%m/')
+    status    = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    score     = models.PositiveSmallIntegerField(null=True, blank=True)   # 0-100
+    rating    = models.PositiveSmallIntegerField(null=True, blank=True)  # 0-5 manual rating
+    feedback  = models.TextField(null=True, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-uploaded_at']
+        unique_together = ['teacher', 'term']
