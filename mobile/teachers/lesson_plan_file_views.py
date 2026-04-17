@@ -125,6 +125,7 @@ class MobileLessonPlanFileStatusView(APIView):
                     "file": "/media/lesson_plan_files/2026/04/plan.pdf",
                     "status": "done",
                     "score": 82,
+                    "rating": 4,
                     "feedback": "Dars rejasi yaxshi tuzilgan. Maqsad va vazifalar aniq ko'rsatilgan. Baholash mezonlari to'liq emas.",
                     "uploaded_at": "2026-04-15T10:00:00Z",
                     "reviewed_at": "2026-04-15T10:02:31Z"
@@ -207,6 +208,7 @@ def _serialize(lp_file: LessonPlanFile) -> dict:
         "file": lp_file.file.url if lp_file.file else None,
         "status": lp_file.status,
         "score": lp_file.score,
+        "rating": lp_file.rating,
         "feedback": lp_file.feedback,
         "uploaded_at": lp_file.uploaded_at,
         "reviewed_at": lp_file.reviewed_at,
