@@ -17,7 +17,7 @@ class Lead(models.Model):
     # surname = models.CharField(max_length=250, null=True)
     created = models.DateField(auto_now_add=True, null=True)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
-    grade =models.CharField(max_length=250, null=True)
+    # grade = models.CharField(max_length=250, null=True)
     # type = models.CharField(max_length=250, null=True)
     deleted = models.BooleanField(default=False)
     # block_id = models.ForeignKey(LeadBlock, on_delete=models.SET_NULL, null=True)

@@ -14,7 +14,6 @@ classroom_server = os.getenv('CLASSROOM_SERVER')
 gennis_server = os.getenv('GENNIS_SERVER')
 BASE_URL = os.getenv('BASE_URL', 'http://localhost:8000')
 
-
 DEBUG = os.getenv('DEBUG', True)
 
 # ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
@@ -62,6 +61,7 @@ INSTALLED_APPS = [
     'encashment.apps.EncashmentConfig',
     "mobile.apps.MobileConfig",
     'django_filters',
+    'channels',
     'ui',
     'terms',
     'parents',
@@ -105,7 +105,7 @@ TEMPLATES = [
         },
     },
 ]
-
+ASGI_APPLICATION = 'your_project.asgi.application'
 WSGI_APPLICATION = 'gennis_platform.wsgi.application'
 
 DATABASES = {
@@ -157,6 +157,11 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT', "Bearer"),
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
+}
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
 }
 
 CELERY_BEAT_SCHEDULE = {

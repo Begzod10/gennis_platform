@@ -2,9 +2,9 @@ import os
 import requests
 from django.core.files.base import ContentFile
 
-VATS_DOMAIN = "https://gennis-campus.sip.uz/crmapi/v1"
-VATS_API_KEY = "6976dcaa-ddb8-4417-8192-ff22ba596d45"
-VATS_CRM_TOKEN = "123"
+VATS_DOMAIN = "gennis-campus.sip.uz"
+VATS_API_KEY = "0db01bec-a886-4dd5-91d7-23e5394cdee4"
+VATS_CRM_TOKEN = "aa111"
 
 
 def save_audio(call):

@@ -211,8 +211,37 @@ class CallLog(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True)
+
     class Meta:
         ordering = ['-created_at']
 
     def __str__(self):
         return f"{self.category} | {self.status} | {self.called_at.strftime('%d.%m.%Y %H:%M')}"
+
+
+class CallStatistic(models.Model):
+    CATEGORY_CHOICES = (
+        ('debtor', 'Debtor'),
+        ('lead', 'Lead'),
+        ('new_student', 'New Student'),
+    )
+
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    date = models.DateField()  # bugungi sana
+
+    total = models.PositiveIntegerField(default=0)
+    called = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('branch', 'category', 'date')
+
+    @property
+    def percentage(self):
+        if self.total == 0:
+            return 0
+        return round((self.called / self.total) * 100, 1)
+
+    def __str__(self):
+        return f"{self.branch} | {self.category} | {self.date} | {self.called}/{self.total}"

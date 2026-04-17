@@ -5,19 +5,27 @@ from django.db.models import Count, Sum, Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from attendances.models import AttendancePerMonth
-from students.models import Student, CallLog
+from students.models import Student, CallLog, DeletedStudent
 from user.models import CustomAutoGroup
 
 
 class DebtorsAPIView(APIView):
     def get(self, request):
         today = now().date()
-        branch_id = request.query_params.get('branch_id')
+        branch_id = request.query_params.get('branch')
 
         base_qs = AttendancePerMonth.objects.filter(
             month_date__lte=today,
             status=False
-        )
+        ).annotate(
+            is_deleted=Exists(
+                DeletedStudent.objects.filter(
+                    student_id=OuterRef('student_id'),
+                    deleted=True
+                )
+            )
+        ).filter(is_deleted=False)
+
         if branch_id:
             base_qs = base_qs.filter(student__user__branch_id=branch_id)
 
@@ -41,6 +49,7 @@ class DebtorsAPIView(APIView):
                 last_next_call_date=Subquery(last_call.values('next_call_date')[:1]),
             )
         )
+        print(debts.count())
 
         result = []
         for item in debts:
