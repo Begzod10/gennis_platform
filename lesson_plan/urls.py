@@ -6,6 +6,7 @@ from lesson_plan.Api.lesson_plan_file import (
     LessonPlanFileUploadView,
     LessonPlanFileDetailView,
     LessonPlanFileListView,
+    LessonPlanFileRateView,
 )
 
 urlpatterns = [
@@ -18,5 +19,6 @@ urlpatterns = [
     # Lesson plan file upload + AI review
     path('file/upload/', LessonPlanFileUploadView.as_view(), name='lesson-plan-file-upload'),
     path('file/<int:pk>/', LessonPlanFileDetailView.as_view(), name='lesson-plan-file-detail'),
+    path('file/<int:pk>/rate/', LessonPlanFileRateView.as_view(), name='lesson-plan-file-rate'),
     path('file/', LessonPlanFileListView.as_view(), name='lesson-plan-file-list'),
 ]

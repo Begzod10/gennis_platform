@@ -38,6 +38,7 @@ class LessonPlanFile(models.Model):
     file      = models.FileField(upload_to='lesson_plan_files/%Y/%m/')
     status    = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
     score     = models.PositiveSmallIntegerField(null=True, blank=True)   # 0-100
+    rating    = models.PositiveSmallIntegerField(null=True, blank=True)  # 0-5 manual rating
     feedback  = models.TextField(null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)

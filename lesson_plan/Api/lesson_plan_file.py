@@ -135,6 +135,42 @@ class LessonPlanFileListView(APIView):
         return Response([_serialize(f) for f in qs])
 
 
+class LessonPlanFileRateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        request={"application/json": {"type": "object", "properties": {
+            "rating": {"type": "integer", "minimum": 0, "maximum": 5},
+        }, "required": ["rating"]}},
+        responses={200: dict},
+        examples=[
+            OpenApiExample("Request", value={"rating": 4}, request_only=True),
+            OpenApiExample("Response", value={"id": 3, "rating": 4, "detail": "Rating saved."}, response_only=True),
+        ],
+        summary="Set manual rating (0–5) for a lesson plan file",
+        tags=["lesson-plan-file"],
+    )
+    def patch(self, request, pk):
+        lp_file = get_object_or_404(LessonPlanFile, pk=pk)
+        rating = request.data.get("rating")
+
+        if rating is None:
+            return Response({"detail": "rating is required."}, status=400)
+
+        try:
+            rating = int(rating)
+        except (TypeError, ValueError):
+            return Response({"detail": "rating must be an integer."}, status=400)
+
+        if not (0 <= rating <= 5):
+            return Response({"detail": "rating must be between 0 and 5."}, status=400)
+
+        lp_file.rating = rating
+        lp_file.save(update_fields=["rating"])
+
+        return Response({"id": lp_file.id, "rating": lp_file.rating, "detail": "Rating saved."})
+
+
 def _serialize(lp_file: LessonPlanFile) -> dict:
     return {
         "id": lp_file.id,
@@ -151,6 +187,7 @@ def _serialize(lp_file: LessonPlanFile) -> dict:
         "file": lp_file.file.url if lp_file.file else None,
         "status": lp_file.status,
         "score": lp_file.score,
+        "rating": lp_file.rating,
         "feedback": lp_file.feedback,
         "uploaded_at": lp_file.uploaded_at,
         "reviewed_at": lp_file.reviewed_at,
