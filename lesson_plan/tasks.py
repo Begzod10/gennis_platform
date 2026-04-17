@@ -30,6 +30,7 @@ def create_lesson_plans():
 
         LessonPlan.objects.get_or_create(
             group_id=timetable.group_id,
+            flow_id=timetable.flow_id,
             teacher_id=timetable.teacher_id,
             date=timetable.date
         )
