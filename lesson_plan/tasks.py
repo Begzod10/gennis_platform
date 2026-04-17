@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 @shared_task
 def create_lesson_plans():
     now = datetime.now()
-    start_date = now.date()-timedelta(days=3)
+    start_date = now.date()
     end_date = start_date + timedelta(days=4)
 
     timetable_qs = (

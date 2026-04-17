@@ -665,7 +665,7 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
         for lesson_plan in queryset:
             status_flag = current_date < lesson_plan.date
             data.append({
-                "group": lesson_plan.group.name,
+                "group": lesson_plan.group.name or lesson_plan.flow.name,
                 "lesson_plan": TeacherLessonPlanGetSerializer(lesson_plan).data,
                 "status": status_flag
             })
