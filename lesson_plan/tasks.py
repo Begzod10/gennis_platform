@@ -15,17 +15,21 @@ logger = logging.getLogger(__name__)
 @shared_task
 def create_lesson_plans():
     now = datetime.now()
-    start_date = now.date()
-    end_date = start_date + timedelta(days=8)
+    start_date = now.date()-timedelta(days=3)
+    end_date = start_date + timedelta(days=4)
 
     timetable_qs = (
         ClassTimeTable.objects
         .filter(date__range=[start_date, end_date])
         .select_related("teacher")
+        .distinct("group_id", "flow_id", "teacher_id", "date")
     )
 
     for timetable in timetable_qs:
         if not timetable.teacher:
+            continue
+
+        if bool(timetable.group_id) == bool(timetable.flow_id):
             continue
 
         LessonPlan.objects.get_or_create(
