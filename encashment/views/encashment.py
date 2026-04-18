@@ -264,6 +264,9 @@ class GetSchoolStudents(APIView):
         total_remaining = 0
         total_donation = 0
         total_discount = 0
+        total_cash = 0
+        total_bank = 0
+        total_click = 0
 
         data = {
             'class': [],
@@ -390,6 +393,9 @@ class GetSchoolStudents(APIView):
             total_donation += donation
             total_discount += paid
             total_sum += payment
+            total_cash += cash
+            total_bank += bank
+            total_click += click
 
             classes[class_key]['students'].append({
                 'id': student.user.id,
@@ -446,6 +452,11 @@ class GetSchoolStudents(APIView):
         data['total_dis'] = total_donation
         data['total_discount'] = total_discount
         data['total_with_discount'] = total_debt - (total_discount + total_donation)
+        data['by_payment_type'] = [
+            {'payment_type': 'cash',  'total': total_cash},
+            {'payment_type': 'bank',  'total': total_bank},
+            {'payment_type': 'click', 'total': total_click},
+        ]
 
         return data
 
