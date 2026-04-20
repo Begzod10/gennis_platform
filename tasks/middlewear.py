@@ -1,7 +1,8 @@
+import time
 from django.utils.deprecation import MiddlewareMixin
 from django.utils import timezone
 from datetime import timedelta
-from tasks.models import Mission
+from tasks.models import Mission, ApiLog
 
 
 class RecurringTaskMiddleware(MiddlewareMixin):
@@ -56,3 +57,30 @@ class RecurringTaskMiddleware(MiddlewareMixin):
         old_task.save()
 
 
+
+class ApiLogMiddleware(MiddlewareMixin):
+    _SKIP = ("/static/", "/media/", "/admin/jsi18n/")
+
+    def process_request(self, request):
+        if not any(request.path.startswith(p) for p in self._SKIP):
+            request._api_log_start = time.monotonic()
+
+    def process_response(self, request, response):
+        start = getattr(request, "_api_log_start", None)
+        if start is None:
+            return response
+        elapsed_ms = round((time.monotonic() - start) * 1000, 2)
+        user_id = None
+        if hasattr(request, "user") and request.user and request.user.is_authenticated:
+            user_id = request.user.id
+        try:
+            ApiLog.objects.create(
+                method=request.method,
+                path=request.path,
+                status_code=response.status_code,
+                user_id=user_id,
+                response_time_ms=elapsed_ms,
+            )
+        except Exception:
+            pass
+        return response
