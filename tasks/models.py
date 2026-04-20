@@ -254,3 +254,16 @@ class Notification(models.Model):
     deadline = models.DateField(null=True, blank=True)  # NEW
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)  # qachon yuborilgan
+
+
+class ApiLog(models.Model):
+    method = models.CharField(max_length=10)
+    path = models.CharField(max_length=500, db_index=True)
+    status_code = models.IntegerField(null=True, blank=True)
+    user_id = models.BigIntegerField(null=True, blank=True, db_index=True)
+    response_time_ms = models.FloatField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = "api_log"
+
