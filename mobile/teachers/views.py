@@ -620,7 +620,7 @@ class TeacherChangeLessonPlanView(generics.UpdateAPIView):
 
 
 class TeacherGetLessonPlanView(generics.ListAPIView):
-    serializer_class = LessonPlanGetSerializer
+    serializer_class = TeacherLessonPlanGetSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -632,6 +632,7 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
         today = localdate()
         weekday = today.weekday()
 
+        # 🔹 hafta hisoblash
         if weekday >= 5:
             monday = today + timedelta(days=(7 - weekday))
         else:
@@ -639,15 +640,42 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
 
         friday = monday + timedelta(days=4)
 
-        group_ids = ClassTimeTable.objects.filter(
-            teacher=teacher
-        ).values_list("group_id", flat=True).distinct()
+        timetable = ClassTimeTable.objects.filter(teacher=teacher)
 
-        return LessonPlan.objects.filter(
-            teacher=teacher,
-            group_id__in=group_ids,
-            date__range=[monday, friday]
-        ).select_related("group")
+        group_ids = list(timetable.values_list("group_id", flat=True))
+        flow_ids = list(timetable.values_list("flow_id", flat=True))
+
+        query = Q()
+
+        if group_ids:
+            query |= Q(group_id__in=group_ids)
+
+        if flow_ids:
+            query |= Q(flow_id__in=flow_ids)
+
+        # 🔥 commentlarni oldindan olib kelamiz
+        comments_qs = LessonPlanStudents.objects.select_related(
+            "student__user"
+        )
+
+        return (
+            LessonPlan.objects
+            .filter(
+                teacher=teacher,
+                date__range=[monday, friday]
+            )
+            .filter(query)
+            .select_related("group", "flow")
+            .prefetch_related(
+                Prefetch(
+                    "lessonplanstudents_set",
+                    queryset=comments_qs,
+                    to_attr="_comments_cache"
+                ),
+                "group__students__user",
+                "flow__students__user"  # ✅ MUHIM FIX
+            )
+        )
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -663,14 +691,20 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
         data = []
         for lesson_plan in queryset:
             status_flag = current_date < lesson_plan.date
+
             data.append({
-                "group": lesson_plan.group.name,
-                "lesson_plan": TeacherLessonPlanGetSerializer(lesson_plan).data,
+                "group": (
+                    lesson_plan.group.name
+                    if lesson_plan.group
+                    else lesson_plan.flow.name
+                    if lesson_plan.flow
+                    else None
+                ),
+                "lesson_plan": self.get_serializer(lesson_plan).data,
                 "status": status_flag
             })
 
         return Response(data)
-
 
 class TeacherTimeTableView(APIView):
 

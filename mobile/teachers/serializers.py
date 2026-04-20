@@ -31,14 +31,14 @@ class TeacherDashboardSerializer(serializers.Serializer):
     rank = serializers.IntegerField()
 
 class TeacherLessonPlanGetSerializer(serializers.ModelSerializer):
-    group = serializers.CharField(source="group.name", read_only=True)
+    group_name = serializers.SerializerMethodField()
     students = serializers.SerializerMethodField()
 
     class Meta:
         model = LessonPlan
         fields = (
             "id",
-            "group",
+            "group_name",
             "date",
             "objective",
             "main_lesson",
@@ -49,25 +49,38 @@ class TeacherLessonPlanGetSerializer(serializers.ModelSerializer):
             "students",
         )
 
+    def get_group_name(self, obj):
+        if obj.group:
+            return obj.group.name
+        if obj.flow:
+            return obj.flow.name
+        return None
 
     def get_students(self, obj):
-        comments = LessonPlanStudents.objects.filter(
-            lesson_plan=obj
-        ).select_related("student", "student__user")
+        comments = getattr(obj, "_comments_cache", [])
 
         comment_map = {
             c.student_id: c.comment
             for c in comments
         }
 
-        students = obj.group.students.select_related("user").all()
+        students = self._get_students(obj)
 
         return [
             {
-                "id": student.id,
-                "name": student.user.name,
-                "surname": student.user.surname,
-                "comment": comment_map.get(student.id, "")
+                "id": s.id,
+                "name": s.user.name,
+                "surname": s.user.surname,
+                "comment": comment_map.get(s.id, "")
             }
-            for student in students
+            for s in students
         ]
+
+    def _get_students(self, obj):
+        if obj.group_id:
+            return obj.group.students.all()
+
+        if obj.flow_id:
+            return obj.flow.students.all().distinct()
+
+        return []

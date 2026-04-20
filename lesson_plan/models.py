@@ -19,6 +19,14 @@ class LessonPlan(models.Model):
     resources = models.TextField(null=True, blank=True)
     updated = models.DateField(null=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['group', 'flow', 'teacher', 'date'],
+                name='unique_lesson_plan'
+            )
+        ]
+
 
 class LessonPlanStudents(models.Model):
     lesson_plan = models.ForeignKey(LessonPlan, on_delete=models.CASCADE)
