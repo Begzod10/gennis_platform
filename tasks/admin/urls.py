@@ -3,6 +3,7 @@ from django.urls import re_path
 
 from tasks.admin.tasks import (
     DebtorsAPIView,
+    LeadsAPIView
 )
 
 from tasks.admin.vats.views import CallAsyncView
@@ -12,6 +13,7 @@ from tasks.admin.vats.views import StudentCallHistoryView, CallStatusView, Updat
 
 urlpatterns = [
     path("debtors/", DebtorsAPIView.as_view()),
+    path("leads/", LeadsAPIView.as_view()),
     path("calls/", CallAsyncView.as_view()),
     path("history/", StudentCallHistoryView.as_view(), name="vats_history"),
     path("status/", CallStatusView.as_view(), name="vats_status"),

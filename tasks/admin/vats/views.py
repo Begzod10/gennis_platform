@@ -12,12 +12,70 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_date
 from students.models import Student, CallLog, CallStatistic
 from tasks.admin.vats.client import VatsCRMClient
-from tasks.admin.vats.utils import wait_until_call_finished
+from tasks.admin.vats.utils import wait_until_call_finished, poll_call_status_task
 
 
+# @method_decorator(csrf_exempt, name='dispatch')
+# class CallAsyncView(View):
+#
+#     async def post(self, request):
+#         try:
+#             body = json.loads(request.body)
+#         except Exception:
+#             return JsonResponse({"error": "Invalid JSON"}, status=400)
+#
+#         user = body.get("user")
+#         phone = body.get("phone")
+#         student_id = body.get("student_id")
+#         branch_id = body.get("student")
+#         comment = body.get("comment", "")
+#         category = body.get("category", "lead")
+#
+#         if not user or not phone:
+#             return JsonResponse({"error": "user va phone majburiy"}, status=400)
+#
+#         client = VatsCRMClient()
+#
+#         # VATS ga qo'ng'iroq
+#         result = await client.make_call(user, phone)
+#         callid = result.get("callid")
+#
+#         if not callid:
+#             return JsonResponse({
+#                 "error": "VATS dan callid kelmadi",
+#                 "vats_response": result
+#             }, status=400)
+#
+#         # CallLog yaratish
+#         call = await sync_to_async(CallLog.objects.create)(
+#             vats_call_id=callid,
+#             vats_phone=phone,
+#             vats_user=user,
+#             vats_type="out",
+#             student_id=student_id,
+#             comment=comment,
+#             category=category,
+#             status="not_answered",
+#             branch_id=branch_id
+#         )
+#
+#         # Polling background da boshlash
+#         asyncio.create_task(
+#             wait_until_call_finished(
+#                 client=client,
+#                 callid=callid,
+#                 call_log_id=call.id
+#             )
+#         )
+#
+#         return JsonResponse({
+#             "ok": True,
+#             "callid": callid,
+#             "call_log_id": call.id,
+#             "ws_url": f"ws://0.0.0.0:8000//ws/call/{callid}/"
+#         })
 @method_decorator(csrf_exempt, name='dispatch')
 class CallAsyncView(View):
-
     async def post(self, request):
         try:
             body = json.loads(request.body)
@@ -59,20 +117,22 @@ class CallAsyncView(View):
             branch_id=branch_id
         )
 
-        # Polling background da boshlash
-        asyncio.create_task(
-            wait_until_call_finished(
-                client=client,
-                callid=callid,
-                call_log_id=call.id
-            )
+        # ❌ ESKI KOD - O'CHIRISH KERAK:
+        # asyncio.create_task(
+        #     wait_until_call_finished(...)
+        # )
+
+        # ✅ YANGI KOD - CELERY TASK ISHGA TUSHIRISH:
+        poll_call_status_task.delay(
+            callid=callid,
+            call_log_id=call.id
         )
 
         return JsonResponse({
             "ok": True,
             "callid": callid,
             "call_log_id": call.id,
-            "ws_url": f"ws://0.0.0.0:8000//ws/call/{callid}/"
+            "ws_url": f"ws://0.0.0.0:8000/ws/call/{callid}/"
         })
 
 

@@ -1,12 +1,11 @@
 from django.utils.timezone import now
-from datetime import timedelta
 from django.db.models import OuterRef, Exists, Subquery
-from django.db.models import Count, Sum, Q
+from django.db.models import Count, Sum
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from attendances.models import AttendancePerMonth
-from students.models import Student, CallLog, DeletedStudent
-from user.models import CustomAutoGroup
+from students.models import CallLog, DeletedStudent
+from lead.models import Lead
 
 
 class DebtorsAPIView(APIView):
@@ -49,7 +48,6 @@ class DebtorsAPIView(APIView):
                 last_next_call_date=Subquery(last_call.values('next_call_date')[:1]),
             )
         )
-        print(debts.count())
 
         result = []
         for item in debts:
@@ -68,6 +66,50 @@ class DebtorsAPIView(APIView):
                 "debt": item['total_debt'] or 0,
                 "months_count": months,
                 "color": color,
+            })
+
+        return Response(result)
+
+
+class LeadsAPIView(APIView):
+    def get(self, request):
+        today = now().date()
+        branch_id = request.query_params.get('branch')
+
+        base_qs = Lead.objects.filter(
+            deleted=False,
+            finished=False
+        )
+
+        if branch_id:
+            base_qs = base_qs.filter(branch_id=branch_id)
+
+        last_call = CallLog.objects.filter(
+            lead=OuterRef('pk')
+        ).order_by('-created_at')
+
+        leads = base_qs.annotate(
+            last_next_call_date=Subquery(last_call.values('next_call_date')[:1]),
+            last_called_at=Subquery(last_call.values('created_at')[:1]),
+            last_status=Subquery(last_call.values('status')[:1]),
+            call_count=Count('calllog'),
+        )
+
+        result = []
+        for lead in leads:
+            next_call = lead.last_next_call_date
+            if next_call and next_call > today:
+                continue  # hali vaqti kelmagan
+
+            result.append({
+                "lead_id": lead.id,
+                "full_name": lead.name,
+                "phone": lead.phone,
+                "branch_id": lead.branch_id,
+                "call_count": lead.call_count,
+                "last_called_at": lead.last_called_at.isoformat() if lead.last_called_at else None,
+                "last_status": lead.last_status,
+                "last_next_call_date": next_call.isoformat() if next_call else None,
             })
 
         return Response(result)
