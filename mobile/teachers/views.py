@@ -557,7 +557,7 @@ class TeacherTodayAttendance(APIView):
         qs = (
             StudentScoreByTeacher.objects
             .filter(teacher=teacher, day=today)
-            .values("group__name", "flow__name")
+            .values("group_id", "group__name", "group__class_number__number", "group__color__name", "flow__name")
             .annotate(
                 present=Count("id", filter=Q(status=True)),
                 absent=Count("id", filter=Q(status=False)),
@@ -574,9 +574,13 @@ class TeacherTodayAttendance(APIView):
 
             percentage = round((present / total) * 100, 1) if total else 0
             percentages.append(percentage)
+            
+            group_name = item.get("group__name")
+            if not group_name and item.get("group_id"):
+                group_name = f"{item.get('group__class_number__number')}-{item.get('group__color__name')}"
 
             results.append({
-                "group": item["group__name"],
+                "group": group_name,
                 "flow": item["flow__name"],
                 "present": present,
                 "absent": item["absent"],
