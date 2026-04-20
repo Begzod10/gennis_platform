@@ -44,7 +44,21 @@ class TeacherGroupProfileView(APIView):
                     queryset=Student.objects.select_related('user')
                 )
             ).get(pk=group_id)
-            teacher = entity.teacher
+            # Bugungi yoki eng so'nggi dars o'tgan o'qituvchini ClassTimeTable dan topamiz
+            timetable_entry = ClassTimeTable.objects.filter(
+                flow_id=group_id,
+                date=today
+            ).select_related('teacher').first()
+            if timetable_entry and timetable_entry.teacher:
+                teacher = timetable_entry.teacher
+            else:
+                last_timetable = ClassTimeTable.objects.filter(
+                    flow_id=group_id,
+                    date__year=year,
+                    date__month=month
+                ).select_related('teacher').order_by('-date').first()
+                teacher = (last_timetable.teacher if last_timetable and last_timetable.teacher
+                           else entity.teacher)
             entity_name = entity.name
             filter_field = 'flow_id'
         else:
@@ -60,7 +74,22 @@ class TeacherGroupProfileView(APIView):
                     queryset=Teacher.objects.select_related('user')
                 )
             ).get(pk=group_id)
-            teacher = entity.teacher.first()
+            # Bugungi yoki eng so'nggi dars o'tgan o'qituvchini ClassTimeTable dan topamiz
+            timetable_entry = ClassTimeTable.objects.filter(
+                group_id=group_id,
+                date=today
+            ).select_related('teacher').first()
+            if timetable_entry and timetable_entry.teacher:
+                teacher = timetable_entry.teacher
+            else:
+                # Fallback: shu oy ichidagi eng so'nggi dars
+                last_timetable = ClassTimeTable.objects.filter(
+                    group_id=group_id,
+                    date__year=year,
+                    date__month=month
+                ).select_related('teacher').order_by('-date').first()
+                teacher = (last_timetable.teacher if last_timetable and last_timetable.teacher
+                           else entity.teacher.first())
             entity_name = f"{entity.class_number.number}-{entity.color.name}"
             filter_field = 'group_id'
 
@@ -97,6 +126,31 @@ class TeacherGroupProfileView(APIView):
         }
 
         # Get all student scores in bulk
+        if teacher is None:
+            # Teacher topilmagan bo'lsa bo'sh natija qaytaramiz
+            info['students'] = [
+                {
+                    'id': student.id,
+                    'name': student.user.name,
+                    'surname': student.user.surname,
+                    'average': 0,
+                    'present_percent': 0,
+                    'marked': False
+                }
+                for student in entity.students.all()
+            ]
+            info['schedule'] = [
+                {
+                    'date': schedule.date,
+                    'week_day': schedule.week.name_en if schedule.week else None,
+                    'room': schedule.room.name if schedule.room else None,
+                    'time': f"{schedule.hours.start_time} - {schedule.hours.end_time}",
+                    'subject': schedule.subject.name if schedule.subject else None,
+                }
+                for schedule in class_schedule
+            ]
+            return Response(info)
+
         score_filter = {
             'teacher': teacher,
             'day__month': month,
@@ -134,7 +188,7 @@ class TeacherGroupProfileView(APIView):
                 teacher=teacher,
                 group_id=group_id if not is_flow else None,
                 flow_id=group_id if is_flow else None,
-                day__day=today.day
+                day=today  # ✅ to'liq sana filtri (faqat kun raqami emas)
             ).exists()
             info['students'].append({
                 'id': student.id,
@@ -393,17 +447,23 @@ class StudentScoreView(APIView):
 
         is_flow = flow_status in ['true', 'True', '1']
 
-        # Get the appropriate object and teacher
         if is_flow:
             flow = Flow.objects.get(id=group_id)
             group = None
-            teacher = flow.teacher
+            timetable = ClassTimeTable.objects.filter(
+                flow_id=group_id,
+                date=day
+            ).select_related('teacher').first()
+            teacher = timetable.teacher if timetable and timetable.teacher else flow.teacher
         else:
             flow = None
             group = Group.objects.get(id=group_id)
-            teacher = group.teacher.first()
+            timetable = ClassTimeTable.objects.filter(
+                group_id=group_id,
+                date=day
+            ).select_related('teacher').first()
+            teacher = timetable.teacher if timetable and timetable.teacher else group.teacher.first()
 
-        # Fetch all existing scores in one query
         existing_scores = StudentScoreByTeacher.objects.filter(
             flow=flow,
             group=group,
@@ -411,7 +471,6 @@ class StudentScoreView(APIView):
             day=day
         )
 
-        # Create a lookup dictionary for O(1) access
         score_lookup = {score.student_id: score for score in existing_scores}
 
         scores_to_update = []
@@ -436,6 +495,7 @@ class StudentScoreView(APIView):
                 student_score.activeness = activeness
                 student_score.average = average
                 student_score.status = status
+                student_score.teacher = teacher
                 scores_to_update.append(student_score)
             else:
                 scores_to_create.append(StudentScoreByTeacher(
@@ -455,25 +515,36 @@ class StudentScoreView(APIView):
             if scores_to_update:
                 StudentScoreByTeacher.objects.bulk_update(
                     scores_to_update,
-                    ['homework', 'activeness', 'average', 'status']
+                    ['homework', 'activeness', 'average', 'status', 'teacher']
                 )
             if scores_to_create:
                 StudentScoreByTeacher.objects.bulk_create(scores_to_create)
 
-        return Response({'status': 'success'})
+        return Response({'status': 'success', 'teacher_id': teacher.id if teacher else None})
 
 
 class TeacherTodayAttendance(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            teacher = Teacher.objects.get(user=request.user)
-        except Teacher.DoesNotExist:
-            return Response(
-                {"detail": "Siz teacher emassiz"},
-                status=403
-            )
+        teacher_id = request.query_params.get('teacher_id')
+
+        if teacher_id:
+            try:
+                teacher = Teacher.objects.get(pk=teacher_id)
+            except Teacher.DoesNotExist:
+                return Response(
+                    {"detail": "Bunday teacher topilmadi"},
+                    status=404
+                )
+        else:
+            try:
+                teacher = Teacher.objects.get(user=request.user)
+            except Teacher.DoesNotExist:
+                return Response(
+                    {"detail": "Siz teacher emassiz"},
+                    status=403
+                )
 
         today = localdate()
 
