@@ -219,6 +219,11 @@ class TeacherProfileView(APIView):
         teacher_id = request.query_params.get('teacher_id')
         teacher = Teacher.objects.get(pk=teacher_id)
         teacher_salary = TeacherSalary.objects.filter(teacher=teacher).last()
+        
+        balance = 0
+        if teacher_salary:
+            balance = teacher_salary.remaining_salary if teacher_salary.remaining_salary else teacher_salary.total_salary
+
         self.class_room = True
         user = teacher.user
         info = {
@@ -227,7 +232,7 @@ class TeacherProfileView(APIView):
             'surname': user.surname,
             'username': user.username,
             'father_name': user.father_name,
-            'balance': teacher_salary.remaining_salary if teacher_salary.remaining_salary else teacher_salary.total_salary,
+            'balance': balance,
             "teacher_id": teacher.id,
             'role': 'teacher',
             'birth_date': user.birth_date.isoformat() if user.birth_date else None,
@@ -446,6 +451,7 @@ class StudentScoreView(APIView):
         group_id = request.query_params.get('group_id')
 
         is_flow = flow_status in ['true', 'True', '1']
+        print(request.data)
 
         if is_flow:
             flow = Flow.objects.get(id=group_id)
@@ -585,7 +591,6 @@ class TeacherTodayAttendance(APIView):
 
         highest_percentage = max(percentages) if percentages else 0
 
-        # ✅ DASHBOARD GA SAQLASH
         dashboard, _ = TeacherDashboard.objects.get_or_create(
             teacher=teacher,
             created_at=today
@@ -633,13 +638,23 @@ class TeacherDashboardView(APIView):
             created_at=today
         )
 
+        higher_rank_count = TeacherDashboard.objects.filter(
+            created_at=today,
+            attendance_percentage__gt=dashboard.attendance_percentage
+        ).count()
+        rank = higher_rank_count + 1
+
+        dashboard.rank = rank
+        dashboard.lessons_count = lessons_count
+        dashboard.save()
+
         data = {
             "attendance_percentage": dashboard.attendance_percentage,
             "class_count": dashboard.class_count,
-            "lessons_count": lessons_count,
-            "task_count": 0,
-            "task_completed": 0,
-            "rank": 0,
+            "lessons_count": dashboard.lessons_count,
+            "task_count": dashboard.task_count,
+            "task_completed": dashboard.task_completed,
+            "rank": dashboard.rank,
         }
 
         serializer = TeacherDashboardSerializer(data)
