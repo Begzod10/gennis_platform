@@ -20,7 +20,7 @@ class TeacherStatsView(APIView):
     @extend_schema(
         parameters=[
             OpenApiParameter("branch_id", int, description="Filter teachers by branch ID"),
-            OpenApiParameter("term_id", int, description="Filter lesson plan files by term ID"),
+            OpenApiParameter("term_id", int, description="Filter lesson plan files by term ID (required)", required=True),
         ],
         responses={200: dict},
         examples=[
@@ -58,6 +58,9 @@ class TeacherStatsView(APIView):
         branch_id = request.query_params.get("branch_id")
         term_id = request.query_params.get("term_id")
 
+        if not term_id:
+            return Response({"detail": "term_id is required."}, status=400)
+
         teacher_qs = Teacher.objects.select_related("user").filter(deleted=False)
         if branch_id:
             teacher_qs = teacher_qs.filter(branches__id=branch_id)
@@ -75,10 +78,8 @@ class TeacherStatsView(APIView):
         for day in obs_days:
             obs_map.setdefault(day.teacher_id, []).append(day)
 
-        # Lesson plan files
-        lp_qs = LessonPlanFile.objects.filter(teacher_id__in=teacher_ids)
-        if term_id:
-            lp_qs = lp_qs.filter(term_id=term_id)
+        # Lesson plan files — always filtered by term
+        lp_qs = LessonPlanFile.objects.filter(teacher_id__in=teacher_ids, term_id=term_id)
         lp_map = {lp.teacher_id: lp for lp in lp_qs}
 
         result = []

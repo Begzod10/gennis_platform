@@ -23,7 +23,14 @@ from teachers.models import Teacher, TeacherSalary
 
 
 class TeacherGroupProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
+        try:
+            teacher = Teacher.objects.get(user=request.user)
+        except Teacher.DoesNotExist:
+            return Response({"detail": "Siz teacher emassiz"}, status=403)
+
         group_id = request.query_params.get('group_id')
         flow_status = request.query_params.get('flow')
 
@@ -38,13 +45,13 @@ class TeacherGroupProfileView(APIView):
         # Determine if it's a flow or group
 
         if is_flow:
+            # Entity details
             entity = Flow.objects.select_related('teacher', 'teacher__user').prefetch_related(
                 Prefetch(
                     'students',
                     queryset=Student.objects.select_related('user')
                 )
             ).get(pk=group_id)
-            teacher = entity.teacher
             entity_name = entity.name
             filter_field = 'flow_id'
         else:
@@ -60,7 +67,6 @@ class TeacherGroupProfileView(APIView):
                     queryset=Teacher.objects.select_related('user')
                 )
             ).get(pk=group_id)
-            teacher = entity.teacher.first()
             entity_name = f"{entity.class_number.number}-{entity.color.name}"
             filter_field = 'group_id'
 
@@ -97,6 +103,31 @@ class TeacherGroupProfileView(APIView):
         }
 
         # Get all student scores in bulk
+        if teacher is None:
+            # Teacher topilmagan bo'lsa bo'sh natija qaytaramiz
+            info['students'] = [
+                {
+                    'id': student.id,
+                    'name': student.user.name,
+                    'surname': student.user.surname,
+                    'average': 0,
+                    'present_percent': 0,
+                    'marked': False
+                }
+                for student in entity.students.all()
+            ]
+            info['schedule'] = [
+                {
+                    'date': schedule.date,
+                    'week_day': schedule.week.name_en if schedule.week else None,
+                    'room': schedule.room.name if schedule.room else None,
+                    'time': f"{schedule.hours.start_time} - {schedule.hours.end_time}",
+                    'subject': schedule.subject.name if schedule.subject else None,
+                }
+                for schedule in class_schedule
+            ]
+            return Response(info)
+
         score_filter = {
             'teacher': teacher,
             'day__month': month,
@@ -134,7 +165,7 @@ class TeacherGroupProfileView(APIView):
                 teacher=teacher,
                 group_id=group_id if not is_flow else None,
                 flow_id=group_id if is_flow else None,
-                day__day=today.day
+                day=today  # ✅ to'liq sana filtri (faqat kun raqami emas)
             ).exists()
             info['students'].append({
                 'id': student.id,
@@ -165,6 +196,11 @@ class TeacherProfileView(APIView):
         teacher_id = request.query_params.get('teacher_id')
         teacher = Teacher.objects.get(pk=teacher_id)
         teacher_salary = TeacherSalary.objects.filter(teacher=teacher).last()
+        
+        balance = 0
+        if teacher_salary:
+            balance = teacher_salary.remaining_salary if teacher_salary.remaining_salary else teacher_salary.total_salary
+
         self.class_room = True
         user = teacher.user
         info = {
@@ -173,7 +209,7 @@ class TeacherProfileView(APIView):
             'surname': user.surname,
             'username': user.username,
             'father_name': user.father_name,
-            'balance': teacher_salary.remaining_salary if teacher_salary.remaining_salary else teacher_salary.total_salary,
+            'balance': balance,
             "teacher_id": teacher.id,
             'role': 'teacher',
             'birth_date': user.birth_date.isoformat() if user.birth_date else None,
@@ -385,33 +421,37 @@ class TeacherClassesView(APIView):
 
 
 class StudentScoreView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
+        try:
+            teacher = Teacher.objects.get(user=request.user)
+        except Teacher.DoesNotExist:
+            return Response({"detail": "Siz teacher emassiz"}, status=403)
+
         day = request.data.get('day')
         student_list = request.data.get('student_list')
         flow_status = request.query_params.get('flow')
         group_id = request.query_params.get('group_id')
 
         is_flow = flow_status in ['true', 'True', '1']
+        print(request.data)
 
-        # Get the appropriate object and teacher
         if is_flow:
             flow = Flow.objects.get(id=group_id)
             group = None
-            teacher = flow.teacher
         else:
             flow = None
             group = Group.objects.get(id=group_id)
-            teacher = group.teacher.first()
 
-        # Fetch all existing scores in one query
         existing_scores = StudentScoreByTeacher.objects.filter(
+            teacher=teacher,
             flow=flow,
             group=group,
             student_id__in=[s['id'] for s in student_list],
             day=day
         )
 
-        # Create a lookup dictionary for O(1) access
         score_lookup = {score.student_id: score for score in existing_scores}
 
         scores_to_update = []
@@ -436,6 +476,7 @@ class StudentScoreView(APIView):
                 student_score.activeness = activeness
                 student_score.average = average
                 student_score.status = status
+                student_score.teacher = teacher
                 scores_to_update.append(student_score)
             else:
                 scores_to_create.append(StudentScoreByTeacher(
@@ -455,32 +496,43 @@ class StudentScoreView(APIView):
             if scores_to_update:
                 StudentScoreByTeacher.objects.bulk_update(
                     scores_to_update,
-                    ['homework', 'activeness', 'average', 'status']
+                    ['homework', 'activeness', 'average', 'status', 'teacher']
                 )
             if scores_to_create:
                 StudentScoreByTeacher.objects.bulk_create(scores_to_create)
 
-        return Response({'status': 'success'})
+        return Response({'status': 'success', 'teacher_id': teacher.id if teacher else None})
 
 
 class TeacherTodayAttendance(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            teacher = Teacher.objects.get(user=request.user)
-        except Teacher.DoesNotExist:
-            return Response(
-                {"detail": "Siz teacher emassiz"},
-                status=403
-            )
+        teacher_id = request.query_params.get('teacher_id')
+
+        if teacher_id:
+            try:
+                teacher = Teacher.objects.get(pk=teacher_id)
+            except Teacher.DoesNotExist:
+                return Response(
+                    {"detail": "Bunday teacher topilmadi"},
+                    status=404
+                )
+        else:
+            try:
+                teacher = Teacher.objects.get(user=request.user)
+            except Teacher.DoesNotExist:
+                return Response(
+                    {"detail": "Siz teacher emassiz"},
+                    status=403
+                )
 
         today = localdate()
 
         qs = (
             StudentScoreByTeacher.objects
             .filter(teacher=teacher, day=today)
-            .values("group__name", "flow__name")
+            .values("group_id", "group__name", "group__class_number__number", "group__color__name", "flow__name")
             .annotate(
                 present=Count("id", filter=Q(status=True)),
                 absent=Count("id", filter=Q(status=False)),
@@ -497,9 +549,13 @@ class TeacherTodayAttendance(APIView):
 
             percentage = round((present / total) * 100, 1) if total else 0
             percentages.append(percentage)
+            
+            group_name = item.get("group__name")
+            if not group_name and item.get("group_id"):
+                group_name = f"{item.get('group__class_number__number')}-{item.get('group__color__name')}"
 
             results.append({
-                "group": item["group__name"],
+                "group": group_name,
                 "flow": item["flow__name"],
                 "present": present,
                 "absent": item["absent"],
@@ -514,7 +570,6 @@ class TeacherTodayAttendance(APIView):
 
         highest_percentage = max(percentages) if percentages else 0
 
-        # ✅ DASHBOARD GA SAQLASH
         dashboard, _ = TeacherDashboard.objects.get_or_create(
             teacher=teacher,
             created_at=today
@@ -562,13 +617,23 @@ class TeacherDashboardView(APIView):
             created_at=today
         )
 
+        higher_rank_count = TeacherDashboard.objects.filter(
+            created_at=today,
+            attendance_percentage__gt=dashboard.attendance_percentage
+        ).count()
+        rank = higher_rank_count + 1
+
+        dashboard.rank = rank
+        dashboard.lessons_count = lessons_count
+        dashboard.save()
+
         data = {
             "attendance_percentage": dashboard.attendance_percentage,
             "class_count": dashboard.class_count,
-            "lessons_count": lessons_count,
-            "task_count": 0,
-            "task_completed": 0,
-            "rank": 0,
+            "lessons_count": dashboard.lessons_count,
+            "task_count": dashboard.task_count,
+            "task_completed": dashboard.task_completed,
+            "rank": dashboard.rank,
         }
 
         serializer = TeacherDashboardSerializer(data)
