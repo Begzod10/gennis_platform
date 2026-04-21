@@ -23,7 +23,14 @@ from teachers.models import Teacher, TeacherSalary
 
 
 class TeacherGroupProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
+        try:
+            teacher = Teacher.objects.get(user=request.user)
+        except Teacher.DoesNotExist:
+            return Response({"detail": "Siz teacher emassiz"}, status=403)
+
         group_id = request.query_params.get('group_id')
         flow_status = request.query_params.get('flow')
 
@@ -38,27 +45,13 @@ class TeacherGroupProfileView(APIView):
         # Determine if it's a flow or group
 
         if is_flow:
+            # Entity details
             entity = Flow.objects.select_related('teacher', 'teacher__user').prefetch_related(
                 Prefetch(
                     'students',
                     queryset=Student.objects.select_related('user')
                 )
             ).get(pk=group_id)
-            # Bugungi yoki eng so'nggi dars o'tgan o'qituvchini ClassTimeTable dan topamiz
-            timetable_entry = ClassTimeTable.objects.filter(
-                flow_id=group_id,
-                date=today
-            ).select_related('teacher').first()
-            if timetable_entry and timetable_entry.teacher:
-                teacher = timetable_entry.teacher
-            else:
-                last_timetable = ClassTimeTable.objects.filter(
-                    flow_id=group_id,
-                    date__year=year,
-                    date__month=month
-                ).select_related('teacher').order_by('-date').first()
-                teacher = (last_timetable.teacher if last_timetable and last_timetable.teacher
-                           else entity.teacher)
             entity_name = entity.name
             filter_field = 'flow_id'
         else:
@@ -74,22 +67,6 @@ class TeacherGroupProfileView(APIView):
                     queryset=Teacher.objects.select_related('user')
                 )
             ).get(pk=group_id)
-            # Bugungi yoki eng so'nggi dars o'tgan o'qituvchini ClassTimeTable dan topamiz
-            timetable_entry = ClassTimeTable.objects.filter(
-                group_id=group_id,
-                date=today
-            ).select_related('teacher').first()
-            if timetable_entry and timetable_entry.teacher:
-                teacher = timetable_entry.teacher
-            else:
-                # Fallback: shu oy ichidagi eng so'nggi dars
-                last_timetable = ClassTimeTable.objects.filter(
-                    group_id=group_id,
-                    date__year=year,
-                    date__month=month
-                ).select_related('teacher').order_by('-date').first()
-                teacher = (last_timetable.teacher if last_timetable and last_timetable.teacher
-                           else entity.teacher.first())
             entity_name = f"{entity.class_number.number}-{entity.color.name}"
             filter_field = 'group_id'
 
@@ -444,7 +421,14 @@ class TeacherClassesView(APIView):
 
 
 class StudentScoreView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
+        try:
+            teacher = Teacher.objects.get(user=request.user)
+        except Teacher.DoesNotExist:
+            return Response({"detail": "Siz teacher emassiz"}, status=403)
+
         day = request.data.get('day')
         student_list = request.data.get('student_list')
         flow_status = request.query_params.get('flow')
@@ -456,21 +440,12 @@ class StudentScoreView(APIView):
         if is_flow:
             flow = Flow.objects.get(id=group_id)
             group = None
-            timetable = ClassTimeTable.objects.filter(
-                flow_id=group_id,
-                date=day
-            ).select_related('teacher').first()
-            teacher = timetable.teacher if timetable and timetable.teacher else flow.teacher
         else:
             flow = None
             group = Group.objects.get(id=group_id)
-            timetable = ClassTimeTable.objects.filter(
-                group_id=group_id,
-                date=day
-            ).select_related('teacher').first()
-            teacher = timetable.teacher if timetable and timetable.teacher else group.teacher.first()
 
         existing_scores = StudentScoreByTeacher.objects.filter(
+            teacher=teacher,
             flow=flow,
             group=group,
             student_id__in=[s['id'] for s in student_list],
