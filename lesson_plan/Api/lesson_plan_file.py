@@ -37,7 +37,7 @@ class LessonPlanFileUploadView(APIView):
         if not teacher_id or not term_id or not file:
             return Response({"detail": "teacher_id, term_id and file are required."}, status=400)
 
-        allowed = {".txt", ".pdf", ".docx"}
+        allowed = {".txt", ".pdf", ".docx", ".xlsx"}
         ext = "." + file.name.rsplit(".", 1)[-1].lower() if "." in file.name else ""
         if ext not in allowed:
             return Response({"detail": f"Unsupported format. Allowed: {', '.join(allowed)}"}, status=400)

@@ -97,7 +97,7 @@ def review_lesson_plan_file(self, lesson_plan_file_id: int) -> dict:
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
 def _extract_text(file_field) -> str:
-    """Return plain text from a .txt, .pdf, or .docx file."""
+    """Return plain text from a .txt, .pdf, .docx, or .xlsx file."""
     name = file_field.name.lower()
 
     with file_field.open("rb") as f:
@@ -123,6 +123,21 @@ def _extract_text(file_field) -> str:
             return "\n".join(p.text for p in doc.paragraphs)
         except ImportError:
             raise ImportError("python-docx not installed. Run: pip install python-docx")
+
+    if name.endswith(".xlsx"):
+        try:
+            import openpyxl
+            import io
+            wb = openpyxl.load_workbook(io.BytesIO(raw), data_only=True)
+            lines = []
+            for sheet in wb.worksheets:
+                for row in sheet.iter_rows(values_only=True):
+                    line = "\t".join(str(c) if c is not None else "" for c in row)
+                    if line.strip():
+                        lines.append(line)
+            return "\n".join(lines)
+        except ImportError:
+            raise ImportError("openpyxl not installed. Run: pip install openpyxl")
 
     raise ValueError(f"Unsupported file format: {name}")
 
