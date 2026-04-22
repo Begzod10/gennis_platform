@@ -41,7 +41,7 @@ class LessonPlanFileUploadView(APIView):
         
         ext = "." + file.name.rsplit(".", 1)[-1].lower() if "." in file.name else ""
         if ext not in allowed:
-            return Response({"detail": f"Unsupported format. Allowed: {', '.join(allowed)}"}, status=400)
+            return Response({"detail": f"Unsupported format. Allowed: {', '.join(sorted(allowed))}"}, status=400)
 
         teacher = get_object_or_404(Teacher, id=teacher_id)
         term = get_object_or_404(Term, id=term_id)
