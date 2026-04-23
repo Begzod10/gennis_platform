@@ -242,6 +242,85 @@ class MobileTeacherFullScheduleView(APIView):
         })
 
 
+class MobileCurrentWeekScheduleView(APIView):
+    """
+    GET /mobile/teachers/observation/schedule/current_week/
+
+    Always returns the current week's schedule for the authenticated teacher.
+    No week param needed.
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        responses={200: dict},
+        examples=[
+            OpenApiExample(
+                "Current week",
+                value={
+                    "current_week": 2,
+                    "total_weeks": 5,
+                    "week_start": "2026-04-28",
+                    "cycle_start": "2026-04-21",
+                    "schedule": [
+                        {
+                            "id": 11,
+                            "week": 2,
+                            "is_completed": False,
+                            "observed_teacher": {"id": 4, "name": "Jasur", "surname": "Toshev"},
+                            "time_table": {"id": 22, "name": "Matematika 9A"},
+                            "observation_day_id": None,
+                        }
+                    ],
+                },
+                response_only=True,
+            )
+        ],
+        summary="Teacher's current week observation schedule",
+        tags=["mobile-observation"],
+    )
+    def get(self, request):
+        teacher = Teacher.objects.filter(user=request.user, deleted=False).first()
+        if not teacher:
+            return Response({"detail": "Teacher not found."}, status=404)
+
+        branch = teacher.branches.first()
+        if not branch:
+            return Response({"detail": "Teacher has no branch assigned."}, status=400)
+
+        cycle = (
+            TeacherObservationCycle.objects
+            .filter(branch=branch)
+            .order_by("-created_at")
+            .first()
+        )
+        if not cycle:
+            return Response({"detail": "No observation cycle found for your branch."}, status=404)
+
+        current_week = _get_current_week(cycle)
+
+        entries = (
+            TeacherObservationSchedule.objects
+            .filter(cycle=cycle, observer=teacher, week=current_week)
+            .select_related("observed_teacher__user", "time_table")
+        )
+
+        total_weeks = (
+            TeacherObservationSchedule.objects
+            .filter(cycle=cycle, observer=teacher)
+            .order_by("-week")
+            .values_list("week", flat=True)
+            .first() or 0
+        )
+
+        return Response({
+            "current_week": current_week,
+            "total_weeks": total_weeks,
+            "week_start": (cycle.start_date + timedelta(weeks=current_week - 1)).isoformat(),
+            "cycle_start": cycle.start_date.isoformat(),
+            "schedule": [_fmt(e) for e in entries],
+        })
+
+
 class MobileCompleteObservationView(APIView):
     """
     PATCH /mobile/teachers/observation/schedule/<id>/complete/

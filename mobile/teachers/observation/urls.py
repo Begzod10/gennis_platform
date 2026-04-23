@@ -5,6 +5,7 @@ from .schedule_views import (
     MobileTeacherScheduleView,
     MobileTeacherFullScheduleView,
     MobileCompleteObservationView,
+    MobileCurrentWeekScheduleView,
 )
 
 urlpatterns = [
@@ -16,6 +17,9 @@ urlpatterns = [
 
     # Observation schedule
     path('schedule/', MobileTeacherScheduleView.as_view(), name='mobile-obs-schedule'),
+    path('schedule/current_week/', MobileCurrentWeekScheduleView.as_view(), name='mobile-obs-schedule-current-week'),
     path('schedule/all/', MobileTeacherFullScheduleView.as_view(), name='mobile-obs-schedule-all'),
     path('schedule/<int:pk>/complete/', MobileCompleteObservationView.as_view(), name='mobile-obs-complete'),
 ]
+
+

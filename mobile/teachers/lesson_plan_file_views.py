@@ -52,7 +52,7 @@ class MobileLessonPlanFileUploadView(APIView):
         if not term_id or not file:
             return Response({"detail": "term_id and file are required."}, status=400)
 
-        allowed = {".txt", ".pdf", ".docx"}
+        allowed = {".txt", ".pdf", ".docx", ".xlsx"}
         ext = "." + file.name.rsplit(".", 1)[-1].lower() if "." in file.name else ""
         if ext not in allowed:
             return Response(

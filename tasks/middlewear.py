@@ -81,6 +81,7 @@ class ApiLogMiddleware(MiddlewareMixin):
                 user_id=user_id,
                 response_time_ms=elapsed_ms,
             )
-        except Exception:
-            pass
+        except Exception as e:
+            import logging
+            logging.getLogger("tasks.middlewear").error(f"ApiLog write failed: {e}", exc_info=True)
         return response
