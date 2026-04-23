@@ -48,6 +48,7 @@ class DebtorsAPIView(APIView):
                 'student__user__surname',
                 'student__user__phone',
                 'student__parents_number',
+                "student__user__branch_id"
             )
             .annotate(
                 months_count=Count('id'),
@@ -73,6 +74,7 @@ class DebtorsAPIView(APIView):
                 "debt": item['total_debt'] or 0,
                 "months_count": months,
                 "color": color,
+                "branch": item['student__user__branch_id']
             })
 
         return Response(result)
