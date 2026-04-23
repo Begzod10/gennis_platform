@@ -19,3 +19,5 @@ urlpatterns = [
     path('schedule/all/', MobileTeacherFullScheduleView.as_view(), name='mobile-obs-schedule-all'),
     path('schedule/<int:pk>/complete/', MobileCompleteObservationView.as_view(), name='mobile-obs-complete'),
 ]
+
+
