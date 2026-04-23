@@ -10,7 +10,7 @@ from lead.models import Lead
 
 class DebtorsAPIView(APIView):
     def get(self, request):
-        from django.db.models import Prefetch
+        from django.db.models import Q, Sum, Count
 
         today = now().date()
         branch_id = request.query_params.get('branch')
@@ -21,68 +21,60 @@ class DebtorsAPIView(APIView):
         else:
             study_year_start = today.replace(year=today.year - 1, month=9, day=1)
 
-        # Qarzli attendance yozuvlarini olish
-        attendance_filter = {
-            'month_date__gte': study_year_start,
-            'month_date__lte': today,
-            'status': False,
-            'remaining_debt__gt': 0
-        }
+        # Bazaviy AttendancePerMonth filtri
+        attendance_qs = AttendancePerMonth.objects.filter(
+            month_date__gte=study_year_start,
+            month_date__lte=today,
+            status=False,
+            remaining_debt__gt=0
+        ).exclude(
+            student__id__in=DeletedStudent.objects.filter(
+                deleted=True
+            ).values_list('student_id', flat=True)
+        )
 
-        # O'chirilgan studentlarni chiqarib tashlash
-        deleted_student_ids = DeletedStudent.objects.filter(
-            deleted=True
-        ).values_list('student_id', flat=True)
-
-        # Student queryset
-        students_qs = Student.objects.exclude(
-            id__in=deleted_student_ids
-        ).filter(
-            attendancepermonth__month_date__gte=study_year_start,
-            attendancepermonth__month_date__lte=today,
-            attendancepermonth__status=False,
-            attendancepermonth__remaining_debt__gt=0
-        ).select_related('user').prefetch_related(
-            Prefetch(
-                'attendancepermonth_set',
-                queryset=AttendancePerMonth.objects.filter(**attendance_filter),
-                to_attr='debts'
-            ),
-            Prefetch(
-                'calllog_set',
-                queryset=CallLog.objects.order_by('-created_at'),
-                to_attr='call_logs'
-            )
-        ).distinct()
-
+        # Agar branch berilgan bo'lsa
         if branch_id:
-            students_qs = students_qs.filter(user__branch_id=branch_id)
+            attendance_qs = attendance_qs.filter(student__user__branch_id=branch_id)
+
+        # Noyob student ID larni olish
+        student_ids = attendance_qs.values_list('student_id', flat=True).distinct()
+
+        # Studentlarni olish
+        students = Student.objects.filter(
+            id__in=student_ids
+        ).select_related('user')
 
         result = []
 
-        for student in students_qs:
+        for student in students:
+            # Bu studentning qarzlarini olish
+            student_debts = attendance_qs.filter(student_id=student.id)
+
+            # Agregatsiya
+            debt_summary = student_debts.aggregate(
+                total_debt=Sum('remaining_debt'),
+                months_count=Count('id')
+            )
+
             # Oxirgi qo'ng'iroqni tekshirish
-            if student.call_logs:
-                last_call = student.call_logs[0]
-                if last_call.next_call_date and last_call.next_call_date > today:
-                    continue
+            last_call = CallLog.objects.filter(
+                student=student
+            ).order_by('-created_at').first()
 
-            # Qarzlarni hisoblash
-            total_debt = sum(debt.remaining_debt or 0 for debt in student.debts)
-            months_count = len(student.debts)
-
-            if months_count == 0:
+            if last_call and last_call.next_call_date and last_call.next_call_date > today:
                 continue
 
-            color = 'red' if months_count >= 2 else 'yellow'
+            months = debt_summary['months_count']
+            color = 'red' if months >= 2 else 'yellow'
 
             result.append({
                 "student_id": student.id,
                 "full_name": f"{student.user.name} {student.user.surname}",
                 "phone": student.user.phone,
                 "parent_phone": student.parents_number,
-                "debt": total_debt,
-                "months_count": months_count,
+                "debt": debt_summary['total_debt'] or 0,
+                "months_count": months,
                 "color": color,
                 "branch": student.user.branch_id
             })
