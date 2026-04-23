@@ -4,7 +4,7 @@ from django.db.models import Count, Sum
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from attendances.models import AttendancePerMonth
-from students.models import CallLog, DeletedStudent
+from students.models import CallLog, DeletedStudent, Student
 from lead.models import Lead
 
 
@@ -91,6 +91,7 @@ class DebtorsAPIView(APIView):
         result.sort(key=lambda x: x['debt'], reverse=True)
 
         return Response(result)
+
 
 class LeadsAPIView(APIView):
     def get(self, request):
