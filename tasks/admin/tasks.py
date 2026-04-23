@@ -13,7 +13,14 @@ class DebtorsAPIView(APIView):
         today = now().date()
         branch_id = request.query_params.get('branch')
 
+        # O'quv yili boshini hisoblash
+        if today.month >= 9:  # sentabr-dekabr
+            study_year_start = today.replace(month=9, day=1)
+        else:  # yanvar-iyun
+            study_year_start = today.replace(year=today.year - 1, month=9, day=1)
+
         base_qs = AttendancePerMonth.objects.filter(
+            month_date__gte=study_year_start,  # o'quv yili boshidan
             month_date__lte=today,
             status=False
         ).annotate(
@@ -53,7 +60,7 @@ class DebtorsAPIView(APIView):
         for item in debts:
             next_call = item['last_next_call_date']
             if next_call and next_call > today:
-                continue  # hali vaqti kelmagan, ko'rsatmaymiz
+                continue
 
             months = item['months_count']
             color = 'red' if months >= 2 else 'yellow'
