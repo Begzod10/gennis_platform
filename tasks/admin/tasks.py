@@ -1,6 +1,6 @@
 from django.utils.timezone import now
 from django.db.models import OuterRef, Exists, Subquery, F
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Q, Max
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from attendances.models import AttendancePerMonth
@@ -10,19 +10,15 @@ from lead.models import Lead
 
 class DebtorsAPIView(APIView):
     def get(self, request):
-        from django.db.models import Q, Sum, Count
-
         today = now().date()
         branch_id = request.query_params.get('branch')
 
-        # O'quv yili boshini hisoblash
         if today.month >= 9:
             study_year_start = today.replace(month=9, day=1)
         else:
             study_year_start = today.replace(year=today.year - 1, month=9, day=1)
 
-        # Bazaviy AttendancePerMonth filtri
-        attendance_qs = AttendancePerMonth.objects.filter(
+        qs = AttendancePerMonth.objects.filter(
             month_date__gte=study_year_start,
             month_date__lte=today,
             status=False,
@@ -33,54 +29,50 @@ class DebtorsAPIView(APIView):
             ).values_list('student_id', flat=True)
         )
 
-        # Agar branch berilgan bo'lsa
         if branch_id:
-            attendance_qs = attendance_qs.filter(student__user__branch_id=branch_id)
+            qs = qs.filter(student__user__branch_id=branch_id)
 
-        # Noyob student ID larni olish
-        student_ids = attendance_qs.values_list('student_id', flat=True).distinct()
-
-        # Studentlarni olish
-        students = Student.objects.filter(
-            id__in=student_ids
-        ).select_related('user')
+        # 🔥 ENG MUHIM QISM
+        qs = qs.values(
+            'student_id',
+            'student__user__name',
+            'student__user__surname',
+            'student__user__phone',
+            'student__parents_number',
+            'student__user__branch_id'
+        ).annotate(
+            total_debt=Sum('remaining_debt'),
+            months_count=Count('id')
+        ).order_by('-total_debt')
 
         result = []
 
-        for student in students:
-            # Bu studentning qarzlarini olish
-            student_debts = attendance_qs.filter(student_id=student.id)
+        # 🔥 CallLog ni oldindan olish (optimizatsiya)
+        last_calls = {
+            c.student_id: c
+            for c in CallLog.objects.order_by('student_id', '-created_at')
+            .distinct('student_id')
+        }
 
-            # Agregatsiya
-            debt_summary = student_debts.aggregate(
-                total_debt=Sum('remaining_debt'),
-                months_count=Count('id')
-            )
-
-            # Oxirgi qo'ng'iroqni tekshirish
-            last_call = CallLog.objects.filter(
-                student=student
-            ).order_by('-created_at').first()
+        for item in qs:
+            last_call = last_calls.get(item['student_id'])
 
             if last_call and last_call.next_call_date and last_call.next_call_date > today:
                 continue
 
-            months = debt_summary['months_count']
+            months = item['months_count']
             color = 'red' if months >= 2 else 'yellow'
 
             result.append({
-                "student_id": student.id,
-                "full_name": f"{student.user.name} {student.user.surname}",
-                "phone": student.user.phone,
-                "parent_phone": student.parents_number,
-                "debt": debt_summary['total_debt'] or 0,
+                "student_id": item['student_id'],
+                "full_name": f"{item['student__user__name']} {item['student__user__surname']}",
+                "phone": item['student__user__phone'],
+                "parent_phone": item['student__parents_number'],
+                "debt": item['total_debt'] or 0,
                 "months_count": months,
                 "color": color,
-                "branch": student.user.branch_id
+                "branch": item['student__user__branch_id']
             })
-
-        # Qarz bo'yicha saralash
-        result.sort(key=lambda x: x['debt'], reverse=True)
 
         return Response(result)
 
