@@ -25,7 +25,7 @@ class DebtorsAPIView(APIView):
             remaining_debt__gt=0
         ).exclude(
             student__id__in=DeletedStudent.objects.filter(
-                deleted=True
+                deleted=False
             ).values_list('student_id', flat=True)
         )
 
