@@ -13,27 +13,45 @@ class DebtorsAPIView(APIView):
         today = now().date()
         branch_id = request.query_params.get('branch')
 
+        # 📅 Study year start
         if today.month >= 9:
             study_year_start = today.replace(month=9, day=1)
         else:
             study_year_start = today.replace(year=today.year - 1, month=9, day=1)
 
-        qs = AttendancePerMonth.objects.filter(
+        # 🚫 Deleted studentlar
+        deleted_ids = DeletedStudent.objects.filter(
+            deleted=True
+        ).values_list('student_id', flat=True)
+
+        deleted_new_ids = DeletedNewStudent.objects.values_list(
+            'student_id', flat=True
+        )
+
+        # 📊 Attendance filter
+        attendance_qs = AttendancePerMonth.objects.filter(
             month_date__gte=study_year_start,
             month_date__lte=today,
             status=False,
             remaining_debt__gt=0
         ).exclude(
-            student__id__in=DeletedStudent.objects.filter(
-                deleted=False
-            ).values_list('student_id', flat=True)
+            student_id__in=deleted_ids
+        ).exclude(
+            student_id__in=deleted_new_ids
         )
 
         if branch_id:
-            qs = qs.filter(student__user__branch_id=branch_id)
+            attendance_qs = attendance_qs.filter(
+                student__user__branch_id=branch_id
+            )
 
-        # 🔥 ENG MUHIM QISM
-        qs = qs.values(
+        # 📞 Last Call (Subquery - universal DB)
+        last_call_qs = CallLog.objects.filter(
+            student_id=OuterRef('student_id')
+        ).order_by('-created_at')
+
+        # 🔥 GROUP BY student
+        qs = attendance_qs.values(
             'student_id',
             'student__user__name',
             'student__user__surname',
@@ -42,37 +60,28 @@ class DebtorsAPIView(APIView):
             'student__user__branch_id'
         ).annotate(
             total_debt=Sum('remaining_debt'),
-            months_count=Count('id')
+            months_count=Count('id'),
+            next_call_date=Subquery(last_call_qs.values('next_call_date')[:1])
+        ).filter(
+            total_debt__gt=0  # 🔥 extra safety
+        ).exclude(
+            next_call_date__gt=today
         ).order_by('-total_debt')
 
-        result = []
-
-        # 🔥 CallLog ni oldindan olish (optimizatsiya)
-        last_calls = {
-            c.student_id: c
-            for c in CallLog.objects.order_by('student_id', '-created_at')
-            .distinct('student_id')
-        }
-
-        for item in qs:
-            last_call = last_calls.get(item['student_id'])
-
-            if last_call and last_call.next_call_date and last_call.next_call_date > today:
-                continue
-
-            months = item['months_count']
-            color = 'red' if months >= 2 else 'yellow'
-
-            result.append({
+        # 📦 Final format
+        result = [
+            {
                 "student_id": item['student_id'],
                 "full_name": f"{item['student__user__name']} {item['student__user__surname']}",
                 "phone": item['student__user__phone'],
                 "parent_phone": item['student__parents_number'],
-                "debt": item['total_debt'] or 0,
-                "months_count": months,
-                "color": color,
+                "debt": item['total_debt'],
+                "months_count": item['months_count'],
+                "color": 'red' if item['months_count'] >= 2 else 'yellow',
                 "branch": item['student__user__branch_id']
-            })
+            }
+            for item in qs
+        ]
 
         return Response(result)
 
