@@ -1,3 +1,4 @@
+from django.db.models import Q
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -61,7 +62,13 @@ class TeacherStatsView(APIView):
         if not term_id:
             return Response({"detail": "term_id is required."}, status=400)
 
-        teacher_qs = Teacher.objects.select_related("user").filter(deleted=False)
+        teacher_qs = (
+            Teacher.objects
+            .select_related("user")
+            .filter(deleted=False)
+            .filter(Q(group__deleted=False) | Q(flow__isnull=False))
+            .distinct()
+        )
         if branch_id:
             teacher_qs = teacher_qs.filter(branches__id=branch_id)
 
