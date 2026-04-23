@@ -78,13 +78,6 @@ urlpatterns = [
     path('api/reports/', include('report.urls')),
     path('api/surveys/', include('surveys.urls')),
     path('api/call/', include('tasks.admin.urls')),
-    # path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-
-    path(
-        'api/schema/',
-        SpectacularAPIView.as_view(generator_class=OnlyPartiesSchemaGenerator),
-        name='schema'
-    ),
     # path("api/vats/webhook/", VatsWebhookAsyncView.as_view()),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
