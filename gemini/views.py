@@ -60,8 +60,7 @@ class GeminiTemplateView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Type school bo'lgan filiallar (branches)
-        branches = Branch.objects.filter(location__system__name='school')
+        branches = Branch.objects.filter(location__system__name='school',location__system__name__isnull=False)
         
         branch_data = []
         for branch in branches:
