@@ -86,7 +86,7 @@ async function connect() {
       elements.startSessionBtn.disabled = true;
     }
 
-    const response = await fetch("/api/token", { method: "POST" });
+    const response = await fetch("/api/gemini/token/", { method: "POST" });
     const { token } = await response.json();
     const model = elements.model.value;
 
@@ -140,127 +140,14 @@ function disconnect() {
   }
 }
 
-/**
- * Voice Signature Recorder
- */
-class SignatureRecorder {
-  constructor() {
-    this.mediaRecorder = null;
-    this.chunks = [];
-    this.recording = false;
-    this.blob = null;
-  }
 
-  async start() {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    this.mediaRecorder = new MediaRecorder(stream);
-    this.chunks = [];
-    this.mediaRecorder.ondataavailable = (e) => this.chunks.push(e.data);
-    this.mediaRecorder.onstop = () => {
-      this.blob = new Blob(this.chunks, { type: 'audio/wav' });
-      if (elements.cloningStatus) elements.cloningStatus.textContent = "Namuna tayyor (" + Math.round(this.blob.size / 1024) + " KB)";
-      if (elements.recordSignatureBtn) {
-        elements.recordSignatureBtn.classList.remove("active");
-        elements.recordSignatureBtn.textContent = "Namunani yozish";
-      }
-    };
-    this.mediaRecorder.start();
-    this.recording = true;
-    if (elements.recordSignatureBtn) {
-      elements.recordSignatureBtn.classList.add("active");
-      elements.recordSignatureBtn.textContent = "Yozib olinmoqda...";
-    }
-  }
-
-  stop() {
-    if (this.mediaRecorder && this.recording) {
-      this.mediaRecorder.stop();
-      this.mediaRecorder.stream.getTracks().forEach(t => t.stop());
-      this.recording = false;
-    }
-  }
-}
-
-const signatureRecorder = new SignatureRecorder();
-const synthesisQueue = [];
-let isProcessingSynthesis = false;
-let assistantTextBuffer = "";
-
-async function processSynthesisQueue() {
-  if (isProcessingSynthesis || synthesisQueue.length === 0) return;
-  console.log("Processing synthesis queue, items remaining:", synthesisQueue.length);
-  isProcessingSynthesis = true;
-
-  const text = synthesisQueue.shift();
-  if (!signatureRecorder.blob) {
-    isProcessingSynthesis = false;
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("text", text);
-  formData.append("speaker_wav", signatureRecorder.blob, "signature.wav");
-
-  try {
-    if (elements.cloningStatus) elements.cloningStatus.textContent = "Sintez qilinmoqda...";
-    const response = await fetch("/api/tts-proxy", {
-      method: "POST",
-      body: formData
-    });
-
-    if (!response.ok) throw new Error("TTS error");
-
-    const arrayBuffer = await response.arrayBuffer();
-    const audioContext = state.audio.player.audioContext;
-    if (audioContext.state === "suspended") {
-      await audioContext.resume();
-    }
-    
-    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    
-    // Play using the AudioBuffer
-    const source = audioContext.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(state.audio.player.gainNode);
-    source.onended = () => {
-      if (elements.cloningStatus) elements.cloningStatus.textContent = "Namuna tayyor";
-      isProcessingSynthesis = false;
-      processSynthesisQueue(); // Process next in queue
-    };
-    source.start();
-  } catch (err) {
-    console.error("Cloning synthesis failed:", err);
-    if (elements.cloningStatus) elements.cloningStatus.textContent = "Sintezda xatolik";
-    isProcessingSynthesis = false;
-    processSynthesisQueue();
-  }
-}
-
-async function speakWithClone(text) {
-  if (!text.trim()) return;
-  synthesisQueue.push(text);
-  processSynthesisQueue();
-}
 
 async function handleMessage(message) {
   switch (message.type) {
     case MultimodalLiveResponseType.TEXT:
       addMessage(message.data, "assistant", true); // Use append mode for streaming UI
-      
-      if (elements.cloningToggle?.checked) {
-        if (!signatureRecorder.blob) {
-          alert("Iltimos, avval ovoz namunangizni yozib oling!");
-          elements.cloningToggle.checked = false;
-          return;
-        }
-        // Buffer text for synthesis at turn end
-        assistantTextBuffer += message.data;
-      }
       break;
     case MultimodalLiveResponseType.AUDIO:
-      // If cloning is active, ignore Gemini's native audio
-      if (elements.cloningToggle?.checked) return;
-      
       if (state.audio.player) state.audio.player.play(message.data);
       break;
     case MultimodalLiveResponseType.INPUT_TRANSCRIPTION:
@@ -268,19 +155,9 @@ async function handleMessage(message) {
       break;
     case MultimodalLiveResponseType.INTERRUPTED:
       if (state.audio.player) state.audio.player.interrupt();
-      
-      // Clear cloning buffers on interruption
-      assistantTextBuffer = "";
-      synthesisQueue.length = 0;
-      isProcessingSynthesis = false;
       break;
     case MultimodalLiveResponseType.TURN_COMPLETE:
       console.log("Turn complete received");
-      if (elements.cloningToggle?.checked && assistantTextBuffer.trim()) {
-        console.log("Triggering cloned synthesis for turn:", assistantTextBuffer);
-        speakWithClone(assistantTextBuffer);
-        assistantTextBuffer = ""; // Reset for next turn
-      }
       break;
     case MultimodalLiveResponseType.SETUP_COMPLETE:
       addMessage("Suhbatga tayyorman!", "system");
@@ -334,15 +211,6 @@ function initEventListeners() {
     });
   }
 
-  if (elements.recordSignatureBtn) {
-    elements.recordSignatureBtn.addEventListener("click", () => {
-      if (!signatureRecorder.recording) {
-        signatureRecorder.start();
-      } else {
-        signatureRecorder.stop();
-      }
-    });
-  }
 }
 
 window.addEventListener("DOMContentLoaded", () => {
