@@ -18,14 +18,18 @@ class DebtorsAPIView(APIView):
         else:
             study_year_start = today.replace(year=today.year - 1, month=9, day=1)
 
-        deleted_students = DeletedStudent.objects.filter(
-            deleted=True
+        # DeletedGroupStudents dagi kabi - deleted=False bo'lganlar o'chirilgan
+        deleted_new_student_ids = DeletedNewStudent.objects.values_list('student_id', flat=True)
+        deleted_student_ids = DeletedStudent.objects.filter(
+            deleted=False
         ).values_list('student_id', flat=True)
 
         students = Student.objects.filter(
             user__branch_id=branch_id
         ).exclude(
-            id__in=deleted_students
+            id__in=deleted_student_ids  # o'chirilganlarni chiqarish
+        ).exclude(
+            id__in=deleted_new_student_ids
         ).select_related('user')
 
         last_call = CallLog.objects.filter(
@@ -42,7 +46,6 @@ class DebtorsAPIView(APIView):
             if next_call and next_call > today:
                 continue
 
-            # Gruppa - GetMonth dagi kabi
             group = student.groups_student.first()
             if group is None:
                 history = StudentHistoryGroups.objects.filter(
