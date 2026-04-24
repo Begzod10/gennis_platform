@@ -87,7 +87,6 @@ class DebtorsAPIView(APIView):
                 "months_count": months_count,
                 "color": color,
             })
-
         return Response(result)
 
 
