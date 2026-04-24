@@ -13,13 +13,11 @@ class DebtorsAPIView(APIView):
         today = now().date()
         branch_id = request.query_params.get('branch')
 
-        # O'quv yili boshi
         if today.month >= 9:
             study_year_start = today.replace(month=9, day=1)
         else:
             study_year_start = today.replace(year=today.year - 1, month=9, day=1)
 
-        # 1. Avval studentlarni olamiz - branch va deleted filter
         deleted_students = DeletedStudent.objects.filter(
             deleted=True
         ).values_list('student_id', flat=True)
@@ -30,9 +28,6 @@ class DebtorsAPIView(APIView):
             id__in=deleted_students
         ).select_related('user')
 
-        print(f"Studentlar soni: {students.count()}")
-
-        # 2. Har bir student uchun attendance hisoblaymiz
         last_call = CallLog.objects.filter(
             student=OuterRef('pk')
         ).order_by('-created_at')
@@ -43,14 +38,25 @@ class DebtorsAPIView(APIView):
 
         result = []
         for student in students:
-            # next_call tekshirish
             next_call = student.last_next_call_date
             if next_call and next_call > today:
                 continue
 
-            # Shu studentning shu o'quv yilidagi to'lanmagan oylarini olamiz
+            # Gruppa - GetMonth dagi kabi
+            group = student.groups_student.first()
+            if group is None:
+                history = StudentHistoryGroups.objects.filter(
+                    student=student
+                ).last()
+                if history:
+                    group = history.group
+
+            if group is None:
+                continue
+
             attendances = AttendancePerMonth.objects.filter(
                 student=student,
+                group_id=group.id,
                 month_date__gte=study_year_start,
                 month_date__lte=today,
                 status=False
@@ -58,14 +64,14 @@ class DebtorsAPIView(APIView):
 
             months_count = attendances.count()
             if months_count == 0:
-                continue  # qarzi yo'q, ko'rsatmaymiz
+                continue
 
             total_debt = attendances.aggregate(
                 total=Sum('remaining_debt')
             )['total'] or 0
 
             if total_debt <= 0:
-                continue  # qarzi yo'q
+                continue
 
             color = 'red' if months_count >= 2 else 'yellow'
 
@@ -79,7 +85,6 @@ class DebtorsAPIView(APIView):
                 "color": color,
             })
 
-        print(f"Final result: {len(result)}")
         return Response(result)
 
 
