@@ -13,76 +13,73 @@ class DebtorsAPIView(APIView):
         today = now().date()
         branch_id = request.query_params.get('branch')
 
-        # 📅 Study year start
+        # O'quv yili boshi
         if today.month >= 9:
             study_year_start = today.replace(month=9, day=1)
         else:
             study_year_start = today.replace(year=today.year - 1, month=9, day=1)
 
-        # 🚫 Deleted studentlar
-        deleted_ids = DeletedStudent.objects.filter(
+        # 1. Avval studentlarni olamiz - branch va deleted filter
+        deleted_students = DeletedStudent.objects.filter(
             deleted=True
         ).values_list('student_id', flat=True)
 
-        deleted_new_ids = DeletedNewStudent.objects.values_list(
-            'student_id', flat=True
-        )
-
-        # 📊 Attendance filter
-        attendance_qs = AttendancePerMonth.objects.filter(
-            month_date__gte=study_year_start,
-            month_date__lte=today,
-            status=False,
-            remaining_debt__gt=0
+        students = Student.objects.filter(
+            user__branch_id=branch_id
         ).exclude(
-            student_id__in=deleted_ids
-        ).exclude(
-            student_id__in=deleted_new_ids
-        )
+            id__in=deleted_students
+        ).select_related('user')
 
-        if branch_id:
-            attendance_qs = attendance_qs.filter(
-                student__user__branch_id=branch_id
-            )
+        print(f"Studentlar soni: {students.count()}")
 
-        # 📞 Last Call (Subquery - universal DB)
-        last_call_qs = CallLog.objects.filter(
-            student_id=OuterRef('student_id')
+        # 2. Har bir student uchun attendance hisoblaymiz
+        last_call = CallLog.objects.filter(
+            student=OuterRef('pk')
         ).order_by('-created_at')
 
-        # 🔥 GROUP BY student
-        qs = attendance_qs.values(
-            'student_id',
-            'student__user__name',
-            'student__user__surname',
-            'student__user__phone',
-            'student__parents_number',
-            'student__user__branch_id'
-        ).annotate(
-            total_debt=Sum('remaining_debt'),
-            months_count=Count('id'),
-            next_call_date=Subquery(last_call_qs.values('next_call_date')[:1])
-        ).filter(
-            total_debt__gt=0  # 🔥 extra safety
-        ).exclude(
-            next_call_date__gt=today
-        ).order_by('-total_debt')
+        students = students.annotate(
+            last_next_call_date=Subquery(last_call.values('next_call_date')[:1]),
+        )
 
-        # 📦 Final format
-        result = [
-            {
-                "student_id": item['student_id'],
-                "full_name": f"{item['student__user__name']} {item['student__user__surname']}",
-                "phone": item['student__user__phone'],
-                "parent_phone": item['student__parents_number'],
-                "debt": item['total_debt'],
-                "months_count": item['months_count'],
-                "color": 'red' if item['months_count'] >= 2 else 'yellow',
-                "branch": item['student__user__branch_id']
-            }
-            for item in qs
-        ]
+        result = []
+        for student in students:
+            # next_call tekshirish
+            next_call = student.last_next_call_date
+            if next_call and next_call > today:
+                continue
 
+            # Shu studentning shu o'quv yilidagi to'lanmagan oylarini olamiz
+            attendances = AttendancePerMonth.objects.filter(
+                student=student,
+                month_date__gte=study_year_start,
+                month_date__lte=today,
+                status=False
+            )
+
+            months_count = attendances.count()
+            if months_count == 0:
+                continue  # qarzi yo'q, ko'rsatmaymiz
+
+            total_debt = attendances.aggregate(
+                total=Sum('remaining_debt')
+            )['total'] or 0
+
+            if total_debt <= 0:
+                continue  # qarzi yo'q
+
+            color = 'red' if months_count >= 2 else 'yellow'
+
+            result.append({
+                "student_id": student.id,
+                "full_name": f"{student.user.name or ''} {student.user.surname or ''}".strip(),
+                "phone": student.user.phone or "",
+                "parent_phone": student.parents_number or "",
+                "debt": total_debt,
+                "months_count": months_count,
+                "color": color,
+            })
+
+        print(f"Final result: {len(result)}")
         return Response(result)
 
 
