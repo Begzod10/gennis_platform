@@ -146,7 +146,6 @@ class GroupFlowRatingReportView(APIView):
         if not target_id:
             return Response({"detail": "group_id yoki flow_id talab qilinadi"}, status=400)
 
-        # 1. Date range - find Term
         today = timezone.now().date()
         term = Term.objects.filter(start_date__lte=today, end_date__gte=today).first()
         
@@ -154,11 +153,9 @@ class GroupFlowRatingReportView(APIView):
             start_date = term.start_date
             end_date = term.end_date
         else:
-            # Default to current month if no term found
             start_date = today.replace(day=1)
             end_date = today
 
-        # 2. Identify entity and branch
         if is_flow:
             try:
                 entity = Flow.objects.get(pk=target_id)
@@ -181,15 +178,6 @@ class GroupFlowRatingReportView(APIView):
             'week', 'hours', 'teacher', 'subject', 'teacher__user'
         ).order_by('week__order', 'hours__start_time')
 
-        timetable_data = [
-            {
-                "day": item.week.name_uz if item.week else None,
-                "time": f"{item.hours.start_time} - {item.hours.end_time}" if item.hours else None,
-                "teacher": f"{item.teacher.user.name} {item.teacher.user.surname}" if item.teacher and item.teacher.user else None,
-                "subject": item.subject.name if item.subject else None
-            }
-            for item in timetable
-        ]
 
         # 4. Students list
         students = entity.students.all().select_related('user')
@@ -292,9 +280,8 @@ class GroupFlowRatingReportView(APIView):
             "term": {
                 "start": start_date,
                 "end": end_date,
-                "name": term.academic_year if term else "Maxsus davr"
+                "name": term.quarter if term else "Maxsus davr"
             },
-            "timetable": timetable_data,
             "subject_scores": subject_scores,
             "overall_rating": final_rating
         })
