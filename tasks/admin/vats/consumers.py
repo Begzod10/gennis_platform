@@ -15,3 +15,19 @@ class CallStatusConsumer(AsyncWebsocketConsumer):
 
     async def call_status(self, event):
         await self.send(text_data=json.dumps(event["data"]))
+
+        
+class TestConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        await self.accept()
+        await self.send(text_data=json.dumps({
+            "status": "connected"
+        }))
+
+    async def receive(self, text_data):
+        await self.send(text_data=json.dumps({
+            "echo": text_data
+        }))
+
+    async def disconnect(self, close_code):
+        print("Disconnected:", close_code)
