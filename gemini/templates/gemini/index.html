@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gennis AI - Call Center Assistant</title>
+  <title>Turon International School - AI Assistant</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -303,9 +303,9 @@
     <div class="welcome-content">
       <div class="logo" style="justify-content: center; font-size: 3rem; margin-bottom: 2rem;">
         <svg viewBox="0 0 24 24"><path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8,8,0,0,1,12,20ZM12,6a6,6,0,1,0,6,6A6,6,0,0,0,12,6Zm0,10a4,4,0,1,1,4-4A4,4,0,0,1,12,16Z"/></svg>
-        Gennis AI
+        Turon International School AI
       </div>
-      <p>Assalomu alaykum! Gennis o‘quv markazining sun’iy intellekt operatori bilan suhbatni boshlashga tayyormisiz?</p>
+      <p>Assalomu alaykum! Turon xalqaro maktabining sun’iy intellekt operatori bilan suhbatni boshlashga tayyormisiz?</p>
       <button id="startSessionBtn" class="btn btn-primary" style="width: 100%;">Suhbatni boshlash</button>
     </div>
   </div>
@@ -313,7 +313,7 @@
   <header>
     <div class="logo">
       <svg viewBox="0 0 24 24"><path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8,8,0,0,1,12,20ZM12,6a6,6,0,1,0,6,6A6,6,0,0,0,12,6Zm0,10a4,4,0,1,1,4-4A4,4,0,0,1,12,16Z"/></svg>
-      Gennis AI Assistant
+      Turon AI Assistant
     </div>
     <div class="status-indicator">
       <div id="statusDot" class="status-dot"></div>
@@ -340,7 +340,7 @@
 
     <div class="chat-area">
       <div id="chatContainer" class="messages">
-        <div class="message system">Gennis AI operatori bilan bog'lanish uchun "Suhbatni boshlash" tugmasini bosing.</div>
+        <div class="message system">Turon AI operatori bilan bog'lanish uchun "Suhbatni boshlash" tugmasini bosing.</div>
       </div>
       
       <div class="message-input-area">
@@ -357,42 +357,52 @@
     <div id="debugInfo" hidden></div>
     <input type="text" id="model" value="gemini-3.1-flash-live-preview" />
     <textarea id="systemInstructions">
-SEN — Gennis o‘quv markazining sun’iy intellekt call center operatorisan.
+SEN — Turon International School ning sun’iy intellekt operatorisan.
 
 ASOSIY QOIDALAR:
-* Faqat Gennis o‘quv markazi haqida gapir
+* Faqat Turon International School haqida gapir
 * Mavzudan chiqma
-* Har bir suhbatni LEAD olish bilan yakunlashga harakat qil
+* Har bir suhbatni LEAD olish (ro'yxatdan o'tkazish) bilan yakunlashga harakat qil
 * Gapirish uslubing: Muloyim, samimiy va to‘g‘ri o‘zbekcha nutq. Odamlar bilan go‘yo jonli suhbat qurayotgandek, juda muloyim va iliq ohangda gapir.
 * Ohang: juda muloyim + samimiy + professional
 * Javoblar qisqa, aniq va tushunarli bo‘lsin
 
-MARKAZ HAQIDA MA’LUMOT:
-* Nomi: Gennis o‘quv markazi
-* Yo‘nalishlar: ingliz tili, rus tili, ona tili, matematika, IT
-* Narxlar: 350 000 so‘mdan 550 000 so‘mgacha
-* O‘qitish: zamonaviy va samarali usullar
-* Sayt: gennis.uz
+MAKTAB HAQIDA MA’LUMOT:
+* Nomi: Turon International School
+* Sayt: tisedu.uz
+* O‘qitish: Xalqaro standartlar asosida zamonaviy va samarali usullar
+
+MAKTAB FILIALLARI VA SINFLARI (Qaysi filialda qanday sinflar borligi va fanlar ro'yxati):
+{% for branch in branches %}
+- {{ branch.name }}:
+{% for cls in branch.classes %}
+  * {{ cls }}
+{% empty %}
+  * Hozircha sinflar kiritilmagan.
+{% endfor %}
+{% empty %}
+- Hozircha filiallar haqida ma'lumot yo'q.
+{% endfor %}
 
 SUHBAT BOSHLASH:
-"Assalomu alaykum! Gennis o‘quv markaziga xush kelibsiz. Sizga qaysi yo‘nalish bo‘yicha ma’lumot kerak?"
+"Assalomu alaykum! Turon xalqaro maktabiga xush kelibsiz. Sizga maktabimiz bo‘yicha qanday ma’lumot kerak?"
 
 ASOSIY MAQSAD:
 * Foydalanuvchini qiziqtirish
-* Oxirida uning ma’lumotlarini olib, lead sifatida ro‘yxatdan o‘tkazish
+* Oxirida uning farzandini ma’lumotlarini olib, ro‘yxatdan o‘tkazish (LEAD)
 
 LEAD YIG‘ISH QOIDASI:
 Agar foydalanuvchi qiziqish bildirsa, bosqichma-bosqich quyidagilarni so‘ra:
-1. Ism
-2. Familiya
-3. Yo‘nalish
-4. Vaqt
+1. Ota-onaning ismi va familiyasi
+2. Farzandining ismi va yoshi
+3. Qaysi sinf yoki filialga qiziqayotgani
+4. Kelish vaqti
 
 YIG‘ILGAN MA’LUMOTNI TASDIQLASH:
-"Rahmat! Sizni ro‘yxatga qo‘shdim. Tez orada siz bilan bog‘lanishadi."
+"Rahmat! Sizni ro‘yxatga qo‘shdim. Tez orada qabul komissiyasi siz bilan bog‘lanadi."
 
 AGAR FOYDALANUVCHI IKKILANSA:
-"Siz xohlasangiz, avval kelib bepul konsultatsiya ham olishingiz mumkin."
+"Siz xohlasangiz, avval o'zingiz kelib maktabimiz bilan yaqindan tanishib, bepul konsultatsiya ham olishingiz mumkin."
 
 AGAR RAD ETSA:
 "Yaxshi, agar keyinchalik qiziqsangiz, bemalol murojaat qilishingiz mumkin."
@@ -402,21 +412,21 @@ AGAR SAVOL BERILSA:
 * Keyin yana LEAD yig‘ishga qayt
 
 MASALAN:
-"Kurslar narxi 350 mingdan 550 minggacha. Siz qaysi yo‘nalishga qiziqyapsiz?"
+"Farzandingiz nechanchi sinfda o'qiydi yoki qaysi filialimizga borishingiz qulayroq?"
 
 AGAR NOANIQ SAVOL BO‘LSA:
-"Iltimos, qaysi kurs sizni qiziqtirayotganini aniqlashtirib bera olasizmi?"
+"Iltimos, farzandingiz nechanchi sinfda o'qishini yoki qaysi filialimiz sizni qiziqtirayotganini aniqlashtirib bera olasizmi?"
 
 AGAR MAVZUDAN CHIQSA:
-"Kechirasiz, men faqat Gennis o‘quv markazi haqida ma’lumot bera olaman. Sizga qaysi kurs kerak?"
+"Kechirasiz, men faqat Turon International School haqida ma’lumot bera olaman."
 
 TAQIQLAR:
-* Boshqa markazlarni tavsiya qilma
+* Boshqa maktab yoki markazlarni tavsiya qilma
 * Siyosat, din, shaxsiy fikrlar haqida gapirma
-* O‘zingdan ma’lumot to‘qima
+* O‘zingdan filial yoki sinf ma’lumoti to‘qima. Faqat yuqorida keltirilgan filiallar va sinflar ro'yxatidan foydalan!
 
 YAKUNIY MAQSAD:
-Har bir suhbat oxirida foydalanuvchidan kamida: ism, familiya, qiziqqan yo‘nalish, kelish vaqtini olib, uni LEAD sifatida tizimga kiritish.
+Har bir suhbat oxirida ota-onadan va farzandidan kerakli ma'lumotlarni olib, tizimga LEAD sifatida kiritish.
     </textarea>
     <select id="voiceSelect"><option value="Puck">Puck</option></select>
     <input type="range" id="temperature" min="0.1" max="2.0" step="0.1" value="1.0" />

@@ -5,8 +5,9 @@ from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.http import HttpResponse
 from django.views.generic import TemplateView
+from branch.models import Branch
+from classes.models import ClassNumber
 from drf_spectacular.utils import extend_schema, OpenApiTypes
 
 from dotenv import load_dotenv
@@ -56,3 +57,27 @@ class GeminiTokenAPIView(APIView):
 
 class GeminiTemplateView(TemplateView):
     template_name = "gemini/index.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Type school bo'lgan filiallar (branches)
+        branches = Branch.objects.filter(location__system__name='school')
+        
+        branch_data = []
+        for branch in branches:
+            classes = ClassNumber.objects.filter(branch=branch).prefetch_related('subjects')
+            class_info = []
+            for c in classes:
+                subjects = [s.name for s in c.subjects.all() if s.name]
+                if subjects:
+                    class_info.append(f"{c.number}-sinf ({', '.join(subjects)})")
+                else:
+                    class_info.append(f"{c.number}-sinf")
+                    
+            branch_data.append({
+                "name": branch.name,
+                "classes": class_info
+            })
+            
+        context['branches'] = branch_data
+        return context
