@@ -27,7 +27,7 @@ class UserSerializerRead(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
                   'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff', 'age', 'job', 'file', 'level']
+                  'branch', 'is_superuser', 'is_staff', 'age', 'job', 'file', 'level', 'crm_username']
 
     def get_age(self, obj):
         return obj.calculate_age()
@@ -63,7 +63,8 @@ class UserSerializerWrite(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
                   'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
-                  'branch', 'is_superuser', 'is_staff', 'old_id', 'profession', 'money', "share", "level"]
+                  'branch', 'is_superuser', 'is_staff', 'old_id', 'profession', 'money', "share", "level",
+                  'crm_username']
         extra_kwargs = {
             'password': {'write_only': True, 'required': False},
             'birth_date': {'required': False},
@@ -343,7 +344,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'username': user.username,
                 'father_name': user.father_name,
                 'password': password,
-                'balance': (teacher_salary.remaining_salary if teacher_salary.remaining_salary else teacher_salary.total_salary) if teacher_salary else 0,
+                'balance': (
+                    teacher_salary.remaining_salary if teacher_salary.remaining_salary else teacher_salary.total_salary) if teacher_salary else 0,
                 "teacher_id": teacher.id,
                 'role': 'teacher',
                 'birth_date': user.birth_date.isoformat() if user.birth_date else None,
