@@ -30,6 +30,9 @@ class GeminiTokenAPIView(APIView):
     """
     Generate an ephemeral token for Gemini Live API.
     """
+    authentication_classes = []
+    permission_classes = []
+
     @extend_schema(responses={200: OpenApiTypes.OBJECT})
     def post(self, request, *args, **kwargs):
         if not client:

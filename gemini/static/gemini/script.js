@@ -87,7 +87,18 @@ async function connect() {
     }
 
     const response = await fetch("/api/gemini/token/", { method: "POST" });
-    const { token } = await response.json();
+    const data = await response.json();
+    
+    if (!response.ok) {
+      alert("Token olishda xatolik: " + (data.error || "Noma'lum xato"));
+      throw new Error("Token error");
+    }
+    if (!data.token) {
+      alert("Server tokenni qaytarmadi!");
+      throw new Error("No token");
+    }
+    
+    const token = data.token;
     const model = elements.model.value;
 
     state.client = new GeminiLiveAPI(token, model);
