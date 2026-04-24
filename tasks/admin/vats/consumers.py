@@ -16,12 +16,12 @@ class CallStatusConsumer(AsyncWebsocketConsumer):
     async def call_status(self, event):
         await self.send(text_data=json.dumps(event["data"]))
 
-        
+
 class TestConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
         await self.send(text_data=json.dumps({
-            "status": "connected"
+            "status": "s"
         }))
 
     async def receive(self, text_data):
