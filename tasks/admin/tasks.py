@@ -4,7 +4,7 @@ from django.db.models import Count, Sum, Q, Max
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from attendances.models import AttendancePerMonth
-from students.models import CallLog, DeletedStudent, Student, DeletedNewStudent
+from students.models import CallLog, DeletedStudent, Student, DeletedNewStudent, StudentHistoryGroups
 from lead.models import Lead
 
 
