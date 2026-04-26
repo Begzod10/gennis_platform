@@ -67,6 +67,7 @@ class CustomUser(AbstractUser):
     face_id = models.CharField(max_length=200, blank=True, null=True)
 
     face_id = models.CharField(max_length=200, blank=True, null=True)
+    crm_username = models.CharField(max_length=200, blank=True, null=True)
 
     level = models.PositiveSmallIntegerField(choices=LEVEL_CHOICES, default=4)
 
