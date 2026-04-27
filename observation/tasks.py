@@ -55,8 +55,11 @@ def generate_observation_schedule_task(self, branch_id: int, start_date_str: str
     cycle = TeacherObservationCycle.objects.create(branch=branch, start_date=start_date)
 
     schedules_to_create = []
-    for observer in teachers:
+    for obs_idx, observer in enumerate(teachers):
         others = [t for t in teachers if t.id != observer.id]
+        # Rotate start position so each observer gets a different week-1 pair
+        offset = (obs_idx * 2) % len(others)
+        others = others[offset:] + others[:offset]
         week = 1
         for i in range(0, len(others), 2):
             pair = others[i: i + 2]
