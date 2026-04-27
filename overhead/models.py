@@ -8,6 +8,9 @@ from payments.models import PaymentTypes
 class OverheadType(models.Model):
     name = models.CharField(null=True, blank=True)
     order = models.IntegerField(null=True, blank=True)
+    management_id = models.IntegerField(null=True, blank=True)
+    branch = models.ForeignKey('branch.Branch', on_delete=models.SET_NULL, null=True, blank=True)
+    deleted = models.BooleanField(default=False)
 
 
 @receiver(post_migrate)
