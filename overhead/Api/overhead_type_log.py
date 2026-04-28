@@ -2,11 +2,18 @@ from datetime import date, datetime
 
 from django.db.models import Sum, Value
 from django.db.models.functions import Coalesce
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from overhead.models import Overhead, OverheadType, OverheadTypeLog
+from overhead.serializers import (
+    OverheadTypeLogListResponseSerializer,
+    OverheadTypeLogGenerateRequestSerializer, OverheadTypeLogGenerateResponseSerializer,
+    OverheadTypeLogPayRequestSerializer, OverheadTypeLogPayResponseSerializer,
+)
 from payments.models import PaymentTypes
 
 
@@ -34,6 +41,25 @@ def _generate_logs_for_month(month: int, year: int, branch_id=None):
             )
 
 
+@extend_schema(
+    tags=['Overhead Type Logs'],
+    summary='List monthly overhead-type logs',
+    description=(
+        "Returns reminder logs for fixed overhead types for the given month/year. "
+        "Auto-generates missing logs on the first call. Includes a summary block with "
+        "paid/unpaid counts and sums."
+    ),
+    parameters=[
+        OpenApiParameter('month', OpenApiTypes.INT, OpenApiParameter.PATH, description='1-12'),
+        OpenApiParameter('year', OpenApiTypes.INT, OpenApiParameter.PATH, description='e.g. 2026'),
+        OpenApiParameter('branch_id', OpenApiTypes.INT, OpenApiParameter.QUERY, required=False,
+                         description='Filter logs by branch'),
+        OpenApiParameter('status', OpenApiTypes.STR, OpenApiParameter.QUERY, required=False,
+                         description="'paid' | 'unpaid' | 'all' (default: 'all')",
+                         enum=['paid', 'unpaid', 'all']),
+    ],
+    responses={200: OverheadTypeLogListResponseSerializer},
+)
 class OverheadTypeLogListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -74,6 +100,17 @@ class OverheadTypeLogListView(APIView):
         })
 
 
+@extend_schema(
+    tags=['Overhead Type Logs'],
+    summary='Manually generate logs for a month',
+    description='Creates OverheadTypeLog rows for every fixed overhead type that does not already have one for the given month/year.',
+    parameters=[
+        OpenApiParameter('month', OpenApiTypes.INT, OpenApiParameter.PATH, description='1-12'),
+        OpenApiParameter('year', OpenApiTypes.INT, OpenApiParameter.PATH, description='e.g. 2026'),
+    ],
+    request=OverheadTypeLogGenerateRequestSerializer,
+    responses={200: OverheadTypeLogGenerateResponseSerializer},
+)
 class OverheadTypeLogGenerateView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -83,6 +120,19 @@ class OverheadTypeLogGenerateView(APIView):
         return Response({'success': True, 'message': 'Loglar yaratildi'})
 
 
+@extend_schema(
+    tags=['Overhead Type Logs'],
+    summary='Pay an overhead-type log (same-month or prepayment)',
+    description=(
+        "Creates an Overhead record and marks the corresponding log as paid.\n\n"
+        "**Same-month payment:** send `log_id` of the existing OverheadTypeLog.\n\n"
+        "**Prepayment for a future month:** send `overhead_type_id` + `paid_for_month` "
+        "(format: `'YYYY-MM'`). The system finds or creates the future month's log "
+        "and marks it as `is_prepaid=True`. The current month's log stays untouched."
+    ),
+    request=OverheadTypeLogPayRequestSerializer,
+    responses={200: OverheadTypeLogPayResponseSerializer, 400: OverheadTypeLogPayResponseSerializer, 404: OverheadTypeLogPayResponseSerializer},
+)
 class OverheadTypeLogPayView(APIView):
     permission_classes = [IsAuthenticated]
 

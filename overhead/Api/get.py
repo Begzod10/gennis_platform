@@ -8,12 +8,16 @@ from rest_framework.views import APIView
 
 from overhead.models import Overhead, OverheadType
 from overhead.serializer.lists import ActiveListTeacherSerializer
-from overhead.serializers import OverheadSerializerGet, OverheadSerializerGetTYpe, MonthDaysSerializer
+from overhead.serializers import (
+    OverheadSerializerGet, OverheadSerializerGetTYpe, MonthDaysSerializer,
+    OverheadTypeListResponseSerializer,
+)
 from permissions.response import QueryParamFilterMixin
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Sum
 from permissions.response import CustomPagination
 from overhead.filters import OverheadFilter
+from drf_spectacular.utils import extend_schema
 class OverheadListView(QueryParamFilterMixin, generics.ListAPIView):
     filter_mappings = {
         'status': 'deleted',
@@ -68,6 +72,12 @@ class OverheadListView(QueryParamFilterMixin, generics.ListAPIView):
             'totalCount': data
         })
 
+@extend_schema(
+    tags=['Overhead Types'],
+    summary='List all overhead types',
+    description='Returns active (non-deleted) overhead types ordered by `order`, then `id`.',
+    responses={200: OverheadTypeListResponseSerializer},
+)
 class OverheadTYpeListView(APIView):
     permission_classes = [IsAuthenticated]
 
