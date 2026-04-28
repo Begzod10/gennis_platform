@@ -8,8 +8,37 @@ from payments.models import PaymentTypes
 class OverheadType(models.Model):
     name = models.CharField(null=True, blank=True)
     order = models.IntegerField(null=True, blank=True)
+    cost = models.IntegerField(null=True, blank=True)
+    changeable = models.BooleanField(default=True)
+    branch = models.ForeignKey('branch.Branch', on_delete=models.SET_NULL, null=True, blank=True, related_name='overhead_types')
     management_id = models.IntegerField(null=True, blank=True)
     deleted = models.BooleanField(default=False)
+
+
+class OverheadTypeLog(models.Model):
+    overhead_type = models.ForeignKey(OverheadType, on_delete=models.CASCADE, related_name='logs')
+    cost = models.IntegerField(null=True)
+    is_paid = models.BooleanField(default=False)
+    is_prepaid = models.BooleanField(default=False)
+    paid_date = models.DateTimeField(null=True, blank=True)
+    overhead = models.ForeignKey('Overhead', on_delete=models.SET_NULL, null=True, blank=True)
+    branch = models.ForeignKey('branch.Branch', on_delete=models.SET_NULL, null=True, blank=True)
+    date = models.DateField(null=True, blank=True)
+    deleted = models.BooleanField(default=False)
+
+    def convert_json(self):
+        return {
+            "id": self.id,
+            "overhead_type_id": self.overhead_type_id,
+            "overhead_type_name": self.overhead_type.name,
+            "cost": self.cost,
+            "is_paid": self.is_paid,
+            "is_prepaid": self.is_prepaid,
+            "paid_date": self.paid_date.strftime("%d.%m.%Y") if self.paid_date else None,
+            "overhead_id": self.overhead_id,
+            "branch_id": self.branch_id,
+            "date": self.date.strftime("%d.%m.%Y") if self.date else None,
+        }
 
 
 @receiver(post_migrate)

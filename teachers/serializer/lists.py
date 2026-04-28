@@ -42,6 +42,7 @@ class ActiveListTeacherSerializer(serializers.ModelSerializer):
     face_id = serializers.CharField(source='user.face_id', read_only=True)
 
     face_id = serializers.CharField(source='user.face_id', read_only=True)
+    profile_img = serializers.CharField(source='user.profile_img', read_only=True)
 
     user_id = serializers.SerializerMethodField()
 
