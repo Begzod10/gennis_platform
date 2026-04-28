@@ -1,0 +1,150 @@
+from datetime import timedelta
+
+from django.utils import timezone
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from overhead.models import Overhead, OverheadType
+from overhead.serializer.lists import ActiveListTeacherSerializer
+from overhead.serializers import OverheadSerializerGet, OverheadSerializerGetTYpe, MonthDaysSerializer
+from permissions.response import QueryParamFilterMixin
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Sum
+from permissions.response import CustomPagination
+from overhead.filters import OverheadFilter
+class OverheadListView(QueryParamFilterMixin, generics.ListAPIView):
+    filter_mappings = {
+        'status': 'deleted',
+        'branch': 'branch_id',
+        'type': 'type_id'
+
+    }
+    permission_classes = [IsAuthenticated]
+
+    queryset = Overhead.objects.all().order_by('-created')
+    serializer_class = ActiveListTeacherSerializer
+    pagination_class = CustomPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class=OverheadFilter
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(page, many=True)
+
+        data = [
+            {
+                "name": "Total Amount",
+                "totalPayment": queryset.aggregate(total_sum=Sum('price'))['total_sum'] or 0,
+                "totalPaymentCount": queryset.count(),
+                "type": "amount"
+            },
+            {
+                "name": "Cash Payments",
+                "totalPayment": queryset.filter(payment__name__iexact='Cash').aggregate(total_sum=Sum('price'))['total_sum'] or 0,
+                "totalPaymentCount": queryset.filter(payment__name__iexact='Cash').count(),
+                "type": "cash"
+            },
+            {
+                "name": "Click Payments",
+                "totalPayment": queryset.filter(payment__name__iexact="Click").aggregate(total_sum=Sum('price'))['total_sum'] or 0,
+                "totalPaymentCount": queryset.filter(payment__name__iexact="Click").count(),
+                "type": "click"
+            },
+            {
+                "name": "Bank Transfers",
+                "totalPayment": queryset.filter(payment__name__iexact="Bank").aggregate(total_sum=Sum('price'))['total_sum'] or 0,
+                "totalPaymentCount": queryset.filter(payment__name__iexact="Bank").count(),
+                "type": "bank"
+            },
+        ]
+
+        return self.get_paginated_response({
+            'data': serializer.data,
+            'totalCount': data
+        })
+
+class OverheadTYpeListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    queryset = OverheadType.objects.order_by('order').all()
+
+    serializer_class = OverheadSerializerGetTYpe
+
+    def get(self, request, *args, **kwargs):
+        queryset = OverheadType.objects.all()
+        serializer = OverheadSerializerGetTYpe(queryset, many=True)
+        return Response(serializer.data)
+
+
+class OverheadRetrieveView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
+    queryset = Overhead.objects.all()
+    serializer_class = OverheadSerializerGet
+
+    def retrieve(self, request, *args, **kwargs):
+        overhead = self.get_object()
+        overhead_data = self.get_serializer(overhead).data
+        return Response(overhead_data)
+
+
+class MonthDaysView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        try:
+            today = timezone.localtime().date()
+
+            # Hozirgi oyni hisoblash
+            current_month_name = today.strftime('%b')
+            current_month_value = today.strftime('%m')
+            start_of_current_month = today.replace(day=1)
+            days_in_current_month = [start_of_current_month + timedelta(days=i) for i in
+                                     range((today - start_of_current_month).days + 1)]
+
+            # Oldingi oyni hisoblash
+            first_of_this_month = today.replace(day=1)
+            last_day_of_last_month = first_of_this_month - timedelta(days=1)
+            last_month_name = last_day_of_last_month.strftime('%b')
+            last_month_value = last_day_of_last_month.strftime('%m')
+            start_of_last_month = last_day_of_last_month.replace(day=1)
+            days_in_last_month = [start_of_last_month + timedelta(days=i) for i in
+                                  range((last_day_of_last_month - start_of_last_month).days + 1)]
+
+            # Undan oldingi oyni hisoblash
+            last_day_of_previous_month = start_of_last_month - timedelta(days=1)
+            previous_month_name = last_day_of_previous_month.strftime('%b')
+            previous_month_value = last_day_of_previous_month.strftime('%m')
+            start_of_previous_month = last_day_of_previous_month.replace(day=1)
+            days_in_previous_month = [start_of_previous_month + timedelta(days=i) for i in
+                                      range((last_day_of_previous_month - start_of_previous_month).days + 1)]
+
+            # Ma'lumotni yig'ish
+            response_data = [
+                {
+                    "days": [day.day for day in days_in_current_month],
+                    "name": current_month_name,
+                    "value": current_month_value
+                },
+                {
+                    "days": [day.day for day in days_in_last_month],
+                    "name": last_month_name,
+                    "value": last_month_value
+                },
+                {
+                    "days": [day.day for day in days_in_previous_month],
+                    "name": previous_month_name,
+                    "value": previous_month_value
+                }
+            ]
+
+            # Serializatsiya qilish va qaytarish
+            serializer = MonthDaysSerializer(response_data, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)

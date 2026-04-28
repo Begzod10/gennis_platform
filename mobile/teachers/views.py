@@ -1,0 +1,929 @@
+from datetime import datetime
+from datetime import timedelta
+
+from django.db import transaction
+from django.db.models import Avg, Count, Q, Prefetch
+from django.db.models.functions import ExtractYear
+from django.utils import timezone
+from django.utils.timezone import localdate, now
+from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from attendances.models import Student, Group, StudentScoreByTeacher
+from flows.models import Flow
+from group.models import GroupSubjects
+from lesson_plan.models import LessonPlan, LessonPlanStudents
+from lesson_plan.serializers import LessonPlanGetSerializer, LessonPlanSerializer
+from mobile.models import TeacherDashboard
+from mobile.teachers.serializers import TeacherDashboardSerializer, TeacherLessonPlanGetSerializer
+from school_time_table.models import ClassTimeTable, Hours
+from teachers.models import Teacher, TeacherSalary
+
+
+class TeacherGroupProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            teacher = Teacher.objects.get(user=request.user)
+        except Teacher.DoesNotExist:
+            return Response({"detail": "Siz teacher emassiz"}, status=403)
+
+        group_id = request.query_params.get('group_id')
+        flow_status = request.query_params.get('flow')
+
+        # Get current date info
+        now = timezone.now()
+        today = now.date()
+        month = now.month
+        year = now.year
+        monday = today - timedelta(days=today.weekday())
+        friday = monday + timedelta(days=4)
+        is_flow = flow_status in ['true', 'True', '1']
+        # Determine if it's a flow or group
+
+        if is_flow:
+            # Entity details
+            entity = Flow.objects.select_related('teacher', 'teacher__user').prefetch_related(
+                Prefetch(
+                    'students',
+                    queryset=Student.objects.select_related('user')
+                )
+            ).get(pk=group_id)
+            entity_name = entity.name
+            filter_field = 'flow_id'
+        else:
+            entity = Group.objects.select_related(
+                'class_number', 'color'
+            ).prefetch_related(
+                Prefetch(
+                    'students',
+                    queryset=Student.objects.select_related('user')
+                ),
+                Prefetch(
+                    'teacher',
+                    queryset=Teacher.objects.select_related('user')
+                )
+            ).get(pk=group_id)
+            entity_name = f"{entity.class_number.number}-{entity.color.name}"
+            filter_field = 'group_id'
+
+        # Get schedules for current week
+        schedule_filter = {
+            filter_field: group_id,
+            'date__gte': monday,
+            'date__lte': friday
+        }
+        class_schedule = ClassTimeTable.objects.filter(
+            **schedule_filter
+        ).select_related(
+            'week', 'room', 'hours', 'subject'
+        ).order_by('date', 'hours__start_time')
+
+        # Get next lesson
+        next_lesson_filter = {
+            filter_field: group_id,
+            'date__gt': today
+        }
+        next_lesson = ClassTimeTable.objects.filter(
+            **next_lesson_filter
+        ).select_related('hours').order_by('date', 'hours__start_time').first()
+
+        # Build base info
+        info = {
+            "group_name": entity_name,
+            "group_id": entity.id,
+            "students_count": entity.students.count(),
+            "next_lesson": next_lesson.date.strftime('%Y-%m-%d') if next_lesson else None,
+            "start_time": next_lesson.hours.start_time.strftime('%H:%M') if next_lesson else None,
+            "students": [],
+            "schedule": []
+        }
+
+        # Get all student scores in bulk
+        if teacher is None:
+            # Teacher topilmagan bo'lsa bo'sh natija qaytaramiz
+            info['students'] = [
+                {
+                    'id': student.id,
+                    'name': student.user.name,
+                    'surname': student.user.surname,
+                    'average': 0,
+                    'present_percent': 0,
+                    'marked': False
+                }
+                for student in entity.students.all()
+            ]
+            info['schedule'] = [
+                {
+                    'date': schedule.date,
+                    'week_day': schedule.week.name_en if schedule.week else None,
+                    'room': schedule.room.name if schedule.room else None,
+                    'time': f"{schedule.hours.start_time} - {schedule.hours.end_time}",
+                    'subject': schedule.subject.name if schedule.subject else None,
+                }
+                for schedule in class_schedule
+            ]
+            return Response(info)
+
+        score_filter = {
+            'teacher': teacher,
+            'day__month': month,
+            'day__year': year
+        }
+        if is_flow:
+            score_filter['flow'] = entity
+        else:
+            score_filter['group'] = entity
+
+        # Aggregate attendance and scores per student
+        student_scores = StudentScoreByTeacher.objects.filter(
+            **score_filter
+        ).values('student_id').annotate(
+            avg_score=Avg('average'),
+            total_count=Count('id'),
+            present_count=Count('id', filter=Q(status=True))
+        )
+
+        # Convert to dictionary for O(1) lookup
+        scores_dict = {
+            item['student_id']: {
+                'average': round(item['avg_score']) if item['avg_score'] else 0,
+                'present_percent': round(item['present_count'] / item['total_count'] * 100, 2) if item[
+                    'total_count'] else 0
+            }
+            for item in student_scores
+        }
+
+        # Build student list
+        for student in entity.students.all():
+            student_data = scores_dict.get(student.id, {'average': 0, 'present_percent': 0})
+            today_score = StudentScoreByTeacher.objects.filter(
+                student=student,
+                teacher=teacher,
+                group_id=group_id if not is_flow else None,
+                flow_id=group_id if is_flow else None,
+                day=today  # ✅ to'liq sana filtri (faqat kun raqami emas)
+            ).exists()
+            info['students'].append({
+                'id': student.id,
+                'name': student.user.name,
+                'surname': student.user.surname,
+                'average': student_data['average'],
+                'present_percent': student_data['present_percent'],
+                'marked': today_score
+            })
+
+        # Build schedule list
+        info['schedule'] = [
+            {
+                'date': schedule.date,
+                'week_day': schedule.week.name_en if schedule.week else None,
+                'room': schedule.room.name if schedule.room else None,
+                'time': f"{schedule.hours.start_time} - {schedule.hours.end_time}",
+                'subject': schedule.subject.name if schedule.subject else None,
+            }
+            for schedule in class_schedule
+        ]
+
+        return Response(info)
+
+
+class TeacherProfileView(APIView):
+    def get(self, request):
+        teacher_id = request.query_params.get('teacher_id')
+        teacher = Teacher.objects.get(pk=teacher_id)
+        teacher_salary = TeacherSalary.objects.filter(teacher=teacher).last()
+        
+        balance = 0
+        if teacher_salary:
+            balance = teacher_salary.remaining_salary if teacher_salary.remaining_salary else teacher_salary.total_salary
+
+        self.class_room = True
+        user = teacher.user
+        info = {
+            'id': user.id,
+            'name': user.name,
+            'surname': user.surname,
+            'username': user.username,
+            'father_name': user.father_name,
+            'balance': balance,
+            "teacher_id": teacher.id,
+            'role': 'teacher',
+            'birth_date': user.birth_date.isoformat() if user.birth_date else None,
+            'phone_number': user.phone,
+            'branch_id': user.branch_id,
+            'observer': user.observer,
+            'subjects': [{
+                'id': subject.id,
+                'name': subject.name
+            } for subject in teacher.subject.all()],
+            'color': teacher.color if teacher.color else None,
+            'groups': [{
+                'name': group.name if group.name else f'{group.class_number.number}-{group.color.name}',
+                'id': group.id,
+                'subjects': [
+                    {'id': subject.subject.id, 'name': subject.subject.name} for subject in
+                    GroupSubjects.objects.filter(group=group).all()
+                ],
+                'teacher_salary': group.teacher_salary,
+                'price': group.price,
+                "teacher_id": user.id
+            } for group in teacher.group_set.all()],
+            'flows': [
+                {
+                    'id': flow.id,
+                    'name': flow.name,
+                    'subject': {
+                        'id': flow.subject.id if flow.subject else None,
+                        'name': flow.subject.name if flow.subject else None,
+                    } if flow.subject else None,
+                    'branch': {
+                        'id': flow.branch.id,
+                        'name': flow.branch.name,
+                    } if flow.branch else None,
+                    'desc': flow.desc,
+                    'activity': flow.activity,
+                    'level': {
+                        'id': flow.level.id,
+                        'name': flow.level.name,
+                    } if flow.level else None,
+                    'classes': flow.classes,
+                    'students': [
+                        {
+                            'id': s.id,
+                            'name': s.user.name,
+                            'surname': s.user.surname,
+                        } for s in flow.students.all()
+                    ]
+                }
+                for flow in Flow.objects.filter(teacher=teacher).all()
+            ]
+        }
+        return Response(info)
+
+
+class SalaryYearsView(APIView):
+    def get(self, request):
+        teacher_id = request.query_params.get('teacher_id')
+        teacher = Teacher.objects.get(pk=teacher_id)
+
+        # Extract unique years at database level
+        years = TeacherSalary.objects.filter(
+            teacher=teacher
+        ).annotate(
+            year=ExtractYear('month_date')
+        ).values_list('year', flat=True).distinct().order_by('year')
+        year_list = []
+        for year in years:
+            info = {
+                "value": year,
+                "current": year == datetime.now().year
+            }
+            year_list.append(info)
+        return Response(list(year_list))
+
+
+class TeacherSalaryView(APIView):
+    def get(self, request):
+        teacher_id = request.query_params.get('teacher_id')
+        teacher = Teacher.objects.get(pk=teacher_id)
+        year = request.query_params.get('year', datetime.now().year)
+        queryset = TeacherSalary.objects.filter(teacher=teacher, month_date__year=year).order_by('-month_date')
+        salary_list = []
+        for salary in queryset:
+            salary_list.append({
+                'id': salary.id,
+                'date': salary.month_date.isoformat(),
+                'total_salary': salary.total_salary,
+                'taken_salary': salary.taken_salary,
+                'remaining_salary': salary.remaining_salary,
+
+            })
+        return Response(salary_list)
+
+
+class TeacherClassesView(APIView):
+    def get(self, request):
+        today = timezone.now().date()
+        monday = today - timedelta(days=today.weekday())
+        friday = monday + timedelta(days=4)
+        teacher_id = request.query_params.get('teacher_id')
+
+        # Single optimized query with select_related
+        base_query = ClassTimeTable.objects.filter(
+            teacher_id=teacher_id,
+            date__gte=monday,
+            date__lte=friday
+        ).select_related(
+            'week', 'room', 'hours', 'subject', 'flow', 'group', 'group__class_number', 'group__color'
+        ).order_by('date', 'hours__start_time')
+
+        # Get unique flow_ids and group_ids
+        flow_ids = base_query.filter(
+            flow_id__isnull=False
+        ).values_list('flow_id', flat=True).distinct()
+
+        group_ids = base_query.filter(
+            group_id__isnull=False
+        ).values_list('group_id', flat=True).distinct()
+
+        # Prefetch flows and groups with their schedules
+        flows = Flow.objects.filter(id__in=flow_ids).prefetch_related(
+            Prefetch(
+                'classtimetable_set',
+                queryset=base_query.filter(flow_id__isnull=False),
+                to_attr='current_week_schedules'
+            )
+        )
+
+        groups = Group.objects.filter(id__in=group_ids).select_related(
+            'class_number', 'color'
+        ).prefetch_related(
+            Prefetch(
+                'classtimetable_set',
+                queryset=base_query.filter(group_id__isnull=False),
+                to_attr='current_week_schedules'
+            )
+        )
+
+        # Get next lessons in one query for flows
+        next_flow_lessons = {
+            lesson.flow_id: lesson
+            for lesson in ClassTimeTable.objects.filter(
+                flow_id__in=flow_ids,
+                date__gt=today
+            ).select_related('hours').order_by('flow_id', 'date', 'hours__start_time').distinct('flow_id')
+        }
+
+        # Get next lessons in one query for groups
+        next_group_lessons = {
+            lesson.group_id: lesson
+            for lesson in ClassTimeTable.objects.filter(
+                group_id__in=group_ids,
+                date__gt=today
+            ).select_related('hours').order_by('group_id', 'date', 'hours__start_time').distinct('group_id')
+        }
+
+        classes = []
+
+        # Process flows
+        for flow in flows:
+            next_lesson = next_flow_lessons.get(flow.id)
+
+            classes.append({
+                'id': flow.id,
+                'name': flow.name,
+                'flow': True,
+                'schedules': [
+                    {
+                        'date': schedule.date,
+                        'week_day': schedule.week.name_en if schedule.week else None,
+                        'room': schedule.room.name if schedule.room else None,
+                        'time': f"{schedule.hours.start_time} - {schedule.hours.end_time}",
+                        'subject': schedule.subject.name if schedule.subject else None,
+                    }
+                    for schedule in flow.current_week_schedules
+                ],
+                'next_lesson': {
+                    'date': next_lesson.date.strftime('%Y-%m-%d') if next_lesson else None,
+                    'time': str(next_lesson.hours.start_time) if next_lesson else None,
+                }
+            })
+
+        # Process groups
+        for group in groups:
+            next_lesson = next_group_lessons.get(group.id)
+
+            classes.append({
+                'id': group.id,
+                'name': f"{group.class_number.number}-{group.color.name}",
+                'flow': False,
+                'schedules': [
+                    {
+                        'date': schedule.date,
+                        'week_day': schedule.week.name_en if schedule.week else None,
+                        'room': schedule.room.name if schedule.room else None,
+                        'time': f"{schedule.hours.start_time} - {schedule.hours.end_time}",
+                        'subject': schedule.subject.name if schedule.subject else None,
+                    }
+                    for schedule in group.current_week_schedules
+                ],
+                'next_lesson': {
+                    'date': next_lesson.date.strftime('%Y-%m-%d') if next_lesson else None,
+                    'time': str(next_lesson.hours.start_time) if next_lesson else None,
+                }
+            })
+
+        return Response({'classes': classes})
+
+
+class StudentScoreView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            teacher = Teacher.objects.get(user=request.user)
+        except Teacher.DoesNotExist:
+            return Response({"detail": "Siz teacher emassiz"}, status=403)
+
+        day = request.data.get('day')
+        student_list = request.data.get('student_list')
+        flow_status = request.query_params.get('flow')
+        group_id = request.query_params.get('group_id')
+
+        is_flow = flow_status in ['true', 'True', '1']
+        print(request.data)
+
+        if is_flow:
+            flow = Flow.objects.get(id=group_id)
+            group = None
+        else:
+            flow = None
+            group = Group.objects.get(id=group_id)
+
+        existing_scores = StudentScoreByTeacher.objects.filter(
+            teacher=teacher,
+            flow=flow,
+            group=group,
+            student_id__in=[s['id'] for s in student_list],
+            day=day
+        )
+
+        score_lookup = {score.student_id: score for score in existing_scores}
+
+        scores_to_update = []
+        scores_to_create = []
+
+        for student in student_list:
+            student_id = student['id']
+            status = student.get('status')
+
+            # Calculate scores
+            if status:
+                homework = student.get('homework', 0)
+                activeness = student.get('activeness', 0)
+                average = round((homework + activeness) / 2)
+            else:
+                homework = activeness = average = 0
+
+            # Check if score exists
+            if student_id in score_lookup:
+                student_score = score_lookup[student_id]
+                student_score.homework = homework
+                student_score.activeness = activeness
+                student_score.average = average
+                student_score.status = status
+                student_score.teacher = teacher
+                scores_to_update.append(student_score)
+            else:
+                scores_to_create.append(StudentScoreByTeacher(
+                    student_id=student_id,
+                    teacher=teacher,
+                    flow=flow,
+                    group=group,
+                    day=day,
+                    homework=homework,
+                    activeness=activeness,
+                    average=average,
+                    status=status
+                ))
+
+        # Perform bulk operations in a transaction
+        with transaction.atomic():
+            if scores_to_update:
+                StudentScoreByTeacher.objects.bulk_update(
+                    scores_to_update,
+                    ['homework', 'activeness', 'average', 'status', 'teacher']
+                )
+            if scores_to_create:
+                StudentScoreByTeacher.objects.bulk_create(scores_to_create)
+
+        return Response({'status': 'success', 'teacher_id': teacher.id if teacher else None})
+
+
+class TeacherTodayAttendance(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        teacher_id = request.query_params.get('teacher_id')
+
+        if teacher_id:
+            try:
+                teacher = Teacher.objects.get(pk=teacher_id)
+            except Teacher.DoesNotExist:
+                return Response(
+                    {"detail": "Bunday teacher topilmadi"},
+                    status=404
+                )
+        else:
+            try:
+                teacher = Teacher.objects.get(user=request.user)
+            except Teacher.DoesNotExist:
+                return Response(
+                    {"detail": "Siz teacher emassiz"},
+                    status=403
+                )
+
+        today = localdate()
+
+        qs = (
+            StudentScoreByTeacher.objects
+            .filter(teacher=teacher, day=today)
+            .values("group_id", "group__name", "group__class_number__number", "group__color__name", "flow__name")
+            .annotate(
+                present=Count("id", filter=Q(status=True)),
+                absent=Count("id", filter=Q(status=False)),
+                total=Count("id"),
+            )
+        )
+
+        results = []
+        percentages = []
+
+        for item in qs:
+            total = item["total"]
+            present = item["present"]
+
+            percentage = round((present / total) * 100, 1) if total else 0
+            percentages.append(percentage)
+            
+            group_name = item.get("group__name")
+            if not group_name and item.get("group_id"):
+                group_name = f"{item.get('group__class_number__number')}-{item.get('group__color__name')}"
+
+            results.append({
+                "group": group_name,
+                "flow": item["flow__name"],
+                "present": present,
+                "absent": item["absent"],
+                "total": total,
+                "percentage": percentage,
+            })
+
+        class_count = len(results)
+        average_percentage = round(
+            sum(percentages) / class_count, 1
+        ) if class_count else 0
+
+        highest_percentage = max(percentages) if percentages else 0
+
+        dashboard, _ = TeacherDashboard.objects.get_or_create(
+            teacher=teacher,
+            created_at=today
+        )
+
+        dashboard.attendance_percentage = average_percentage
+        dashboard.class_count = class_count
+        dashboard.save()
+
+        return Response({
+            "summary": {
+                "average_percentage": average_percentage,
+                "class_count": class_count,
+                "highest_percentage": highest_percentage
+            },
+            "attendance_history": results
+        })
+
+
+class TeacherDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            teacher = Teacher.objects.get(user=request.user)
+        except Teacher.DoesNotExist:
+            return Response(
+                {"detail": "Siz teacher emassiz"},
+                status=403
+            )
+
+        today = localdate()
+
+        monday = today - timedelta(days=today.weekday())
+
+        saturday = monday + timedelta(days=5)
+
+        lessons_count = ClassTimeTable.objects.filter(
+            teacher=teacher,
+            date__range=[monday, saturday]
+        ).count()
+
+        dashboard, _ = TeacherDashboard.objects.get_or_create(
+            teacher=teacher,
+            created_at=today
+        )
+
+        higher_rank_count = TeacherDashboard.objects.filter(
+            created_at=today,
+            attendance_percentage__gt=dashboard.attendance_percentage
+        ).count()
+        rank = higher_rank_count + 1
+
+        dashboard.rank = rank
+        dashboard.lessons_count = lessons_count
+        dashboard.save()
+
+        data = {
+            "attendance_percentage": dashboard.attendance_percentage,
+            "class_count": dashboard.class_count,
+            "lessons_count": dashboard.lessons_count,
+            "task_count": dashboard.task_count,
+            "task_completed": dashboard.task_completed,
+            "rank": dashboard.rank,
+        }
+
+        serializer = TeacherDashboardSerializer(data)
+        return Response(serializer.data)
+
+
+class TeacherChangeLessonPlanView(generics.UpdateAPIView):
+    queryset = LessonPlan.objects.all()
+    serializer_class = LessonPlanSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        plan_id = kwargs.get('pk')
+        lesson_plan = self.get_object()
+
+        data = request.data
+        lesson_plan.objective = data.get('objective')
+        lesson_plan.main_lesson = data.get('main_lesson')
+        lesson_plan.homework = data.get('homework')
+        lesson_plan.assessment = data.get('assessment')
+        lesson_plan.activities = data.get('activities')
+        lesson_plan.resources = data.get('resources')
+        lesson_plan.save()
+
+        students = data.get('students', [])
+        for student in students:
+            info = {
+                "comment": student.get('comment'),
+                "student_id": student['student']['id'],
+                "lesson_plan_id": plan_id
+            }
+            lesson_plan_student, created = LessonPlanStudents.objects.get_or_create(
+                lesson_plan_id=plan_id,
+                student_id=student['student']['id'],
+                defaults=info
+            )
+            if not created:
+                lesson_plan_student.comment = student.get('comment')
+                lesson_plan_student.save()
+
+        return Response({
+            "success": True,
+            "msg": "Lesson plan updated",
+            "lesson_plan": LessonPlanSerializer(lesson_plan).data
+        })
+
+
+class TeacherGetLessonPlanView(generics.ListAPIView):
+    serializer_class = TeacherLessonPlanGetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        try:
+            teacher = Teacher.objects.get(user=self.request.user)
+        except Teacher.DoesNotExist:
+            return LessonPlan.objects.none()
+
+        today = localdate()
+        weekday = today.weekday()
+
+        # 🔹 hafta hisoblash
+        if weekday >= 5:
+            monday = today + timedelta(days=(7 - weekday))
+        else:
+            monday = today - timedelta(days=weekday)
+
+        friday = monday + timedelta(days=4)
+
+        timetable = ClassTimeTable.objects.filter(teacher=teacher)
+
+        group_ids = list(timetable.values_list("group_id", flat=True))
+        flow_ids = list(timetable.values_list("flow_id", flat=True))
+
+        query = Q()
+
+        if group_ids:
+            query |= Q(group_id__in=group_ids)
+
+        if flow_ids:
+            query |= Q(flow_id__in=flow_ids)
+
+        # 🔥 commentlarni oldindan olib kelamiz
+        comments_qs = LessonPlanStudents.objects.select_related(
+            "student__user"
+        )
+
+        return (
+            LessonPlan.objects
+            .filter(
+                teacher=teacher,
+                date__range=[monday, friday]
+            )
+            .filter(query)
+            .select_related("group", "flow")
+            .prefetch_related(
+                Prefetch(
+                    "lessonplanstudents_set",
+                    queryset=comments_qs,
+                    to_attr="_comments_cache"
+                ),
+                "group__students__user",
+                "flow__students__user"  # ✅ MUHIM FIX
+            )
+        )
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response(
+                {"msg": "Lesson plan not found"},
+                status=status.HTTP_200_OK
+            )
+
+        current_date = now().date()
+
+        data = []
+        for lesson_plan in queryset:
+            status_flag = current_date < lesson_plan.date
+
+            data.append({
+                "group": (
+                    lesson_plan.group.name
+                    if lesson_plan.group
+                    else lesson_plan.flow.name
+                    if lesson_plan.flow
+                    else None
+                ),
+                "lesson_plan": self.get_serializer(lesson_plan).data,
+                "status": status_flag
+            })
+
+        return Response(data)
+
+class TeacherTimeTableView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        which_week = request.query_params.get('which_week', 'current')
+
+        try:
+            teacher = Teacher.objects.select_related('user').prefetch_related('branches').get(user=request.user)
+        except Teacher.DoesNotExist:
+            return Response(
+                {'error': 'Siz teacher emassiz'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        branch_ids = list(teacher.branches.values_list('id', flat=True))
+
+        if not branch_ids:
+            return Response(
+                {'error': 'Sizning profilingizda branch topilmadi'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        today = localdate()
+        start_of_week = today - timedelta(days=today.weekday())
+
+        if which_week == 'prev':
+            start_of_week -= timedelta(days=7)
+        elif which_week == 'next':
+            start_of_week += timedelta(days=7)
+
+        end_of_week = start_of_week + timedelta(days=6)
+
+        hours_qs = Hours.objects.filter(branch_id__in=branch_ids).order_by('order')
+        hours_map = {
+            h.id: {
+                'id': h.id,
+                'name': h.name,
+                'start_time': h.start_time.strftime('%H:%M'),
+                'end_time': h.end_time.strftime('%H:%M'),
+                'order': h.order,
+            }
+            for h in hours_qs
+        }
+
+        lessons = (
+            ClassTimeTable.objects
+            .filter(
+                branch_id__in=branch_ids,
+                teacher=teacher,
+                date__gte=start_of_week,
+                date__lte=end_of_week,
+            )
+            .select_related(
+                'hours', 'room', 'subject', 'teacher__user',
+                'group__class_number', 'group__color', 'flow',
+                'branch'
+            )
+            .order_by('date', 'hours__order')
+        )
+
+        week_days_names = [
+            'Dushanba', 'Seshanba', 'Chorshanba',
+            'Payshanba', 'Juma', 'Shanba', 'Yakshanba'
+        ]
+
+        days_data = {}
+        for i in range(7):
+            day_date = start_of_week + timedelta(days=i)
+            date_str = day_date.strftime('%Y-%m-%d')
+            days_data[date_str] = {
+                'date': date_str,
+                'weekday': week_days_names[day_date.weekday()],
+                'lessons': []
+            }
+
+        for lesson in lessons:
+            date_str = lesson.date.strftime('%Y-%m-%d')
+            if date_str not in days_data:
+                continue
+
+            hour_info = hours_map.get(lesson.hours_id, {})
+
+            if lesson.flow:
+                group_info = {
+                    'id': lesson.flow.id,
+                    'name': lesson.flow.name,
+                    'type': 'flow',
+                    'classes': lesson.flow.classes,
+                }
+            elif lesson.group:
+                group_name = lesson.group.name
+                if lesson.group.class_number and lesson.group.color:
+                    group_name = f"{lesson.group.class_number.number}-{lesson.group.color.name}"
+                group_info = {
+                    'id': lesson.group.id,
+                    'name': group_name,
+                    'type': 'group',
+                }
+            else:
+                group_info = None
+
+            lesson_data = {
+                'id': lesson.id,
+                'time': f"{hour_info.get('start_time', '')} - {hour_info.get('end_time', '')}",
+                'hour': hour_info,
+                'subject': {
+                    'id': lesson.subject.id,
+                    'name': lesson.subject.name,
+                } if lesson.subject else None,
+                'room': {
+                    'id': lesson.room.id,
+                    'name': lesson.room.name,
+                } if lesson.room else None,
+                'group': group_info,
+                'branch': {
+                    'id': lesson.branch.id,
+                    'name': lesson.branch.name,
+                } if lesson.branch else None,
+                'is_flow': bool(lesson.flow),
+                'students_count': lesson.students.count(),
+            }
+
+            days_data[date_str]['lessons'].append(lesson_data)
+
+        schedule = list(days_data.values())
+
+        total_lessons = sum(len(d['lessons']) for d in schedule)
+        active_days = sum(1 for d in schedule if d['lessons'])
+
+        teacher_info = {
+            'id': teacher.id,
+            'name': teacher.user.name,
+            'surname': teacher.user.surname,
+        }
+
+        branches_info = [
+            {'id': b.id, 'name': b.name}
+            for b in teacher.branches.all()
+        ]
+
+        return Response({
+            'teacher': teacher_info,
+            'branches': branches_info,
+            'week_range': {
+                'start': start_of_week.strftime('%Y-%m-%d'),
+                'end': end_of_week.strftime('%Y-%m-%d'),
+            },
+            'summary': {
+                'total_lessons': total_lessons,
+                'active_days': active_days,
+            },
+            'hours_list': list(hours_map.values()),
+            'schedule': schedule,
+        })
+

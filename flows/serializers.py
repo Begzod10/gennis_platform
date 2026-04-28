@@ -1,0 +1,90 @@
+from rest_framework import serializers
+
+from branch.models import Branch
+from branch.serializers import BranchSerializer
+from students.models import Student
+from students.serializers import StudentSerializer
+from subjects.models import Subject, SubjectLevel
+from subjects.serializers import SubjectSerializer, SubjectLevelSerializer
+from teachers.models import Teacher
+from teachers.serializers import TeacherSerializer
+from .functions.flowClasses import flow_classes
+from .models import Flow
+
+
+class FlowCreateUpdateSerializer(serializers.ModelSerializer):
+    update_type = serializers.CharField(default=None, allow_blank=True)
+    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), allow_null=True, allow_empty=True,
+                                                 required=False)
+    teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all(), required=False, allow_null=True)
+    students = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), many=True)
+    level = serializers.PrimaryKeyRelatedField(queryset=SubjectLevel.objects.all(), allow_null=True, required=False)
+    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all())
+    order_by = serializers.IntegerField(source='order', required=False)
+
+    class Meta:
+        model = Flow
+        fields = ['id', 'name', 'level', 'activity', 'subject', 'teacher', 'students', 'update_type', 'branch',
+                  'classes',"order_by"]
+
+    def create(self, validated_data):
+        students = validated_data.pop('students')
+        flow = Flow.objects.create(**validated_data)
+        flow.students.set(students)
+        flow.save()
+        flow_classes(flow)
+        return flow
+
+    def update(self, instance, validated_data):
+        update_type = validated_data.get('update_type', None)
+        order_by = validated_data.get('order', instance.order)
+        instance.name = validated_data.get('name', instance.name)
+        instance.level = validated_data.get('level', instance.level) if validated_data.get('level') else None
+        instance.activity = validated_data.get('activity', instance.activity)
+        instance.subject = validated_data.get('subject', instance.subject)
+        instance.teacher = validated_data.get('teacher', instance.teacher)
+        Flow.objects.filter(order=order_by).update(order=instance.order)
+        instance.order = order_by
+
+
+        if update_type:
+            if update_type == 'add_students':
+                students = validated_data.get('students')
+                for student in students:
+                    instance.students.add(student)
+                    student.class_time_table.set(instance.classtimetable_set.all())
+
+
+            elif update_type == 'remove_students':
+                students = validated_data.get('students')
+                for student in students:
+                    instance.students.remove(student)
+                    for time_table in instance.classtimetable_set.all():
+                        student.class_time_table.remove(time_table)
+        instance.save()
+        flow_classes(instance)
+        return instance
+
+
+class FlowsSerializer(serializers.ModelSerializer):
+    subject = SubjectSerializer(read_only=True)
+    teacher = TeacherSerializer(read_only=True)
+    students = StudentSerializer(read_only=True, many=True)
+    level = SubjectLevelSerializer(read_only=True)
+    branch = BranchSerializer(read_only=True)
+    type = serializers.CharField(default='flow', read_only=True)
+
+    class Meta:
+        model = Flow
+        fields = ['id', 'name', 'level', 'activity', 'subject', 'teacher', 'students', 'branch', 'type', 'classes']
+
+
+class FlowForTeacherProfile(serializers.ModelSerializer):
+    subject = SubjectSerializer(read_only=True)
+    teacher = serializers.PrimaryKeyRelatedField(read_only=True)
+    level = SubjectLevelSerializer(read_only=True)
+    type = serializers.CharField(default='flow', read_only=True)
+
+    class Meta:
+        model = Flow
+        fields = ['id', 'name', 'level', 'activity', 'subject', 'teacher', 'type', 'classes']

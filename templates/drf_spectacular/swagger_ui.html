@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ title|default:"Swagger UI" }}</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ swagger_ui_css }}">
+  <style>
+    *, *:after, *:before { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; background: #fafafa; }
+
+    #layout {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: 240px;
+      min-width: 240px;
+      background: #1b1b1b;
+      color: #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    #sidebar-header {
+      padding: 18px 16px 12px;
+      border-bottom: 1px solid #333;
+      flex-shrink: 0;
+    }
+
+    #sidebar-header h2 {
+      margin: 0 0 4px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.4px;
+    }
+
+    #sidebar-header p {
+      margin: 0;
+      font-size: 11px;
+      color: #888;
+    }
+
+    #sidebar-search {
+      padding: 10px 12px;
+      flex-shrink: 0;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    #sidebar-search input {
+      width: 100%;
+      padding: 6px 10px;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #e0e0e0;
+      font-size: 12px;
+      outline: none;
+    }
+
+    #sidebar-search input::placeholder { color: #666; }
+    #sidebar-search input:focus { border-color: #49cc90; }
+
+    #tag-list {
+      overflow-y: auto;
+      flex: 1;
+      padding: 8px 0;
+    }
+
+    #tag-list::-webkit-scrollbar { width: 4px; }
+    #tag-list::-webkit-scrollbar-track { background: #1b1b1b; }
+    #tag-list::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+
+    .tag-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #c0c0c0;
+      border-left: 3px solid transparent;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      text-decoration: none;
+    }
+
+    .tag-item:hover {
+      background: #2a2a2a;
+      color: #fff;
+      border-left-color: #49cc90;
+    }
+
+    .tag-item.active {
+      background: #222;
+      color: #49cc90;
+      border-left-color: #49cc90;
+      font-weight: 600;
+    }
+
+    .tag-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #49cc90;
+      flex-shrink: 0;
+    }
+
+    #sidebar-footer {
+      padding: 10px 16px;
+      border-top: 1px solid #2a2a2a;
+      font-size: 11px;
+      color: #555;
+      flex-shrink: 0;
+    }
+
+    /* ── Main content ── */
+    #main {
+      flex: 1;
+      overflow-y: auto;
+      height: 100vh;
+    }
+
+    /* Fix swagger-ui topbar to scroll with content */
+    .swagger-ui .topbar { display: none; }
+
+    .swagger-ui .info { margin: 30px 0 20px; }
+  </style>
+</head>
+<body>
+<div id="layout">
+
+  <!-- Sidebar -->
+  <nav id="sidebar">
+    <div id="sidebar-header">
+      <h2>{{ title|default:"API Docs" }}</h2>
+      <p>v{{ version|default:"1.0.0" }}</p>
+    </div>
+    <div id="sidebar-search">
+      <input type="text" id="search-input" placeholder="Search tags…">
+    </div>
+    <div id="tag-list">
+      <div style="padding:12px 16px;font-size:12px;color:#555;">Loading…</div>
+    </div>
+    <div id="sidebar-footer">
+      <a href="/api/redoc/" style="color:#49cc90;text-decoration:none;font-size:12px;">ReDoc view →</a>
+    </div>
+  </nav>
+
+  <!-- Swagger UI -->
+  <div id="main">
+    <div id="swagger-ui"></div>
+  </div>
+
+</div>
+
+<script src="{{ swagger_ui_bundle }}"></script>
+<script src="{{ swagger_ui_standalone }}"></script>
+<script>
+{% include template_name_js %}
+</script>
+<script>
+(function () {
+  function buildSidebar(tags) {
+    const list = document.getElementById('tag-list');
+    if (!tags || tags.length === 0) {
+      list.innerHTML = '<div style="padding:12px 16px;font-size:12px;color:#555;">No tags found</div>';
+      return;
+    }
+
+    list.innerHTML = tags.map(tag => `
+      <a class="tag-item" href="#" data-tag="${tag}">
+        <span class="tag-dot"></span>
+        <span>${tag}</span>
+      </a>
+    `).join('');
+
+    list.querySelectorAll('.tag-item').forEach(item => {
+      item.addEventListener('click', function (e) {
+        e.preventDefault();
+        scrollToTag(this.dataset.tag);
+        list.querySelectorAll('.tag-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+  }
+
+  function scrollToTag(tagName) {
+    const main = document.getElementById('main');
+    // Swagger UI renders <span data-tag="TagName"> inside the section header
+    const tagEl = main.querySelector(`[data-tag="${tagName}"]`);
+    if (tagEl) {
+      tagEl.closest('.opblock-tag-section, section')
+        ? tagEl.closest('.opblock-tag-section, section').scrollIntoView({ behavior: 'smooth', block: 'start' })
+        : tagEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    // fallback: match visible heading text
+    const headings = main.querySelectorAll('.opblock-tag');
+    for (const el of headings) {
+      if (el.textContent.trim().toLowerCase().startsWith(tagName.toLowerCase())) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+    }
+  }
+
+  function filterTags(query) {
+    document.querySelectorAll('.tag-item').forEach(item => {
+      item.style.display = item.dataset.tag.toLowerCase().includes(query.toLowerCase()) ? '' : 'none';
+    });
+  }
+
+  // Poll the Swagger UI redux store until the spec is loaded, then build sidebar
+  function tryBuildFromUI(attempts) {
+    attempts = attempts || 0;
+    if (attempts > 60) return; // give up after ~6s
+
+    try {
+      const state = ui.getState();
+      const json = state.getIn(['spec', 'json']);
+      if (!json) throw new Error('not ready');
+
+      const tagSet = new Set();
+
+      // Prefer top-level tags array
+      const topTags = json.get ? json.get('tags') : json.tags;
+      if (topTags && topTags.size > 0) {
+        topTags.forEach(t => tagSet.add(t.get ? t.get('name') : t.name));
+      }
+
+      // Derive from paths as fallback
+      if (tagSet.size === 0) {
+        const paths = json.get ? json.get('paths') : json.paths;
+        if (paths) {
+          const pathsObj = paths.toJS ? paths.toJS() : paths;
+          Object.values(pathsObj).forEach(methods => {
+            Object.values(methods).forEach(op => {
+              if (op && op.tags) op.tags.forEach(t => tagSet.add(t));
+            });
+          });
+        }
+      }
+
+      const tags = Array.from(tagSet).sort((a, b) => a.localeCompare(b));
+      buildSidebar(tags);
+    } catch (_) {
+      setTimeout(() => tryBuildFromUI(attempts + 1), 100);
+    }
+  }
+
+  document.getElementById('search-input').addEventListener('input', function () {
+    filterTags(this.value);
+  });
+
+  // Start polling after SwaggerUIBundle initialises
+  setTimeout(() => tryBuildFromUI(0), 300);
+})();
+</script>
+</body>
+</html>
