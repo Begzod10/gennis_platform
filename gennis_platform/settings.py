@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'maintenance.apps.MaintenanceConfig',
     "report",
     'surveys'
+    'tasks'
 ]
 
 MIDDLEWARE = [
@@ -84,6 +85,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # "tasks.middlewear.RecurringTaskMiddleware",
     "tasks.middlewear.ApiLogMiddleware",
+    'surveys.apps.SurveysConfig'
 ]
 
 ROOT_URLCONF = 'gennis_platform.urls'
