@@ -10,6 +10,7 @@ class OverheadType(models.Model):
     order = models.IntegerField(null=True, blank=True)
     cost = models.IntegerField(null=True, blank=True)
     changeable = models.BooleanField(default=True)
+    branch = models.ForeignKey('branch.Branch', on_delete=models.SET_NULL, null=True, blank=True, related_name='overhead_types')
     management_id = models.IntegerField(null=True, blank=True)
     deleted = models.BooleanField(default=False)
 
