@@ -17,7 +17,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Sum
 from permissions.response import CustomPagination
 from overhead.filters import OverheadFilter
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 class OverheadListView(QueryParamFilterMixin, generics.ListAPIView):
     filter_mappings = {
         'status': 'deleted',
@@ -74,15 +75,30 @@ class OverheadListView(QueryParamFilterMixin, generics.ListAPIView):
 
 @extend_schema(
     tags=['Overhead Types'],
-    summary='List all overhead types',
-    description='Returns active (non-deleted) overhead types ordered by `order`, then `id`.',
+    summary='List overhead types (filterable by branch)',
+    description=(
+        'Returns active (non-deleted) overhead types ordered by `order`, then `id`. '
+        'Pass `?branch_id=` to scope results to a single branch — strongly recommended, '
+        'since each branch has its own copy of every type.'
+    ),
+    parameters=[
+        OpenApiParameter('branch_id', OpenApiTypes.INT, OpenApiParameter.QUERY, required=False,
+                         description='Branch ID; omit to list all branches'),
+    ],
     responses={200: OverheadTypeListResponseSerializer},
 )
 class OverheadTYpeListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        types = OverheadType.objects.filter(deleted=False).order_by('order', 'id')
+        qs = OverheadType.objects.filter(deleted=False)
+        branch_id = request.query_params.get('branch_id')
+        if branch_id:
+            try:
+                qs = qs.filter(branch_id=int(branch_id))
+            except (TypeError, ValueError):
+                return Response({'success': False, 'message': 'Invalid branch_id'}, status=400)
+        qs = qs.order_by('order', 'id')
         return Response({
             'success': True,
             'data': [
@@ -92,8 +108,9 @@ class OverheadTYpeListView(APIView):
                     'cost': t.cost,
                     'changeable': t.changeable,
                     'order': t.order,
+                    'branch_id': t.branch_id,
                 }
-                for t in types
+                for t in qs
             ],
         })
 

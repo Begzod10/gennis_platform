@@ -84,6 +84,7 @@ class OverheadTypeListItemSerializer(serializers.Serializer):
     cost = serializers.IntegerField(allow_null=True)
     changeable = serializers.BooleanField()
     order = serializers.IntegerField(allow_null=True)
+    branch_id = serializers.IntegerField(allow_null=True)
 
 
 class OverheadTypeListResponseSerializer(serializers.Serializer):
