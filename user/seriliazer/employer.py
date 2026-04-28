@@ -12,6 +12,7 @@ class EmployerSerializer(serializers.ModelSerializer):
     job = serializers.SerializerMethodField(required=False)
     status = serializers.SerializerMethodField(required=False)
     user_id = serializers.SerializerMethodField(required=False)
+    profile_img =serializers.CharField(required=False,source='user.profile_img')
 
     class Meta:
         model = CustomAutoGroup

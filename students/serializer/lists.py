@@ -9,10 +9,11 @@ class UserSerializer(serializers.ModelSerializer):
     age = serializers.SerializerMethodField(required=False)
     language = serializers.CharField(source='language.name', read_only=True)
     id = serializers.SerializerMethodField(required=False)
+    profile_img = serializers.CharField(source='profile_img.url', read_only=True)
 
     class Meta:
         model = CustomUser
-        fields = ('id', 'name', 'surname', 'phone', 'age', 'registered_date', 'language')
+        fields = ('id', 'name', 'surname', 'phone', 'age', 'registered_date', 'language','profile_img')
 
     def get_age(self, obj):
         return obj.calculate_age()
