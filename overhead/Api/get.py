@@ -68,17 +68,24 @@ class OverheadListView(QueryParamFilterMixin, generics.ListAPIView):
             'totalCount': data
         })
 
-class OverheadTYpeListView(generics.ListAPIView):
+class OverheadTYpeListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    queryset = OverheadType.objects.order_by('order').all()
-
-    serializer_class = OverheadSerializerGetTYpe
-
-    def get(self, request, *args, **kwargs):
-        queryset = OverheadType.objects.all()
-        serializer = OverheadSerializerGetTYpe(queryset, many=True)
-        return Response(serializer.data)
+    def get(self, request):
+        types = OverheadType.objects.filter(deleted=False).order_by('order', 'id')
+        return Response({
+            'success': True,
+            'data': [
+                {
+                    'id': t.id,
+                    'name': t.name,
+                    'cost': t.cost,
+                    'changeable': t.changeable,
+                    'order': t.order,
+                }
+                for t in types
+            ],
+        })
 
 
 class OverheadRetrieveView(generics.RetrieveAPIView):
