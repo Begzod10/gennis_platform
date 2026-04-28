@@ -145,6 +145,7 @@ class StudentCallHistoryView(View):
         date_from = request.GET.get("date_from")  # 2024-01-01
         date_to = request.GET.get("date_to")  # 2024-01-31
         callid = request.GET.get("callid")
+        branch_id = request.GET.get("branch")
 
 
         try:
@@ -170,6 +171,11 @@ class StudentCallHistoryView(View):
                     )
                     .order_by("-called_at")
                 )
+                if branch_id:
+                    calls = calls.filter(
+                        Q(student__user__branch_id=branch_id) |
+                        Q(lead__branch_id=branch_id)
+                    )
 
                 result = []
                 for call in calls:
