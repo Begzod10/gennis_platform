@@ -74,6 +74,8 @@ class CallAsyncView(View):
             "call_log_id": call.id,
             "ws_url": f"ws://0.0.0.0:8000//ws/call/{callid}/"
         })
+
+
 # @method_decorator(csrf_exempt, name='dispatch')
 # class CallAsyncView(View):
 #     async def post(self, request):
@@ -147,7 +149,6 @@ class StudentCallHistoryView(View):
         callid = request.GET.get("callid")
         branch_id = request.GET.get("branch")
 
-
         try:
             def get_calls():
                 filters = {}
@@ -172,6 +173,7 @@ class StudentCallHistoryView(View):
                     .order_by("-called_at")
                 )
                 if branch_id:
+                    from django.db.models import Q
                     calls = calls.filter(
                         Q(student__user__branch_id=branch_id) |
                         Q(lead__branch_id=branch_id)
