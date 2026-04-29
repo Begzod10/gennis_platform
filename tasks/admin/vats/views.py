@@ -148,7 +148,7 @@ class StudentCallHistoryView(View):
         date_to = request.GET.get("date_to")  # 2024-01-31
         callid = request.GET.get("callid")
         branch_id = request.GET.get("branch")
-
+        type = request.GET.get("type")  # "debtor", "lead_debtor", "lead"
         try:
             def get_calls():
                 filters = {}
@@ -172,6 +172,10 @@ class StudentCallHistoryView(View):
                     )
                     .order_by("-called_at")
                 )
+                if type == "debtor":
+                    calls = calls.filter(student__isnull=False)
+                elif type == "lead":
+                    calls = calls.filter(lead__isnull=False)
                 if branch_id:
                     from django.db.models import Q
                     calls = calls.filter(
