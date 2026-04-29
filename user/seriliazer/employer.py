@@ -16,7 +16,7 @@ class EmployerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomAutoGroup
-        fields = ('id', 'name', 'phone', 'age', 'job', 'status', 'user_id')
+        fields = ('id', 'name', 'phone', 'age', 'job', 'status', 'user_id','profile_img')
 
     def get_name(self, obj):
         return f"{obj.user.name} {obj.user.surname} {obj.user.father_name}"
