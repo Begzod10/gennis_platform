@@ -69,8 +69,8 @@ INSTALLED_APPS = [
     'apps.investor.apps.InvestorConfig',
     'maintenance.apps.MaintenanceConfig',
     "report",
-    'surveys'
-    'tasks'
+    'surveys',
+    # 'tasks',
     'gemini',
 ]
 
@@ -86,7 +86,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # "tasks.middlewear.RecurringTaskMiddleware",
     "tasks.middlewear.ApiLogMiddleware",
-    'surveys.apps.SurveysConfig'
+    # 'surveys.apps.SurveysConfig'
 ]
 
 ROOT_URLCONF = 'gennis_platform.urls'
