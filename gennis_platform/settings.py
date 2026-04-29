@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     "report",
     'surveys'
     'tasks'
+    'gemini',
 ]
 
 MIDDLEWARE = [
@@ -200,6 +201,12 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute=0, hour=20),
         # "schedule": crontab(minute="*/1"),
 
+    },
+    'check-lesson-plans-daily': {
+        'task': 'check_lesson_plans',
+        'schedule': crontab(hour=21, minute="0"),
+        # 'schedule': crontab(minute="*/1"),
+        'options': {'expires': 3600}
     },
     # "update_deleted_students_debts": {
     #     "task": "students.tasks.update_deleted_students_debts",

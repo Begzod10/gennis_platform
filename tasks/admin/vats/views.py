@@ -74,6 +74,8 @@ class CallAsyncView(View):
             "call_log_id": call.id,
             "ws_url": f"ws://0.0.0.0:8000//ws/call/{callid}/"
         })
+
+
 # @method_decorator(csrf_exempt, name='dispatch')
 # class CallAsyncView(View):
 #     async def post(self, request):
@@ -145,8 +147,7 @@ class StudentCallHistoryView(View):
         date_from = request.GET.get("date_from")  # 2024-01-01
         date_to = request.GET.get("date_to")  # 2024-01-31
         callid = request.GET.get("callid")
-        # if not student_id and not lead_id:
-        #     return JsonResponse({"error": "student_id yoki lead_id majburiy"}, status=400)
+        branch_id = request.GET.get("branch")
 
         try:
             def get_calls():
@@ -171,6 +172,12 @@ class StudentCallHistoryView(View):
                     )
                     .order_by("-called_at")
                 )
+                if branch_id:
+                    from django.db.models import Q
+                    calls = calls.filter(
+                        Q(student__user__branch_id=branch_id) |
+                        Q(lead__branch_id=branch_id)
+                    )
 
                 result = []
                 for call in calls:
@@ -200,7 +207,7 @@ class StudentCallHistoryView(View):
                     result.append({
                         "id": call.id,
                         "person": person,
-
+                        'branch': call.branch_id,
                         # VATS ma'lumotlari
                         "vats_call_id": call.vats_call_id,
                         "vats_phone": call.vats_phone,

@@ -18,6 +18,8 @@ class LessonPlan(models.Model):
     activities = models.TextField(null=True, blank=True)
     resources = models.TextField(null=True, blank=True)
     updated = models.DateField(null=True)
+    ball = models.PositiveSmallIntegerField(null=True, blank=True)
+    conclusion = models.TextField(null=True, blank=True)
 
     class Meta:
         constraints = [

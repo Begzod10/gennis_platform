@@ -48,7 +48,7 @@ class AudioStreamer {
 
       // Load the audio worklet module
       await this.audioContext.audioWorklet.addModule(
-        "audio-processors/capture.worklet.js"
+        "/static_admin/gemini/audio-processors/capture.worklet.js"
       );
 
       // Create the audio worklet node
@@ -423,7 +423,7 @@ class AudioPlayer {
 
       // Load the audio worklet from external file
       await this.audioContext.audioWorklet.addModule(
-        "audio-processors/playback.worklet.js"
+        "/static_admin/gemini/audio-processors/playback.worklet.js"
       );
 
       // Create worklet node

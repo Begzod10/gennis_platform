@@ -5,11 +5,123 @@ from datetime import timedelta, datetime
 
 from celery import shared_task
 from django.utils import timezone
+from openai import OpenAI
 
 from lesson_plan.models import LessonPlan, LessonPlanFile
 from school_time_table.models import ClassTimeTable
 
 logger = logging.getLogger(__name__)
+
+SYSTEM_PROMPT = """You are an expert education evaluator. You will receive a teacher's lesson plan and must evaluate it.
+
+Evaluation criteria:
+- Objective clarity (is the lesson objective clear and measurable?)
+- Main lesson content (is the content well-structured and appropriate?)
+- Homework relevance (does homework reinforce the lesson?)
+- Assessment quality (are assessments aligned with objectives?)
+- Activities engagement (are activities interactive and effective?)
+- Resources appropriateness (are resources suitable for the lesson?)
+
+You must respond in JSON format with exactly two fields:
+{
+    "ball": <integer from 1 to 10>,
+    "conclusion": "<brief evaluation summary in Uzbek language explaining strengths and weaknesses>"
+}
+
+Respond ONLY with valid JSON. No extra text."""
+
+USER_PROMPT_TEMPLATE = """Evaluate this lesson plan:
+
+Objective: {objective}
+Main Lesson: {main_lesson}
+Homework: {homework}
+Assessment: {assessment}
+Activities: {activities}
+Resources: {resources}"""
+
+
+def evaluate_lesson_plan(lesson_plan):
+    client = OpenAI(
+        api_key=os.environ.get("PROXY_API_KEY"),
+        base_url=os.environ.get("OPENAI_BASE_URL", "https://lively-breeze-0247.rimefara22.workers.dev/v1"),
+    )
+
+    user_prompt = USER_PROMPT_TEMPLATE.format(
+        objective=lesson_plan.objective or "",
+        main_lesson=lesson_plan.main_lesson or "",
+        homework=lesson_plan.homework or "",
+        assessment=lesson_plan.assessment or "",
+        activities=lesson_plan.activities or "",
+        resources=lesson_plan.resources or "",
+    )
+
+    response = client.chat.completions.create(
+        model="gpt-5-mini",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ],
+        max_completion_tokens=1000,
+    )
+
+    content = response.choices[0].message.content.strip()
+    if content.startswith("```"):
+        content = content.split("```")[1]
+        if content.startswith("json"):
+            content = content[4:]
+        content = content.strip()
+
+    result = json.loads(content)
+    score = int(result["ball"])
+    conclusion = str(result["conclusion"])
+
+    if score < 1 or score > 10:
+        logger.warning(f"Score out of range: {score}")
+        score = max(1, min(10, score))
+
+    return score, conclusion
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=120, name='check_lesson_plans')
+def check_lesson_plans(self):
+    try:
+
+        today = datetime.now().date()
+        three_days_ahead = today + timedelta(days=3)
+
+        lesson_plans = LessonPlan.objects.filter(
+            ball__isnull=True,
+            objective__isnull=False,
+            main_lesson__isnull=False,
+            homework__isnull=False,
+            date__range=[today, three_days_ahead]
+        )
+
+        if not lesson_plans.exists():
+            logger.info("No unscored lesson plans found")
+            return {"status": "success", "checked": 0}
+
+        checked = 0
+        errors = 0
+
+        for lesson_plan in lesson_plans:
+            try:
+                score, conclusion = evaluate_lesson_plan(lesson_plan)
+                lesson_plan.ball = score
+                lesson_plan.conclusion = conclusion
+                lesson_plan.save(update_fields=["ball", "conclusion"])
+                checked += 1
+                logger.info(f"Lesson plan {lesson_plan.id} scored: {score}/10")
+            except (ValueError, json.JSONDecodeError, KeyError, Exception) as e:
+                errors += 1
+                logger.error(f"Error scoring lesson plan {lesson_plan.id}: {e}")
+
+        logger.info(f"Checked {checked} lesson plans, {errors} errors")
+        return {"status": "success", "checked": checked, "errors": errors}
+
+    except Exception as exc:
+        logger.error(f"Task failed: {exc}")
+        raise self.retry(exc=exc)
 
 
 @shared_task
