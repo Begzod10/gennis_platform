@@ -9,13 +9,18 @@ class UserSerializer(serializers.ModelSerializer):
     age = serializers.SerializerMethodField(required=False)
     language = serializers.CharField(source='language.name', read_only=True)
     id = serializers.SerializerMethodField(required=False)
+    profile_img = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = CustomUser
-        fields = ('id', 'name', 'surname', 'phone', 'age', 'registered_date', 'language')
+        fields = ('id', 'name', 'surname', 'phone', 'age', 'registered_date', 'language','profile_img')
 
     def get_age(self, obj):
         return obj.calculate_age()
+    def get_profile_img(self,obj):
+        if obj.profile_img:
+            return obj.profile_img.url
+        return None
 
     def get_id(self, obj):
         students = obj.student_user.all()

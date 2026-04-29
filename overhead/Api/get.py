@@ -8,12 +8,17 @@ from rest_framework.views import APIView
 
 from overhead.models import Overhead, OverheadType
 from overhead.serializer.lists import ActiveListTeacherSerializer
-from overhead.serializers import OverheadSerializerGet, OverheadSerializerGetTYpe, MonthDaysSerializer
+from overhead.serializers import (
+    OverheadSerializerGet, OverheadSerializerGetTYpe, MonthDaysSerializer,
+    OverheadTypeListResponseSerializer,
+)
 from permissions.response import QueryParamFilterMixin
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Sum
 from permissions.response import CustomPagination
 from overhead.filters import OverheadFilter
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 class OverheadListView(QueryParamFilterMixin, generics.ListAPIView):
     filter_mappings = {
         'status': 'deleted',
@@ -68,17 +73,46 @@ class OverheadListView(QueryParamFilterMixin, generics.ListAPIView):
             'totalCount': data
         })
 
-class OverheadTYpeListView(generics.ListAPIView):
+@extend_schema(
+    tags=['Overhead Types'],
+    summary='List overhead types (filterable by branch)',
+    description=(
+        'Returns active (non-deleted) overhead types ordered by `order`, then `id`. '
+        'Pass `?branch_id=` to scope results to a single branch — strongly recommended, '
+        'since each branch has its own copy of every type.'
+    ),
+    parameters=[
+        OpenApiParameter('branch_id', OpenApiTypes.INT, OpenApiParameter.QUERY, required=False,
+                         description='Branch ID; omit to list all branches'),
+    ],
+    responses={200: OverheadTypeListResponseSerializer},
+)
+class OverheadTYpeListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    queryset = OverheadType.objects.order_by('order').all()
-
-    serializer_class = OverheadSerializerGetTYpe
-
-    def get(self, request, *args, **kwargs):
-        queryset = OverheadType.objects.all()
-        serializer = OverheadSerializerGetTYpe(queryset, many=True)
-        return Response(serializer.data)
+    def get(self, request):
+        qs = OverheadType.objects.filter(deleted=False)
+        branch_id = request.query_params.get('branch_id')
+        if branch_id:
+            try:
+                qs = qs.filter(branch_id=int(branch_id))
+            except (TypeError, ValueError):
+                return Response({'success': False, 'message': 'Invalid branch_id'}, status=400)
+        qs = qs.order_by('order', 'id')
+        return Response({
+            'success': True,
+            'data': [
+                {
+                    'id': t.id,
+                    'name': t.name,
+                    'cost': t.cost,
+                    'changeable': t.changeable,
+                    'order': t.order,
+                    'branch_id': t.branch_id,
+                }
+                for t in qs
+            ],
+        })
 
 
 class OverheadRetrieveView(generics.RetrieveAPIView):

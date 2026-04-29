@@ -178,6 +178,12 @@ CELERY_BEAT_SCHEDULE = {
         # "schedule": crontab(minute=0, hour=0, day_of_month="1", month_of_year="*/2"),
     },
 
+    # Generate monthly overhead-type logs on the 1st of every month at 00:05
+    "generate-monthly-overhead-logs": {
+        "task": "overhead.generate_monthly_overhead_logs",
+        "schedule": crontab(minute=5, hour=0, day_of_month="1"),
+    },
+
     # Every Saturday at 00:00
     "update-school-time-table": {
         "task": "school_time_table.tasks.update_school_time_table_task",
