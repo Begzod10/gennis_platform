@@ -11,6 +11,15 @@ from .api.branch_transaction import (
     BranchTransactionMonthListView,
     BranchTransactionUpdateView,
 )
+from .api.branch_loan import (
+    BranchLoanCancelView,
+    BranchLoanCreateView,
+    BranchLoanDetailView,
+    BranchLoanListView,
+    BranchLoanOutstandingView,
+    BranchLoanRepayView,
+    BranchLoanUpdateView,
+)
 
 urlpatterns = [
     path('branch_create/', BranchCreateView.as_view(), name='branch-create'),
@@ -32,4 +41,12 @@ urlpatterns = [
          name='branch-transaction-delete'),
     path('branch_transaction/deleted/<int:month>/<int:year>/', BranchTransactionDeletedListView.as_view(),
          name='branch-transaction-deleted-list'),
+
+    path('branch_loans/', BranchLoanListView.as_view(), name='branch-loan-list'),
+    path('branch_loans/outstanding/', BranchLoanOutstandingView.as_view(), name='branch-loan-outstanding'),
+    path('branch_loans/create/', BranchLoanCreateView.as_view(), name='branch-loan-create'),
+    path('branch_loans/<int:pk>/', BranchLoanDetailView.as_view(), name='branch-loan-detail'),
+    path('branch_loans/<int:pk>/update/', BranchLoanUpdateView.as_view(), name='branch-loan-update'),
+    path('branch_loans/<int:pk>/repay/', BranchLoanRepayView.as_view(), name='branch-loan-repay'),
+    path('branch_loans/<int:pk>/cancel/', BranchLoanCancelView.as_view(), name='branch-loan-cancel'),
 ]

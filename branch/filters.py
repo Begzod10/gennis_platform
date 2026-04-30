@@ -1,7 +1,7 @@
 import django_filters
 from django.db.models import Q
 
-from branch.models import BranchTransaction
+from branch.models import BranchLoan, BranchTransaction
 
 
 class BranchTransactionFilter(django_filters.FilterSet):
@@ -30,3 +30,14 @@ class BranchTransactionFilter(django_filters.FilterSet):
         if v == 'receive':
             return queryset.filter(is_give=False)
         return queryset
+
+
+class BranchLoanFilter(django_filters.FilterSet):
+    counterparty = django_filters.NumberFilter(field_name='counterparty_id')
+    issued_date = django_filters.DateFromToRangeFilter(field_name='issued_date')
+    due_date = django_filters.DateFromToRangeFilter(field_name='due_date')
+    principal = django_filters.RangeFilter(field_name='principal_amount')
+
+    class Meta:
+        model = BranchLoan
+        fields = ['status', 'direction', 'counterparty', 'issued_date', 'due_date', 'principal']
