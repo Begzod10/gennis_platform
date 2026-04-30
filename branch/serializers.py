@@ -12,6 +12,99 @@ class BranchSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class BranchTransactionPersonSerializer(serializers.Serializer):
+    id = serializers.IntegerField(allow_null=True)
+    name = serializers.CharField(allow_null=True)
+    surname = serializers.CharField(allow_null=True)
+    phone = serializers.CharField(allow_null=True)
+
+
+class BranchTransactionPaymentTypeSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField(allow_null=True)
+
+
+class BranchTransactionItemSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    amount = serializers.IntegerField()
+    is_give = serializers.BooleanField()
+    direction = serializers.ChoiceField(choices=['give', 'receive'])
+    reason = serializers.CharField(allow_null=True)
+    person = BranchTransactionPersonSerializer()
+    payment_type = BranchTransactionPaymentTypeSerializer()
+    branch_id = serializers.IntegerField()
+    date = serializers.CharField(help_text="YYYY-MM-DD")
+
+
+class BranchTransactionCreateRequestSerializer(serializers.Serializer):
+    amount = serializers.IntegerField(help_text="Pul miqdori")
+    is_give = serializers.BooleanField(help_text="True = berildi, False = qabul qilindi")
+    payment_type_id = serializers.IntegerField(help_text="PaymentTypes.id")
+    branch_id = serializers.IntegerField(help_text="Branch.id")
+    date = serializers.DateField(help_text="YYYY-MM-DD")
+    reason = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    person_id = serializers.IntegerField(
+        required=False, allow_null=True,
+        help_text="CustomUser.id — person_name bilan birga yuborilmasin",
+    )
+    person_name = serializers.CharField(
+        required=False, allow_null=True, allow_blank=True,
+        help_text="Tizimda bo'lmagan shaxs uchun ism — person_id bilan birga yuborilmasin",
+    )
+    person_surname = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    person_phone = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
+
+class BranchTransactionUpdateRequestSerializer(serializers.Serializer):
+    amount = serializers.IntegerField(required=False)
+    is_give = serializers.BooleanField(required=False)
+    reason = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    payment_type_id = serializers.IntegerField(required=False)
+    person_id = serializers.IntegerField(required=False, allow_null=True)
+    person_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    person_surname = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    person_phone = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
+
+class BranchTransactionSummarySerializer(serializers.Serializer):
+    total_given = serializers.IntegerField()
+    total_received = serializers.IntegerField()
+    net = serializers.IntegerField()
+
+
+class BranchTransactionCreateResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+    data = BranchTransactionItemSerializer()
+
+
+class BranchTransactionUpdateResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+    data = BranchTransactionItemSerializer()
+
+
+class BranchTransactionListResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    summary = BranchTransactionSummarySerializer()
+    data = BranchTransactionItemSerializer(many=True)
+
+
+class BranchTransactionDeletedListResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    data = BranchTransactionItemSerializer(many=True)
+
+
+class BranchTransactionDeleteResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+
+
+class BranchTransactionErrorResponseSerializer(serializers.Serializer):
+    success = serializers.BooleanField(default=False)
+    message = serializers.CharField()
+
+
 class BranchListSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     location = LocationListSerializers(required=False)

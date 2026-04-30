@@ -1,14 +1,55 @@
 from datetime import datetime
 
 from django.db.models import Sum, Q
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    extend_schema,
+)
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from branch.models import Branch, BranchTransaction
+from branch.serializers import (
+    BranchTransactionCreateRequestSerializer,
+    BranchTransactionCreateResponseSerializer,
+    BranchTransactionDeletedListResponseSerializer,
+    BranchTransactionDeleteResponseSerializer,
+    BranchTransactionErrorResponseSerializer,
+    BranchTransactionListResponseSerializer,
+    BranchTransactionUpdateRequestSerializer,
+    BranchTransactionUpdateResponseSerializer,
+)
 from payments.models import PaymentTypes
 from user.models import CustomUser
+
+
+_ITEM_EXAMPLE = {
+    "id": 17,
+    "amount": 1500000,
+    "is_give": True,
+    "direction": "give",
+    "reason": "Filial uchun avans",
+    "person": {"id": 42, "name": "Ali", "surname": "Valiyev", "phone": "+998901112233"},
+    "payment_type": {"id": 1, "name": "Cash"},
+    "branch_id": 3,
+    "date": "2026-04-30",
+}
+
+_ITEM_EXAMPLE_RECEIVE = {
+    "id": 18,
+    "amount": 800000,
+    "is_give": False,
+    "direction": "receive",
+    "reason": "Filialdan qaytarildi",
+    "person": {"id": None, "name": "Aziz", "surname": "Karimov", "phone": "+998935554433"},
+    "payment_type": {"id": 2, "name": "Click"},
+    "branch_id": 3,
+    "date": "2026-04-29",
+}
 
 
 def _parse_date(s):
@@ -28,12 +69,71 @@ def _serialize_summary(qs):
     }
 
 
+@extend_schema(
+    tags=['Branch Transactions'],
+    summary='Filial tranzaksiyasini yaratish',
+    description=(
+        "Filial bo'yicha pul kirim/chiqimini yaratadi. "
+        "`person_id` (tizim foydalanuvchisi) va `person_name` (qo'lda kiritish) "
+        "ikkalasidan bittasi yuborilishi shart, ikkalasini birga yuborish mumkin emas."
+    ),
+    request=BranchTransactionCreateRequestSerializer,
+    responses={
+        201: BranchTransactionCreateResponseSerializer,
+        400: BranchTransactionErrorResponseSerializer,
+        404: BranchTransactionErrorResponseSerializer,
+    },
+    examples=[
+        OpenApiExample(
+            'Tizim foydalanuvchisiga berildi',
+            value={
+                "amount": 1500000,
+                "is_give": True,
+                "reason": "Filial uchun avans",
+                "payment_type_id": 1,
+                "branch_id": 3,
+                "date": "2026-04-30",
+                "person_id": 42,
+            },
+            request_only=True,
+        ),
+        OpenApiExample(
+            'Tashqi shaxsdan qabul qilindi',
+            value={
+                "amount": 800000,
+                "is_give": False,
+                "reason": "Filialdan qaytarildi",
+                "payment_type_id": 2,
+                "branch_id": 3,
+                "date": "2026-04-29",
+                "person_name": "Aziz",
+                "person_surname": "Karimov",
+                "person_phone": "+998935554433",
+            },
+            request_only=True,
+        ),
+        OpenApiExample(
+            'Muvaffaqiyatli javob',
+            value={
+                "success": True,
+                "message": "Tranzaksiya qo'shildi",
+                "data": _ITEM_EXAMPLE,
+            },
+            response_only=True,
+            status_codes=['201'],
+        ),
+        OpenApiExample(
+            'Xatolik — majburiy maydon yo\'q',
+            value={
+                "success": False,
+                "message": "amount, is_give, payment_type_id, branch_id, date kerak",
+            },
+            response_only=True,
+            status_codes=['400'],
+        ),
+    ],
+)
 class BranchTransactionCreateView(APIView):
-    """
-    POST /branch_transaction/
-    Body: amount, is_give, reason?, payment_type_id, branch_id, date (YYYY-MM-DD),
-          person_id  XOR  person_name/person_surname/person_phone
-    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -116,13 +216,42 @@ class BranchTransactionCreateView(APIView):
         )
 
 
+@extend_schema(
+    tags=['Branch Transactions'],
+    summary='Oylik tranzaksiyalar ro\'yxati',
+    description=(
+        "Berilgan oy/yil bo'yicha o'chirilmagan tranzaksiyalar ro'yxati va umumiy summa. "
+        "`summary` har doim yo'nalish bo'yicha filtrsiz hisoblanadi (Flask bilan mos)."
+    ),
+    parameters=[
+        OpenApiParameter('direction', OpenApiTypes.STR, OpenApiParameter.QUERY,
+                         required=False, enum=['give', 'receive', 'all'],
+                         description="Yo'nalish bo'yicha filtr; default 'all'"),
+        OpenApiParameter('branch_id', OpenApiTypes.INT, OpenApiParameter.QUERY,
+                         required=False, description='Filial ID bo\'yicha filtr'),
+    ],
+    responses={
+        200: BranchTransactionListResponseSerializer,
+        400: BranchTransactionErrorResponseSerializer,
+    },
+    examples=[
+        OpenApiExample(
+            'Muvaffaqiyatli javob',
+            value={
+                "success": True,
+                "summary": {
+                    "total_given": 1500000,
+                    "total_received": 800000,
+                    "net": -700000,
+                },
+                "data": [_ITEM_EXAMPLE, _ITEM_EXAMPLE_RECEIVE],
+            },
+            response_only=True,
+            status_codes=['200'],
+        ),
+    ],
+)
 class BranchTransactionMonthListView(APIView):
-    """
-    GET /branch_transaction/<month>/<year>/
-    Query params:
-        direction: give | receive | all (default all)
-        branch_id: int (optional)
-    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, month, year):
@@ -164,8 +293,43 @@ class BranchTransactionMonthListView(APIView):
         })
 
 
+@extend_schema(
+    tags=['Branch Transactions'],
+    summary='Tranzaksiyani yangilash',
+    description=(
+        "Tranzaksiyaning hech bo'lmaganda bitta maydonini yangilash. "
+        "`person_id` yuborilsa qo'lda kiritilgan ism/familiya/telefon tozalanadi va aksincha. "
+        "`branch_id` va `date` o'zgartirilmaydi (Flask bilan mos)."
+    ),
+    request=BranchTransactionUpdateRequestSerializer,
+    responses={
+        200: BranchTransactionUpdateResponseSerializer,
+        404: BranchTransactionErrorResponseSerializer,
+    },
+    examples=[
+        OpenApiExample(
+            'Summa va sababni yangilash',
+            value={"amount": 1700000, "reason": "Avans qisman qaytarildi"},
+            request_only=True,
+        ),
+        OpenApiExample(
+            'Qo\'lda kiritishdan tizim foydalanuvchisiga o\'tkazish',
+            value={"person_id": 42},
+            request_only=True,
+        ),
+        OpenApiExample(
+            'Muvaffaqiyatli javob',
+            value={
+                "success": True,
+                "message": "Tranzaksiya yangilandi",
+                "data": {**_ITEM_EXAMPLE, "amount": 1700000, "reason": "Avans qisman qaytarildi"},
+            },
+            response_only=True,
+            status_codes=['200'],
+        ),
+    ],
+)
 class BranchTransactionUpdateView(APIView):
-    """PUT /branch_transaction/<int:pk>/"""
     permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
@@ -217,8 +381,30 @@ class BranchTransactionUpdateView(APIView):
         })
 
 
+@extend_schema(
+    tags=['Branch Transactions'],
+    summary='Tranzaksiyani o\'chirish (soft-delete)',
+    description="`deleted=True` qilib belgilaydi; jismoniy o'chirilmaydi.",
+    responses={
+        200: BranchTransactionDeleteResponseSerializer,
+        404: BranchTransactionErrorResponseSerializer,
+    },
+    examples=[
+        OpenApiExample(
+            'Muvaffaqiyatli javob',
+            value={"success": True, "message": "Tranzaksiya o'chirildi"},
+            response_only=True,
+            status_codes=['200'],
+        ),
+        OpenApiExample(
+            'Topilmadi',
+            value={"success": False, "message": "Tranzaksiya topilmadi"},
+            response_only=True,
+            status_codes=['404'],
+        ),
+    ],
+)
 class BranchTransactionDeleteView(APIView):
-    """DELETE /branch_transaction/<int:pk>/  (soft-delete)"""
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
@@ -233,12 +419,31 @@ class BranchTransactionDeleteView(APIView):
         return Response({'success': True, 'message': "Tranzaksiya o'chirildi"})
 
 
+@extend_schema(
+    tags=['Branch Transactions'],
+    summary='O\'chirilgan tranzaksiyalar ro\'yxati',
+    description="Berilgan oy/yil bo'yicha soft-delete qilingan tranzaksiyalar.",
+    parameters=[
+        OpenApiParameter('branch_id', OpenApiTypes.INT, OpenApiParameter.QUERY,
+                         required=False, description='Filial ID bo\'yicha filtr'),
+    ],
+    responses={
+        200: BranchTransactionDeletedListResponseSerializer,
+        400: BranchTransactionErrorResponseSerializer,
+    },
+    examples=[
+        OpenApiExample(
+            'Muvaffaqiyatli javob',
+            value={
+                "success": True,
+                "data": [_ITEM_EXAMPLE],
+            },
+            response_only=True,
+            status_codes=['200'],
+        ),
+    ],
+)
 class BranchTransactionDeletedListView(APIView):
-    """
-    GET /branch_transaction/deleted/<month>/<year>/
-    Query params:
-        branch_id: int (optional)
-    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, month, year):
