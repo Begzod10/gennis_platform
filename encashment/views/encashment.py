@@ -12,6 +12,7 @@ from django.db.models import Prefetch, Q, F, Sum, Case, When, IntegerField, Exis
 from attendances.models import AttendancePerMonth
 from books.models import BranchPayment
 from books.serializers import BranchPaymentListSerializers
+from branch.models import BranchTransaction
 from capital.models import Capital
 from capital.serializer.old_capital import OldCapitalsListSerializers
 from capital.serializers import OldCapital
@@ -130,6 +131,20 @@ class Encashments(APIView):
 
             ).distinct()
             capital_serializer = OldCapitalsListSerializers(capitals, many=True)
+
+            branch_transactions = BranchTransaction.objects.filter(
+                date__range=(ot, do),
+                payment_type_id=payment_type,
+                branch_id=branch,
+                deleted=False,
+            ).order_by('-date', '-id')
+            bt_given = branch_transactions.filter(is_give=True)
+            bt_received = branch_transactions.filter(is_give=False)
+            bt_given_total = bt_given.aggregate(total=Sum('amount'))['total'] or 0
+            bt_received_total = bt_received.aggregate(total=Sum('amount'))['total'] or 0
+            bt_given_data = [tx.convert_json() for tx in bt_given]
+            bt_received_data = [tx.convert_json() for tx in bt_received]
+
             Encashment.objects.get_or_create(
                 ot=ot,
                 do=do,
@@ -168,8 +183,19 @@ class Encashments(APIView):
                     'capital_data': capital_serializer.data,
                     'total_capital': total_capital,
                 },
-                'overall': student_total_payment - (
-                        teacher_total_salary + worker_total_salary + total_capital + total_overhead_payment)
+                'branch_transactions': {
+                    'given': {
+                        'data': bt_given_data,
+                        'total': bt_given_total,
+                    },
+                    'received': {
+                        'data': bt_received_data,
+                        'total': bt_received_total,
+                    },
+                    'net': bt_received_total - bt_given_total,
+                },
+                'overall': (student_total_payment + bt_received_total) - (
+                        teacher_total_salary + worker_total_salary + total_capital + total_overhead_payment + bt_given_total)
             })
 
         except KeyError as e:
@@ -237,11 +263,22 @@ class Encashments(APIView):
 
                 ).aggregate(total=Sum('price'))['total'] or 0
 
+                bt_qs = BranchTransaction.objects.filter(
+                    date__range=(ot, do),
+                    payment_type=payment_type,
+                    branch_id=branch,
+                    deleted=False,
+                )
+                bt_given_total = bt_qs.filter(is_give=True).aggregate(total=Sum('amount'))['total'] or 0
+                bt_received_total = bt_qs.filter(is_give=False).aggregate(total=Sum('amount'))['total'] or 0
+
                 payment_data = {
                     'payment_type': payment_type.name,
-
-                    'overall': student_total_payment - (
-                            teacher_total_salary + worker_total_salary + branch_total_payment + total_capital + total_overhead_payment)
+                    'branch_transactions_given_total': bt_given_total,
+                    'branch_transactions_received_total': bt_received_total,
+                    'branch_transactions_net': bt_received_total - bt_given_total,
+                    'overall': (student_total_payment + bt_received_total) - (
+                            teacher_total_salary + worker_total_salary + branch_total_payment + total_capital + total_overhead_payment + bt_given_total)
                 }
 
                 all_payment_data.append(payment_data)
