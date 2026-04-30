@@ -1,7 +1,32 @@
 from rest_framework import serializers
 
 from location.serializers import LocationListSerializers, Location
-from .models import Branch
+from .models import Branch, BranchTransaction
+
+
+class BranchTransactionListSerializer(serializers.ModelSerializer):
+    """Wraps BranchTransaction.convert_json() for paginated list responses."""
+
+    class Meta:
+        model = BranchTransaction
+        fields = ['id']
+
+    def to_representation(self, instance):
+        return instance.convert_json()
+
+
+class BranchTransactionTotalsRowSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    totalPayment = serializers.IntegerField()
+    totalPaymentCount = serializers.IntegerField()
+    type = serializers.CharField()
+
+
+class BranchTransactionPaginatedListResponseSerializer(serializers.Serializer):
+    count = serializers.IntegerField()
+    next = serializers.CharField(allow_null=True)
+    previous = serializers.CharField(allow_null=True)
+    results = serializers.DictField()
 
 
 class BranchSerializer(serializers.ModelSerializer):

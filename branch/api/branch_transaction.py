@@ -1,17 +1,19 @@
 from datetime import datetime
 
 from django.db.models import Sum, Q
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiExample,
     OpenApiParameter,
     extend_schema,
 )
-from rest_framework import status
+from rest_framework import filters, generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from branch.filters import BranchTransactionFilter
 from branch.models import Branch, BranchTransaction
 from branch.serializers import (
     BranchTransactionCreateRequestSerializer,
@@ -20,10 +22,13 @@ from branch.serializers import (
     BranchTransactionDeleteResponseSerializer,
     BranchTransactionErrorResponseSerializer,
     BranchTransactionListResponseSerializer,
+    BranchTransactionListSerializer,
+    BranchTransactionPaginatedListResponseSerializer,
     BranchTransactionUpdateRequestSerializer,
     BranchTransactionUpdateResponseSerializer,
 )
 from payments.models import PaymentTypes
+from permissions.response import CustomPagination, QueryParamFilterMixin
 from user.models import CustomUser
 
 
@@ -466,4 +471,150 @@ class BranchTransactionDeletedListView(APIView):
         return Response({
             'success': True,
             'data': [tx.convert_json() for tx in qs.order_by('-id')],
+        })
+
+
+@extend_schema(
+    tags=['Branch Transactions'],
+    summary='Tranzaksiyalar ro\'yxati (paginated)',
+    description=(
+        "Filtrlar va sahifalash bilan tranzaksiyalar ro'yxati. "
+        "`?branch=` yuborilmasa, foydalanuvchining o'zining filiali ishlatiladi."
+    ),
+    parameters=[
+        OpenApiParameter('branch', OpenApiTypes.INT, OpenApiParameter.QUERY, required=False,
+                         description='Filial ID. Berilmasa avtomatik foydalanuvchi filiali.'),
+        OpenApiParameter('limit', OpenApiTypes.INT, OpenApiParameter.QUERY, required=False),
+        OpenApiParameter('offset', OpenApiTypes.INT, OpenApiParameter.QUERY, required=False),
+        OpenApiParameter('search', OpenApiTypes.STR, OpenApiParameter.QUERY, required=False,
+                         description="Sabab/ism/familiya bo'yicha qidiruv"),
+        OpenApiParameter('is_give', OpenApiTypes.BOOL, OpenApiParameter.QUERY, required=False),
+        OpenApiParameter('direction', OpenApiTypes.STR, OpenApiParameter.QUERY, required=False,
+                         enum=['give', 'receive']),
+        OpenApiParameter('payment_type', OpenApiTypes.STR, OpenApiParameter.QUERY, required=False,
+                         description="To'lov turi nomi bo'yicha (vergul bilan ajratilgan)"),
+        OpenApiParameter('date_after', OpenApiTypes.DATE, OpenApiParameter.QUERY, required=False),
+        OpenApiParameter('date_before', OpenApiTypes.DATE, OpenApiParameter.QUERY, required=False),
+        OpenApiParameter('amount_min', OpenApiTypes.INT, OpenApiParameter.QUERY, required=False),
+        OpenApiParameter('amount_max', OpenApiTypes.INT, OpenApiParameter.QUERY, required=False),
+    ],
+    responses={200: BranchTransactionPaginatedListResponseSerializer},
+    examples=[
+        OpenApiExample(
+            'Muvaffaqiyatli javob (paginated)',
+            value={
+                "count": 2,
+                "next": None,
+                "previous": None,
+                "results": {
+                    "data": [
+                        {
+                            "id": 17,
+                            "amount": 1500000,
+                            "is_give": True,
+                            "direction": "give",
+                            "reason": "Filial uchun avans",
+                            "person": {"id": 42, "name": "Ali", "surname": "Valiyev", "phone": "+998901112233"},
+                            "payment_type": {"id": 1, "name": "Cash"},
+                            "branch_id": 9,
+                            "date": "2026-04-30",
+                        },
+                    ],
+                    "totalCount": [
+                        {"name": "Total Amount", "totalPayment": 2300000, "totalPaymentCount": 2, "type": "amount"},
+                        {"name": "Total Given", "totalPayment": 1500000, "totalPaymentCount": 1, "type": "given"},
+                        {"name": "Total Received", "totalPayment": 800000, "totalPaymentCount": 1, "type": "received"},
+                        {"name": "Net (received - given)", "totalPayment": -700000, "totalPaymentCount": 2, "type": "net"},
+                        {"name": "Cash Payments", "totalPayment": 1500000, "totalPaymentCount": 1, "type": "cash"},
+                        {"name": "Click Payments", "totalPayment": 800000, "totalPaymentCount": 1, "type": "click"},
+                        {"name": "Bank Transfers", "totalPayment": 0, "totalPaymentCount": 0, "type": "bank"},
+                    ],
+                },
+            },
+            response_only=True,
+            status_codes=['200'],
+        ),
+    ],
+)
+class BranchTransactionListView(QueryParamFilterMixin, generics.ListAPIView):
+    filter_mappings = {
+        'branch': 'branch_id',
+    }
+    permission_classes = [IsAuthenticated]
+    search_fields = ['reason', 'person__name', 'person__surname', 'person_name', 'person_surname']
+
+    queryset = BranchTransaction.objects.filter(deleted=False).select_related(
+        'payment_type', 'person', 'branch',
+    )
+    serializer_class = BranchTransactionListSerializer
+    filterset_class = BranchTransactionFilter
+    pagination_class = CustomPagination
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+
+    def list(self, request, *args, **kwargs):
+        # Reset filter_conditions per request — QueryParamFilterMixin uses class attr
+        self.filter_conditions = Q()
+        queryset = self.filter_queryset(self.get_queryset()).order_by('-date', '-id')
+
+        page = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(page, many=True)
+
+        given_qs = queryset.filter(is_give=True)
+        received_qs = queryset.filter(is_give=False)
+        total_amount = queryset.aggregate(total=Sum('amount'))['total'] or 0
+        given_total = given_qs.aggregate(total=Sum('amount'))['total'] or 0
+        received_total = received_qs.aggregate(total=Sum('amount'))['total'] or 0
+
+        cash_qs = queryset.filter(payment_type__name__iexact='Cash')
+        click_qs = queryset.filter(payment_type__name__iexact='Click')
+        bank_qs = queryset.filter(payment_type__name__iexact='Bank')
+
+        total_count = [
+            {
+                "name": "Total Amount",
+                "totalPayment": total_amount,
+                "totalPaymentCount": queryset.count(),
+                "type": "amount",
+            },
+            {
+                "name": "Total Given",
+                "totalPayment": given_total,
+                "totalPaymentCount": given_qs.count(),
+                "type": "given",
+            },
+            {
+                "name": "Total Received",
+                "totalPayment": received_total,
+                "totalPaymentCount": received_qs.count(),
+                "type": "received",
+            },
+            {
+                "name": "Net (received - given)",
+                "totalPayment": received_total - given_total,
+                "totalPaymentCount": queryset.count(),
+                "type": "net",
+            },
+            {
+                "name": "Cash Payments",
+                "totalPayment": cash_qs.aggregate(total=Sum('amount'))['total'] or 0,
+                "totalPaymentCount": cash_qs.count(),
+                "type": "cash",
+            },
+            {
+                "name": "Click Payments",
+                "totalPayment": click_qs.aggregate(total=Sum('amount'))['total'] or 0,
+                "totalPaymentCount": click_qs.count(),
+                "type": "click",
+            },
+            {
+                "name": "Bank Transfers",
+                "totalPayment": bank_qs.aggregate(total=Sum('amount'))['total'] or 0,
+                "totalPaymentCount": bank_qs.count(),
+                "type": "bank",
+            },
+        ]
+
+        return self.get_paginated_response({
+            'data': serializer.data,
+            'totalCount': total_count,
         })

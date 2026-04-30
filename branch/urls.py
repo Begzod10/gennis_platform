@@ -5,10 +5,11 @@ from .api.get import BranchRetrieveAPIView, BranchListAPIView, BranchForLocation
 from .api.createdeleteupdate import BranchDestroyView, BranchUpdateView, BranchCreateView
 from .api.branch_transaction import (
     BranchTransactionCreateView,
+    BranchTransactionDeletedListView,
+    BranchTransactionDeleteView,
+    BranchTransactionListView,
     BranchTransactionMonthListView,
     BranchTransactionUpdateView,
-    BranchTransactionDeleteView,
-    BranchTransactionDeletedListView,
 )
 
 urlpatterns = [
@@ -21,6 +22,7 @@ urlpatterns = [
     path('branch_for_locations/', BranchForLocations.as_view(), name='branch_for_locations'),
     path('branch_filtered/', BranchListFilterAPIView.as_view(), name='branch-filtered'),
 
+    path('branch_transactions/', BranchTransactionListView.as_view(), name='branch-transaction-list'),
     path('branch_transaction/', BranchTransactionCreateView.as_view(), name='branch-transaction-create'),
     path('branch_transaction/<int:month>/<int:year>/', BranchTransactionMonthListView.as_view(),
          name='branch-transaction-month-list'),
