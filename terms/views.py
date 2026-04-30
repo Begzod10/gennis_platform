@@ -7,7 +7,8 @@ from group.models import Group, GroupSubjects, Student
 from .functions import create_multiple_years
 from .models import Assignment
 from .serializers import TestCreateUpdateSerializer, Test, TermSerializer, Term
-from django.db.models import Case, When, Value, IntegerField
+from django.db.models import Case, When, Value, IntegerField, Avg
+from group.models import Group, GroupSubjects, Student, GroupRating
 
 
 class CreateTest(generics.CreateAPIView):
@@ -303,3 +304,88 @@ class GroupSubjectsApiView(views.APIView):
         ]
 
         return response.Response(subjects_data, status=status.HTTP_200_OK)
+
+class EducationQualityOverview(views.APIView):
+    def get(self, request, *args, **kwargs):
+        # Get overall average rating
+        avg_rating = GroupRating.objects.aggregate(Avg('rating'))['rating__avg'] or 0
+        return response.Response({
+            "rating": round(avg_rating, 1),
+            "max_rating": 5,
+            "description": "5 ballik tizimda maktab reytingi"
+        }, status=status.HTTP_200_OK)
+
+
+class EducationQualityDetails(views.APIView):
+    def get(self, request, *args, **kwargs):
+        term_id = kwargs.get('term_id')
+        term = get_object_or_404(Term, id=term_id)
+
+        subject_id = request.query_params.get('subject_id')
+        class_id = request.query_params.get('class_id')
+        teacher_id = request.query_params.get('teacher_id')
+
+        # Filter ratings by term dates
+        ratings = GroupRating.objects.filter(
+            date__range=[term.start_date, term.end_date]
+        )
+
+        chart_data = []
+        chart_type = "subjects"
+
+        if subject_id:
+            chart_type = "classes"
+            # Average rating per group (class) for this subject
+            data = (
+                ratings.filter(group__subject_id=subject_id)
+                .values('group__name', 'group__class_number__number')
+                .annotate(avg=Avg('rating'))
+                .order_by('group__class_number__number')
+            )
+            for item in data:
+                label = item['group__name'] or f"{item['group__class_number__number']}-sinf"
+                chart_data.append({"label": label, "value": round(item['avg'], 1)})
+
+        elif teacher_id:
+            chart_type = "performance"
+            # Average rating per group for this teacher
+            data = (
+                ratings.filter(teacher_id=teacher_id)
+                .values('group__name', 'group__subject__name')
+                .annotate(avg=Avg('rating'))
+            )
+            for item in data:
+                label = f"{item['group__subject__name']} ({item['group__name']})"
+                chart_data.append({"label": label, "value": round(item['avg'], 1)})
+
+        elif class_id:
+            chart_type = "subjects"
+            # Average rating per subject for this class
+            data = (
+                ratings.filter(group_id=class_id)
+                .values('group__subject__name')
+                .annotate(avg=Avg('rating'))
+            )
+            for item in data:
+                chart_data.append({"label": item['group__subject__name'], "value": round(item['avg'], 1)})
+
+        else:
+            # Default: Average rating per subject
+            data = (
+                ratings.values('group__subject__name')
+                .annotate(avg=Avg('rating'))
+                .order_by('-avg')
+            )
+            for item in data:
+                if item['group__subject__name']:
+                    chart_data.append({"label": item['group__subject__name'], "value": round(item['avg'], 1)})
+
+        return response.Response({
+            "term": TermSerializer(term).data,
+            "charts": [
+                {
+                    "type": chart_type,
+                    "data": chart_data
+                }
+            ]
+        }, status=status.HTTP_200_OK)
