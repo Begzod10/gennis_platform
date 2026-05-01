@@ -83,6 +83,8 @@ class CustomUser(AbstractUser):
         except:
             url = ''
         return url
+    def get_full_name(self):
+        return f"{self.name} {self.surname}"
 
     def calculate_age(self):
         if not self.birth_date:
