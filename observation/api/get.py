@@ -3,11 +3,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from observation.models import ObservationDay, ObservationStatistics
-from observation.serializers import (ObservationDayListSerializers, ObservationStatisticsListSerializers)
+from observation.serializers import (ObservationDayListSerializers, ObservationStatisticsListSerializers,
+                                     TeacherWeeklyObservationSerializer)
 
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from group.models import Group
+from observation.uitils import get_week_date_range
 from school_time_table.models import ClassTimeTable
 from teachers.models import Teacher
 from observation.models import TeacherObservationDay, TeacherObservation, ObservationInfo, ObservationOptions
@@ -44,6 +46,8 @@ def _complete_schedule_entry(observer_teacher, observed_teacher, observation_day
         entry.is_completed = True
         entry.observation_day = observation_day
         entry.save(update_fields=['is_completed', 'observation_day'])
+
+
 class ObservationStatisticsRetrieveAPIView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -95,10 +99,11 @@ class ObservationDayListView(generics.ListAPIView):
     serializer_class = ObservationDayListSerializers
 
     def get(self, request, *args, **kwargs):
-
         queryset = ObservationDay.objects.all()
         serializer = ObservationDayListSerializers(queryset, many=True)
         return Response(serializer.data)
+
+
 class TeacherObserveView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -113,7 +118,6 @@ class TeacherObserveView(APIView):
             date = datetime.strptime(f"{year}-{month}-{day}", '%Y-%m-%d').date()
         else:
             date = None
-
 
         teacher_observation_day, created = TeacherObservationDay.objects.get_or_create(
             teacher=group.teacher,
@@ -173,12 +177,14 @@ class TeacherObserveView(APIView):
             "observation_tools": data,
             "old_current_dates": old_current_dates(group_id, observation=True)
         })
+
+
 class ObservedGroupAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, group_id, date=None):
-        print ("date", date)
-        print ("group_id", group_id)
+        print("date", date)
+        print("group_id", group_id)
         group = ClassTimeTable.objects.filter(id=group_id).first()
         if not group:
             return Response({"detail": "Group not found"}, status=404)
@@ -220,6 +226,8 @@ class ObservedGroupAPIView(APIView):
             "year": calendar_month.strftime("%Y") if years_list else None,
             "days": days_list
         })
+
+
 class ObservedGroupInfoAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -345,6 +353,7 @@ class ObservedGroupInfoAPIView(APIView):
             "observer": observer
         })
 
+
 class ObservedGroupClassroomAPIView(APIView):
     def get(self, request, group_id, date=None):
         group = get_object_or_404(ClassTimeTable, id=group_id)
@@ -398,8 +407,9 @@ class ObservedGroupClassroomAPIView(APIView):
             "year": calendar_month.strftime("%Y"),
             "days": days_list
         })
-class ObservedGroupInfoClassroomAPIView(APIView):
 
+
+class ObservedGroupInfoClassroomAPIView(APIView):
 
     def post(self, request, time_table_id):
         day = request.data.get('day')
@@ -471,4 +481,79 @@ class ObservedGroupInfoClassroomAPIView(APIView):
             ],
             "average": average,
             "observer": observer
+        })
+
+
+class WeeklyObservationStatsAPIView(APIView):
+    """
+    GET /observation/weekly/?cycle_id=1&branch_id=2
+    """
+
+    def get(self, request):
+        from observation.models import TeacherObservationCycle, TeacherObservationSchedule
+
+        cycle_id = request.query_params.get('cycle')
+        branch_id = request.query_params.get('branch')
+
+        if not cycle_id:
+            return Response(
+                {'detail': 'cycle_id majburiy.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            cycle = TeacherObservationCycle.objects.get(id=cycle_id)
+        except TeacherObservationCycle.DoesNotExist:
+            return Response({'detail': 'Cycle topilmadi.'}, status=status.HTTP_404_NOT_FOUND)
+
+        schedules = (
+            TeacherObservationSchedule.objects
+            .filter(cycle=cycle)
+            .select_related(
+                'observer__user',
+                'observed_teacher__user',
+                'observation_day',
+            )
+        )
+
+        if branch_id:
+            schedules = schedules.filter(
+                observed_teacher__user__branch_id=branch_id
+            )
+
+        # observed_teacher bo'yicha guruhlash
+        teachers_map = {}
+        for schedule in schedules:
+            observed = schedule.observed_teacher
+            tid = observed.id
+            if tid not in teachers_map:
+                user = observed.user
+                teachers_map[tid] = {
+                    'teacher_id': tid,
+                    'teacher_name': f"{user.name or ''} {user.surname or ''}".strip(),
+                    'observers': [],
+                }
+            teachers_map[tid]['observers'].append(schedule)
+
+        result = []
+        for data in teachers_map.values():
+            observer_schedules = data['observers']
+            completed = [s for s in observer_schedules if s.is_completed]
+            pending = [s for s in observer_schedules if not s.is_completed]
+            scores = [s.observation_day.average for s in completed if s.observation_day]
+
+            result.append({
+                **data,
+                'total_observers_required': len(observer_schedules),
+                'completed_count': len(completed),
+                'pending_count': len(pending),
+                'weekly_avg_score': round(sum(scores) / len(scores), 2) if scores else None,
+            })
+
+        return Response({
+            'cycle_id': cycle.id,
+            'start_date': cycle.start_date,
+            'end_date': cycle.end_date,  # ← shu, tamom
+            'branch_id': cycle.branch_id,
+            'teachers': TeacherWeeklyObservationSerializer(result, many=True).data,
         })

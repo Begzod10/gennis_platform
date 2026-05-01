@@ -1,5 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import calendar
+
 
 def old_current_dates(group_id=0, observation=False):
     """
@@ -30,7 +31,7 @@ def old_current_dates(group_id=0, observation=False):
     if observation:
         data = [
             {
-                "name": today.strftime("%b"),   # masalan "Oct"
+                "name": today.strftime("%b"),  # masalan "Oct"
                 "value": f"{current_month:02d}",
                 "days": day_list
             },
@@ -49,7 +50,10 @@ def old_current_dates(group_id=0, observation=False):
             }
         ]
     return data
+
+
 from datetime import datetime
+
 
 def find_calendar_date(date_day=None, date_month=None, date_year=None):
     """
@@ -60,3 +64,14 @@ def find_calendar_date(date_day=None, date_month=None, date_year=None):
     if date_day and date_month and date_year:
         return datetime(year=date_year, month=date_month, day=date_day)
     return datetime.now()
+
+
+def get_week_date_range(start_date, week_number):
+    """
+    Cycle start_date dan boshlab week_number-chi haftaning
+    boshlanish va tugash sanasini qaytaradi.
+    week_number 1 dan boshlanadi.
+    """
+    week_start = start_date + timedelta(weeks=week_number - 1)
+    week_end = week_start + timedelta(days=6)
+    return week_start, week_end
