@@ -549,11 +549,17 @@ class WeeklyObservationStatsAPIView(APIView):
                 'pending_count': len(pending),
                 'weekly_avg_score': round(sum(scores) / len(scores), 2) if scores else None,
             })
+        from datetime import timedelta
+
+        # Haftaning boshi (dushanba)
+        week_start = cycle.start_date - timedelta(days=cycle.start_date.weekday())
+        # Haftaning oxiri (yakshanba)
+        week_end = week_start + timedelta(days=6)
 
         return Response({
             'cycle_id': cycle.id,
             'start_date': cycle.start_date,
-            'end_date': cycle.end_date,  # ← shu, tamom
+            'end_date': week_end,  # ← shu, tamom
             'branch_id': cycle.branch_id,
             'teachers': TeacherWeeklyObservationSerializer(result, many=True).data,
         })
