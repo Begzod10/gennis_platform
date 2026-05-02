@@ -90,7 +90,7 @@ class Encashments(APIView):
 
         newly_issued = list(loan_base.filter(
             issued_date__gte=ot, issued_date__lte=do,
-        ).order_by('-issued_date', '-id'))
+        ).exclude(status='cancelled').order_by('-issued_date', '-id'))
 
         settled_in = list(loan_base.filter(
             status='settled',
