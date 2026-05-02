@@ -309,12 +309,10 @@ class EducationQualityOverview(views.APIView):
     def get(self, request, *args, **kwargs):
         branch_id = request.query_params.get('branch_id') or request.query_params.get('branch')
         
-        # Filter assignments
         assignments = Assignment.objects.filter(test__deleted=False, test__group__deleted=False)
         if branch_id and branch_id not in ['undefined', 'null', '', 'all']:
             assignments = assignments.filter(test__group__branch_id=branch_id)
 
-        # Get overall average score
         avg_percentage = assignments.aggregate(Avg('percentage'))['percentage__avg'] or 0
         avg_rating = avg_percentage / 20
         return response.Response({
@@ -329,7 +327,6 @@ class EducationQualityDetails(views.APIView):
         term_id = kwargs.get('term_id')
         term = get_object_or_404(Term, id=term_id)
 
-        # Helper to get valid query params with aliases
         def get_param(names):
             for name in names:
                 val = request.query_params.get(name)
@@ -342,7 +339,6 @@ class EducationQualityDetails(views.APIView):
         teacher_id = get_param(['teacher_id', 'teacher'])
         branch_id = get_param(['branch_id', 'branch'])
 
-        # Filter assignments by term and ensure test/group is not deleted
         assignments = Assignment.objects.filter(test__term_id=term_id, test__deleted=False, test__group__deleted=False)
         
         if branch_id:
@@ -353,7 +349,6 @@ class EducationQualityDetails(views.APIView):
 
         if subject_id:
             chart_type = "classes"
-            # Average score per group (class) for this subject
             data = (
                 assignments.filter(test__subject_id=subject_id)
                 .values('test__group__name', 'test__group__class_number__number')
@@ -366,7 +361,6 @@ class EducationQualityDetails(views.APIView):
 
         elif teacher_id:
             chart_type = "performance"
-            # Average score per group for this teacher
             data = (
                 assignments.filter(test__group__teacher=teacher_id)
                 .values('test__group__name', 'test__subject__name')
@@ -378,7 +372,6 @@ class EducationQualityDetails(views.APIView):
 
         elif class_id:
             chart_type = "subjects"
-            # Average score per subject for this class
             data = (
                 assignments.filter(test__group_id=class_id)
                 .values('test__subject__name')
@@ -388,7 +381,6 @@ class EducationQualityDetails(views.APIView):
                 chart_data.append({"label": item['test__subject__name'], "value": round((item['avg'] or 0) / 20, 1)})
 
         else:
-            # Default: Average score per subject
             data = (
                 assignments.values('test__subject__name')
                 .annotate(avg=Avg('percentage'))
