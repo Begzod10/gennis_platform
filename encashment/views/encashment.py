@@ -50,6 +50,18 @@ class Encashments(APIView):
           - `cancelled_in`   updated_at within [ot, do] AND status='cancelled'
           - `overdue`        active subset where due_date < do AND remaining_amount > 0
         """
+        def _to_date(v):
+            if v is None or isinstance(v, date) and not isinstance(v, datetime):
+                return v
+            if isinstance(v, datetime):
+                return v.date()
+            if isinstance(v, str):
+                return datetime.strptime(v[:10], '%Y-%m-%d').date()
+            return v
+
+        ot = _to_date(ot)
+        do = _to_date(do)
+
         # Disbursement-scoped loan ids (matches gennis behaviour)
         disbursement_q = BranchTransaction.objects.filter(
             branch_id=branch,
