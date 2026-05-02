@@ -276,7 +276,7 @@ class Encashments(APIView):
                 payment_type_id=payment_type,
                 branch_id=branch,
                 deleted=False,
-            ).order_by('-date', '-id')
+            ).exclude(loan__status='cancelled').order_by('-date', '-id')
             bt_given = branch_transactions.filter(is_give=True)
             bt_received = branch_transactions.filter(is_give=False)
             bt_given_total = bt_given.aggregate(total=Sum('amount'))['total'] or 0
