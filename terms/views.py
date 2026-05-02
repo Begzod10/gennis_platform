@@ -307,8 +307,15 @@ class GroupSubjectsApiView(views.APIView):
 
 class EducationQualityOverview(views.APIView):
     def get(self, request, *args, **kwargs):
-        # Get overall average score from all active assignments
-        avg_percentage = Assignment.objects.filter(test__deleted=False).aggregate(Avg('percentage'))['percentage__avg'] or 0
+        branch_id = request.query_params.get('branch_id')
+        
+        # Filter assignments
+        assignments = Assignment.objects.filter(test__deleted=False)
+        if branch_id:
+            assignments = assignments.filter(test__group__branch_id=branch_id)
+
+        # Get overall average score
+        avg_percentage = assignments.aggregate(Avg('percentage'))['percentage__avg'] or 0
         avg_rating = avg_percentage / 20
         return response.Response({
             "rating": round(avg_rating, 1),
@@ -325,9 +332,13 @@ class EducationQualityDetails(views.APIView):
         subject_id = request.query_params.get('subject_id')
         class_id = request.query_params.get('class_id')
         teacher_id = request.query_params.get('teacher_id')
+        branch_id = request.query_params.get('branch_id')
 
         # Filter assignments by term and ensure test is not deleted
         assignments = Assignment.objects.filter(test__term_id=term_id, test__deleted=False)
+        
+        if branch_id:
+            assignments = assignments.filter(test__group__branch_id=branch_id)
 
         chart_data = []
         chart_type = "subjects"
