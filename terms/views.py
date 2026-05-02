@@ -307,8 +307,9 @@ class GroupSubjectsApiView(views.APIView):
 
 class EducationQualityOverview(views.APIView):
     def get(self, request, *args, **kwargs):
-        # Get overall average rating
-        avg_rating = GroupRating.objects.aggregate(Avg('rating'))['rating__avg'] or 0
+        # Get overall average score from all active assignments
+        avg_percentage = Assignment.objects.filter(test__deleted=False).aggregate(Avg('percentage'))['percentage__avg'] or 0
+        avg_rating = avg_percentage / 20
         return response.Response({
             "rating": round(avg_rating, 1),
             "max_rating": 5,
@@ -325,60 +326,58 @@ class EducationQualityDetails(views.APIView):
         class_id = request.query_params.get('class_id')
         teacher_id = request.query_params.get('teacher_id')
 
-        # Filter ratings by term dates
-        ratings = GroupRating.objects.filter(
-            date__range=[term.start_date, term.end_date]
-        )
+        # Filter assignments by term and ensure test is not deleted
+        assignments = Assignment.objects.filter(test__term_id=term_id, test__deleted=False)
 
         chart_data = []
         chart_type = "subjects"
 
         if subject_id:
             chart_type = "classes"
-            # Average rating per group (class) for this subject
+            # Average score per group (class) for this subject
             data = (
-                ratings.filter(group__subject_id=subject_id)
-                .values('group__name', 'group__class_number__number')
-                .annotate(avg=Avg('rating'))
-                .order_by('group__class_number__number')
+                assignments.filter(test__subject_id=subject_id)
+                .values('test__group__name', 'test__group__class_number__number')
+                .annotate(avg=Avg('percentage'))
+                .order_by('test__group__class_number__number')
             )
             for item in data:
-                label = item['group__name'] or f"{item['group__class_number__number']}-sinf"
-                chart_data.append({"label": label, "value": round(item['avg'], 1)})
+                label = item['test__group__name'] or f"{item['test__group__class_number__number']}-sinf"
+                chart_data.append({"label": label, "value": round(item['avg'] / 20, 1)})
 
         elif teacher_id:
             chart_type = "performance"
-            # Average rating per group for this teacher
+            # Average score per group for this teacher
             data = (
-                ratings.filter(teacher_id=teacher_id)
-                .values('group__name', 'group__subject__name')
-                .annotate(avg=Avg('rating'))
+                assignments.filter(test__group__teacher=teacher_id)
+                .values('test__group__name', 'test__subject__name')
+                .annotate(avg=Avg('percentage'))
             )
             for item in data:
-                label = f"{item['group__subject__name']} ({item['group__name']})"
-                chart_data.append({"label": label, "value": round(item['avg'], 1)})
+                label = f"{item['test__subject__name']} ({item['test__group__name']})"
+                chart_data.append({"label": label, "value": round(item['avg'] / 20, 1)})
 
         elif class_id:
             chart_type = "subjects"
-            # Average rating per subject for this class
+            # Average score per subject for this class
             data = (
-                ratings.filter(group_id=class_id)
-                .values('group__subject__name')
-                .annotate(avg=Avg('rating'))
+                assignments.filter(test__group_id=class_id)
+                .values('test__subject__name')
+                .annotate(avg=Avg('percentage'))
             )
             for item in data:
-                chart_data.append({"label": item['group__subject__name'], "value": round(item['avg'], 1)})
+                chart_data.append({"label": item['test__subject__name'], "value": round(item['avg'] / 20, 1)})
 
         else:
-            # Default: Average rating per subject
+            # Default: Average score per subject
             data = (
-                ratings.values('group__subject__name')
-                .annotate(avg=Avg('rating'))
+                assignments.values('test__subject__name')
+                .annotate(avg=Avg('percentage'))
                 .order_by('-avg')
             )
             for item in data:
-                if item['group__subject__name']:
-                    chart_data.append({"label": item['group__subject__name'], "value": round(item['avg'], 1)})
+                if item['test__subject__name']:
+                    chart_data.append({"label": item['test__subject__name'], "value": round(item['avg'] / 20, 1)})
 
         return response.Response({
             "term": TermSerializer(term).data,
