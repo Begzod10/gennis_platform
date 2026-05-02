@@ -307,11 +307,11 @@ class GroupSubjectsApiView(views.APIView):
 
 class EducationQualityOverview(views.APIView):
     def get(self, request, *args, **kwargs):
-        branch_id = request.query_params.get('branch_id')
+        branch_id = request.query_params.get('branch_id') or request.query_params.get('branch')
         
         # Filter assignments
-        assignments = Assignment.objects.filter(test__deleted=False)
-        if branch_id:
+        assignments = Assignment.objects.filter(test__deleted=False, test__group__deleted=False)
+        if branch_id and branch_id not in ['undefined', 'null', '', 'all']:
             assignments = assignments.filter(test__group__branch_id=branch_id)
 
         # Get overall average score
@@ -329,13 +329,21 @@ class EducationQualityDetails(views.APIView):
         term_id = kwargs.get('term_id')
         term = get_object_or_404(Term, id=term_id)
 
-        subject_id = request.query_params.get('subject_id')
-        class_id = request.query_params.get('class_id')
-        teacher_id = request.query_params.get('teacher_id')
-        branch_id = request.query_params.get('branch_id')
+        # Helper to get valid query params with aliases
+        def get_param(names):
+            for name in names:
+                val = request.query_params.get(name)
+                if val and val not in ['undefined', 'null', '', 'all']:
+                    return val
+            return None
 
-        # Filter assignments by term and ensure test is not deleted
-        assignments = Assignment.objects.filter(test__term_id=term_id, test__deleted=False)
+        subject_id = get_param(['subject_id', 'subject'])
+        class_id = get_param(['class_id', 'class', 'group_id'])
+        teacher_id = get_param(['teacher_id', 'teacher'])
+        branch_id = get_param(['branch_id', 'branch'])
+
+        # Filter assignments by term and ensure test/group is not deleted
+        assignments = Assignment.objects.filter(test__term_id=term_id, test__deleted=False, test__group__deleted=False)
         
         if branch_id:
             assignments = assignments.filter(test__group__branch_id=branch_id)
@@ -354,7 +362,7 @@ class EducationQualityDetails(views.APIView):
             )
             for item in data:
                 label = item['test__group__name'] or f"{item['test__group__class_number__number']}-sinf"
-                chart_data.append({"label": label, "value": round(item['avg'] / 20, 1)})
+                chart_data.append({"label": label, "value": round((item['avg'] or 0) / 20, 1)})
 
         elif teacher_id:
             chart_type = "performance"
@@ -366,7 +374,7 @@ class EducationQualityDetails(views.APIView):
             )
             for item in data:
                 label = f"{item['test__subject__name']} ({item['test__group__name']})"
-                chart_data.append({"label": label, "value": round(item['avg'] / 20, 1)})
+                chart_data.append({"label": label, "value": round((item['avg'] or 0) / 20, 1)})
 
         elif class_id:
             chart_type = "subjects"
@@ -377,7 +385,7 @@ class EducationQualityDetails(views.APIView):
                 .annotate(avg=Avg('percentage'))
             )
             for item in data:
-                chart_data.append({"label": item['test__subject__name'], "value": round(item['avg'] / 20, 1)})
+                chart_data.append({"label": item['test__subject__name'], "value": round((item['avg'] or 0) / 20, 1)})
 
         else:
             # Default: Average score per subject
@@ -388,7 +396,7 @@ class EducationQualityDetails(views.APIView):
             )
             for item in data:
                 if item['test__subject__name']:
-                    chart_data.append({"label": item['test__subject__name'], "value": round(item['avg'] / 20, 1)})
+                    chart_data.append({"label": item['test__subject__name'], "value": round((item['avg'] or 0) / 20, 1)})
 
         return response.Response({
             "term": TermSerializer(term).data,
