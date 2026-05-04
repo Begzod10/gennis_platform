@@ -728,8 +728,7 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
             .filter(
                 teacher=teacher,
                 date__range=[monday, friday],
-                class_time_table_is_null=False,
-            )
+                class_time_table__isnull=False            )
             .filter(query)
             .select_related("group", "flow")
             .prefetch_related(
