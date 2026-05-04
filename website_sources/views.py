@@ -115,6 +115,14 @@ class NewsDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = News.objects.select_related('category', 'branch', 'created_by')
     serializer_class = NewsListSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            {"detail": "Deleted successfully"},
+            status=status.HTTP_200_OK
+        )
+
 
 class NewsTogglePublishView(APIView):
     """
@@ -276,6 +284,14 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            {"detail": "Deleted successfully"},
+            status=status.HTTP_200_OK
+        )
+
 
 def apply_admission_filters(qs, params):
     """
@@ -374,6 +390,14 @@ class AdminAdmissionDetailView(generics.RetrieveAPIView):
     """
     queryset = Admission.objects.select_related('branch')
     serializer_class = AdmissionSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            {"detail": "Deleted successfully"},
+            status=status.HTTP_200_OK
+        )
 
 
 class AdminAdmissionStatusView(APIView):
