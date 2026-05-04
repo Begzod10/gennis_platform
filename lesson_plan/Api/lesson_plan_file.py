@@ -17,12 +17,15 @@ class LessonPlanFileUploadView(APIView):
         request={"multipart/form-data": {"type": "object", "properties": {
             "teacher_id": {"type": "integer"},
             "term_id": {"type": "integer"},
+            "group_id": {"type": "integer", "nullable": True},
+            "flow_id": {"type": "integer", "nullable": True},
             "file": {"type": "string", "format": "binary"},
         }, "required": ["teacher_id", "term_id", "file"]}},
         responses={201: dict, 200: dict},
         examples=[
             OpenApiExample("Response", value={
                 "id": 3, "teacher_id": 5, "term_id": 2,
+                "group_id": 1, "flow_id": None,
                 "status": "pending", "detail": "File uploaded. AI review started."
             }, response_only=True),
         ],
@@ -32,6 +35,8 @@ class LessonPlanFileUploadView(APIView):
     def post(self, request):
         teacher_id = request.data.get("teacher_id")
         term_id = request.data.get("term_id")
+        group_id = request.data.get("group_id")
+        flow_id = request.data.get("flow_id")
         file = request.FILES.get("file")
 
         if not teacher_id or not term_id or not file:
@@ -45,10 +50,17 @@ class LessonPlanFileUploadView(APIView):
 
         teacher = get_object_or_404(Teacher, id=teacher_id)
         term = get_object_or_404(Term, id=term_id)
+        
+        from group.models import Group
+        from flows.models import Flow
+        group = get_object_or_404(Group, id=group_id) if group_id else None
+        flow = get_object_or_404(Flow, id=flow_id) if flow_id else None
 
         lp_file, created = LessonPlanFile.objects.update_or_create(
             teacher=teacher,
             term=term,
+            group=group,
+            flow=flow,
             defaults={
                 "file": file,
                 "status": LessonPlanFile.Status.PENDING,
@@ -66,6 +78,8 @@ class LessonPlanFileUploadView(APIView):
                 "id": lp_file.id,
                 "teacher_id": teacher.id,
                 "term_id": term.id,
+                "group_id": group.id if group else None,
+                "flow_id": flow.id if flow else None,
                 "status": lp_file.status,
                 "detail": "File uploaded. AI review started.",
             },
@@ -107,6 +121,8 @@ class LessonPlanFileListView(APIView):
         parameters=[
             OpenApiParameter("teacher_id", int, description="Filter by teacher ID"),
             OpenApiParameter("term_id", int, description="Filter by term ID"),
+            OpenApiParameter("group_id", int, description="Filter by group ID"),
+            OpenApiParameter("flow_id", int, description="Filter by flow ID"),
         ],
         responses={200: dict},
         examples=[
@@ -127,11 +143,17 @@ class LessonPlanFileListView(APIView):
 
         teacher_id = request.query_params.get("teacher_id")
         term_id = request.query_params.get("term_id")
+        group_id = request.query_params.get("group_id")
+        flow_id = request.query_params.get("flow_id")
 
         if teacher_id:
             qs = qs.filter(teacher_id=teacher_id)
         if term_id:
             qs = qs.filter(term_id=term_id)
+        if group_id:
+            qs = qs.filter(group_id=group_id)
+        if flow_id:
+            qs = qs.filter(flow_id=flow_id)
 
         return Response([_serialize(f) for f in qs])
 
@@ -185,6 +207,14 @@ def _serialize(lp_file: LessonPlanFile) -> dict:
             "quarter": lp_file.term.quarter,
             "academic_year": lp_file.term.academic_year,
         },
+        "group": {
+            "id": lp_file.group_id,
+            "name": lp_file.group.name if lp_file.group else None,
+        } if lp_file.group_id else None,
+        "flow": {
+            "id": lp_file.flow_id,
+            "name": lp_file.flow.name if lp_file.flow else None,
+        } if lp_file.flow_id else None,
         "file": lp_file.file.url if lp_file.file else None,
         "status": lp_file.status,
         "score": lp_file.score,

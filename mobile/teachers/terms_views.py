@@ -4,6 +4,7 @@ from rest_framework import generics, views, response, status
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Case, When, Value, IntegerField, Avg
 
+from flows.models import Flow
 from group.models import Group, GroupSubjects, Student
 from terms.models import Assignment, Test, Term
 from terms.serializers import TestCreateUpdateSerializer, TermSerializer
@@ -294,3 +295,67 @@ class TeacherTermsByGroupView(views.APIView):
         return response.Response(response_data, status=status.HTTP_200_OK)
 
 
+
+
+class TeacherGroupsAndFlowsView(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            teacher = Teacher.objects.get(user=request.user)
+        except Teacher.DoesNotExist:
+            return response.Response({"detail": "Siz teacher emassiz"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Groups
+        groups = teacher.group_set.filter(deleted=False).select_related(
+            'class_number', 'color'
+        ).order_by('class_number__number')
+
+        groups_data = []
+        for group in groups:
+            teacher_subject_ids = ClassTimeTable.objects.filter(
+                teacher=teacher,
+                group=group
+            ).values_list('subject_id', flat=True).distinct()
+
+            subjects = GroupSubjects.objects.filter(
+                group=group,
+                subject_id__in=teacher_subject_ids
+            ).select_related('subject').distinct('subject')
+
+            if not subjects.exists():
+                subjects = GroupSubjects.objects.filter(
+                    group=group,
+                    subject__in=teacher.subject.all()
+                ).select_related('subject').distinct('subject')
+
+            groups_data.append({
+                "id": group.id,
+                "name": group.name if group.name else f"{group.class_number.number}-{group.color.name}",
+                "type": "group",
+                "students_count": group.students.count(),
+                "subjects": [
+                    {"id": gs.subject.id, "name": gs.subject.name}
+                    for gs in subjects
+                ]
+            })
+
+        # Flows
+        flows = Flow.objects.filter(teacher=teacher).select_related('subject', 'level')
+
+        flows_data = []
+        for flow in flows:
+            flows_data.append({
+                "id": flow.id,
+                "name": flow.name,
+                "type": "flow",
+                "students_count": flow.students.count(),
+                "subjects": [
+                    {"id": flow.subject.id, "name": flow.subject.name}
+                ] if flow.subject else []
+            })
+
+        return response.Response({
+            "groups": groups_data,
+            "flows": flows_data,
+        }, status=status.HTTP_200_OK)

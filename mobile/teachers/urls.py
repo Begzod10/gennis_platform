@@ -18,6 +18,7 @@ from .terms_views import (
     TeacherStudentAssignmentView,
     TeacherAssignmentCreateView,
     TeacherTermsByGroupView,
+    TeacherGroupsAndFlowsView,
 )
 
 
@@ -60,6 +61,7 @@ urlpatterns = [
     path('terms/assignment-create/', TeacherAssignmentCreateView.as_view(), name='terms-assignment-create'),
     path('terms/terms-by-group/<int:group_id>/<int:term_id>/', TeacherTermsByGroupView.as_view(), name='terms-by-group'),
     path('terms/terms-by-group/<int:group_id>/<int:term_id>/<int:subject_id>/', TeacherTermsByGroupView.as_view(), name='terms-by-group-subject'),
+    path('terms/my-classes/', TeacherGroupsAndFlowsView.as_view(), name='terms-my-classes'),
 ]
 
 
