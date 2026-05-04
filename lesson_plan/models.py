@@ -21,9 +21,7 @@ class LessonPlan(models.Model):
     updated = models.DateField(null=True)
     ball = models.PositiveSmallIntegerField(null=True, blank=True)
     conclusion = models.TextField(null=True, blank=True)
-    subject =models.ForeignKey('subjects.Subject', on_delete=models.SET_NULL, null=True)
-    hour_id =models.ForeignKey(Hours,on_delete=models.SET_NULL, null=True)
-
+    class_time_table =models.ForeignKey('school_time_table.ClassTimeTable', on_delete=models.SET_NULL, null=True)
 
     class Meta:
         constraints = [
