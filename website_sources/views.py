@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from website_sources.models import News, Category, Admission, ContactMessage, CareerApplication, JobPosition
+from website_sources.models import News, Category, Admission, ContactMessage, CareerApplication, JobPosition, TalentPool
 from website_sources.serializers import NewsListSerializer, PublicNewsSerializer, CategorySerializer, \
     AdmissionSerializer, AdmissionCreateSerializer, ContactMessageSerializer, ContactCreateSerializer, \
     CareerApplicationSerializer, JobPositionSerializer, TalentPoolSerializer, CareerApplicationUpdateSerializer
@@ -726,25 +726,6 @@ class PublicCareerUpdateView(generics.RetrieveUpdateDestroyAPIView):
 
 # ─── TALENT POOL ──────────────────────────────────────────────────────────────
 
-class PublicTalentPoolView(APIView):
-    """
-    POST /api/careers/talent-pool/
-    """
-    parser_classes = [MultiPartParser, FormParser]
-
-    def post(self, request):
-        serializer = TalentPoolSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({
-                'success': True,
-                'message': 'Thank you! Your profile has been added to our talent pool.'
-            }, status=status.HTTP_201_CREATED)
-        return Response(
-            {'success': False, 'errors': serializer.errors},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
 
 # ─── ADMIN APPLICATIONS ───────────────────────────────────────────────────────
 
@@ -766,6 +747,108 @@ class AdminCareerApplicationListView(generics.ListAPIView):
     def get_queryset(self):
         qs = CareerApplication.objects.select_related('position', 'branch')
         return apply_application_filters(qs, self.request.query_params)
+
+
+class PublicTalentPoolView(APIView):
+    """
+    GET  /api/careers/talent-pool/        - List all
+    POST /api/careers/talent-pool/        - Create new
+    """
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        talent_pool = TalentPool.objects.all()
+
+        branch_id = request.query_params.get('branch_id')
+        if branch_id:
+            talent_pool = talent_pool.filter(branch_id=branch_id)
+
+        serializer = TalentPoolSerializer(talent_pool, many=True)
+        return Response({
+            'success': True,
+            'count': talent_pool.count(),
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = TalentPoolSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'success': True,
+                'message': 'Thank you! Your profile has been added to our talent pool.'
+            }, status=status.HTTP_201_CREATED)
+        return Response(
+            {'success': False, 'errors': serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+class TalentPoolDetailView(APIView):
+    """
+    GET    /api/careers/talent-pool/<pk>/            - Detail
+    PATCH  /api/careers/talent-pool/<pk>/            - Update (fields only)
+    DELETE /api/careers/talent-pool/<pk>/            - Delete
+    """
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_object(self, pk):
+        try:
+            return TalentPool.objects.get(pk=pk)
+        except TalentPool.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        instance = self.get_object(pk)
+        if not instance:
+            return Response({'success': False, 'message': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = TalentPoolSerializer(instance)
+        return Response({'success': True, 'data': serializer.data})
+
+    def patch(self, request, pk):
+        instance = self.get_object(pk)
+        if not instance:
+            return Response({'success': False, 'message': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = TalentPoolSerializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'data': serializer.data})
+        return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        instance = self.get_object(pk)
+        if not instance:
+            return Response({'success': False, 'message': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        # CV file ni ham o'chirish
+        if instance.cv_file:
+            instance.cv_file.delete(save=False)
+        instance.delete()
+        return Response({'success': True, 'message': 'Deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
+
+
+class TalentPoolFileUpdateView(APIView):
+    """
+    PATCH /api/careers/talent-pool/<pk>/cv/   - Faqat cv_file ni alohida update
+    """
+    parser_classes = [MultiPartParser, FormParser]
+
+    def patch(self, request, pk):
+        try:
+            instance = TalentPool.objects.get(pk=pk)
+        except TalentPool.DoesNotExist:
+            return Response({'success': False, 'message': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if 'cv_file' not in request.FILES:
+            return Response({'success': False, 'message': 'cv_file is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Eski faylni o'chirish
+        if instance.cv_file:
+            instance.cv_file.delete(save=False)
+
+        instance.cv_file = request.FILES['cv_file']
+        instance.save()
+        serializer = TalentPoolSerializer(instance)
+        return Response({'success': True, 'data': serializer.data})
 
 
 class AdminStatsView(APIView):
