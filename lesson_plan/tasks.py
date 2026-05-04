@@ -134,7 +134,7 @@ def create_lesson_plans():
         ClassTimeTable.objects
         .filter(date__range=[start_date, end_date])
         .select_related("teacher")
-        .distinct("group_id", "flow_id", "teacher_id", "date")
+
     )
 
     for timetable in timetable_qs:

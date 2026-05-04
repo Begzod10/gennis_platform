@@ -738,8 +738,8 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
                     to_attr="_comments_cache"
                 ),
                 "group__students__user",
-                "flow__students__user"  # ✅ MUHIM FIX
-            ).order_by("-date")
+                "flow__students__user"
+            ).order_by("date")
         )
 
     def list(self, request, *args, **kwargs):
