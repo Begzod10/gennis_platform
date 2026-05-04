@@ -697,7 +697,6 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
         today = localdate()
         weekday = today.weekday()
 
-        # 🔹 hafta hisoblash
         if weekday >= 5:
             monday = today + timedelta(days=(7 - weekday))
         else:
@@ -718,7 +717,6 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
         if flow_ids:
             query |= Q(flow_id__in=flow_ids)
 
-        # 🔥 commentlarni oldindan olib kelamiz
         comments_qs = LessonPlanStudents.objects.select_related(
             "student__user"
         )
