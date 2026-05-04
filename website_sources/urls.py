@@ -55,7 +55,6 @@ urlpatterns = [
     # ── CAREERS (PUBLIC) ───────────────────────────────────────────────────────
     path('careers/positions/', PublicJobPositionListView.as_view(), name='public-job-positions'),
     path('careers/apply/', PublicCareerApplyView.as_view(), name='public-career-apply'),
-    path('careers/<int:pk>/', PublicCareerApplyView.as_view(), name='public-career-update'),
 
     path('careers/talent-pool/', PublicTalentPoolView.as_view(), name='public-talent-pool'),
 
