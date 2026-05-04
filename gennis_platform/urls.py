@@ -80,6 +80,7 @@ urlpatterns = [
     path('api/call/', include('tasks.admin.urls')),
     # path("api/vats/webhook/", VatsWebhookAsyncView.as_view()),
     path('api/gemini/', include('gemini.urls')),
+    path('api/website-sources/', include('website_sources.urls')),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),

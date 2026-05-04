@@ -559,7 +559,7 @@ class WeeklyObservationStatsAPIView(APIView):
         return Response({
             'cycle_id': cycle.id,
             'start_date': cycle.start_date,
-            'end_date': week_end,  # ← shu, tamom
+            'end_date': week_end,
             'branch_id': cycle.branch_id,
             'teachers': TeacherWeeklyObservationSerializer(result, many=True).data,
         })

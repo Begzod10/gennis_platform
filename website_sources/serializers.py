@@ -1,0 +1,96 @@
+from rest_framework import serializers
+from website_sources.models import News, Category, Admission, ContactMessage, JobPosition, CareerApplication, TalentPool
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name']
+
+
+class NewsListSerializer(serializers.ModelSerializer):
+    category = CategorySerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(), source='category', write_only=True,
+        required=False, allow_null=True
+    )
+
+    class Meta:
+        model = News
+        fields = [
+            'id', 'title', 'description', 'category', 'category_id',
+            'date', 'image_url', 'image', 'published', 'slug',
+            'views', 'branch', 'created_by', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['slug', 'views', 'created_by', 'created_at', 'updated_at']
+
+
+class PublicNewsSerializer(serializers.ModelSerializer):
+    category = CategorySerializer(read_only=True)
+
+    class Meta:
+        model = News
+        fields = [
+            'id', 'title', 'description', 'category',
+            'date', 'image_url', 'image', 'slug', 'views', 'created_at'
+        ]
+
+
+class AdmissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Admission
+        fields = [
+            'id', 'application_id', 'student_name', 'phone',
+            'grade', 'status', 'notes', 'branch', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['application_id', 'created_at', 'updated_at']
+
+
+class AdmissionCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Admission
+        fields = ['student_name', 'phone', 'grade', 'branch']
+
+
+class ContactMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactMessage
+        fields = ['id', 'name', 'email', 'message', 'status', 'branch', 'created_at']
+        read_only_fields = ['status', 'created_at']
+
+
+class ContactCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactMessage
+        fields = ['name', 'email', 'message', 'branch']
+
+
+class JobPositionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JobPosition
+        fields = [
+            'id', 'title', 'type', 'location', 'employment_type',
+            'description', 'requirements', 'posted_date', 'deadline',
+            'is_active', 'branch', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+
+class CareerApplicationSerializer(serializers.ModelSerializer):
+    position_title = serializers.CharField(source='position.title', read_only=True)
+
+    class Meta:
+        model = CareerApplication
+        fields = [
+            'id', 'application_id', 'name', 'email', 'phone',
+            'position', 'position_title', 'cv_file', 'cover_letter',
+            'status', 'branch', 'created_at'
+        ]
+        read_only_fields = ['application_id', 'status', 'created_at']
+
+
+class TalentPoolSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TalentPool
+        fields = ['id', 'name', 'email', 'phone', 'expertise', 'cv_file', 'branch', 'created_at']
+        read_only_fields = ['created_at']
