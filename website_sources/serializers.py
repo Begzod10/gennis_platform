@@ -3,9 +3,17 @@ from website_sources.models import News, Category, Admission, ContactMessage, Jo
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    # Har bir kategoriyada nechta published yangilik borligini ko'rsatadi
+    news_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Category
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'branch', 'news_count']
+
+    def get_news_count(self, obj):
+        if hasattr(obj, '_news_count'):
+            return obj._news_count
+        return obj.news_set.filter(published=True).count()
 
 
 class NewsListSerializer(serializers.ModelSerializer):

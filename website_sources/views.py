@@ -219,6 +219,7 @@ class PublicNewsDetailView(APIView):
 
 # ─── CATEGORIES ───────────────────────────────────────────────────────────────
 
+
 class CategoryListView(generics.ListAPIView):
     """
     GET /api/categories/
@@ -234,6 +235,46 @@ class CategoryListView(generics.ListAPIView):
         if branch_id:
             qs = qs.filter(news__branch_id=branch_id, news__published=True).distinct()
         return qs
+
+
+class CategoryListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/admin/categories/   — barcha kategoriyalar (admin)
+    POST /api/admin/categories/   — yangi kategoriya yaratish (admin)
+
+    POST body:
+      { "name": "Achievements", "branch": 1 }
+
+    Filterlar (GET):
+      ?branch=1    — shu branchga tegishli kategoriyalar
+      ?search=ann  — nomi bo'yicha qidiruv
+    """
+    serializer_class = CategorySerializer
+
+    def get_queryset(self):
+        qs = Category.objects.all()
+        branch_id = self.request.query_params.get('branch')
+        search = self.request.query_params.get('search')
+        if branch_id:
+            qs = qs.filter(branch_id=branch_id)
+        if search:
+            qs = qs.filter(name__icontains=search)
+        return qs
+
+
+class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET    /api/admin/categories/:id/   — bitta kategoriya
+    PUT    /api/admin/categories/:id/   — yangilash
+    PATCH  /api/admin/categories/:id/   — qisman yangilash
+    DELETE /api/admin/categories/:id/   — o'chirish
+
+    ESLATMA: Kategoriyani o'chirishda unga bog'liq
+    yangiliklardagi category maydoni NULL ga o'tadi
+    (News modelida on_delete=SET_NULL).
+    """
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
 
 
 def apply_admission_filters(qs, params):
