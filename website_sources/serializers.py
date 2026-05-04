@@ -109,6 +109,9 @@ class CareerApplicationUpdateSerializer(serializers.ModelSerializer):
     Faqat o'zgartirmoqchi bo'lgan maydonlarni yuboring.
     """
     cv_file = serializers.FileField(required=False, allow_null=True)
+    name = serializers.FileField(required=False, allow_null=True)
+    email = serializers.FileField(required=False, allow_null=True)
+    phone = serializers.FileField(required=False, allow_null=True)
 
     class Meta:
         model = CareerApplication
