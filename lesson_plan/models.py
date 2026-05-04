@@ -1,6 +1,7 @@
 from django.db import models
 
 from group.models import Group
+from school_time_table.models import Hours
 from students.models import Student
 from teachers.models import Teacher
 from flows.models import Flow
@@ -20,11 +21,14 @@ class LessonPlan(models.Model):
     updated = models.DateField(null=True)
     ball = models.PositiveSmallIntegerField(null=True, blank=True)
     conclusion = models.TextField(null=True, blank=True)
+    subject =models.ForeignKey('subjects.Subject', on_delete=models.SET_NULL, null=True)
+    hour_id =models.ForeignKey(Hours,on_delete=models.SET_NULL, null=True)
+
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['group', 'flow', 'teacher', 'date'],
+                fields=['group', 'flow', 'teacher', 'date','subject','hour_id'],
                 name='unique_lesson_plan'
             )
         ]
