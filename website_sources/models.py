@@ -194,7 +194,7 @@ class TalentPool(models.Model):
     email = models.EmailField(max_length=100)
     phone = models.CharField(max_length=20)
     expertise = models.CharField(max_length=255, null=True, blank=True)
-    cv_file = models.FileField(upload_to='careers/talent-pool/')
+    cv_file = models.FileField(upload_to='careers/talent-pool/', null=True)
     branch = models.ForeignKey(
         'branch.Branch', on_delete=models.SET_NULL, null=True, blank=True
     )
