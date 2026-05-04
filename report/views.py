@@ -12,7 +12,7 @@ class ReportViewSet(viewsets.ModelViewSet):
 class AdminRequestViewSet(viewsets.ModelViewSet):
     queryset = AdminRequest.objects.all()
     serializer_class = AdminRequestSerializer
-    filterset_fields = ['branch', 'user']
+    filterset_fields = ['branch', 'user', 'status']
 
 
 class RequestCommentViewSet(viewsets.ModelViewSet):
