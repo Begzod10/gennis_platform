@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from website_sources.models import News, Category, Admission, ContactMessage, CareerApplication, JobPosition
 from website_sources.serializers import NewsListSerializer, PublicNewsSerializer, CategorySerializer, \
     AdmissionSerializer, AdmissionCreateSerializer, ContactMessageSerializer, ContactCreateSerializer, \
-    CareerApplicationSerializer, JobPositionSerializer, TalentPoolSerializer
+    CareerApplicationSerializer, JobPositionSerializer, TalentPoolSerializer, CareerApplicationUpdateSerializer
 
 
 def apply_news_filters(qs, params):
@@ -721,7 +721,7 @@ class PublicCareerApplyView(APIView):
 
 class PublicCareerUpdateView(generics.RetrieveUpdateDestroyAPIView):
     queryset = CareerApplication.objects.select_related('branch')
-    serializer_class = CareerApplicationSerializer
+    serializer_class = CareerApplicationUpdateSerializer
 
 
 # ─── TALENT POOL ──────────────────────────────────────────────────────────────

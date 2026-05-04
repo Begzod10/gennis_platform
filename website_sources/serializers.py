@@ -97,8 +97,49 @@ class CareerApplicationSerializer(serializers.ModelSerializer):
         read_only_fields = ['application_id', 'status', 'created_at']
 
 
+class CareerApplicationUpdateSerializer(serializers.ModelSerializer):
+    """
+    PATCH /api/admin/careers/applications/:id/ uchun.
+
+    Foydalanuvchi yuborishi mumkin:
+      - multipart/form-data (agar cv_file o'zgarsa)
+      - application/json   (faqat matn maydonlari o'zgarsa)
+
+    cv_file yuborilmasa — eski fayl saqlanib qoladi.
+    Faqat o'zgartirmoqchi bo'lgan maydonlarni yuboring.
+    """
+    cv_file = serializers.FileField(required=False, allow_null=True)
+
+    class Meta:
+        model = CareerApplication
+        fields = ['name', 'email', 'phone', 'position', 'cv_file', 'cover_letter', 'status', 'branch']
+
+    def update(self, instance, validated_data):
+        # cv_file kelmagan bo'lsa — eskisini saqla
+        if 'cv_file' not in validated_data or validated_data.get('cv_file') is None:
+            validated_data.pop('cv_file', None)
+        return super().update(instance, validated_data)
+
+
 class TalentPoolSerializer(serializers.ModelSerializer):
     class Meta:
         model = TalentPool
         fields = ['id', 'name', 'email', 'phone', 'expertise', 'cv_file', 'branch', 'created_at']
         read_only_fields = ['created_at']
+
+
+class TalentPoolUpdateSerializer(serializers.ModelSerializer):
+    """
+    PATCH /api/admin/careers/talent-pool/:id/ uchun.
+    cv_file ixtiyoriy — yuborilmasa eski fayl qoladi.
+    """
+    cv_file = serializers.FileField(required=False, allow_null=True)
+
+    class Meta:
+        model = TalentPool
+        fields = ['name', 'email', 'phone', 'expertise', 'cv_file', 'branch']
+
+    def update(self, instance, validated_data):
+        if 'cv_file' not in validated_data or validated_data.get('cv_file') is None:
+            validated_data.pop('cv_file', None)
+        return super().update(instance, validated_data)
