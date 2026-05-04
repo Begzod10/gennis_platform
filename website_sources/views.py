@@ -102,9 +102,6 @@ class NewsListCreateView(generics.ListCreateAPIView):
         qs = News.objects.select_related('category', 'branch', 'created_by')
         return apply_news_filters(qs, self.request.query_params)
 
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
-
 
 class NewsDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
