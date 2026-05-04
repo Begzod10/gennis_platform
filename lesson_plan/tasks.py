@@ -149,7 +149,7 @@ def create_lesson_plans():
             flow_id=timetable.flow_id,
             teacher_id=timetable.teacher_id,
             date=timetable.date,
-            hour_id=timetable.hours_id,
+            hour_id_id=timetable.hours_id,
             subject_id=timetable.subject_id,
 
         )
