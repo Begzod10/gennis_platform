@@ -740,7 +740,7 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
                 ),
                 "group__students__user",
                 "flow__students__user"  # ✅ MUHIM FIX
-            ).order_by("date")
+            ).order_by("-date")
         )
 
     def list(self, request, *args, **kwargs):
