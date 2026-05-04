@@ -141,8 +141,6 @@ def create_lesson_plans():
         if not timetable.teacher:
             continue
 
-        if bool(timetable.group_id) == bool(timetable.flow_id):
-            continue
 
         LessonPlan.objects.get_or_create(
             group_id=timetable.group_id,
