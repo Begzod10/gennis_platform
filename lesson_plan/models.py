@@ -26,7 +26,7 @@ class LessonPlan(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['group', 'flow', 'teacher', 'date','subject','hour_id'],
+                fields=['group', 'flow', 'teacher', 'date','class_time_table'],
                 name='unique_lesson_plan'
             )
         ]
