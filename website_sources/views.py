@@ -688,6 +688,14 @@ class AdminJobPositionDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = JobPosition.objects.select_related('branch')
     serializer_class = JobPositionSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            {"detail": "Deleted successfully"},
+            status=status.HTTP_200_OK
+        )
+
 
 # ─── CV SUBMIT ────────────────────────────────────────────────────────────────
 
@@ -709,11 +717,6 @@ class PublicCareerApplyView(APIView):
             {'success': False, 'errors': serializer.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
-
-
-class PublicCareerUpdateView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = CareerApplication.objects.select_related('branch')
-    serializer_class = CareerApplicationSerializer
 
 
 # ─── TALENT POOL ──────────────────────────────────────────────────────────────
