@@ -695,7 +695,6 @@ class PublicCareerApplyView(APIView):
     """
     POST /api/careers/apply/
     """
-    parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
         serializer = CareerApplicationSerializer(data=request.data)
