@@ -754,7 +754,6 @@ class PublicTalentPoolView(APIView):
     GET  /api/careers/talent-pool/        - List all
     POST /api/careers/talent-pool/        - Create new
     """
-    parser_classes = [MultiPartParser, FormParser]
 
     def get(self, request):
         talent_pool = TalentPool.objects.all()
