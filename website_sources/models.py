@@ -172,7 +172,7 @@ class CareerApplication(models.Model):
     position = models.ForeignKey(
         JobPosition, on_delete=models.SET_NULL, null=True, blank=True
     )
-    cv_file = models.FileField(upload_to='careers/cvs/')
+    cv_file = models.FileField(upload_to='careers/cvs/', null=True)
     cover_letter = models.TextField(null=True, blank=True)
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default='pending'
