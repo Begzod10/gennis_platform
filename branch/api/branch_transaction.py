@@ -427,10 +427,25 @@ class BranchTransactionDeleteView(APIView):
 @extend_schema(
     tags=['Branch Transactions'],
     summary='O\'chirilgan tranzaksiyalar ro\'yxati',
-    description="Berilgan oy/yil bo'yicha soft-delete qilingan tranzaksiyalar.",
+    description="Berilgan oy/yil bo'yicha soft-delete qilingan tranzaksiyalar (filtrlar bilan).",
     parameters=[
         OpenApiParameter('branch_id', OpenApiTypes.INT, OpenApiParameter.QUERY,
-                         required=False, description='Filial ID bo\'yicha filtr'),
+                         required=False, description='Filial ID'),
+        OpenApiParameter('payment_type', OpenApiTypes.STR, OpenApiParameter.QUERY,
+                         required=False, description="To'lov turi nomi"),
+        OpenApiParameter('payment_type_id', OpenApiTypes.INT, OpenApiParameter.QUERY,
+                         required=False, description="To'lov turi ID"),
+        OpenApiParameter('is_give', OpenApiTypes.BOOL, OpenApiParameter.QUERY, required=False),
+        OpenApiParameter('direction', OpenApiTypes.STR, OpenApiParameter.QUERY,
+                         required=False, enum=['give', 'receive']),
+        OpenApiParameter('amount_min', OpenApiTypes.INT, OpenApiParameter.QUERY, required=False),
+        OpenApiParameter('amount_max', OpenApiTypes.INT, OpenApiParameter.QUERY, required=False),
+        OpenApiParameter('loan_id', OpenApiTypes.STR, OpenApiParameter.QUERY, required=False,
+                         description="Loan ID. 'null' qaytsa, qarzga ulanmagan tranzaksiyalar."),
+        OpenApiParameter('search', OpenApiTypes.STR, OpenApiParameter.QUERY, required=False,
+                         description="Sabab/ism/familiya bo'yicha qidiruv"),
+        OpenApiParameter('limit', OpenApiTypes.INT, OpenApiParameter.QUERY, required=False),
+        OpenApiParameter('offset', OpenApiTypes.INT, OpenApiParameter.QUERY, required=False),
     ],
     responses={
         200: BranchTransactionDeletedListResponseSerializer,
@@ -441,6 +456,7 @@ class BranchTransactionDeleteView(APIView):
             'Muvaffaqiyatli javob',
             value={
                 "success": True,
+                "total": 1,
                 "data": [_ITEM_EXAMPLE],
             },
             response_only=True,
@@ -452,13 +468,25 @@ class BranchTransactionDeletedListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, month, year):
-        branch_id = request.query_params.get('branch_id')
+        qp = request.query_params
+        branch_id = qp.get('branch_id')
+        payment_type_name = qp.get('payment_type')
+        payment_type_id = qp.get('payment_type_id')
+        is_give_param = qp.get('is_give')
+        direction = (qp.get('direction') or '').strip().lower()
+        amount_min = qp.get('amount_min')
+        amount_max = qp.get('amount_max')
+        loan_id_raw = qp.get('loan_id')
+        search = (qp.get('search') or '').strip()
+        limit = qp.get('limit')
+        offset = qp.get('offset')
 
         qs = BranchTransaction.objects.filter(
             date__year=year,
             date__month=month,
             deleted=True,
         )
+
         if branch_id:
             try:
                 qs = qs.filter(branch_id=int(branch_id))
@@ -468,9 +496,85 @@ class BranchTransactionDeletedListView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+        if payment_type_id:
+            try:
+                qs = qs.filter(payment_type_id=int(payment_type_id))
+            except (TypeError, ValueError):
+                return Response(
+                    {'success': False, 'message': 'payment_type_id noto\'g\'ri'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        elif payment_type_name:
+            pt = PaymentTypes.objects.filter(name=payment_type_name).first()
+            if pt:
+                qs = qs.filter(payment_type_id=pt.id)
+            else:
+                qs = qs.none()
+
+        is_give_val = None
+        if is_give_param is not None:
+            v = str(is_give_param).strip().lower()
+            if v in ('true', '1', 'yes'):
+                is_give_val = True
+            elif v in ('false', '0', 'no'):
+                is_give_val = False
+        if direction == 'give':
+            is_give_val = True
+        elif direction == 'receive':
+            is_give_val = False
+        if is_give_val is not None:
+            qs = qs.filter(is_give=is_give_val)
+
+        if amount_min is not None:
+            try:
+                qs = qs.filter(amount__gte=int(amount_min))
+            except (TypeError, ValueError):
+                pass
+        if amount_max is not None:
+            try:
+                qs = qs.filter(amount__lte=int(amount_max))
+            except (TypeError, ValueError):
+                pass
+
+        if loan_id_raw is not None:
+            if str(loan_id_raw).strip().lower() == 'null':
+                qs = qs.filter(loan__isnull=True)
+            else:
+                try:
+                    qs = qs.filter(loan_id=int(loan_id_raw))
+                except (TypeError, ValueError):
+                    pass
+
+        if search:
+            qs = qs.filter(
+                Q(reason__icontains=search)
+                | Q(person_name__icontains=search)
+                | Q(person_surname__icontains=search)
+                | Q(person__name__icontains=search)
+                | Q(person__surname__icontains=search)
+            )
+
+        total = qs.count()
+        qs = qs.order_by('-id')
+
+        try:
+            offset_val = int(offset) if offset is not None else 0
+        except (TypeError, ValueError):
+            offset_val = 0
+        try:
+            limit_val = int(limit) if limit is not None else None
+        except (TypeError, ValueError):
+            limit_val = None
+
+        if offset_val:
+            qs = qs[offset_val:]
+        if limit_val is not None:
+            qs = qs[:limit_val]
+
         return Response({
             'success': True,
-            'data': [tx.convert_json() for tx in qs.order_by('-id')],
+            'total': total,
+            'data': [tx.convert_json() for tx in qs],
         })
 
 
