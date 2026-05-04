@@ -19,6 +19,7 @@ class AdminRequest(models.Model):
     description = models.TextField(null=True, blank=True)
     deadline = models.DateField(null=True, blank=True)
     comment = models.TextField(null=True, blank=True)
+    status = models.BooleanField(default=False)
     branch = models.ForeignKey('branch.Branch', on_delete=models.CASCADE, related_name='admin_requests', null=True, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='admin_requests', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

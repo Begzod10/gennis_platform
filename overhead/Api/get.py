@@ -127,6 +127,68 @@ class OverheadRetrieveView(generics.RetrieveAPIView):
         return Response(overhead_data)
 
 
+@extend_schema(
+    tags=['Overhead Types'],
+    summary='Update overhead type (changeable / cost)',
+    description=(
+        'Patch a single Turon `OverheadType` row. Only `changeable` and `cost` are '
+        'accepted — `name` is owned by the management project and propagated from '
+        'there. Pass at least one field in the body.'
+    ),
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'changeable': {'type': 'boolean'},
+                'cost': {'type': 'integer', 'nullable': True},
+            },
+        },
+    },
+)
+class OverheadTypeUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        try:
+            ot = OverheadType.objects.get(pk=pk, deleted=False)
+        except OverheadType.DoesNotExist:
+            return Response({'success': False, 'message': 'Overhead type not found'}, status=404)
+
+        data = request.data or {}
+        updated = False
+
+        if 'changeable' in data:
+            value = data['changeable']
+            if not isinstance(value, bool):
+                return Response({'success': False, 'message': '`changeable` must be a boolean'}, status=400)
+            ot.changeable = value
+            updated = True
+
+        if 'cost' in data:
+            cost = data['cost']
+            if cost is not None and not isinstance(cost, int):
+                return Response({'success': False, 'message': '`cost` must be an integer or null'}, status=400)
+            ot.cost = cost
+            updated = True
+
+        if not updated:
+            return Response({'success': False, 'message': 'No updatable fields provided'}, status=400)
+
+        ot.save(update_fields=['changeable', 'cost'])
+        return Response({
+            'success': True,
+            'data': {
+                'id': ot.id,
+                'name': ot.name,
+                'cost': ot.cost,
+                'changeable': ot.changeable,
+                'order': ot.order,
+                'branch_id': ot.branch_id,
+                'management_id': ot.management_id,
+            },
+        })
+
+
 class MonthDaysView(APIView):
     permission_classes = [IsAuthenticated]
 
