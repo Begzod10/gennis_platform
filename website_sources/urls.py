@@ -14,7 +14,7 @@ from website_sources.views import (
     AdminContactListView, AdminContactStatusView,
     PublicJobPositionListView, PublicCareerApplyView, PublicTalentPoolView,
     AdminJobPositionListCreateView, AdminJobPositionDetailView,
-    AdminCareerApplicationListView, AdminStatsView, CategoryListCreateView, CategoryDetailView
+    AdminCareerApplicationListView, AdminStatsView, CategoryListCreateView, CategoryDetailView, PublicCareerUpdateView
 )
 
 urlpatterns = [
@@ -55,6 +55,7 @@ urlpatterns = [
     # ── CAREERS (PUBLIC) ───────────────────────────────────────────────────────
     path('careers/positions/', PublicJobPositionListView.as_view(), name='public-job-positions'),
     path('careers/apply/', PublicCareerApplyView.as_view(), name='public-career-apply'),
+    path('careers/<int:pk>/', PublicCareerUpdateView.as_view(), name='public-career-update'),
 
     path('careers/talent-pool/', PublicTalentPoolView.as_view(), name='public-talent-pool'),
 

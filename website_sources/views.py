@@ -719,6 +719,11 @@ class PublicCareerApplyView(APIView):
         )
 
 
+class PublicCareerUpdateView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = CareerApplication.objects.select_related('branch')
+    serializer_class = CareerApplicationSerializer
+
+
 # ─── TALENT POOL ──────────────────────────────────────────────────────────────
 
 class PublicTalentPoolView(APIView):
