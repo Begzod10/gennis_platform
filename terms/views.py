@@ -7,7 +7,8 @@ from group.models import Group, GroupSubjects, Student
 from .functions import create_multiple_years
 from .models import Assignment
 from .serializers import TestCreateUpdateSerializer, Test, TermSerializer, Term
-from django.db.models import Case, When, Value, IntegerField
+from django.db.models import Case, When, Value, IntegerField, Avg
+from group.models import Group, GroupSubjects, Student, GroupRating
 
 
 class CreateTest(generics.CreateAPIView):
@@ -303,3 +304,121 @@ class GroupSubjectsApiView(views.APIView):
         ]
 
         return response.Response(subjects_data, status=status.HTTP_200_OK)
+
+class EducationQualityOverview(views.APIView):
+    def get(self, request, *args, **kwargs):
+        def get_param(names):
+            for name in names:
+                val = request.query_params.get(name)
+                if val and val not in ['undefined', 'null', '', 'all']:
+                    return val
+            return None
+
+        branch_id = get_param(['branch_id', 'branch'])
+        subject_id = get_param(['subject_id', 'subject'])
+        class_id = get_param(['class_id', 'class', 'group_id'])
+        teacher_id = get_param(['teacher_id', 'teacher'])
+        term_id = get_param(['term_id', 'term'])
+        
+        assignments = Assignment.objects.filter(test__deleted=False, test__group__deleted=False)
+        
+        if branch_id:
+            assignments = assignments.filter(test__group__branch_id=branch_id)
+        if subject_id:
+            assignments = assignments.filter(test__subject_id=subject_id)
+        if class_id:
+            assignments = assignments.filter(test__group_id=class_id)
+        if teacher_id:
+            assignments = assignments.filter(test__group__teacher=teacher_id)
+        if term_id:
+            assignments = assignments.filter(test__term_id=term_id)
+
+        avg_percentage = assignments.aggregate(Avg('percentage'))['percentage__avg'] or 0
+        avg_rating = avg_percentage / 20
+        return response.Response({
+            "rating": round(avg_rating, 1),
+            "max_rating": 5,
+            "description": "5 ballik tizimda maktab reytingi"
+        }, status=status.HTTP_200_OK)
+
+
+class EducationQualityDetails(views.APIView):
+    def get(self, request, *args, **kwargs):
+        term_id = kwargs.get('term_id')
+        term = get_object_or_404(Term, id=term_id)
+
+        def get_param(names):
+            for name in names:
+                val = request.query_params.get(name)
+                if val and val not in ['undefined', 'null', '', 'all']:
+                    return val
+            return None
+
+        subject_id = get_param(['subject_id', 'subject'])
+        class_id = get_param(['class_id', 'class', 'group_id'])
+        teacher_id = get_param(['teacher_id', 'teacher'])
+        branch_id = get_param(['branch_id', 'branch'])
+
+        assignments = Assignment.objects.filter(test__term_id=term_id, test__deleted=False, test__group__deleted=False)
+        
+        if branch_id:
+            assignments = assignments.filter(test__group__branch_id=branch_id)
+        if teacher_id:
+            assignments = assignments.filter(test__group__teacher=teacher_id)
+        if class_id:
+            assignments = assignments.filter(test__group_id=class_id)
+        if subject_id:
+            assignments = assignments.filter(test__subject_id=subject_id)
+
+        chart_data = []
+        chart_type = "subjects"
+
+        if subject_id:
+            chart_type = "classes"
+            data = (
+                assignments.values('test__group__name', 'test__group__class_number__number')
+                .annotate(avg=Avg('percentage'))
+                .order_by('test__group__class_number__number')
+            )
+            for item in data:
+                label = item['test__group__name'] or f"{item['test__group__class_number__number']}-sinf"
+                chart_data.append({"label": label, "value": round((item['avg'] or 0) / 20, 1)})
+
+        elif teacher_id:
+            chart_type = "performance"
+            data = (
+                assignments.values('test__group__name', 'test__subject__name')
+                .annotate(avg=Avg('percentage'))
+            )
+            for item in data:
+                label = f"{item['test__subject__name']} ({item['test__group__name']})"
+                chart_data.append({"label": label, "value": round((item['avg'] or 0) / 20, 1)})
+
+        elif class_id:
+            chart_type = "subjects"
+            data = (
+                assignments.values('test__subject__name')
+                .annotate(avg=Avg('percentage'))
+            )
+            for item in data:
+                chart_data.append({"label": item['test__subject__name'], "value": round((item['avg'] or 0) / 20, 1)})
+
+        else:
+            data = (
+                assignments.values('test__subject__name')
+                .annotate(avg=Avg('percentage'))
+                .order_by('-avg')
+            )
+            for item in data:
+                if item['test__subject__name']:
+                    chart_data.append({"label": item['test__subject__name'], "value": round((item['avg'] or 0) / 20, 1)})
+
+        return response.Response({
+            "term": TermSerializer(term).data,
+            "charts": [
+                {
+                    "type": chart_type,
+                    "data": chart_data
+                }
+            ]
+        }, status=status.HTTP_200_OK)

@@ -12,6 +12,7 @@ from django.db.models import Prefetch, Q, F, Sum, Case, When, IntegerField, Exis
 from attendances.models import AttendancePerMonth
 from books.models import BranchPayment
 from books.serializers import BranchPaymentListSerializers
+from branch.models import BranchLoan, BranchTransaction
 from capital.models import Capital
 from capital.serializer.old_capital import OldCapitalsListSerializers
 from capital.serializers import OldCapital
@@ -36,6 +37,145 @@ from datetime import date
 
 class Encashments(APIView):
     permission_classes = [IsAuthenticated]
+
+    def _loans_summary(self, branch, ot, do, payment_type=None):
+        """Branch loans visible for the encashment period.
+
+        Filtering rules:
+          - Loans are scoped to the disbursement payment_type when one is given
+            (so the report stays consistent with the rest of the encashment).
+          - `active`         loans open at any moment during [ot, do]
+          - `newly_issued`   issued_date in [ot, do]
+          - `settled_in`     settled_date in [ot, do]
+          - `cancelled_in`   updated_at within [ot, do] AND status='cancelled'
+          - `overdue`        active subset where due_date < do AND remaining_amount > 0
+        """
+        def _to_date(v):
+            if v is None or isinstance(v, date) and not isinstance(v, datetime):
+                return v
+            if isinstance(v, datetime):
+                return v.date()
+            if isinstance(v, str):
+                return datetime.strptime(v[:10], '%Y-%m-%d').date()
+            return v
+
+        ot = _to_date(ot)
+        do = _to_date(do)
+
+        # Disbursement-scoped loan ids (matches gennis behaviour)
+        disbursement_q = BranchTransaction.objects.filter(
+            branch_id=branch,
+            loan_id__isnull=False,
+            deleted=False,
+        )
+        if payment_type is not None:
+            disbursement_q = disbursement_q.filter(payment_type_id=payment_type)
+        loan_id_filter = disbursement_q.values_list('loan_id', flat=True).distinct()
+
+        loan_base = BranchLoan.objects.filter(
+            branch_id=branch,
+            deleted=False,
+            id__in=loan_id_filter,
+        ).select_related('counterparty')
+
+        active = list(loan_base.filter(
+            issued_date__lte=do,
+            status__in=['active', 'settled'],
+        ).filter(
+            Q(settled_date__isnull=True) | Q(settled_date__gte=ot)
+        ).exclude(status='cancelled').order_by('-issued_date', '-id'))
+        # Drop loans that are settled BEFORE ot (already excluded above by settled_date>=ot
+        # but we also need to drop status='settled' that happened to settle before ot)
+        active = [l for l in active if l.status != 'settled' or (l.settled_date and l.settled_date >= ot)]
+
+        newly_issued = list(loan_base.filter(
+            issued_date__gte=ot, issued_date__lte=do,
+        ).exclude(status='cancelled').order_by('-issued_date', '-id'))
+
+        settled_in = list(loan_base.filter(
+            status='settled',
+            settled_date__gte=ot, settled_date__lte=do,
+        ).order_by('-settled_date', '-id'))
+
+        cancelled_in = list(loan_base.filter(
+            status='cancelled',
+            updated_at__gte=ot, updated_at__lte=do,
+        ).order_by('-updated_at', '-id'))
+
+        # Outstanding as-of `do`: principal − repayments dated <= do
+        def _outstanding_as_of(loan):
+            opposite_is_give = (loan.direction == 'in')
+            agg = BranchTransaction.objects.filter(
+                loan_id=loan.id,
+                deleted=False,
+                is_give=opposite_is_give,
+                date__lte=do,
+            ).aggregate(total=Sum('amount'))
+            paid = int(agg['total'] or 0)
+            return max(0, int(loan.principal_amount or 0) - paid)
+
+        def _payload(loan, as_of_outstanding=True):
+            data = loan.convert_json()
+            if as_of_outstanding:
+                data['outstanding_as_of'] = _outstanding_as_of(loan)
+            return data
+
+        active_payloads = [_payload(l) for l in active]
+        out_loans = [(l, p) for l, p in zip(active, active_payloads) if l.direction == 'out']
+        in_loans  = [(l, p) for l, p in zip(active, active_payloads) if l.direction == 'in']
+
+        def _direction_summary(items):
+            payloads = [p for _, p in items]
+            principal_total = sum(p['principal_amount'] for p in payloads)
+            outstanding = sum(p['outstanding_as_of'] for p in payloads)
+            paid = principal_total - outstanding
+            return {
+                'count': len(items),
+                'principal_total': principal_total,
+                'paid_total': paid,
+                'outstanding': outstanding,
+                'loans': payloads,
+            }
+
+        # Overdue subset of active
+        overdue_loans = [
+            (l, p) for l, p in zip(active, active_payloads)
+            if l.due_date and l.due_date < do and p['outstanding_as_of'] > 0
+        ]
+
+        lent_out_summary = _direction_summary(out_loans)
+        borrowed_in_summary = _direction_summary(in_loans)
+
+        # Period-bucket counts add to per-direction blocks
+        def _bucket_for_direction(items, direction):
+            scoped = [l for l in items if l.direction == direction]
+            return {
+                'count': len(scoped),
+                'principal_total': sum(int(l.principal_amount or 0) for l in scoped),
+                'list': [l.convert_json() for l in scoped],
+            }
+
+        lent_out_summary['newly_issued'] = _bucket_for_direction(newly_issued, 'out')
+        lent_out_summary['settled_in_period'] = _bucket_for_direction(settled_in, 'out')
+        borrowed_in_summary['newly_issued'] = _bucket_for_direction(newly_issued, 'in')
+        borrowed_in_summary['settled_in_period'] = _bucket_for_direction(settled_in, 'in')
+
+        out_overdue = [(l, p) for l, p in overdue_loans if l.direction == 'out']
+        in_overdue  = [(l, p) for l, p in overdue_loans if l.direction == 'in']
+        lent_out_summary['overdue_count'] = len(out_overdue)
+        lent_out_summary['overdue_amount'] = sum(p['outstanding_as_of'] for _, p in out_overdue)
+        borrowed_in_summary['overdue_count'] = len(in_overdue)
+        borrowed_in_summary['overdue_amount'] = sum(p['outstanding_as_of'] for _, p in in_overdue)
+
+        return {
+            'lent_out': lent_out_summary,
+            'borrowed_in': borrowed_in_summary,
+            'cancelled_in_period': {
+                'count': len(cancelled_in),
+                'list': [l.convert_json() for l in cancelled_in],
+            },
+            'net_outstanding': lent_out_summary['outstanding'] - borrowed_in_summary['outstanding'],
+        }
 
     def post(self, request, *args, **kwargs):
         try:
@@ -130,6 +270,20 @@ class Encashments(APIView):
 
             ).distinct()
             capital_serializer = OldCapitalsListSerializers(capitals, many=True)
+
+            branch_transactions = BranchTransaction.objects.filter(
+                date__range=(ot, do),
+                payment_type_id=payment_type,
+                branch_id=branch,
+                deleted=False,
+            ).exclude(loan__status='cancelled').order_by('-date', '-id')
+            bt_given = branch_transactions.filter(is_give=True)
+            bt_received = branch_transactions.filter(is_give=False)
+            bt_given_total = bt_given.aggregate(total=Sum('amount'))['total'] or 0
+            bt_received_total = bt_received.aggregate(total=Sum('amount'))['total'] or 0
+            bt_given_data = [tx.convert_json() for tx in bt_given]
+            bt_received_data = [tx.convert_json() for tx in bt_received]
+
             Encashment.objects.get_or_create(
                 ot=ot,
                 do=do,
@@ -168,8 +322,20 @@ class Encashments(APIView):
                     'capital_data': capital_serializer.data,
                     'total_capital': total_capital,
                 },
-                'overall': student_total_payment - (
-                        teacher_total_salary + worker_total_salary + total_capital + total_overhead_payment)
+                'branch_transactions': {
+                    'given': {
+                        'data': bt_given_data,
+                        'total': bt_given_total,
+                    },
+                    'received': {
+                        'data': bt_received_data,
+                        'total': bt_received_total,
+                    },
+                    'net': bt_received_total - bt_given_total,
+                },
+                'branch_loans': self._loans_summary(branch=branch, ot=ot, do=do, payment_type=payment_type),
+                'overall': (student_total_payment + bt_received_total) - (
+                        teacher_total_salary + worker_total_salary + total_capital + total_overhead_payment + bt_given_total)
             })
 
         except KeyError as e:
@@ -237,11 +403,22 @@ class Encashments(APIView):
 
                 ).aggregate(total=Sum('price'))['total'] or 0
 
+                bt_qs = BranchTransaction.objects.filter(
+                    date__range=(ot, do),
+                    payment_type=payment_type,
+                    branch_id=branch,
+                    deleted=False,
+                )
+                bt_given_total = bt_qs.filter(is_give=True).aggregate(total=Sum('amount'))['total'] or 0
+                bt_received_total = bt_qs.filter(is_give=False).aggregate(total=Sum('amount'))['total'] or 0
+
                 payment_data = {
                     'payment_type': payment_type.name,
-
-                    'overall': student_total_payment - (
-                            teacher_total_salary + worker_total_salary + branch_total_payment + total_capital + total_overhead_payment)
+                    'branch_transactions_given_total': bt_given_total,
+                    'branch_transactions_received_total': bt_received_total,
+                    'branch_transactions_net': bt_received_total - bt_given_total,
+                    'overall': (student_total_payment + bt_received_total) - (
+                            teacher_total_salary + worker_total_salary + branch_total_payment + total_capital + total_overhead_payment + bt_given_total)
                 }
 
                 all_payment_data.append(payment_data)

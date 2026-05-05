@@ -6,7 +6,10 @@ from teachers.models import Teacher
 from teachers.serializers import TeacherSerializer
 from user.models import CustomUser
 from user.serializers import UserSerializerRead
-from .models import ObservationStatistics, ObservationDay, ObservationOptions, ObservationInfo
+from .models import ObservationStatistics, ObservationDay, ObservationOptions, ObservationInfo, \
+    TeacherObservationSchedule, TeacherObservationCycle
+from observation.uitils import get_week_date_range
+from django.db import models
 
 
 class ObservationInfoSerializers(serializers.ModelSerializer):
@@ -83,3 +86,33 @@ class ObservationStatisticsListSerializers(serializers.ModelSerializer):
     class Meta:
         model = ObservationStatistics
         fields = ['id', 'comment', 'observation_day', 'observation_info', 'observation_option']
+
+
+class ObserverScheduleSerializer(serializers.ModelSerializer):
+    observer_id = serializers.IntegerField(source='observer.id')
+    observer_name = serializers.SerializerMethodField()
+    is_completed = serializers.BooleanField()
+    observation_avg = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TeacherObservationSchedule
+        fields = ['observer_id', 'observer_name', 'is_completed', 'observation_avg']
+
+    def get_observer_name(self, obj):
+        user = obj.observer.user
+        return f"{user.name or ''} {user.surname or ''}".strip()
+
+    def get_observation_avg(self, obj):
+        if obj.observation_day:
+            return obj.observation_day.average
+        return None
+
+
+class TeacherWeeklyObservationSerializer(serializers.Serializer):
+    teacher_id = serializers.IntegerField()
+    teacher_name = serializers.CharField()
+    total_observers_required = serializers.IntegerField()
+    completed_count = serializers.IntegerField()
+    pending_count = serializers.IntegerField()
+    weekly_avg_score = serializers.FloatField(allow_null=True)
+    observers = ObserverScheduleSerializer(many=True)

@@ -92,3 +92,59 @@ class AttendancePerDay(models.Model):
     activeness_ball = models.IntegerField()
     average = models.IntegerField()
     status = models.IntegerField()
+
+
+class GroupRating(models.Model):
+    RATING_CHOICES = [
+        (1, 'Juda yomon'),
+        (2, 'Yomon'),
+        (3, 'O\'rtacha'),
+        (4, 'Yaxshi'),
+        (5, 'A\'lo'),
+    ]
+
+    COLOR_CHOICES = [
+        ('red', 'Qizil'),
+        ('orange', 'To\'q sariq'),
+        ('yellow', 'Sariq'),
+        ('green', 'Yashil'),
+        ('blue', 'Ko\'k'),
+    ]
+
+    group = models.ForeignKey(
+        'group.Group',
+        on_delete=models.CASCADE,
+        related_name='ratings'
+    )
+    teacher = models.ForeignKey(
+        'teachers.Teacher',
+        on_delete=models.CASCADE,
+        related_name='given_ratings'
+    )
+    branch = models.ForeignKey(
+        'branch.Branch',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='group_ratings'
+    )
+    rating = models.PositiveSmallIntegerField(
+        choices=RATING_CHOICES,
+        null=True
+    )
+    color = models.CharField(
+        max_length=20,
+        choices=COLOR_CHOICES,
+        null=True,
+        blank=True
+    )
+    comment = models.TextField(null=True, blank=True)
+    date = models.DateField()  # Filter uchun — qo'lda kiritiladi
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date']
+        verbose_name = 'Guruh reytingi'
+        verbose_name_plural = 'Guruh reytinglari'
+
+    def __str__(self):
+        return f"{self.teacher} → {self.group} | {self.date} | {self.rating}"

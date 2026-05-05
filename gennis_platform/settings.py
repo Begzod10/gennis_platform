@@ -70,7 +70,9 @@ INSTALLED_APPS = [
     'maintenance.apps.MaintenanceConfig',
     "report",
     'surveys',
+    # 'tasks',
     'gemini',
+    'website_sources'
 ]
 
 MIDDLEWARE = [
@@ -85,6 +87,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # "tasks.middlewear.RecurringTaskMiddleware",
     "tasks.middlewear.ApiLogMiddleware",
+    # 'surveys.apps.SurveysConfig'
 ]
 
 ROOT_URLCONF = 'gennis_platform.urls'
@@ -174,6 +177,12 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute=0, hour=0, day_of_month="1"),  # month_of_year="*" is optional
         # If you really want “every 2 months” etc, use:
         # "schedule": crontab(minute=0, hour=0, day_of_month="1", month_of_year="*/2"),
+    },
+
+    # Generate monthly overhead-type logs on the 1st of every month at 00:05
+    "generate-monthly-overhead-logs": {
+        "task": "overhead.generate_monthly_overhead_logs",
+        "schedule": crontab(minute=5, hour=0, day_of_month="1"),
     },
 
     # Every Saturday at 00:00

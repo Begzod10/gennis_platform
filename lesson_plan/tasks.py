@@ -134,21 +134,22 @@ def create_lesson_plans():
         ClassTimeTable.objects
         .filter(date__range=[start_date, end_date])
         .select_related("teacher")
-        .distinct("group_id", "flow_id", "teacher_id", "date")
+
     )
 
     for timetable in timetable_qs:
         if not timetable.teacher:
             continue
 
-        if bool(timetable.group_id) == bool(timetable.flow_id):
-            continue
 
         LessonPlan.objects.get_or_create(
             group_id=timetable.group_id,
             flow_id=timetable.flow_id,
             teacher_id=timetable.teacher_id,
-            date=timetable.date
+            date=timetable.date,
+            class_time_table=timetable,
+
+
         )
 
 

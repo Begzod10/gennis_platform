@@ -11,7 +11,7 @@ from classes.models import ClassNumber
 from drf_spectacular.utils import extend_schema, OpenApiTypes
 
 from dotenv import load_dotenv
-from google import genai
+import google.genai as genai
 
 load_dotenv()
 

@@ -23,6 +23,8 @@ class MobileLessonPlanFileUploadView(APIView):
     @extend_schema(
         request={"multipart/form-data": {"type": "object", "properties": {
             "term_id": {"type": "integer"},
+            "group_id": {"type": "integer", "nullable": True},
+            "flow_id": {"type": "integer", "nullable": True},
             "file": {"type": "string", "format": "binary"},
         }}},
         responses={201: dict, 200: dict},
@@ -32,6 +34,8 @@ class MobileLessonPlanFileUploadView(APIView):
                 value={
                     "id": 3,
                     "term_id": 2,
+                    "group_id": 1,
+                    "flow_id": None,
                     "status": "pending",
                     "detail": "File uploaded. AI review started."
                 },
@@ -47,6 +51,8 @@ class MobileLessonPlanFileUploadView(APIView):
             return Response({"detail": "Teacher not found."}, status=404)
 
         term_id = request.data.get("term_id")
+        group_id = request.data.get("group_id")
+        flow_id = request.data.get("flow_id")
         file = request.FILES.get("file")
 
         if not term_id or not file:
@@ -64,10 +70,28 @@ class MobileLessonPlanFileUploadView(APIView):
             term = Term.objects.get(id=term_id)
         except Term.DoesNotExist:
             return Response({"detail": "Term not found."}, status=404)
+            
+        from group.models import Group
+        from flows.models import Flow
+        group = None
+        if group_id:
+            try:
+                group = Group.objects.get(id=group_id)
+            except Group.DoesNotExist:
+                return Response({"detail": "Group not found."}, status=404)
+                
+        flow = None
+        if flow_id:
+            try:
+                flow = Flow.objects.get(id=flow_id)
+            except Flow.DoesNotExist:
+                return Response({"detail": "Flow not found."}, status=404)
 
         lp_file, created = LessonPlanFile.objects.update_or_create(
             teacher=teacher,
             term=term,
+            group=group,
+            flow=flow,
             defaults={
                 "file": file,
                 "status": LessonPlanFile.Status.PENDING,
@@ -84,6 +108,8 @@ class MobileLessonPlanFileUploadView(APIView):
             {
                 "id": lp_file.id,
                 "term_id": term.id,
+                "group_id": group.id if group else None,
+                "flow_id": flow.id if flow else None,
                 "status": lp_file.status,
                 "detail": "File uploaded. AI review started.",
             },
@@ -161,6 +187,8 @@ class MobileLessonPlanFileListView(APIView):
     @extend_schema(
         parameters=[
             OpenApiParameter("term_id", int, description="Filter by term ID"),
+            OpenApiParameter("group_id", int, description="Filter by group ID"),
+            OpenApiParameter("flow_id", int, description="Filter by flow ID"),
         ],
         responses={200: dict},
         examples=[
@@ -191,8 +219,15 @@ class MobileLessonPlanFileListView(APIView):
 
         qs = LessonPlanFile.objects.filter(teacher=teacher).select_related("term")
         term_id = request.query_params.get("term_id")
+        group_id = request.query_params.get("group_id")
+        flow_id = request.query_params.get("flow_id")
+        
         if term_id:
             qs = qs.filter(term_id=term_id)
+        if group_id:
+            qs = qs.filter(group_id=group_id)
+        if flow_id:
+            qs = qs.filter(flow_id=flow_id)
 
         return Response([_serialize(f) for f in qs])
 
@@ -205,6 +240,14 @@ def _serialize(lp_file: LessonPlanFile) -> dict:
             "quarter": lp_file.term.quarter,
             "academic_year": lp_file.term.academic_year,
         },
+        "group": {
+            "id": lp_file.group_id,
+            "name": lp_file.group.name if lp_file.group else None,
+        } if lp_file.group_id else None,
+        "flow": {
+            "id": lp_file.flow_id,
+            "name": lp_file.flow.name if lp_file.flow else None,
+        } if lp_file.flow_id else None,
         "file": lp_file.file.url if lp_file.file else None,
         "status": lp_file.status,
         "score": lp_file.score,

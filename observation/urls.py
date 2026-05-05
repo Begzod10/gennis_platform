@@ -4,7 +4,7 @@ from .views import (ObservationInfoList, ObservationOptionsList, ObservationInfo
                     ObservationOptionsRetrieveUpdateAPIView)
 from .api.get import ObservationDayRetrieveAPIView, ObservationDayListView, ObservationStatisticsRetrieveAPIView, \
     ObservationStatisticsListView, TeacherObserveView, ObservedGroupAPIView, ObservedGroupInfoAPIView, \
-    ObservedGroupClassroomAPIView, ObservedGroupInfoClassroomAPIView
+    ObservedGroupClassroomAPIView, ObservedGroupInfoClassroomAPIView, WeeklyObservationStatsAPIView
 from .api.createdeleteupdate import ObservationDayCreateView, ObservationDayUpdateView, ObservationDayDestroyView, \
     ObservationStatisticsCreateView, ObservationStatisticsUpdateView, ObservationStatisticsDestroyView, \
     TeacherObservationDayDestroyView
@@ -33,7 +33,8 @@ urlpatterns = [
     path('observation_day_create/', ObservationDayCreateView.as_view(), name='observation-day-create'),
     path('observation_day_update/<int:pk>/', ObservationDayUpdateView.as_view(), name='observation-day-update'),
     path('observation_day_delete/<int:pk>/', ObservationDayDestroyView.as_view(), name='observation-day-delete'),
-    path('teacher_observation_day_delete/<int:pk>/', TeacherObservationDayDestroyView.as_view(), name='teacher-observation-day-delete'),
+    path('teacher_observation_day_delete/<int:pk>/', TeacherObservationDayDestroyView.as_view(),
+         name='teacher-observation-day-delete'),
     path('observation_day/<int:pk>/', ObservationDayRetrieveAPIView.as_view(), name='observation-day'),
     path('observation_day_list/', ObservationDayListView.as_view(), name='observation-day-list'),
     path('observation_info/', ObservationInfoList.as_view(), name='observation-info-list'),
@@ -46,7 +47,8 @@ urlpatterns = [
     path('observed_group/<int:group_id>/', ObservedGroupAPIView.as_view(), name='observed_group_current'),
     path('observed_group/<int:group_id>/<str:date>/', ObservedGroupAPIView.as_view(), name='observed_group_by_date'),
     path('observed_group_info/<int:group_id>/', ObservedGroupInfoAPIView.as_view(), name='observed_group_info'),
-    path('observed_group_info/<int:group_id>/<int:observation_id>/', ObservedGroupInfoAPIView.as_view(), name='observed_group_info_by_id'),
+    path('observed_group_info/<int:group_id>/<int:observation_id>/', ObservedGroupInfoAPIView.as_view(),
+         name='observed_group_info_by_id'),
 
     path("observed_group_classroom/<int:group_id>/", ObservedGroupClassroomAPIView.as_view()),
     path("observed_group_classroom/<int:group_id>/<str:date>/", ObservedGroupClassroomAPIView.as_view()),
@@ -65,4 +67,5 @@ urlpatterns = [
 
     # Statistics
     path('teacher_stats/', TeacherStatsView.as_view(), name='teacher-stats'),
+    path('observation/weekly/', WeeklyObservationStatsAPIView.as_view(), name='weekly-observation-stats'),
 ]

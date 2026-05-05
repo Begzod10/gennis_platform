@@ -8,6 +8,20 @@ from .lesson_plan_file_views import (
     MobileLessonPlanFileStatusView,
     MobileLessonPlanFileListView,
 )
+from .terms_views import (
+    TeacherEducationYears,
+    TeacherListTerm,
+    TeacherListTest,
+    TeacherCreateTest,
+    TeacherUpdateTest,
+    TeacherDeleteTest,
+    TeacherStudentAssignmentView,
+    TeacherAssignmentCreateView,
+    TeacherTermsByGroupView,
+    TeacherGroupsAndFlowsView,
+)
+
+
 
 app_name = 'teachers'
 urlpatterns = [
@@ -35,4 +49,19 @@ urlpatterns = [
     path('lesson-plan/file/upload/', MobileLessonPlanFileUploadView.as_view(), name='mobile-lp-upload'),
     path('lesson-plan/file/<int:pk>/', MobileLessonPlanFileStatusView.as_view(), name='mobile-lp-status'),
     path('lesson-plan/file/', MobileLessonPlanFileListView.as_view(), name='mobile-lp-list'),
+
+    # Terms (Baholash/Choraklar)
+    path('terms/education-years/', TeacherEducationYears.as_view(), name='terms-education-years'),
+    path('terms/list-term/<str:academic_year>/', TeacherListTerm.as_view(), name='terms-list-term'),
+    path('terms/list-test/<int:term>/', TeacherListTest.as_view(), name='terms-list-test'),
+    path('terms/create-test/', TeacherCreateTest.as_view(), name='terms-create-test'),
+    path('terms/update-test/<int:pk>/', TeacherUpdateTest.as_view(), name='terms-update-test'),
+    path('terms/delete-test/<int:pk>/', TeacherDeleteTest.as_view(), name='terms-delete-test'),
+    path('terms/student-assignment/<int:group_id>/<int:test_id>/', TeacherStudentAssignmentView.as_view(), name='terms-student-assignment'),
+    path('terms/assignment-create/', TeacherAssignmentCreateView.as_view(), name='terms-assignment-create'),
+    path('terms/terms-by-group/<int:group_id>/<int:term_id>/', TeacherTermsByGroupView.as_view(), name='terms-by-group'),
+    path('terms/terms-by-group/<int:group_id>/<int:term_id>/<int:subject_id>/', TeacherTermsByGroupView.as_view(), name='terms-by-group-subject'),
+    path('terms/my-classes/', TeacherGroupsAndFlowsView.as_view(), name='terms-my-classes'),
 ]
+
+

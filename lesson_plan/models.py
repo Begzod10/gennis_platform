@@ -1,6 +1,7 @@
 from django.db import models
 
 from group.models import Group
+from school_time_table.models import Hours
 from students.models import Student
 from teachers.models import Teacher
 from flows.models import Flow
@@ -20,11 +21,12 @@ class LessonPlan(models.Model):
     updated = models.DateField(null=True)
     ball = models.PositiveSmallIntegerField(null=True, blank=True)
     conclusion = models.TextField(null=True, blank=True)
+    class_time_table =models.ForeignKey('school_time_table.ClassTimeTable', on_delete=models.SET_NULL, null=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['group', 'flow', 'teacher', 'date'],
+                fields=['group', 'flow', 'teacher', 'date','class_time_table'],
                 name='unique_lesson_plan'
             )
         ]
@@ -45,6 +47,8 @@ class LessonPlanFile(models.Model):
 
     teacher   = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='lesson_plan_files')
     term      = models.ForeignKey('terms.Term', on_delete=models.CASCADE, related_name='lesson_plan_files')
+    group     = models.ForeignKey(Group, on_delete=models.SET_NULL, null=True, blank=True, related_name='lesson_plan_files')
+    flow      = models.ForeignKey(Flow, on_delete=models.SET_NULL, null=True, blank=True, related_name='lesson_plan_files')
     file      = models.FileField(upload_to='lesson_plan_files/%Y/%m/')
     status    = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
     score     = models.PositiveSmallIntegerField(null=True, blank=True)   # 0-100
@@ -55,4 +59,9 @@ class LessonPlanFile(models.Model):
 
     class Meta:
         ordering = ['-uploaded_at']
-        unique_together = ['teacher', 'term']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['teacher', 'term', 'group', 'flow'],
+                name='unique_lesson_plan_file'
+            )
+        ]

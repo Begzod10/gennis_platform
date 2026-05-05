@@ -12,10 +12,11 @@ class EmployerSerializer(serializers.ModelSerializer):
     job = serializers.SerializerMethodField(required=False)
     status = serializers.SerializerMethodField(required=False)
     user_id = serializers.SerializerMethodField(required=False)
+    profile_img =serializers.CharField(required=False,source='user.profile_img')
 
     class Meta:
         model = CustomAutoGroup
-        fields = ('id', 'name', 'phone', 'age', 'job', 'status', 'user_id')
+        fields = ('id', 'name', 'phone', 'age', 'job', 'status', 'user_id','profile_img')
 
     def get_name(self, obj):
         return f"{obj.user.name} {obj.user.surname} {obj.user.father_name}"

@@ -697,7 +697,6 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
         today = localdate()
         weekday = today.weekday()
 
-        # 🔹 hafta hisoblash
         if weekday >= 5:
             monday = today + timedelta(days=(7 - weekday))
         else:
@@ -718,7 +717,6 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
         if flow_ids:
             query |= Q(flow_id__in=flow_ids)
 
-        # 🔥 commentlarni oldindan olib kelamiz
         comments_qs = LessonPlanStudents.objects.select_related(
             "student__user"
         )
@@ -727,8 +725,8 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
             LessonPlan.objects
             .filter(
                 teacher=teacher,
-                date__range=[monday, friday]
-            )
+                date__range=[monday, friday],
+                class_time_table__isnull=False            )
             .filter(query)
             .select_related("group", "flow")
             .prefetch_related(
@@ -738,8 +736,8 @@ class TeacherGetLessonPlanView(generics.ListAPIView):
                     to_attr="_comments_cache"
                 ),
                 "group__students__user",
-                "flow__students__user"  # ✅ MUHIM FIX
-            )
+                "flow__students__user"
+            ).order_by("date")
         )
 
     def list(self, request, *args, **kwargs):

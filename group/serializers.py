@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
-
-from django.db.models import Q
+from django.db.models import Q, Avg, Count
 from rest_framework import serializers
 from django.utils.timezone import now
 from attendances.models import AttendancePerMonth
@@ -10,7 +9,7 @@ from classes.models import ClassNumber, ClassColors
 from gennis_platform.settings import classroom_server
 from gennis_platform.uitils import request
 from group.functions.CreateSchoolStudentDebts import create_school_student_debts
-from group.models import Group, GroupReason, CourseTypes, GroupSubjects
+from group.models import Group, GroupReason, CourseTypes, GroupSubjects, GroupRating
 from language.models import Language
 from language.serializers import LanguageSerializers
 from students.models import DeletedNewStudent
@@ -449,15 +448,17 @@ class GroupListSerializer(serializers.ModelSerializer):
     status_class_type = serializers.BooleanField(read_only=True)
     overall_hours = serializers.SerializerMethodField(read_only=True)
 
-
     class Meta:
         model = Group
-        fields = ["id", "class_number", "color", "class_type", "price", "subjects", "status_class_type",'overall_hours']
+        fields = ["id", "class_number", "color", "class_type", "price", "subjects", "status_class_type",
+                  'overall_hours']
+
     def get_overall_hours(self, obj):
-        hours =0
+        hours = 0
         for i in obj.group_subjects.all():
             hours += i.hours
         return hours
+
 
 # class GroupListSerializer(serializers.ModelSerializer):
 #     class_number = serializers.CharField(required=False, source='class_number.number')
@@ -480,3 +481,95 @@ class GroupListSerializer(serializers.ModelSerializer):
 #             }
 #             data.append(info)
 #         return data
+class GroupRatingSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.SerializerMethodField()
+    group_name = serializers.SerializerMethodField()
+    branch_name = serializers.SerializerMethodField()
+    rating_label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GroupRating
+        fields = [
+            'id', 'group', 'group_name', 'teacher', 'teacher_name',
+            'branch', 'branch_name', 'rating', 'rating_label',
+            'color', 'comment', 'date', 'created_at'
+        ]
+        read_only_fields = ['created_at']
+
+    def get_teacher_name(self, obj):
+        return str(obj.teacher.user.get_full_name()) if obj.teacher else None
+
+    def get_group_name(self, obj):
+        return obj.group.name if obj.group else None
+
+    def get_branch_name(self, obj):
+        return obj.branch.name if obj.branch else None
+
+    def get_rating_label(self, obj):
+        return obj.get_rating_display()
+
+
+class GroupRatingCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GroupRating
+        fields = ['group', 'teacher', 'branch', 'rating', 'color', 'comment', 'date']
+
+
+class GroupRatingSummarySerializer(serializers.ModelSerializer):
+    """GroupRating uchun oddiy serializer (detail ko'rinishi)"""
+    teacher_name = serializers.SerializerMethodField()
+    branch_name = serializers.SerializerMethodField()
+    rating_label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GroupRating
+        fields = [
+            'id', 'teacher', 'teacher_name', 'branch', 'branch_name',
+            'rating', 'rating_label', 'color', 'comment', 'date', 'created_at'
+        ]
+
+    def get_teacher_name(self, obj):
+        return obj.teacher.user.get_full_name() if obj.teacher else None
+
+    def get_branch_name(self, obj):
+        return obj.branch.name if obj.branch else None
+
+    def get_rating_label(self, obj):
+        return obj.get_rating_display()
+
+
+class GroupWithRatingSerializer(serializers.ModelSerializer):
+    """Group list — ratinglar jamlanmasi bilan"""
+    avg_rating = serializers.FloatField(read_only=True)
+    total_ratings = serializers.IntegerField(read_only=True)
+    last_color = serializers.SerializerMethodField()
+    last_comment = serializers.SerializerMethodField()
+    last_rated_date = serializers.SerializerMethodField()
+
+    # Rang bo'yicha taqsimot: { red: 2, green: 5, ... }
+    color_distribution = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Group
+        fields = [
+            'id', 'name', 'branch', 'status',
+            'avg_rating', 'total_ratings',
+            'last_color', 'last_comment', 'last_rated_date',
+            'color_distribution',
+        ]
+
+    def get_last_color(self, obj):
+        last = obj.ratings.order_by('-date', '-created_at').first()
+        return last.color if last else None
+
+    def get_last_comment(self, obj):
+        last = obj.ratings.order_by('-date', '-created_at').first()
+        return last.comment if last else None
+
+    def get_last_rated_date(self, obj):
+        last = obj.ratings.order_by('-date', '-created_at').first()
+        return last.date if last else None
+
+    def get_color_distribution(self, obj):
+        colors = obj.ratings.values('color').annotate(count=Count('color'))
+        return {item['color']: item['count'] for item in colors if item['color']}

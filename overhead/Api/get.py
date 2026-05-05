@@ -8,12 +8,17 @@ from rest_framework.views import APIView
 
 from overhead.models import Overhead, OverheadType
 from overhead.serializer.lists import ActiveListTeacherSerializer
-from overhead.serializers import OverheadSerializerGet, OverheadSerializerGetTYpe, MonthDaysSerializer
+from overhead.serializers import (
+    OverheadSerializerGet, OverheadSerializerGetTYpe, MonthDaysSerializer,
+    OverheadTypeListResponseSerializer,
+)
 from permissions.response import QueryParamFilterMixin
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Sum
 from permissions.response import CustomPagination
 from overhead.filters import OverheadFilter
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 class OverheadListView(QueryParamFilterMixin, generics.ListAPIView):
     filter_mappings = {
         'status': 'deleted',
@@ -68,17 +73,46 @@ class OverheadListView(QueryParamFilterMixin, generics.ListAPIView):
             'totalCount': data
         })
 
-class OverheadTYpeListView(generics.ListAPIView):
+@extend_schema(
+    tags=['Overhead Types'],
+    summary='List overhead types (filterable by branch)',
+    description=(
+        'Returns active (non-deleted) overhead types ordered by `order`, then `id`. '
+        'Pass `?branch_id=` to scope results to a single branch — strongly recommended, '
+        'since each branch has its own copy of every type.'
+    ),
+    parameters=[
+        OpenApiParameter('branch_id', OpenApiTypes.INT, OpenApiParameter.QUERY, required=False,
+                         description='Branch ID; omit to list all branches'),
+    ],
+    responses={200: OverheadTypeListResponseSerializer},
+)
+class OverheadTYpeListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    queryset = OverheadType.objects.order_by('order').all()
-
-    serializer_class = OverheadSerializerGetTYpe
-
-    def get(self, request, *args, **kwargs):
-        queryset = OverheadType.objects.all()
-        serializer = OverheadSerializerGetTYpe(queryset, many=True)
-        return Response(serializer.data)
+    def get(self, request):
+        qs = OverheadType.objects.filter(deleted=False)
+        branch_id = request.query_params.get('branch_id')
+        if branch_id:
+            try:
+                qs = qs.filter(branch_id=int(branch_id))
+            except (TypeError, ValueError):
+                return Response({'success': False, 'message': 'Invalid branch_id'}, status=400)
+        qs = qs.order_by('order', 'id')
+        return Response({
+            'success': True,
+            'data': [
+                {
+                    'id': t.id,
+                    'name': t.name,
+                    'cost': t.cost,
+                    'changeable': t.changeable,
+                    'order': t.order,
+                    'branch_id': t.branch_id,
+                }
+                for t in qs
+            ],
+        })
 
 
 class OverheadRetrieveView(generics.RetrieveAPIView):
@@ -91,6 +125,68 @@ class OverheadRetrieveView(generics.RetrieveAPIView):
         overhead = self.get_object()
         overhead_data = self.get_serializer(overhead).data
         return Response(overhead_data)
+
+
+@extend_schema(
+    tags=['Overhead Types'],
+    summary='Update overhead type (changeable / cost)',
+    description=(
+        'Patch a single Turon `OverheadType` row. Only `changeable` and `cost` are '
+        'accepted — `name` is owned by the management project and propagated from '
+        'there. Pass at least one field in the body.'
+    ),
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'changeable': {'type': 'boolean'},
+                'cost': {'type': 'integer', 'nullable': True},
+            },
+        },
+    },
+)
+class OverheadTypeUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        try:
+            ot = OverheadType.objects.get(pk=pk, deleted=False)
+        except OverheadType.DoesNotExist:
+            return Response({'success': False, 'message': 'Overhead type not found'}, status=404)
+
+        data = request.data or {}
+        updated = False
+
+        if 'changeable' in data:
+            value = data['changeable']
+            if not isinstance(value, bool):
+                return Response({'success': False, 'message': '`changeable` must be a boolean'}, status=400)
+            ot.changeable = value
+            updated = True
+
+        if 'cost' in data:
+            cost = data['cost']
+            if cost is not None and not isinstance(cost, int):
+                return Response({'success': False, 'message': '`cost` must be an integer or null'}, status=400)
+            ot.cost = cost
+            updated = True
+
+        if not updated:
+            return Response({'success': False, 'message': 'No updatable fields provided'}, status=400)
+
+        ot.save(update_fields=['changeable', 'cost'])
+        return Response({
+            'success': True,
+            'data': {
+                'id': ot.id,
+                'name': ot.name,
+                'cost': ot.cost,
+                'changeable': ot.changeable,
+                'order': ot.order,
+                'branch_id': ot.branch_id,
+                'management_id': ot.management_id,
+            },
+        })
 
 
 class MonthDaysView(APIView):
