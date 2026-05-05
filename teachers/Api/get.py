@@ -201,6 +201,19 @@ class TeacherStatAPIView(APIView):
                 'mission_delay_days': round(mission_delay_avg, 2),
             })
 
+        result.sort(key=lambda x: (
+                x['observation_avg'] +
+                x['lesson_plan_avg_ball'] +
+                x['mission_avg_score']
+        ), reverse=True)
+
+        # rank va total_avg qo'shish
+        for i, item in enumerate(result, start=1):
+            item['rank'] = i
+            item['total_avg'] = round(
+                (item['observation_avg'] + item['lesson_plan_avg_ball'] + item['mission_avg_score']) / 3, 2
+            )
+
         return Response({
             'date_from': str(date_from),
             'date_to': str(date_to),
