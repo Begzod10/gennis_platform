@@ -113,32 +113,32 @@ class TeacherRatingAPIView(APIView):
 
 class TeacherStatAPIView(APIView):
 
-    def get_date_range(self, filter_type):
-        today = date.today()
-
-        if filter_type == 'last_week':
-            return today - timedelta(days=7), today
-        elif filter_type == 'last_month':
-            return today - timedelta(days=30), today
-        elif filter_type == 'this_month':
-            return today.replace(day=1), today
-        elif filter_type == 'this_week':
-            return today - timedelta(days=today.weekday()), today
-        else:
-            return today - timedelta(days=30), today
-
     def get(self, request, teacher_id=None):
-        filter_type = request.query_params.get('filter', 'last_month')
         date_from_str = request.query_params.get('date_from')
         date_to_str = request.query_params.get('date_to')
-        branch_id = request.query_params.get('branch')  # 👈 yangi param
+        branch_id = request.query_params.get('branch_id')
 
-        date_from, date_to = self.get_date_range(filter_type)
+        # date_from / date_to majburiy
+        if not date_from_str or not date_to_str:
+            return Response(
+                {'error': 'date_from va date_to majburiy parametrlar'},
+                status=400
+            )
 
-        if filter_type == 'custom' and date_from_str and date_to_str:
-            from datetime import datetime
+        try:
             date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date()
             date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date()
+        except ValueError:
+            return Response(
+                {'error': 'Sana formati noto\'g\'ri. To\'g\'ri format: YYYY-MM-DD'},
+                status=400
+            )
+
+        if date_from > date_to:
+            return Response(
+                {'error': 'date_from date_to dan katta bo\'lmasligi kerak'},
+                status=400
+            )
 
         # Teacher query
         teachers_qs = Teacher.objects.filter(deleted=False).select_related('user', 'user__branch')
@@ -146,7 +146,6 @@ class TeacherStatAPIView(APIView):
         if teacher_id:
             teachers_qs = teachers_qs.filter(id=teacher_id)
 
-        # Branch filter — teacher.user.branch orqali
         if branch_id:
             teachers_qs = teachers_qs.filter(user__branch_id=branch_id)
 
@@ -155,7 +154,6 @@ class TeacherStatAPIView(APIView):
         for teacher in teachers_qs:
             user = teacher.user
 
-            # ObservationDay
             observations = ObservationDay.objects.filter(
                 teacher=teacher,
                 deleted=False,
@@ -164,7 +162,6 @@ class TeacherStatAPIView(APIView):
             obs_count = observations.count()
             obs_avg = observations.aggregate(avg=Avg('average'))['avg'] or 0
 
-            # LessonPlan
             lesson_plans = LessonPlan.objects.filter(
                 teacher=teacher,
                 date__range=(date_from, date_to)
@@ -172,7 +169,6 @@ class TeacherStatAPIView(APIView):
             lp_count = lesson_plans.count()
             lp_avg_ball = lesson_plans.aggregate(avg=Avg('ball'))['avg'] or 0
 
-            # Mission
             missions = Mission.objects.filter(
                 executor=user,
                 start_date__range=(date_from, date_to)
@@ -189,8 +185,6 @@ class TeacherStatAPIView(APIView):
                     'id': user.branch.id if user.branch else None,
                     'name': str(user.branch) if user.branch else None,
                 },
-                'period': f"{date_from} / {date_to}",
-                'filter_type': filter_type,
                 'observation_count': obs_count,
                 'observation_avg': round(obs_avg, 2),
                 'lesson_plan_count': lp_count,
@@ -201,13 +195,14 @@ class TeacherStatAPIView(APIView):
                 'mission_delay_days': round(mission_delay_avg, 2),
             })
 
+        # Saralash
         result.sort(key=lambda x: (
                 x['observation_avg'] +
                 x['lesson_plan_avg_ball'] +
                 x['mission_avg_score']
         ), reverse=True)
 
-        # rank va total_avg qo'shish
+        # Rank va total_avg
         for i, item in enumerate(result, start=1):
             item['rank'] = i
             item['total_avg'] = round(
@@ -217,7 +212,6 @@ class TeacherStatAPIView(APIView):
         return Response({
             'date_from': str(date_from),
             'date_to': str(date_to),
-            'filter': filter_type,
             'branch_id': branch_id,
             'count': len(result),
             'results': result
