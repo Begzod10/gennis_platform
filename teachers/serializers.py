@@ -665,3 +665,27 @@ class TeamCollaborationReadSerializer(serializers.ModelSerializer):
 
     def get_creator_name(self, obj):
         return f'{obj.user.name} {obj.user.surname}'
+
+
+
+class TeacherStatSerializer(serializers.Serializer):
+    teacher_id = serializers.IntegerField()
+    teacher_name = serializers.SerializerMethodField()
+    period = serializers.CharField()
+
+    # ObservationDay
+    observation_count = serializers.IntegerField()
+    observation_avg = serializers.FloatField()
+
+    # LessonPlan
+    lesson_plan_count = serializers.IntegerField()
+    lesson_plan_avg_ball = serializers.FloatField()
+
+    # Mission
+    mission_total = serializers.IntegerField()
+    mission_completed = serializers.IntegerField()
+    mission_avg_score = serializers.FloatField()
+    mission_delay_days = serializers.FloatField()
+
+    def get_teacher_name(self, obj):
+        return obj.get('teacher_name', '')

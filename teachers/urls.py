@@ -17,7 +17,7 @@ from teachers.Api.write import (
 from .Api.requests.crud import TeacherRequestViewSet
 from .Api.createdeleteupdate import TeacherAttendanceCreateView, TeacherAttendanceDestroyView
 from .Api.get import TeacherAttendanceListView, TeacherAttendanceRetrieveView, TeachersForBranches, TeachersForSubject, \
-    SalaryType, TeachersForSubjectForTimeTable, TeacherRatingAPIView
+    SalaryType, TeachersForSubjectForTimeTable, TeacherRatingAPIView, TeacherStatAPIView
 from .views import GetGroupStudents
 from teachers.Api.satisfaction.views import SatisfactionSurveyAPIView, SatisfactionSurveyDetailAPIView
 from teachers.Api.contribution.views import TeacherContributionAPIView, TeacherContributionDetailAPIView
@@ -85,6 +85,7 @@ urlpatterns = [
     path('teacher-requests/<int:pk>/', teacher_request_detail, name='teacher-request-detail'),
 
     path('teacher-rating/', TeacherRatingAPIView.as_view(), name='teacher-rating'),
+    path('teacher-stat/', TeacherStatAPIView.as_view(), name='teacher-stat'),
 
     path('teacher-satisfaction/', SatisfactionSurveyAPIView.as_view(), name='teacher-satisfaction'),
     path('teacher-satisfaction/<int:pk>/', SatisfactionSurveyDetailAPIView.as_view(),
