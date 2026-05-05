@@ -107,7 +107,6 @@ class TeacherRatingAPIView(APIView):
 
 
 class TeacherStatAPIView(APIView):
-    permission_classes = [IsAuthenticated]
 
     def get_date_range(self, filter_type):
         today = date.today()
