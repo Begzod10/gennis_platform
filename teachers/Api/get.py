@@ -127,7 +127,7 @@ class TeacherStatAPIView(APIView):
         filter_type = request.query_params.get('filter', 'last_month')
         date_from_str = request.query_params.get('date_from')
         date_to_str = request.query_params.get('date_to')
-        branch_id = request.query_params.get('branch_id')  # 👈 yangi param
+        branch_id = request.query_params.get('branch')  # 👈 yangi param
 
         date_from, date_to = self.get_date_range(filter_type)
 
