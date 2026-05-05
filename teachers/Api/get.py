@@ -12,7 +12,10 @@ from teachers.services.teacher_rating import CATEGORY_MAP
 from datetime import datetime, timedelta, date
 from observation.models import ObservationDay
 from lesson_plan.models import LessonPlan
+from tasks.models import Mission
 from django.db.models import Avg
+
+
 class TeacherAttendanceListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     queryset = TeacherAttendance.objects.all()
