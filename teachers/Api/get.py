@@ -116,7 +116,7 @@ class TeacherStatAPIView(APIView):
     def get(self, request, teacher_id=None):
         date_from_str = request.query_params.get('date_from')
         date_to_str = request.query_params.get('date_to')
-        branch_id = request.query_params.get('branch_id')
+        branch_id = request.query_params.get('branch')
 
         # date_from / date_to majburiy
         if not date_from_str or not date_to_str:
