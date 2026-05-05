@@ -925,3 +925,110 @@ class TeacherTimeTableView(APIView):
             'schedule': schedule,
         })
 
+
+
+class TeacherStatAPIView(APIView):
+
+    def get(self, request, teacher_id=None):
+        date_from_str = request.query_params.get('date_from')
+        date_to_str = request.query_params.get('date_to')
+        branch_id = request.query_params.get('branch')
+
+        # date_from / date_to majburiy
+        if not date_from_str or not date_to_str:
+            return Response(
+                {'error': 'date_from va date_to majburiy parametrlar'},
+                status=400
+            )
+
+        try:
+            date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date()
+            date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date()
+        except ValueError:
+            return Response(
+                {'error': 'Sana formati noto\'g\'ri. To\'g\'ri format: YYYY-MM-DD'},
+                status=400
+            )
+
+        if date_from > date_to:
+            return Response(
+                {'error': 'date_from date_to dan katta bo\'lmasligi kerak'},
+                status=400
+            )
+
+        # Teacher query
+        teachers_qs = Teacher.objects.filter(deleted=False).select_related('user', 'user__branch')
+
+        if teacher_id:
+            teachers_qs = teachers_qs.filter(id=teacher_id)
+
+        if branch_id:
+            teachers_qs = teachers_qs.filter(user__branch_id=branch_id)
+
+        result = []
+
+        for teacher in teachers_qs:
+            user = teacher.user
+
+            observations = ObservationDay.objects.filter(
+                teacher=teacher,
+                deleted=False,
+                day__range=(date_from, date_to)
+            )
+            obs_count = observations.count()
+            obs_avg = observations.aggregate(avg=Avg('average'))['avg'] or 0
+
+            lesson_plans = LessonPlan.objects.filter(
+                teacher=teacher,
+                date__range=(date_from, date_to)
+            )
+            lp_count = lesson_plans.count()
+            lp_avg_ball = lesson_plans.aggregate(avg=Avg('ball'))['avg'] or 0
+
+            missions = Mission.objects.filter(
+                executor=user,
+                start_date__range=(date_from, date_to)
+            )
+            mission_total = missions.count()
+            mission_completed = missions.filter(status__in=['completed', 'approved']).count()
+            mission_avg_score = missions.aggregate(avg=Avg('final_sc'))['avg'] or 0
+            mission_delay_avg = missions.aggregate(avg=Avg('delay_days'))['avg'] or 0
+
+            result.append({
+                'teacher_id': teacher.id,
+                'teacher_name': f"{user.name} {user.surname}",
+                'branch': {
+                    'id': user.branch.id if user.branch else None,
+                    'name': str(user.branch) if user.branch else None,
+                },
+                'observation_count': obs_count,
+                'observation_avg': round(obs_avg, 2),
+                'lesson_plan_count': lp_count,
+                'lesson_plan_avg_ball': round(lp_avg_ball, 2),
+                'mission_total': mission_total,
+                'mission_completed': mission_completed,
+                'mission_avg_score': round(mission_avg_score, 2),
+                'mission_delay_days': round(mission_delay_avg, 2),
+            })
+
+        # Saralash
+        result.sort(key=lambda x: (
+                x['observation_avg'] +
+                x['lesson_plan_avg_ball'] +
+                x['mission_avg_score']
+        ), reverse=True)
+
+        # Rank va total_avg
+        for i, item in enumerate(result, start=1):
+            item['rank'] = i
+            item['total_avg'] = round(
+                (item['observation_avg'] + item['lesson_plan_avg_ball'] + item['mission_avg_score']) / 3, 2
+            )
+
+        return Response({
+            'date_from': str(date_from),
+            'date_to': str(date_to),
+            'branch_id': branch_id,
+            'count': len(result),
+            'results': result
+        })

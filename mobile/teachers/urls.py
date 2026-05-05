@@ -2,7 +2,7 @@ from django.urls import path, include
 
 from .views import TeacherGroupProfileView, TeacherProfileView, SalaryYearsView, TeacherSalaryView, TeacherClassesView, \
     StudentScoreView, TeacherTodayAttendance, TeacherDashboardView, TeacherGetLessonPlanView, \
-    TeacherChangeLessonPlanView, TeacherTimeTableView
+    TeacherChangeLessonPlanView, TeacherTimeTableView, TeacherStatAPIView
 from .lesson_plan_file_views import (
     MobileLessonPlanFileUploadView,
     MobileLessonPlanFileStatusView,
@@ -21,8 +21,6 @@ from .terms_views import (
     TeacherGroupsAndFlowsView,
 )
 
-
-
 app_name = 'teachers'
 urlpatterns = [
     path('group-profile/', TeacherGroupProfileView.as_view(), name='group-profile'),
@@ -34,6 +32,7 @@ urlpatterns = [
     path("teacher/today-attendance/", TeacherTodayAttendance.as_view(), name="teacher-today-attendance"),
     path("teacher/dashboard/", TeacherDashboardView.as_view(), name="teacher-dashboard"),
     path("teacher/timetable/", TeacherTimeTableView.as_view(), name="teacher-timetable"),
+    path("teacher/stat/", TeacherStatAPIView.as_view(), name="teacher-stat"),
 
     path("teacher/lesson-plan/", TeacherGetLessonPlanView.as_view()),
     path('teacher/change_lesson_plan/<int:pk>/', TeacherChangeLessonPlanView.as_view(), name='change_lesson_plan'),
@@ -57,11 +56,12 @@ urlpatterns = [
     path('terms/create-test/', TeacherCreateTest.as_view(), name='terms-create-test'),
     path('terms/update-test/<int:pk>/', TeacherUpdateTest.as_view(), name='terms-update-test'),
     path('terms/delete-test/<int:pk>/', TeacherDeleteTest.as_view(), name='terms-delete-test'),
-    path('terms/student-assignment/<int:group_id>/<int:test_id>/', TeacherStudentAssignmentView.as_view(), name='terms-student-assignment'),
+    path('terms/student-assignment/<int:group_id>/<int:test_id>/', TeacherStudentAssignmentView.as_view(),
+         name='terms-student-assignment'),
     path('terms/assignment-create/', TeacherAssignmentCreateView.as_view(), name='terms-assignment-create'),
-    path('terms/terms-by-group/<int:group_id>/<int:term_id>/', TeacherTermsByGroupView.as_view(), name='terms-by-group'),
-    path('terms/terms-by-group/<int:group_id>/<int:term_id>/<int:subject_id>/', TeacherTermsByGroupView.as_view(), name='terms-by-group-subject'),
+    path('terms/terms-by-group/<int:group_id>/<int:term_id>/', TeacherTermsByGroupView.as_view(),
+         name='terms-by-group'),
+    path('terms/terms-by-group/<int:group_id>/<int:term_id>/<int:subject_id>/', TeacherTermsByGroupView.as_view(),
+         name='terms-by-group-subject'),
     path('terms/my-classes/', TeacherGroupsAndFlowsView.as_view(), name='terms-my-classes'),
 ]
-
-
