@@ -1,5 +1,4 @@
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta, date
 
 from django.db import transaction
 from django.db.models import Avg, Count, Q, Prefetch
@@ -20,7 +19,10 @@ from mobile.models import TeacherDashboard
 from mobile.teachers.serializers import TeacherDashboardSerializer, TeacherLessonPlanGetSerializer
 from school_time_table.models import ClassTimeTable, Hours
 from teachers.models import Teacher, TeacherSalary
-
+from observation.models import ObservationDay
+from lesson_plan.models import LessonPlan
+from tasks.models import Mission
+from django.db.models import Avg
 
 class TeacherGroupProfileView(APIView):
     permission_classes = [IsAuthenticated]
