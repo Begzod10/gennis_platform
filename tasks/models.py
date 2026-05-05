@@ -212,7 +212,6 @@ class MissionComment(models.Model):
     attachment = models.FileField(upload_to="mission_comments/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     creator_name = models.CharField(max_length=255, null=True, blank=True)
-    test = models.CharField(max_length=64, null=True, blank=True)
 
 
 class MissionProof(models.Model):
