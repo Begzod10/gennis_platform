@@ -19,13 +19,14 @@ class LessonPlanFileUploadView(APIView):
             "term_id": {"type": "integer"},
             "group_id": {"type": "integer", "nullable": True},
             "flow_id": {"type": "integer", "nullable": True},
+            "subject_id": {"type": "integer", "nullable": True},
             "file": {"type": "string", "format": "binary"},
         }, "required": ["teacher_id", "term_id", "file"]}},
         responses={201: dict, 200: dict},
         examples=[
             OpenApiExample("Response", value={
                 "id": 3, "teacher_id": 5, "term_id": 2,
-                "group_id": 1, "flow_id": None,
+                "group_id": 1, "flow_id": None, "subject_id": 25,
                 "status": "pending", "detail": "File uploaded. AI review started."
             }, response_only=True),
         ],
@@ -37,30 +38,34 @@ class LessonPlanFileUploadView(APIView):
         term_id = request.data.get("term_id")
         group_id = request.data.get("group_id")
         flow_id = request.data.get("flow_id")
+        subject_id = request.data.get("subject_id")
         file = request.FILES.get("file")
 
         if not teacher_id or not term_id or not file:
             return Response({"detail": "teacher_id, term_id and file are required."}, status=400)
 
         allowed = {".txt", ".pdf", ".docx", ".xlsx"}
-        
+
         ext = "." + file.name.rsplit(".", 1)[-1].lower() if "." in file.name else ""
         if ext not in allowed:
             return Response({"detail": f"Unsupported format. Allowed: {', '.join(sorted(allowed))}"}, status=400)
 
         teacher = get_object_or_404(Teacher, id=teacher_id)
         term = get_object_or_404(Term, id=term_id)
-        
+
         from group.models import Group
         from flows.models import Flow
+        from subjects.models import Subject
         group = get_object_or_404(Group, id=group_id) if group_id else None
         flow = get_object_or_404(Flow, id=flow_id) if flow_id else None
+        subject = get_object_or_404(Subject, id=subject_id) if subject_id else None
 
         lp_file, created = LessonPlanFile.objects.update_or_create(
             teacher=teacher,
             term=term,
             group=group,
             flow=flow,
+            subject=subject,
             defaults={
                 "file": file,
                 "status": LessonPlanFile.Status.PENDING,
@@ -80,6 +85,7 @@ class LessonPlanFileUploadView(APIView):
                 "term_id": term.id,
                 "group_id": group.id if group else None,
                 "flow_id": flow.id if flow else None,
+                "subject_id": subject.id if subject else None,
                 "status": lp_file.status,
                 "detail": "File uploaded. AI review started.",
             },
@@ -108,7 +114,9 @@ class LessonPlanFileDetailView(APIView):
     )
     def get(self, request, pk):
         lp_file = get_object_or_404(
-            LessonPlanFile.objects.select_related("teacher__user", "term"),
+            LessonPlanFile.objects.select_related(
+                "teacher__user", "term", "group", "flow", "subject"
+            ),
             pk=pk,
         )
         return Response(_serialize(lp_file))
@@ -123,6 +131,7 @@ class LessonPlanFileListView(APIView):
             OpenApiParameter("term_id", int, description="Filter by term ID"),
             OpenApiParameter("group_id", int, description="Filter by group ID"),
             OpenApiParameter("flow_id", int, description="Filter by flow ID"),
+            OpenApiParameter("subject_id", int, description="Filter by subject ID"),
         ],
         responses={200: dict},
         examples=[
@@ -139,12 +148,15 @@ class LessonPlanFileListView(APIView):
         tags=["lesson-plan-file"],
     )
     def get(self, request):
-        qs = LessonPlanFile.objects.select_related("teacher__user", "term")
+        qs = LessonPlanFile.objects.select_related(
+            "teacher__user", "term", "group", "flow", "subject"
+        )
 
         teacher_id = request.query_params.get("teacher_id")
         term_id = request.query_params.get("term_id")
         group_id = request.query_params.get("group_id")
         flow_id = request.query_params.get("flow_id")
+        subject_id = request.query_params.get("subject_id")
 
         if teacher_id:
             qs = qs.filter(teacher_id=teacher_id)
@@ -154,6 +166,8 @@ class LessonPlanFileListView(APIView):
             qs = qs.filter(group_id=group_id)
         if flow_id:
             qs = qs.filter(flow_id=flow_id)
+        if subject_id:
+            qs = qs.filter(subject_id=subject_id)
 
         return Response([_serialize(f) for f in qs])
 
@@ -215,6 +229,10 @@ def _serialize(lp_file: LessonPlanFile) -> dict:
             "id": lp_file.flow_id,
             "name": lp_file.flow.name if lp_file.flow else None,
         } if lp_file.flow_id else None,
+        "subject": {
+            "id": lp_file.subject_id,
+            "name": lp_file.subject.name if lp_file.subject else None,
+        } if lp_file.subject_id else None,
         "file": lp_file.file.url if lp_file.file else None,
         "status": lp_file.status,
         "score": lp_file.score,
