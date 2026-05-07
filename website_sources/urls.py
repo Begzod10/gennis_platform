@@ -15,7 +15,8 @@ from website_sources.views import (
     PublicJobPositionListView, PublicCareerApplyView, PublicTalentPoolView,
     AdminJobPositionListCreateView, AdminJobPositionDetailView,
     AdminCareerApplicationListView, AdminStatsView, CategoryListCreateView, CategoryDetailView, PublicCareerUpdateView,
-    TalentPoolDetailView
+    TalentPoolDetailView,
+    NewsImageUploadView, CareerApplicationCVUploadView, TalentPoolCVUploadView
 )
 
 urlpatterns = [
@@ -27,6 +28,7 @@ urlpatterns = [
     path('news/', NewsListCreateView.as_view(), name='news-list-create'),
     path('news/<int:pk>/', NewsDetailView.as_view(), name='news-detail'),
     path('news/<int:pk>/toggle-publish/', NewsTogglePublishView.as_view(), name='news-toggle-publish'),
+    path('news/<int:pk>/upload-image/', NewsImageUploadView.as_view(), name='news-upload-image'),  # <-- yangi
 
     # ── IMAGE UPLOAD ───────────────────────────────────────────────────────────
     path('upload/image/', ImageUploadView.as_view(), name='upload-image'),
@@ -57,9 +59,11 @@ urlpatterns = [
     path('careers/positions/', PublicJobPositionListView.as_view(), name='public-job-positions'),
     path('careers/apply/', PublicCareerApplyView.as_view(), name='public-career-apply'),
     path('careers/<int:pk>/', PublicCareerUpdateView.as_view(), name='public-career-update'),
+    path('applications/<int:pk>/upload-cv/', CareerApplicationCVUploadView.as_view(), name='application-upload-cv'),
 
     path('careers/talent-pool/', PublicTalentPoolView.as_view(), name='public-talent-pool'),
     path('careers/talent-pool/<int:pk>/', TalentPoolDetailView.as_view(), name='public-talent-pool'),
+    path('talent-pool/<int:pk>/upload-cv/', TalentPoolCVUploadView.as_view(), name='talent-pool-upload-cv'),
 
     # ── CAREERS (ADMIN) ────────────────────────────────────────────────────────
     path('admin/careers/positions/', AdminJobPositionListCreateView.as_view(), name='admin-job-positions'),
