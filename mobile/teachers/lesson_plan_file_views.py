@@ -16,7 +16,7 @@ class MobileLessonPlanFileUploadView(APIView):
 
     Teacher uploads their lesson plan file for a term.
     AI review starts automatically in the background.
-    One file per teacher per term — re-uploading replaces the previous one.
+    Each upload creates a new record — history is kept.
     """
     permission_classes = [IsAuthenticated]
 
@@ -87,18 +87,13 @@ class MobileLessonPlanFileUploadView(APIView):
             except Flow.DoesNotExist:
                 return Response({"detail": "Flow not found."}, status=404)
 
-        lp_file, created = LessonPlanFile.objects.update_or_create(
+        lp_file = LessonPlanFile.objects.create(
             teacher=teacher,
             term=term,
             group=group,
             flow=flow,
-            defaults={
-                "file": file,
-                "status": LessonPlanFile.Status.PENDING,
-                "score": None,
-                "feedback": None,
-                "reviewed_at": None,
-            },
+            file=file,
+            status=LessonPlanFile.Status.PENDING,
         )
 
         from lesson_plan.tasks import review_lesson_plan_file
@@ -113,7 +108,7 @@ class MobileLessonPlanFileUploadView(APIView):
                 "status": lp_file.status,
                 "detail": "File uploaded. AI review started.",
             },
-            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+            status=status.HTTP_201_CREATED,
         )
 
 

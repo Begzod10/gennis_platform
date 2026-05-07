@@ -59,9 +59,3 @@ class LessonPlanFile(models.Model):
 
     class Meta:
         ordering = ['-uploaded_at']
-        constraints = [
-            models.UniqueConstraint(
-                fields=['teacher', 'term', 'group', 'flow'],
-                name='unique_lesson_plan_file'
-            )
-        ]

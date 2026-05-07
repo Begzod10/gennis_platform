@@ -85,8 +85,14 @@ class TeacherStatsView(APIView):
         for day in obs_days:
             obs_map.setdefault(day.teacher_id, []).append(day)
 
-        # Lesson plan files — always filtered by term
-        lp_qs = LessonPlanFile.objects.filter(teacher_id__in=teacher_ids, term_id=term_id)
+        # Lesson plan files — always filtered by term.
+        # Multiple files per teacher per term are allowed; pick the latest by upload time.
+        lp_qs = (
+            LessonPlanFile.objects
+            .filter(teacher_id__in=teacher_ids, term_id=term_id)
+            .order_by('teacher_id', '-uploaded_at')
+            .distinct('teacher_id')
+        )
         lp_map = {lp.teacher_id: lp for lp in lp_qs}
 
         result = []

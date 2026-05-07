@@ -56,18 +56,13 @@ class LessonPlanFileUploadView(APIView):
         group = get_object_or_404(Group, id=group_id) if group_id else None
         flow = get_object_or_404(Flow, id=flow_id) if flow_id else None
 
-        lp_file, created = LessonPlanFile.objects.update_or_create(
+        lp_file = LessonPlanFile.objects.create(
             teacher=teacher,
             term=term,
             group=group,
             flow=flow,
-            defaults={
-                "file": file,
-                "status": LessonPlanFile.Status.PENDING,
-                "score": None,
-                "feedback": None,
-                "reviewed_at": None,
-            },
+            file=file,
+            status=LessonPlanFile.Status.PENDING,
         )
 
         from lesson_plan.tasks import review_lesson_plan_file
@@ -83,7 +78,7 @@ class LessonPlanFileUploadView(APIView):
                 "status": lp_file.status,
                 "detail": "File uploaded. AI review started.",
             },
-            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -139,21 +134,26 @@ class LessonPlanFileListView(APIView):
         tags=["lesson-plan-file"],
     )
     def get(self, request):
-        qs = LessonPlanFile.objects.select_related("teacher__user", "term")
+        qs = LessonPlanFile.objects.select_related(
+            "teacher__user", "term", "group", "flow"
+        )
 
-        teacher_id = request.query_params.get("teacher_id")
-        term_id = request.query_params.get("term_id")
-        group_id = request.query_params.get("group_id")
-        flow_id = request.query_params.get("flow_id")
+        filter_fields = ("teacher_id", "term_id", "group_id", "flow_id")
+        filters = {}
+        for field in filter_fields:
+            raw = request.query_params.get(field)
+            if raw in (None, ""):
+                continue
+            try:
+                filters[field] = int(raw)
+            except (TypeError, ValueError):
+                return Response(
+                    {"detail": f"{field} must be an integer."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-        if teacher_id:
-            qs = qs.filter(teacher_id=teacher_id)
-        if term_id:
-            qs = qs.filter(term_id=term_id)
-        if group_id:
-            qs = qs.filter(group_id=group_id)
-        if flow_id:
-            qs = qs.filter(flow_id=flow_id)
+        if filters:
+            qs = qs.filter(**filters)
 
         return Response([_serialize(f) for f in qs])
 
