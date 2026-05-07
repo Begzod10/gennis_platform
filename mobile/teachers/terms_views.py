@@ -2,7 +2,7 @@ from collections import defaultdict
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, views, response, status
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Case, When, Value, IntegerField, Avg
+from django.db.models import Case, When, Value, IntegerField, Avg, Count
 
 from flows.models import Flow
 from group.models import Group, GroupSubjects, Student
@@ -301,59 +301,113 @@ class TeacherGroupsAndFlowsView(views.APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        try:
-            teacher = Teacher.objects.get(user=request.user)
-        except Teacher.DoesNotExist:
-            return response.Response({"detail": "Siz teacher emassiz"}, status=status.HTTP_403_FORBIDDEN)
+        teacher = Teacher.objects.filter(user=request.user, deleted=False).first()
+        if not teacher:
+            return response.Response(
+                {"detail": "Siz teacher emassiz"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-        # Groups
-        groups = teacher.group_set.filter(deleted=False).select_related(
-            'class_number', 'color'
-        ).order_by('class_number__number')
+        # Source of truth: any group this teacher has a ClassTimeTable lesson for.
+        # Unioned with the legacy Group.teacher M2M for safety on older records.
+        group_ids_via_ctt = set(
+            ClassTimeTable.objects
+            .filter(teacher=teacher, group__isnull=False)
+            .values_list('group_id', flat=True)
+            .distinct()
+        )
+        group_ids_via_m2m = set(
+            Group.objects
+            .filter(teacher=teacher, deleted=False)
+            .values_list('id', flat=True)
+        )
+        all_group_ids = group_ids_via_ctt | group_ids_via_m2m
+
+        groups = (
+            Group.objects
+            .filter(id__in=all_group_ids, deleted=False)
+            .select_related('class_number', 'color')
+            .annotate(students_count_=Count('students', distinct=True))
+            .order_by('class_number__number')
+        )
+        group_ids = list(groups.values_list('id', flat=True))
+
+        # Bulk-fetch (group_id, subject_id) pairs taught by this teacher
+        ctt_pairs = (
+            ClassTimeTable.objects
+            .filter(teacher=teacher, group_id__in=group_ids)
+            .values_list('group_id', 'subject_id')
+            .distinct()
+        )
+        subject_ids_by_group = defaultdict(set)
+        all_subject_ids = set()
+        for gid, sid in ctt_pairs:
+            if sid is None:
+                continue
+            subject_ids_by_group[gid].add(sid)
+            all_subject_ids.add(sid)
+
+        teacher_subject_ids = set(teacher.subject.values_list('id', flat=True))
+        all_subject_ids |= teacher_subject_ids
+
+        # Single bulk fetch of GroupSubjects for every group + every relevant subject
+        gs_qs = (
+            GroupSubjects.objects
+            .filter(group_id__in=group_ids, subject_id__in=all_subject_ids)
+            .select_related('subject')
+        )
+        gs_by_group = defaultdict(dict)  # group_id -> {subject_id: GroupSubjects}
+        for gs in gs_qs:
+            gs_by_group[gs.group_id].setdefault(gs.subject_id, gs)
 
         groups_data = []
         for group in groups:
-            teacher_subject_ids = ClassTimeTable.objects.filter(
-                teacher=teacher,
-                group=group
-            ).values_list('subject_id', flat=True).distinct()
+            primary = subject_ids_by_group.get(group.id, set())
+            subject_map = gs_by_group.get(group.id, {})
+            primary_subjects = [subject_map[sid] for sid in primary if sid in subject_map]
 
-            subjects = GroupSubjects.objects.filter(
-                group=group,
-                subject_id__in=teacher_subject_ids
-            ).select_related('subject').distinct('subject')
+            if primary_subjects:
+                subjects = primary_subjects
+            else:
+                subjects = [
+                    gs for sid, gs in subject_map.items() if sid in teacher_subject_ids
+                ]
 
-            if not subjects.exists():
-                subjects = GroupSubjects.objects.filter(
-                    group=group,
-                    subject__in=teacher.subject.all()
-                ).select_related('subject').distinct('subject')
+            class_no = getattr(group.class_number, 'number', None)
+            color_name = getattr(group.color, 'name', None)
+            display_name = group.name or f"{class_no or '?'}-{color_name or '?'}"
 
             groups_data.append({
                 "id": group.id,
-                "name": group.name if group.name else f"{group.class_number.number}-{group.color.name}",
+                "name": display_name,
                 "type": "group",
-                "students_count": group.students.count(),
+                "students_count": group.students_count_,
                 "subjects": [
                     {"id": gs.subject.id, "name": gs.subject.name}
                     for gs in subjects
-                ]
+                ],
             })
 
-        # Flows
-        flows = Flow.objects.filter(teacher=teacher).select_related('subject', 'level')
+        flows = (
+            Flow.objects
+            .filter(teacher=teacher)
+            .select_related('subject', 'level')
+            .annotate(students_count_=Count('students', distinct=True))
+        )
 
-        flows_data = []
-        for flow in flows:
-            flows_data.append({
+        flows_data = [
+            {
                 "id": flow.id,
                 "name": flow.name,
                 "type": "flow",
-                "students_count": flow.students.count(),
-                "subjects": [
-                    {"id": flow.subject.id, "name": flow.subject.name}
-                ] if flow.subject else []
-            })
+                "students_count": flow.students_count_,
+                "subjects": (
+                    [{"id": flow.subject.id, "name": flow.subject.name}]
+                    if flow.subject_id else []
+                ),
+            }
+            for flow in flows
+        ]
 
         return response.Response({
             "groups": groups_data,
