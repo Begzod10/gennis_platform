@@ -122,6 +122,7 @@ class LessonPlanFileDetailView(APIView):
                 "flow__subject",
                 "flow__level",
                 "subject",
+                "teacher__user", "term", "group", "flow", "subject"
             ),
             pk=pk,
         )
@@ -162,6 +163,7 @@ class LessonPlanFileListView(APIView):
             "flow__subject",
             "flow__level",
             "subject",
+            "teacher__user", "term", "group", "flow", "subject"
         )
 
         teacher_id = request.query_params.get("teacher_id")
@@ -283,6 +285,18 @@ def _serialize(lp_file: LessonPlanFile) -> dict:
         "group": _group_block(lp_file.group) if lp_file.group_id else None,
         "flow": _flow_block(lp_file.flow) if lp_file.flow_id else None,
         "subject": _subject_block(lp_file.subject) if lp_file.subject_id else None,
+        "group": {
+            "id": lp_file.group_id,
+            "name": lp_file.group.name if lp_file.group else None,
+        } if lp_file.group_id else None,
+        "flow": {
+            "id": lp_file.flow_id,
+            "name": lp_file.flow.name if lp_file.flow else None,
+        } if lp_file.flow_id else None,
+        "subject": {
+            "id": lp_file.subject_id,
+            "name": lp_file.subject.name if lp_file.subject else None,
+        } if lp_file.subject_id else None,
         "file": lp_file.file.url if lp_file.file else None,
         "status": lp_file.status,
         "score": lp_file.score,
