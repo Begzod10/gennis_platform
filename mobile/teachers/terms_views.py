@@ -307,7 +307,9 @@ class TeacherGroupsAndFlowsView(views.APIView):
             return response.Response({"detail": "Siz teacher emassiz"}, status=status.HTTP_403_FORBIDDEN)
 
         # Groups
-        groups = teacher.group_set.filter(deleted=False).select_related(
+        groups = Group.objects.filter(
+            deleted=False,teacher__in=[teacher]
+        ).select_related(
             'class_number', 'color'
         ).order_by('class_number__number')
 
