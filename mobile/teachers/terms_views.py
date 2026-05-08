@@ -304,16 +304,25 @@ class TeacherGroupsAndFlowsView(views.APIView):
         try:
             teacher = Teacher.objects.get(user=request.user)
         except Teacher.DoesNotExist:
-            return response.Response({"detail": "Siz teacher emassiz"}, status=status.HTTP_403_FORBIDDEN)
+            return response.Response(
+                {"detail": "Siz teacher emassiz"},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
-        # Groups
+        group_ids = ClassTimeTable.objects.filter(
+            teacher=teacher
+        ).values_list('group_id', flat=True).distinct()
+
         groups = Group.objects.filter(
-            deleted=False,teacher__in=[teacher]
+            id__in=group_ids,
+            deleted=False
         ).select_related(
-            'class_number', 'color'
+            'class_number',
+            'color'
         ).order_by('class_number__number')
 
         groups_data = []
+
         for group in groups:
             teacher_subject_ids = ClassTimeTable.objects.filter(
                 teacher=teacher,
@@ -337,15 +346,24 @@ class TeacherGroupsAndFlowsView(views.APIView):
                 "type": "group",
                 "students_count": group.students.count(),
                 "subjects": [
-                    {"id": gs.subject.id, "name": gs.subject.name}
+                    {
+                        "id": gs.subject.id,
+                        "name": gs.subject.name
+                    }
                     for gs in subjects
                 ]
             })
 
         # Flows
-        flows = Flow.objects.filter(teacher=teacher).select_related('subject', 'level')
+        flows = Flow.objects.filter(
+            teacher=teacher
+        ).select_related(
+            'subject',
+            'level'
+        )
 
         flows_data = []
+
         for flow in flows:
             flows_data.append({
                 "id": flow.id,
@@ -353,7 +371,10 @@ class TeacherGroupsAndFlowsView(views.APIView):
                 "type": "flow",
                 "students_count": flow.students.count(),
                 "subjects": [
-                    {"id": flow.subject.id, "name": flow.subject.name}
+                    {
+                        "id": flow.subject.id,
+                        "name": flow.subject.name
+                    }
                 ] if flow.subject else []
             })
 
