@@ -6,7 +6,6 @@ from django.db.models import Case, When, Value, IntegerField, Avg
 
 from flows.models import Flow
 from group.models import Group, GroupSubjects, Student
-from subjects.models import Subject
 from terms.models import Assignment, Test, Term
 from terms.serializers import TestCreateUpdateSerializer, TermSerializer
 from teachers.models import Teacher
@@ -76,7 +75,7 @@ class TeacherListTest(views.APIView):
                 "children": []
             }
 
-            flows = Flow.objects.filter(
+            flows = Flows.objects.filter(
                 classtimetable__teacher=teacher,
                 classtimetable__group=group
             ).distinct()
@@ -90,13 +89,22 @@ class TeacherListTest(views.APIView):
                     "children": []
                 }
 
-                subjects = Subject.objects.filter(
-                    classtimetable__teacher=teacher,
-                    classtimetable__group=group,
-                    classtimetable__flow=flow
-                ).distinct()
+                timetables = ClassTimeTable.objects.filter(
+                    teacher=teacher,
+                    group=group,
+                    flow=flow
+                ).select_related("subject").distinct()
 
-                for subject in subjects:
+                added_subjects = set()
+
+                for timetable in timetables:
+
+                    subject = timetable.subject
+
+                    if subject.id in added_subjects:
+                        continue
+
+                    added_subjects.add(subject.id)
 
                     tests = Test.objects.filter(
                         group=group,
