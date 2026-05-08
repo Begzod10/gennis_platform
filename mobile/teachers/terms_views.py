@@ -51,16 +51,22 @@ class TeacherListTest(views.APIView):
         try:
             teacher = Teacher.objects.get(user=request.user)
         except Teacher.DoesNotExist:
-            return response.Response({"detail": "Siz teacher emassiz"}, status=status.HTTP_403_FORBIDDEN)
+            return response.Response(
+                {"detail": "Siz teacher emassiz"},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         term_id = kwargs.get('term')
 
-        # Faqat o'qituvchiga tegishli guruhlarni olamiz
-        groups = teacher.group_set.filter(deleted=False).order_by('class_number__number')
+        groups = Group.objects.filter(
+            classtimetable__teacher=teacher,
+            deleted=False
+        ).distinct().order_by('class_number__number')
 
         result = []
 
         for group in groups:
+
             group_data = {
                 "title": group.name if group.name else f"{group.class_number.number} {group.color.name}",
                 "id": group.id,
@@ -68,7 +74,6 @@ class TeacherListTest(views.APIView):
                 "children": []
             }
 
-            # Bu guruhda o'qituvchi o'tadigan fanlarni ClassTimeTable orqali aniqlaymiz
             teacher_subjects_ids = ClassTimeTable.objects.filter(
                 teacher=teacher,
                 group=group
@@ -77,22 +82,17 @@ class TeacherListTest(views.APIView):
             group_subjects = GroupSubjects.objects.filter(
                 group=group,
                 subject_id__in=teacher_subjects_ids
-            ).select_related('subject').distinct('subject')
-
-            if not group_subjects.exists():
-                # Agar ClassTimeTable da yo'q bo'lsa, lekin guruhga biriktirilgan bo'lsa,
-                # balki o'qituvchining barcha fanlarini ko'rsatish kerakdir?
-                # User "unga tegishli fanlar" dedi.
-                teacher_subjects = teacher.subject.all()
-                group_subjects = GroupSubjects.objects.filter(
-                    group=group,
-                    subject__in=teacher_subjects
-                ).select_related('subject').distinct('subject')
+            ).select_related('subject').distinct()
 
             for group_subject in group_subjects:
                 subject = group_subject.subject
 
-                tests = Test.objects.filter(group=group, subject=subject, term_id=term_id, deleted=False)
+                tests = Test.objects.filter(
+                    group=group,
+                    subject=subject,
+                    term_id=term_id,
+                    deleted=False
+                )
 
                 table_data = [
                     {
@@ -100,7 +100,8 @@ class TeacherListTest(views.APIView):
                         "name": test.name,
                         "weight": test.weight,
                         "date": test.date
-                    } for test in tests
+                    }
+                    for test in tests
                 ]
 
                 group_data["children"].append({
@@ -114,7 +115,6 @@ class TeacherListTest(views.APIView):
                 result.append(group_data)
 
         return response.Response(result, status=status.HTTP_200_OK)
-
 
 class TeacherCreateTest(generics.CreateAPIView):
     queryset = Test.objects.all()
