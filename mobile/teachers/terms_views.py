@@ -48,6 +48,7 @@ class TeacherListTest(views.APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
+
         try:
             teacher = Teacher.objects.get(user=request.user)
         except Teacher.DoesNotExist:
@@ -56,12 +57,12 @@ class TeacherListTest(views.APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        term_id = kwargs.get('term')
+        term_id = kwargs.get("term")
 
         groups = Group.objects.filter(
             classtimetable__teacher=teacher,
             deleted=False
-        ).distinct().order_by('class_number__number')
+        ).distinct().order_by("class_number__number")
 
         result = []
 
@@ -74,42 +75,56 @@ class TeacherListTest(views.APIView):
                 "children": []
             }
 
-            teacher_subjects_ids = ClassTimeTable.objects.filter(
-                teacher=teacher,
-                group=group
-            ).values_list('subject_id', flat=True).distinct()
+            # Shu groupdagi flowlar
+            flows = Flows.objects.filter(
+                classtimetable__teacher=teacher,
+                classtimetable__group=group
+            ).distinct()
 
-            group_subjects = GroupSubjects.objects.filter(
-                group=group,
-                subject_id__in=teacher_subjects_ids
-            ).select_related('subject').distinct()
+            for flow in flows:
 
-            for group_subject in group_subjects:
-                subject = group_subject.subject
+                flow_data = {
+                    "title": flow.name,
+                    "id": flow.id,
+                    "type": "flow",
+                    "children": []
+                }
 
-                tests = Test.objects.filter(
-                    group=group,
-                    subject=subject,
-                    term_id=term_id,
-                    deleted=False
-                )
+                # Shu flowdagi subjectlar
+                subjects = Subject.objects.filter(
+                    classtimetable__teacher=teacher,
+                    classtimetable__group=group,
+                    classtimetable__flow=flow
+                ).distinct()
 
-                table_data = [
-                    {
-                        "id": test.id,
-                        "name": test.name,
-                        "weight": test.weight,
-                        "date": test.date
-                    }
-                    for test in tests
-                ]
+                for subject in subjects:
 
-                group_data["children"].append({
-                    "title": subject.name,
-                    "id": subject.id,
-                    "type": "subject",
-                    "tableData": table_data
-                })
+                    tests = Test.objects.filter(
+                        group=group,
+                        subject=subject,
+                        term_id=term_id,
+                        deleted=False
+                    )
+
+                    table_data = [
+                        {
+                            "id": test.id,
+                            "name": test.name,
+                            "weight": test.weight,
+                            "date": test.date
+                        }
+                        for test in tests
+                    ]
+
+                    flow_data["children"].append({
+                        "title": subject.name,
+                        "id": subject.id,
+                        "type": "subject",
+                        "tableData": table_data
+                    })
+
+                if flow_data["children"]:
+                    group_data["children"].append(flow_data)
 
             if group_data["children"]:
                 result.append(group_data)
