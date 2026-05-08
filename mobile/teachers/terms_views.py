@@ -319,7 +319,7 @@ class TeacherGroupsAndFlowsView(views.APIView):
         ).select_related(
             'class_number',
             'color'
-        ).order_by('class_number__number')
+        ).order_by('class_number__number').distinct()
 
         groups_data = []
 
