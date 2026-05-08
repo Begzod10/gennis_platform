@@ -48,7 +48,6 @@ class TeacherListTest(views.APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-
         try:
             teacher = Teacher.objects.get(user=request.user)
         except Teacher.DoesNotExist:
@@ -57,12 +56,13 @@ class TeacherListTest(views.APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        term_id = kwargs.get("term")
+        term_id = kwargs.get('term')
 
+        # Grouplarni ClassTimeTable orqali olish
         groups = Group.objects.filter(
             classtimetable__teacher=teacher,
             deleted=False
-        ).distinct().order_by("class_number__number")
+        ).distinct().order_by('class_number__number')
 
         result = []
 
@@ -75,69 +75,48 @@ class TeacherListTest(views.APIView):
                 "children": []
             }
 
-            flows = Flows.objects.filter(
-                classtimetable__teacher=teacher,
-                classtimetable__group=group
-            ).distinct()
+            # Shu groupdagi teacher subjectlari
+            teacher_subjects_ids = ClassTimeTable.objects.filter(
+                teacher=teacher,
+                group=group
+            ).values_list('subject_id', flat=True).distinct()
 
-            for flow in flows:
+            group_subjects = GroupSubjects.objects.filter(
+                group=group,
+                subject_id__in=teacher_subjects_ids
+            ).select_related('subject').distinct()
 
-                flow_data = {
-                    "title": flow.name,
-                    "id": flow.id,
-                    "type": "flow",
-                    "children": []
-                }
+            for group_subject in group_subjects:
+                subject = group_subject.subject
 
-                timetables = ClassTimeTable.objects.filter(
-                    teacher=teacher,
+                tests = Test.objects.filter(
                     group=group,
-                    flow=flow
-                ).select_related("subject").distinct()
+                    subject=subject,
+                    term_id=term_id,
+                    deleted=False
+                )
 
-                added_subjects = set()
+                table_data = [
+                    {
+                        "id": test.id,
+                        "name": test.name,
+                        "weight": test.weight,
+                        "date": test.date
+                    }
+                    for test in tests
+                ]
 
-                for timetable in timetables:
-
-                    subject = timetable.subject
-
-                    if subject.id in added_subjects:
-                        continue
-
-                    added_subjects.add(subject.id)
-
-                    tests = Test.objects.filter(
-                        group=group,
-                        subject=subject,
-                        term_id=term_id,
-                        deleted=False
-                    )
-
-                    table_data = [
-                        {
-                            "id": test.id,
-                            "name": test.name,
-                            "weight": test.weight,
-                            "date": test.date
-                        }
-                        for test in tests
-                    ]
-
-                    flow_data["children"].append({
-                        "title": subject.name,
-                        "id": subject.id,
-                        "type": "subject",
-                        "tableData": table_data
-                    })
-
-                if flow_data["children"]:
-                    group_data["children"].append(flow_data)
+                group_data["children"].append({
+                    "title": subject.name,
+                    "id": subject.id,
+                    "type": "subject",
+                    "tableData": table_data
+                })
 
             if group_data["children"]:
                 result.append(group_data)
 
         return response.Response(result, status=status.HTTP_200_OK)
-
 class TeacherCreateTest(generics.CreateAPIView):
     queryset = Test.objects.all()
     serializer_class = TestCreateUpdateSerializer
