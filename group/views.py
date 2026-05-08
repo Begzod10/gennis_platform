@@ -285,3 +285,53 @@ class GroupFlowRatingReportView(APIView):
             "subject_scores": subject_scores,
             "overall_rating": final_rating
         })
+
+
+
+class TeacherGroupListAPIView(APIView):
+
+    def get(self, request):
+        teacher_id = request.query_params.get('teacher_id')
+
+        if not teacher_id:
+            return Response({'error': 'teacher_id majburiy parametr'}, status=400)
+
+        groups = Group.objects.filter(
+            teacher__id=teacher_id,
+            status=True,
+            deleted=False
+        ).select_related(
+            'subject', 'level', 'branch', 'language'
+        ).distinct()
+
+        data = []
+        for group in groups:
+            data.append({
+                'id': group.id,
+                'name': group.name,
+                'price': group.price,
+                'subject': {
+                    'id': group.subject.id if group.subject else None,
+                    'name': group.subject.name if group.subject else None,
+                },
+                'level': {
+                    'id': group.level.id if group.level else None,
+                    'name': group.level.name if group.level else None,
+                },
+                'branch': {
+                    'id': group.branch.id if group.branch else None,
+                    'name': group.branch.name if group.branch else None,
+                },
+                'language': {
+                    'id': group.language.id if group.language else None,
+                    'name': group.language.name if group.language else None,
+                },
+                'attendance_days': group.attendance_days,
+                'created_date': group.created_date,
+            })
+
+        return Response({
+            'teacher_id': teacher_id,
+            'count': len(data),
+            'results': data
+        })

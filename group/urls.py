@@ -13,7 +13,7 @@ from .gennis.MoveToGroupApi import MoveToGroupApi
 from .gennis.TeacherGroupChange import TeacherGroupChange
 from .school.ClassesList import ClassesView, AddClassesList, CreateGroupTeacherListView, ClassesView2
 from .views import GroupStudentsClassRoom, GroupListView, GroupSubjectAddView, GroupSubjectRemoveView, \
-    AddClassTypeToGroup, GroupFlowRatingReportView
+    AddClassTypeToGroup, GroupFlowRatingReportView, TeacherGroupListAPIView
 from .gennis.grouprating import GroupRatingListCreateView, GroupRatingDetailView, GroupWithRatingListView
 
 urlpatterns = [
@@ -49,5 +49,6 @@ urlpatterns = [
 
     path('group-ratings/', GroupRatingListCreateView.as_view(), name='group-rating-list-create'),
     path('group-ratings/<int:pk>/', GroupRatingDetailView.as_view(), name='group-rating-detail'),
+    path('teacher-groups/', TeacherGroupListAPIView.as_view(), name='teacher-groups'),
     path('with-ratings/', GroupWithRatingListView.as_view(), name='groups-with-ratings'),
 ]

@@ -25,6 +25,7 @@ class MobileLessonPlanFileUploadView(APIView):
             "term_id": {"type": "integer"},
             "group_id": {"type": "integer", "nullable": True},
             "flow_id": {"type": "integer", "nullable": True},
+            "subject_id": {"type": "integer", "nullable": True},
             "file": {"type": "string", "format": "binary"},
         }}},
         responses={201: dict, 200: dict},
@@ -36,6 +37,7 @@ class MobileLessonPlanFileUploadView(APIView):
                     "term_id": 2,
                     "group_id": 1,
                     "flow_id": None,
+                    "subject_id": 25,
                     "status": "pending",
                     "detail": "File uploaded. AI review started."
                 },
@@ -53,6 +55,7 @@ class MobileLessonPlanFileUploadView(APIView):
         term_id = request.data.get("term_id")
         group_id = request.data.get("group_id")
         flow_id = request.data.get("flow_id")
+        subject_id = request.data.get("subject_id")
         file = request.FILES.get("file")
 
         if not term_id or not file:
@@ -73,13 +76,14 @@ class MobileLessonPlanFileUploadView(APIView):
             
         from group.models import Group
         from flows.models import Flow
+        from subjects.models import Subject
         group = None
         if group_id:
             try:
                 group = Group.objects.get(id=group_id)
             except Group.DoesNotExist:
                 return Response({"detail": "Group not found."}, status=404)
-                
+
         flow = None
         if flow_id:
             try:
@@ -87,11 +91,19 @@ class MobileLessonPlanFileUploadView(APIView):
             except Flow.DoesNotExist:
                 return Response({"detail": "Flow not found."}, status=404)
 
+        subject = None
+        if subject_id:
+            try:
+                subject = Subject.objects.get(id=subject_id)
+            except Subject.DoesNotExist:
+                return Response({"detail": "Subject not found."}, status=404)
+
         lp_file, created = LessonPlanFile.objects.update_or_create(
             teacher=teacher,
             term=term,
             group=group,
             flow=flow,
+            subject=subject,
             defaults={
                 "file": file,
                 "status": LessonPlanFile.Status.PENDING,
@@ -110,6 +122,7 @@ class MobileLessonPlanFileUploadView(APIView):
                 "term_id": term.id,
                 "group_id": group.id if group else None,
                 "flow_id": flow.id if flow else None,
+                "subject_id": subject.id if subject else None,
                 "status": lp_file.status,
                 "detail": "File uploaded. AI review started.",
             },
@@ -168,7 +181,11 @@ class MobileLessonPlanFileStatusView(APIView):
             return Response({"detail": "Teacher not found."}, status=404)
 
         try:
-            lp_file = LessonPlanFile.objects.select_related("term").get(pk=pk, teacher=teacher)
+            lp_file = (
+                LessonPlanFile.objects
+                .select_related("term", "group", "flow", "subject")
+                .get(pk=pk, teacher=teacher)
+            )
         except LessonPlanFile.DoesNotExist:
             return Response({"detail": "File not found."}, status=404)
 
@@ -189,6 +206,7 @@ class MobileLessonPlanFileListView(APIView):
             OpenApiParameter("term_id", int, description="Filter by term ID"),
             OpenApiParameter("group_id", int, description="Filter by group ID"),
             OpenApiParameter("flow_id", int, description="Filter by flow ID"),
+            OpenApiParameter("subject_id", int, description="Filter by subject ID"),
         ],
         responses={200: dict},
         examples=[
@@ -217,17 +235,24 @@ class MobileLessonPlanFileListView(APIView):
         if not teacher:
             return Response({"detail": "Teacher not found."}, status=404)
 
-        qs = LessonPlanFile.objects.filter(teacher=teacher).select_related("term")
+        qs = (
+            LessonPlanFile.objects
+            .filter(teacher=teacher)
+            .select_related("term", "group", "flow", "subject")
+        )
         term_id = request.query_params.get("term_id")
         group_id = request.query_params.get("group_id")
         flow_id = request.query_params.get("flow_id")
-        
+        subject_id = request.query_params.get("subject_id")
+
         if term_id:
             qs = qs.filter(term_id=term_id)
         if group_id:
             qs = qs.filter(group_id=group_id)
         if flow_id:
             qs = qs.filter(flow_id=flow_id)
+        if subject_id:
+            qs = qs.filter(subject_id=subject_id)
 
         return Response([_serialize(f) for f in qs])
 
@@ -248,6 +273,10 @@ def _serialize(lp_file: LessonPlanFile) -> dict:
             "id": lp_file.flow_id,
             "name": lp_file.flow.name if lp_file.flow else None,
         } if lp_file.flow_id else None,
+        "subject": {
+            "id": lp_file.subject_id,
+            "name": lp_file.subject.name if lp_file.subject else None,
+        } if lp_file.subject_id else None,
         "file": lp_file.file.url if lp_file.file else None,
         "status": lp_file.status,
         "score": lp_file.score,

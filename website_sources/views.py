@@ -124,6 +124,42 @@ class NewsDetailView(generics.RetrieveUpdateDestroyAPIView):
         )
 
 
+class NewsImageUploadView(APIView):
+    """
+    PATCH /api/news/:id/upload-image/
+
+    Faqat rasm yuklash uchun (multipart/form-data)
+    Body: image (file)
+    """
+    parser_classes = [MultiPartParser, FormParser]
+
+    def patch(self, request, pk):
+        try:
+            news = News.objects.get(pk=pk)
+        except News.DoesNotExist:
+            return Response(
+                {"detail": "Yangilik topilmadi."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        image = request.FILES.get('image')
+        if not image:
+            return Response(
+                {"detail": "'image' maydoni majburiy."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Eski rasmni o'chirish (ixtiyoriy)
+        if news.image:
+            news.image.delete(save=False)
+
+        news.image = image
+        news.save(update_fields=['image', 'updated_at'])
+
+        serializer = NewsListSerializer(news, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class NewsTogglePublishView(APIView):
     """
     PATCH /api/news/:id/toggle-publish/
@@ -719,6 +755,42 @@ class PublicCareerApplyView(APIView):
         )
 
 
+class CareerApplicationCVUploadView(APIView):
+    """
+    PATCH /api/careers/applications/:id/upload-cv/
+
+    Faqat CV faylni almashtirish uchun (multipart/form-data)
+    Body: cv_file (file)
+    """
+    parser_classes = [MultiPartParser, FormParser]
+
+    def patch(self, request, pk):
+        try:
+            application = CareerApplication.objects.get(pk=pk)
+        except CareerApplication.DoesNotExist:
+            return Response(
+                {"detail": "Ariza topilmadi."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        cv_file = request.FILES.get('cv_file')
+        if not cv_file:
+            return Response(
+                {"detail": "'cv_file' maydoni majburiy."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Eski CV ni o'chirish
+        if application.cv_file:
+            application.cv_file.delete(save=False)
+
+        application.cv_file = cv_file
+        application.save(update_fields=['cv_file'])
+
+        serializer = CareerApplicationSerializer(application, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class PublicCareerUpdateView(generics.RetrieveUpdateDestroyAPIView):
     queryset = CareerApplication.objects.select_related('branch')
     serializer_class = CareerApplicationUpdateSerializer
@@ -848,6 +920,40 @@ class TalentPoolFileUpdateView(APIView):
         instance.save()
         serializer = TalentPoolSerializer(instance)
         return Response({'success': True, 'data': serializer.data})
+
+class TalentPoolCVUploadView(APIView):
+    """
+    PATCH /api/careers/talent-pool/:id/upload-cv/
+
+    Faqat CV faylni almashtirish (multipart/form-data)
+    Body: cv_file (file)
+    """
+    parser_classes = [MultiPartParser, FormParser]
+
+    def patch(self, request, pk):
+        try:
+            talent = TalentPool.objects.get(pk=pk)
+        except TalentPool.DoesNotExist:
+            return Response(
+                {"detail": "Talent topilmadi."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        cv_file = request.FILES.get('cv_file')
+        if not cv_file:
+            return Response(
+                {"detail": "'cv_file' maydoni majburiy."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if talent.cv_file:
+            talent.cv_file.delete(save=False)
+
+        talent.cv_file = cv_file
+        talent.save(update_fields=['cv_file'])
+
+        serializer = TalentPoolSerializer(talent, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class AdminStatsView(APIView):

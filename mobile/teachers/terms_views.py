@@ -54,7 +54,7 @@ class TeacherListTest(views.APIView):
             return response.Response({"detail": "Siz teacher emassiz"}, status=status.HTTP_403_FORBIDDEN)
 
         term_id = kwargs.get('term')
-        
+
         # Faqat o'qituvchiga tegishli guruhlarni olamiz
         groups = teacher.group_set.filter(deleted=False).order_by('class_number__number')
 
@@ -63,29 +63,29 @@ class TeacherListTest(views.APIView):
         for group in groups:
             group_data = {
                 "title": group.name if group.name else f"{group.class_number.number} {group.color.name}",
-                "id": group.id, 
-                "type": "group", 
+                "id": group.id,
+                "type": "group",
                 "children": []
             }
 
             # Bu guruhda o'qituvchi o'tadigan fanlarni ClassTimeTable orqali aniqlaymiz
             teacher_subjects_ids = ClassTimeTable.objects.filter(
-                teacher=teacher, 
+                teacher=teacher,
                 group=group
             ).values_list('subject_id', flat=True).distinct()
-            
+
             group_subjects = GroupSubjects.objects.filter(
-                group=group, 
+                group=group,
                 subject_id__in=teacher_subjects_ids
             ).select_related('subject').distinct('subject')
 
             if not group_subjects.exists():
-                # Agar ClassTimeTable da yo'q bo'lsa, lekin guruhga biriktirilgan bo'lsa, 
+                # Agar ClassTimeTable da yo'q bo'lsa, lekin guruhga biriktirilgan bo'lsa,
                 # balki o'qituvchining barcha fanlarini ko'rsatish kerakdir?
                 # User "unga tegishli fanlar" dedi.
                 teacher_subjects = teacher.subject.all()
                 group_subjects = GroupSubjects.objects.filter(
-                    group=group, 
+                    group=group,
                     subject__in=teacher_subjects
                 ).select_related('subject').distinct('subject')
 
@@ -96,17 +96,17 @@ class TeacherListTest(views.APIView):
 
                 table_data = [
                     {
-                        "id": test.id, 
-                        "name": test.name, 
-                        "weight": test.weight, 
+                        "id": test.id,
+                        "name": test.name,
+                        "weight": test.weight,
                         "date": test.date
                     } for test in tests
                 ]
 
                 group_data["children"].append({
-                    "title": subject.name, 
-                    "id": subject.id, 
-                    "type": "subject", 
+                    "title": subject.name,
+                    "id": subject.id,
+                    "type": "subject",
                     "tableData": table_data
                 })
 
@@ -208,14 +208,14 @@ class TeacherAssignmentCreateView(views.APIView):
                 continue
 
             assignment, created = Assignment.objects.update_or_create(
-                test_id=test_id, 
+                test_id=test_id,
                 student_id=student_id,
                 defaults={"percentage": percentage}
             )
 
             results.append({
-                "student_id": student_id, 
-                "assignment_id": assignment.id, 
+                "student_id": student_id,
+                "assignment_id": assignment.id,
                 "created": created,
                 "result": percentage * assignment.test.weight / 100
             })
@@ -249,18 +249,18 @@ class TeacherTermsByGroupView(views.APIView):
         for student in students:
             if subject_id:
                 assignments = Assignment.objects.filter(
-                    student=student, 
+                    student=student,
                     test__term_id=term_id,
                     test__subject_id=subject_id
                 ).select_related('test__subject')
             else:
                 teacher_subjects_ids = ClassTimeTable.objects.filter(
-                    teacher=teacher, 
+                    teacher=teacher,
                     group=group
                 ).values_list('subject_id', flat=True).distinct()
-                
+
                 assignments = Assignment.objects.filter(
-                    student=student, 
+                    student=student,
                     test__term_id=term_id,
                     test__subject_id__in=teacher_subjects_ids
                 ).select_related('test__subject')
@@ -286,8 +286,8 @@ class TeacherTermsByGroupView(views.APIView):
                 del subj_data["count"]
 
             response_data.append({
-                "id": student.id, 
-                "first_name": student.user.name, 
+                "id": student.id,
+                "first_name": student.user.name,
                 "last_name": student.user.surname,
                 "subjects": list(subjects_data.values())
             })
