@@ -1,10 +1,4 @@
-"""
-urls.py — Barcha endpointlar
-
-Asosiy urls.py ga shu faylni include qiling:
-    path('api/', include('urls')),
-"""
-from django.urls import path
+from django.urls import include, path
 from website_sources.views import (
     NewsListCreateView, NewsDetailView, NewsTogglePublishView,
     ImageUploadView, PublicNewsListView, PublicNewsDetailView,
@@ -16,10 +10,16 @@ from website_sources.views import (
     AdminJobPositionListCreateView, AdminJobPositionDetailView,
     AdminCareerApplicationListView, AdminStatsView, CategoryListCreateView, CategoryDetailView, PublicCareerUpdateView,
     TalentPoolDetailView,
-    NewsImageUploadView, CareerApplicationCVUploadView, TalentPoolCVUploadView
+    NewsImageUploadView, CareerApplicationCVUploadView, TalentPoolCVUploadView,
+    PublicSchoolStatisticListView, PublicTestimonialListView, PublicWhyChooseListView,
+    PublicPartnerListView, PublicLeadershipListView, PublicTranslationsView,
+    PageDetailView, MenuView
 )
 
 urlpatterns = [
+    path('pages/<slug:slug>/', PageDetailView.as_view(), name='page-detail'),
+    path('menus/<slug:key>/', MenuView.as_view(), name='menu-detail'),
+    path('cms/', include('website_sources.cms_urls')),
 
     # ── ADMIN STATS ────────────────────────────────────────────────────────────
     path('admin/stats/', AdminStatsView.as_view(), name='admin-stats'),
@@ -28,7 +28,7 @@ urlpatterns = [
     path('news/', NewsListCreateView.as_view(), name='news-list-create'),
     path('news/<int:pk>/', NewsDetailView.as_view(), name='news-detail'),
     path('news/<int:pk>/toggle-publish/', NewsTogglePublishView.as_view(), name='news-toggle-publish'),
-    path('news/<int:pk>/upload-image/', NewsImageUploadView.as_view(), name='news-upload-image'),  # <-- yangi
+    path('news/<int:pk>/upload-image/', NewsImageUploadView.as_view(), name='news-upload-image'),
 
     # ── IMAGE UPLOAD ───────────────────────────────────────────────────────────
     path('upload/image/', ImageUploadView.as_view(), name='upload-image'),
@@ -41,7 +41,6 @@ urlpatterns = [
     # ── CATEGORIES ─────────────────────────────────────────────────────────────
     path('categories/', CategoryListView.as_view(), name='category-list'),
     path('admin/categories/', CategoryListCreateView.as_view(), name='admin-category-list-create'),
-    # GET / PUT / PATCH / DELETE
     path('admin/categories/<int:pk>/', CategoryDetailView.as_view(), name='admin-category-detail'),
 
     # ── ADMISSIONS ─────────────────────────────────────────────────────────────
@@ -64,6 +63,14 @@ urlpatterns = [
     path('careers/talent-pool/', PublicTalentPoolView.as_view(), name='public-talent-pool'),
     path('careers/talent-pool/<int:pk>/', TalentPoolDetailView.as_view(), name='public-talent-pool'),
     path('talent-pool/<int:pk>/upload-cv/', TalentPoolCVUploadView.as_view(), name='talent-pool-upload-cv'),
+
+    # ── NEW PUBLIC ENDPOINTS ───────────────────────────────────────────────────
+    path('public/stats/', PublicSchoolStatisticListView.as_view(), name='public-stats'),
+    path('public/testimonials/', PublicTestimonialListView.as_view(), name='public-testimonials'),
+    path('public/why-choose/', PublicWhyChooseListView.as_view(), name='public-why-choose'),
+    path('public/partners/', PublicPartnerListView.as_view(), name='public-partners'),
+    path('public/leadership/', PublicLeadershipListView.as_view(), name='public-leadership'),
+    path('public/translations/', PublicTranslationsView.as_view(), name='public-translations'),
 
     # ── CAREERS (ADMIN) ────────────────────────────────────────────────────────
     path('admin/careers/positions/', AdminJobPositionListCreateView.as_view(), name='admin-job-positions'),

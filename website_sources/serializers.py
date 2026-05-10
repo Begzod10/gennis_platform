@@ -1,5 +1,9 @@
 from rest_framework import serializers
-from website_sources.models import News, Category, Admission, ContactMessage, JobPosition, CareerApplication, TalentPool
+from website_sources.models import (
+    News, Category, Admission, ContactMessage, JobPosition, CareerApplication, TalentPool,
+    SchoolStatistic, Testimonial, WhyChooseItem, Partner, Leadership, SectionContent, ComponentDefinition, PageSection,
+    Page
+)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -146,3 +150,64 @@ class TalentPoolUpdateSerializer(serializers.ModelSerializer):
         if 'cv_file' not in validated_data or validated_data.get('cv_file') is None:
             validated_data.pop('cv_file', None)
         return super().update(instance, validated_data)
+
+class SchoolStatisticSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SchoolStatistic
+        fields = ['id', 'label', 'value', 'icon', 'branch', 'locale', 'sort_order']
+
+
+class TestimonialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Testimonial
+        fields = ['id', 'name', 'role', 'text', 'image', 'branch', 'locale', 'is_active']
+
+
+class WhyChooseItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WhyChooseItem
+        fields = ['id', 'text', 'icon', 'branch', 'locale', 'sort_order']
+
+
+class PartnerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Partner
+        fields = ['id', 'name', 'logo', 'category', 'description', 'website', 'branch', 'locale', 'sort_order']
+
+
+class LeadershipSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Leadership
+        fields = ['id', 'name', 'role', 'message', 'image', 'branch', 'locale', 'is_active']
+
+
+class SectionContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SectionContent
+        fields = ['id', 'section', 'title', 'subtitle', 'content', 'extra_data', 'branch', 'locale']
+
+
+class ComponentDefinitionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ComponentDefinition
+        fields = ['key', 'name', 'description', 'props_schema', 'default_props', 'is_layout']
+
+
+class PageSectionSerializer(serializers.ModelSerializer):
+    component_key = serializers.CharField(source='component.key', read_only=True)
+
+    class Meta:
+        model = PageSection
+        fields = ['id', 'component_key', 'section_id', 'props', 'layout', 'sort_order']
+
+
+class PageDetailSerializer(serializers.ModelSerializer):
+    sections = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Page
+        fields = ['id', 'slug', 'title', 'locale', 'seo', 'sections']
+
+    def get_sections(self, obj):
+        sections = obj.sections.filter(is_active=True).order_by('sort_order')
+        return PageSectionSerializer(sections, many=True).data
