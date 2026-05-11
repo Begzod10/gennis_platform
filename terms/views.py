@@ -3,12 +3,11 @@ from collections import defaultdict
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, views, response, status
 
-from group.models import Group, GroupSubjects, Student
+from group.models import Group, GroupSubjects, Student, GroupRating
 from .functions import create_multiple_years
 from .models import Assignment
 from .serializers import TestCreateUpdateSerializer, Test, TermSerializer, Term
 from django.db.models import Case, When, Value, IntegerField, Avg, Q
-from group.models import Group, GroupSubjects, Student, GroupRating
 from flows.models import Flow
 
 
@@ -69,12 +68,12 @@ class DeleteTest(generics.DestroyAPIView):
 
 class ListTest(views.APIView):
     def get(self, request, *args, **kwargs):
-        term = kwargs.get('term')
-        branch = kwargs.get('branch')
+        term = get_object_or_404(Term, id=kwargs.get('term'))
+        branch_id = kwargs.get('branch')
 
         groups = (
             Group.objects
-            .filter(deleted=False, branch=branch)
+            .filter(deleted=False, branch_id=branch_id)
             .select_related('class_number', 'color')
             .order_by('class_number__number')
         )
@@ -82,8 +81,9 @@ class ListTest(views.APIView):
 
         flows = (
             Flow.objects
-            .filter(branch=branch)
+            .filter(branch_id=branch_id)
             .select_related('subject')
+            .order_by('order', 'id')
         )
         flow_ids = list(flows.values_list('id', flat=True))
 
