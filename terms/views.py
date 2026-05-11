@@ -7,8 +7,9 @@ from group.models import Group, GroupSubjects, Student
 from .functions import create_multiple_years
 from .models import Assignment
 from .serializers import TestCreateUpdateSerializer, Test, TermSerializer, Term
-from django.db.models import Case, When, Value, IntegerField, Avg
+from django.db.models import Case, When, Value, IntegerField, Avg, Q
 from group.models import Group, GroupSubjects, Student, GroupRating
+from flows.models import Flow
 
 
 class CreateTest(generics.CreateAPIView):
@@ -71,29 +72,91 @@ class ListTest(views.APIView):
         term = kwargs.get('term')
         branch = kwargs.get('branch')
 
+        groups = (
+            Group.objects
+            .filter(deleted=False, branch=branch)
+            .select_related('class_number', 'color')
+            .order_by('class_number__number')
+        )
+        group_ids = list(groups.values_list('id', flat=True))
+
+        flows = (
+            Flow.objects
+            .filter(branch=branch)
+            .select_related('subject')
+        )
+        flow_ids = list(flows.values_list('id', flat=True))
+
+        gs_qs = (
+            GroupSubjects.objects
+            .filter(group_id__in=group_ids)
+            .select_related('subject')
+            .distinct('group_id', 'subject_id')
+        )
+        gs_by_group = defaultdict(list)
+        for gs in gs_qs:
+            gs_by_group[gs.group_id].append(gs)
+
+        tests_qs = (
+            Test.objects
+            .filter(term=term, deleted=False)
+            .filter(Q(group_id__in=group_ids) | Q(flow_id__in=flow_ids))
+            .values('id', 'name', 'weight', 'date', 'group_id', 'flow_id', 'subject_id')
+        )
+
+        tests_by_group_subject = defaultdict(list)
+        tests_by_flow_subject = defaultdict(list)
+        for t in tests_qs:
+            row = {
+                "id": t['id'],
+                "name": t['name'],
+                "weight": t['weight'],
+                "date": t['date'],
+            }
+            if t['group_id']:
+                tests_by_group_subject[(t['group_id'], t['subject_id'])].append(row)
+            elif t['flow_id']:
+                tests_by_flow_subject[(t['flow_id'], t['subject_id'])].append(row)
+
         result = []
 
-        groups = Group.objects.filter(deleted=False, branch=branch).all().order_by('class_number__number')
-
         for group in groups:
-            group_data = {
-                "title": group.name if group.name else f"{group.class_number.number} {group.color.name}",
-                "id": group.id, "type": "group", "children": []}
+            class_no = getattr(group.class_number, 'number', None)
+            color_name = getattr(group.color, 'name', None)
+            display_name = group.name or f"{class_no or '?'} {color_name or '?'}"
 
-            group_subjects = (GroupSubjects.objects.filter(group=group).select_related('subject').distinct('subject'))
+            children = [
+                {
+                    "title": gs.subject.name,
+                    "id": gs.subject.id,
+                    "type": "subject",
+                    "tableData": tests_by_group_subject.get((group.id, gs.subject_id), []),
+                }
+                for gs in gs_by_group.get(group.id, [])
+            ]
 
-            for group_subject in group_subjects:
-                subject = group_subject.subject
+            result.append({
+                "title": display_name,
+                "id": group.id,
+                "type": "group",
+                "children": children,
+            })
 
-                tests = Test.objects.filter(group=group, subject=subject, term=term, deleted=False)
-
-                table_data = [{"id": test.id, "name": test.name, "weight": test.weight, "date": test.date} for test in
-                              tests]
-
-                group_data["children"].append(
-                    {"title": subject.name, "id": subject.id, "type": "subject", "tableData": table_data})
-
-            result.append(group_data)
+        for flow in flows:
+            subj = flow.subject
+            if not subj:
+                continue
+            result.append({
+                "title": flow.name,
+                "id": flow.id,
+                "type": "flow",
+                "children": [{
+                    "title": subj.name,
+                    "id": subj.id,
+                    "type": "subject",
+                    "tableData": tests_by_flow_subject.get((flow.id, subj.id), []),
+                }],
+            })
 
         return response.Response(result, status=status.HTTP_200_OK)
 
@@ -319,17 +382,24 @@ class EducationQualityOverview(views.APIView):
         class_id = get_param(['class_id', 'class', 'group_id'])
         teacher_id = get_param(['teacher_id', 'teacher'])
         term_id = get_param(['term_id', 'term'])
-        
-        assignments = Assignment.objects.filter(test__deleted=False, test__group__deleted=False)
-        
+
+        # Include group-tests (non-deleted group) and flow-tests
+        assignments = Assignment.objects.filter(test__deleted=False).filter(
+            Q(test__group__deleted=False) | Q(test__flow__isnull=False)
+        )
+
         if branch_id:
-            assignments = assignments.filter(test__group__branch_id=branch_id)
+            assignments = assignments.filter(
+                Q(test__group__branch_id=branch_id) | Q(test__flow__branch_id=branch_id)
+            )
         if subject_id:
             assignments = assignments.filter(test__subject_id=subject_id)
         if class_id:
             assignments = assignments.filter(test__group_id=class_id)
         if teacher_id:
-            assignments = assignments.filter(test__group__teacher=teacher_id)
+            assignments = assignments.filter(
+                Q(test__group__teacher=teacher_id) | Q(test__flow__teacher_id=teacher_id)
+            )
         if term_id:
             assignments = assignments.filter(test__term_id=term_id)
 
@@ -359,12 +429,20 @@ class EducationQualityDetails(views.APIView):
         teacher_id = get_param(['teacher_id', 'teacher'])
         branch_id = get_param(['branch_id', 'branch'])
 
-        assignments = Assignment.objects.filter(test__term_id=term_id, test__deleted=False, test__group__deleted=False)
-        
+        assignments = Assignment.objects.filter(
+            test__term_id=term_id, test__deleted=False
+        ).filter(
+            Q(test__group__deleted=False) | Q(test__flow__isnull=False)
+        )
+
         if branch_id:
-            assignments = assignments.filter(test__group__branch_id=branch_id)
+            assignments = assignments.filter(
+                Q(test__group__branch_id=branch_id) | Q(test__flow__branch_id=branch_id)
+            )
         if teacher_id:
-            assignments = assignments.filter(test__group__teacher=teacher_id)
+            assignments = assignments.filter(
+                Q(test__group__teacher=teacher_id) | Q(test__flow__teacher_id=teacher_id)
+            )
         if class_id:
             assignments = assignments.filter(test__group_id=class_id)
         if subject_id:
@@ -375,23 +453,46 @@ class EducationQualityDetails(views.APIView):
 
         if subject_id:
             chart_type = "classes"
-            data = (
-                assignments.values('test__group__name', 'test__group__class_number__number')
+            group_data = (
+                assignments.filter(test__group__isnull=False)
+                .values('test__group__name', 'test__group__class_number__number')
                 .annotate(avg=Avg('percentage'))
                 .order_by('test__group__class_number__number')
             )
-            for item in data:
+            for item in group_data:
                 label = item['test__group__name'] or f"{item['test__group__class_number__number']}-sinf"
                 chart_data.append({"label": label, "value": round((item['avg'] or 0) / 20, 1)})
 
+            flow_data = (
+                assignments.filter(test__flow__isnull=False)
+                .values('test__flow__name')
+                .annotate(avg=Avg('percentage'))
+                .order_by('test__flow__name')
+            )
+            for item in flow_data:
+                chart_data.append({
+                    "label": item['test__flow__name'],
+                    "value": round((item['avg'] or 0) / 20, 1),
+                })
+
         elif teacher_id:
             chart_type = "performance"
-            data = (
-                assignments.values('test__group__name', 'test__subject__name')
+            group_data = (
+                assignments.filter(test__group__isnull=False)
+                .values('test__group__name', 'test__subject__name')
                 .annotate(avg=Avg('percentage'))
             )
-            for item in data:
+            for item in group_data:
                 label = f"{item['test__subject__name']} ({item['test__group__name']})"
+                chart_data.append({"label": label, "value": round((item['avg'] or 0) / 20, 1)})
+
+            flow_data = (
+                assignments.filter(test__flow__isnull=False)
+                .values('test__flow__name', 'test__subject__name')
+                .annotate(avg=Avg('percentage'))
+            )
+            for item in flow_data:
+                label = f"{item['test__subject__name']} ({item['test__flow__name']})"
                 chart_data.append({"label": label, "value": round((item['avg'] or 0) / 20, 1)})
 
         elif class_id:

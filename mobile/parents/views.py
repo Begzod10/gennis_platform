@@ -110,10 +110,19 @@ class ChildrenTodayTimeTableView(APIView):
             ).order_by('hours__start_time')  # Order by lesson time
             lessons = []
             for lesson in timetable:
-                test = Test.objects.filter(term=terms, group=lesson.group, subject=lesson.subject).all()
+                if lesson.flow_id:
+                    test = Test.objects.filter(
+                        term=terms, flow_id=lesson.flow_id, subject=lesson.subject
+                    )
+                else:
+                    test = Test.objects.filter(
+                        term=terms, group=lesson.group, subject=lesson.subject
+                    )
                 percentage = 0
                 for ts in test:
                     assignment = Assignment.objects.filter(test=ts, student_id=student_id).first()
+                    if not assignment:
+                        continue
                     calculated_result = (assignment.test.weight * assignment.percentage) / 100
                     percentage += round(calculated_result, 2)
 

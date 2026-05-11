@@ -41,10 +41,11 @@ class Test(models.Model):
     name = models.CharField(max_length=255)
     weight = models.IntegerField()
     term = models.ForeignKey(Term, on_delete=models.CASCADE)
-    date =models.DateField(default=timezone.now)
+    date = models.DateField(default=timezone.now)
     subject = models.ForeignKey('subjects.Subject', on_delete=models.CASCADE)
-    group = models.ForeignKey('group.Group', on_delete=models.CASCADE)
-    class_number = models.ForeignKey('classes.ClassNumber', on_delete=models.CASCADE)
+    group = models.ForeignKey('group.Group', on_delete=models.SET_NULL, null=True, blank=True)
+    flow = models.ForeignKey('flows.Flow', on_delete=models.SET_NULL, null=True, blank=True)
+    class_number = models.ForeignKey('classes.ClassNumber', on_delete=models.SET_NULL, null=True, blank=True)
     deleted = models.BooleanField(default=False)
 
 
