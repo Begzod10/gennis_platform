@@ -173,9 +173,11 @@ class StudentCallHistoryView(View):
                     .order_by("-called_at")
                 )
                 if type == "debtor":
-                    calls = calls.filter(student__isnull=False)
+                    calls = calls.filter(category="debtor")
+                elif type == "new_student":
+                    calls = calls.filter(category="new_student")
                 elif type == "lead":
-                    calls = calls.filter(lead__isnull=False)
+                    calls = calls.filter(category="lead")
                 if branch_id:
                     from django.db.models import Q
                     calls = calls.filter(
