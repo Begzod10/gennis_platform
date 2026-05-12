@@ -213,7 +213,9 @@ class PageSection(models.Model):
     )
     page = models.CharField(max_length=100)  # e.g., 'home', 'about-campus'
     section_id = models.CharField(max_length=100)  # e.g., 'whoWeAre', 'stats'
-    content = models.JSONField(default=dict)
+    content_uz = models.JSONField(default=dict, blank=True)
+    content_en = models.JSONField(default=dict, blank=True)
+    content_ru = models.JSONField(default=dict, blank=True)
     image = models.ImageField(upload_to='sections/images/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

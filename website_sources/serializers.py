@@ -127,7 +127,7 @@ class CareerApplicationUpdateSerializer(serializers.ModelSerializer):
 class PageSectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = PageSection
-        fields = ['id', 'branch', 'page', 'section_id', 'content', 'image', 'created_at', 'updated_at']
+        fields = ['id', 'branch', 'page', 'section_id', 'content_uz', 'content_en', 'content_ru', 'image', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
 
 
