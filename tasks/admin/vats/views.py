@@ -447,23 +447,27 @@ class CallStatisticView(View):
         if date_str:
             target_date = parse_date(date_str)
             if not target_date:
-                return JsonResponse({"ok": False, "error": "Noto'g'ri sana formati. YYYY-MM-DD bo'lishi kerak."}, status=400)
+                return JsonResponse({"ok": False, "error": "Noto'g'ri sana formati. YYYY-MM-DD bo'lishi kerak."},
+                                    status=400)
         else:
             target_date = now().date()
 
         def get_stats():
+            from django.db.models import Q
             log_filters = {"called_at__date": target_date}
 
             stats_sum = CallStatistic.objects.filter(
                 date=target_date, branch_id=branch_id
             ).select_related("branch").first()
 
-            # if branch_id:
-            #     log_filters["branch_id"] = branch_id
+            if branch_id:
+                log_filters["branch_id"] = branch_id
 
             stats = (
                 CallLog.objects
                 .filter(**log_filters)
+                .filter(Q(student__user__branch_id=branch_id) |
+                        Q(lead__branch_id=branch_id))
                 .values("category")
                 .annotate(called=Count("id"))
                 .order_by("category")
@@ -489,7 +493,6 @@ class CallStatisticView(View):
             "date": target_date.isoformat(),
             "called_counts": called_counts
         })
-
 
 
 @method_decorator(csrf_exempt, name='dispatch')
