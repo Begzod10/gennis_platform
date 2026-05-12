@@ -6,18 +6,11 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from website_sources.models import (
-    News, Category, Admission, ContactMessage, CareerApplication, JobPosition, TalentPool,
-    SchoolStatistic, Testimonial, WhyChooseItem, Partner, Leadership, SectionContent,
-    Page, PageSection, ComponentDefinition, Menu
-)
-from website_sources.serializers import (
-    NewsListSerializer, PublicNewsSerializer, CategorySerializer,
-    AdmissionSerializer, AdmissionCreateSerializer, ContactMessageSerializer, ContactCreateSerializer,
-    CareerApplicationSerializer, JobPositionSerializer, TalentPoolSerializer, CareerApplicationUpdateSerializer,
-    SchoolStatisticSerializer, TestimonialSerializer, WhyChooseItemSerializer, PartnerSerializer,
-    LeadershipSerializer, SectionContentSerializer, PageDetailSerializer
-)
+from website_sources.models import News, Category, Admission, ContactMessage, CareerApplication, JobPosition, TalentPool, PageSection
+from website_sources.serializers import NewsListSerializer, PublicNewsSerializer, CategorySerializer, \
+    AdmissionSerializer, AdmissionCreateSerializer, ContactMessageSerializer, ContactCreateSerializer, \
+    CareerApplicationSerializer, JobPositionSerializer, TalentPoolSerializer, CareerApplicationUpdateSerializer, \
+    PageSectionSerializer
 
 
 def apply_news_filters(qs, params):
@@ -1015,163 +1008,63 @@ class AdminStatsView(APIView):
 
         return Response({'success': True, 'data': data})
 
-# ─── NEW PUBLIC VIEWS ──────────────────────────────────────────────────────────
 
-class PublicSchoolStatisticListView(generics.ListAPIView):
-    serializer_class = SchoolStatisticSerializer
-    permission_classes = [AllowAny]
+# ─── PAGE SECTIONS ────────────────────────────────────────────────────────────
 
-    def get_queryset(self):
-        locale = self.request.query_params.get('locale', 'uz')
-        branch = self.request.query_params.get('branch')
-        qs = SchoolStatistic.objects.filter(locale=locale)
-        if branch:
-            qs = qs.filter(branch_id=branch)
-        return qs
-
-
-class PublicTestimonialListView(generics.ListAPIView):
-    serializer_class = TestimonialSerializer
-    permission_classes = [AllowAny]
+class PageSectionListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/page-sections/    — list sections with filters (?branch=1&page=home)
+    POST /api/page-sections/    — create or update a section (upsert)
+    """
+    serializer_class = PageSectionSerializer
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_queryset(self):
-        locale = self.request.query_params.get('locale', 'uz')
-        branch = self.request.query_params.get('branch')
-        qs = Testimonial.objects.filter(locale=locale, is_active=True)
-        if branch:
-            qs = qs.filter(branch_id=branch)
+        branch_id = self.request.query_params.get('branch')
+        page = self.request.query_params.get('page')
+        qs = PageSection.objects.all()
+        if branch_id:
+            qs = qs.filter(branch_id=branch_id)
+        if page:
+            qs = qs.filter(page=page)
         return qs
 
+    def post(self, request, *args, **kwargs):
+        # Upsert logic
+        branch_id = request.data.get('branch')
+        page = request.data.get('page')
+        section_id = request.data.get('section_id')
 
-class PublicWhyChooseListView(generics.ListAPIView):
-    serializer_class = WhyChooseItemSerializer
-    permission_classes = [AllowAny]
+        if not all([page, section_id]):
+            return Response(
+                {"detail": "page and section_id are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-    def get_queryset(self):
-        locale = self.request.query_params.get('locale', 'uz')
-        branch = self.request.query_params.get('branch')
-        qs = WhyChooseItem.objects.filter(locale=locale)
-        if branch:
-            qs = qs.filter(branch_id=branch)
-        return qs
+        # Get or create the instance
+        instance = PageSection.objects.filter(
+            branch_id=branch_id if branch_id else None,
+            page=page,
+            section_id=section_id
+        ).first()
 
-
-class PublicPartnerListView(generics.ListAPIView):
-    serializer_class = PartnerSerializer
-    permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        locale = self.request.query_params.get('locale', 'uz')
-        branch = self.request.query_params.get('branch')
-        qs = Partner.objects.filter(locale=locale)
-        if branch:
-            qs = qs.filter(branch_id=branch)
-        return qs
-
-
-class PublicLeadershipListView(generics.ListAPIView):
-    serializer_class = LeadershipSerializer
-    permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        locale = self.request.query_params.get('locale', 'uz')
-        branch = self.request.query_params.get('branch')
-        qs = Leadership.objects.filter(locale=locale, is_active=True)
-        if branch:
-            qs = qs.filter(branch_id=branch)
-        return qs
-
-
-class PublicTranslationsView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        locale = request.query_params.get('locale', 'uz')
-        branch = request.query_params.get('branch')
-
-        sections = SectionContent.objects.filter(locale=locale)
-        if branch:
-            sections = sections.filter(branch_id=branch)
-
-        data = {}
-        for section in sections:
-            # Handle nested keys like "about.campus"
-            parts = section.section.split('.')
-            current = data
-            for part in parts[:-1]:
-                if part not in current:
-                    current[part] = {}
-                current = current[part]
-            
-            section_data = {
-                'title': section.title,
-                'subtitle': section.subtitle,
-                'content': section.content,
-            }
-            if section.extra_data:
-                section_data.update(section.extra_data)
-                
-            current[parts[-1]] = section_data
-        
-        # Add related items as well to provide a full "translation" object
-        stats = SchoolStatistic.objects.filter(locale=locale)
-        if branch: stats = stats.filter(branch_id=branch)
-        data['stats_items'] = SchoolStatisticSerializer(stats, many=True).data
-
-        testimonials = Testimonial.objects.filter(locale=locale, is_active=True)
-        if branch: testimonials = testimonials.filter(branch_id=branch)
-        data['testimonials_items'] = TestimonialSerializer(testimonials, many=True).data
-
-        why_choose = WhyChooseItem.objects.filter(locale=locale)
-        if branch: why_choose = why_choose.filter(branch_id=branch)
-        data['why_choose_items'] = WhyChooseItemSerializer(why_choose, many=True).data
-
-        partners = Partner.objects.filter(locale=locale)
-        if branch: partners = partners.filter(branch_id=branch)
-        data['partners_items'] = PartnerSerializer(partners, many=True).data
-
-        return Response(data)
-        
-        
-class PageDetailView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request, slug):
-        locale = request.query_params.get('locale', 'uz')
-        branch = request.query_params.get('branch')
-        
-        try:
-            # Find the page for current locale and branch
-            page_qs = Page.objects.filter(slug=slug, locale=locale, status='published')
-            if branch:
-                page_qs = page_qs.filter(branch_id=branch)
-            else:
-                page_qs = page_qs.filter(branch__isnull=True)
-            
-            page = page_qs.first()
-            if not page:
-                return Response({"error": "Page not found"}, status=404)
-            
-            serializer = PageDetailSerializer(page)
-            return Response(serializer.data)
-        except Exception as e:
-            return Response({"error": str(e)}, status=500)
-
-
-class MenuView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request, key):
-        branch = request.query_params.get('branch')
-        
-        menu_qs = Menu.objects.filter(key=key, is_active=True)
-        if branch:
-            menu_qs = menu_qs.filter(branch_id=branch)
+        if instance:
+            serializer = self.get_serializer(instance, data=request.data, partial=True)
         else:
-            menu_qs = menu_qs.filter(branch__isnull=True)
-            
-        menu = menu_qs.first()
-        if not menu:
-            return Response({"error": "Menu not found"}, status=404)
-            
-        return Response(menu.items)
+            serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED if not instance else status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PageSectionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET    /api/page-sections/:id/
+    PUT    /api/page-sections/:id/
+    DELETE /api/page-sections/:id/
+    """
+    queryset = PageSection.objects.all()
+    serializer_class = PageSectionSerializer
+    parser_classes = [MultiPartParser, FormParser]

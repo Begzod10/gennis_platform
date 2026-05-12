@@ -11,15 +11,16 @@ from website_sources.views import (
     AdminCareerApplicationListView, AdminStatsView, CategoryListCreateView, CategoryDetailView, PublicCareerUpdateView,
     TalentPoolDetailView,
     NewsImageUploadView, CareerApplicationCVUploadView, TalentPoolCVUploadView,
-    PublicSchoolStatisticListView, PublicTestimonialListView, PublicWhyChooseListView,
-    PublicPartnerListView, PublicLeadershipListView, PublicTranslationsView,
-    PageDetailView, MenuView
+    # PublicSchoolStatisticListView, PublicTestimonialListView, PublicWhyChooseListView,
+    # PublicPartnerListView, PublicLeadershipListView, PublicTranslationsView,
+    # PageDetailView, MenuView,
+    PageSectionListCreateView, PageSectionDetailView
 )
 
 urlpatterns = [
-    path('pages/<slug:slug>/', PageDetailView.as_view(), name='page-detail'),
-    path('menus/<slug:key>/', MenuView.as_view(), name='menu-detail'),
-    path('cms/', include('website_sources.cms_urls')),
+    # path('pages/<slug:slug>/', PageDetailView.as_view(), name='page-detail'),
+    # path('menus/<slug:key>/', MenuView.as_view(), name='menu-detail'),
+    # path('cms/', include('website_sources.cms_urls')),
 
     # ── ADMIN STATS ────────────────────────────────────────────────────────────
     path('admin/stats/', AdminStatsView.as_view(), name='admin-stats'),
@@ -65,15 +66,19 @@ urlpatterns = [
     path('talent-pool/<int:pk>/upload-cv/', TalentPoolCVUploadView.as_view(), name='talent-pool-upload-cv'),
 
     # ── NEW PUBLIC ENDPOINTS ───────────────────────────────────────────────────
-    path('public/stats/', PublicSchoolStatisticListView.as_view(), name='public-stats'),
-    path('public/testimonials/', PublicTestimonialListView.as_view(), name='public-testimonials'),
-    path('public/why-choose/', PublicWhyChooseListView.as_view(), name='public-why-choose'),
-    path('public/partners/', PublicPartnerListView.as_view(), name='public-partners'),
-    path('public/leadership/', PublicLeadershipListView.as_view(), name='public-leadership'),
-    path('public/translations/', PublicTranslationsView.as_view(), name='public-translations'),
+    # path('public/stats/', PublicSchoolStatisticListView.as_view(), name='public-stats'),
+    # path('public/testimonials/', PublicTestimonialListView.as_view(), name='public-testimonials'),
+    # path('public/why-choose/', PublicWhyChooseListView.as_view(), name='public-why-choose'),
+    # path('public/partners/', PublicPartnerListView.as_view(), name='public-partners'),
+    # path('public/leadership/', PublicLeadershipListView.as_view(), name='public-leadership'),
+    # path('public/translations/', PublicTranslationsView.as_view(), name='public-translations'),
 
     # ── CAREERS (ADMIN) ────────────────────────────────────────────────────────
     path('admin/careers/positions/', AdminJobPositionListCreateView.as_view(), name='admin-job-positions'),
     path('admin/careers/positions/<int:pk>/', AdminJobPositionDetailView.as_view(), name='admin-job-position-detail'),
     path('admin/careers/applications/', AdminCareerApplicationListView.as_view(), name='admin-career-applications'),
+
+    # ── PAGE SECTIONS ──────────────────────────────────────────────────────────
+    path('page-sections/', PageSectionListCreateView.as_view(), name='page-section-list-create'),
+    path('page-sections/<int:pk>/', PageSectionDetailView.as_view(), name='page-section-detail'),
 ]
