@@ -474,11 +474,11 @@ class CallStatisticView(View):
                 "lead": result.get("lead", 0),
                 "debtor": result.get("debtor", 0),
                 "new_student": result.get("new_student", 0),
-                "branch_id": s.branch_id,
-                "date": s.date.isoformat(),
-                "total": s.total,
-                "called": s.called,
-                "percentage": s.percentage
+                "branch_id": stats_sum.branch_id,
+                "date": stats_sum.date.isoformat(),
+                "total": stats_sumtotal,
+                "called": stats_sum.called,
+                "percentage": stats_sum.percentage
             }
 
         called_counts = await sync_to_async(get_stats)()
