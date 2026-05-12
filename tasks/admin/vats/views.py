@@ -437,43 +437,57 @@ class CallStatisticView(View):
     async def get(self, request):
         """
         Query params:
-        ?branch_id=1
+        ?branch=1
         ?date=2024-01-15  (bo'lmasa bugun)
         """
         branch_id = request.GET.get("branch")
         date_str = request.GET.get("date")
 
-        filters = {}
-        if branch_id:
-            filters["branch_id"] = branch_id
-
         if date_str:
-            filters["date"] = parse_date(date_str)
+            target_date = parse_date(date_str)
+            if not target_date:
+                return JsonResponse({"ok": False, "error": "Noto'g'ri sana formati. YYYY-MM-DD bo'lishi kerak."}, status=400)
         else:
-            filters["date"] = now().date()
+            target_date = now().date()
 
         def get_stats():
-            stats = CallStatistic.objects.filter(**filters).select_related("branch")
+            log_filters = {"called_at__date": target_date}
 
-            result = []
-            for s in stats:
-                result.append({
-                    "id": s.id,
-                    "branch_id": s.branch_id,
-                    "date": s.date.isoformat(),
-                    "total": s.total,
-                    "called": s.called,
-                    "percentage": s.percentage
-                })
-            return result
+            stats_sum = CallStatistic.objects.filter(date=target_date, branch_id=branch_id).select_related("branch")
 
-        results = await sync_to_async(get_stats)()
+            if branch_id:
+                log_filters["branch_id"] = branch_id
+
+            # CallLog dan faqat category bo'yicha nechta call qilingan
+            stats = (
+                CallLog.objects
+                .filter(**log_filters)
+                .values("category")
+                .annotate(called=Count("id"))
+                .order_by("category")
+            )
+
+            result = {s["category"]: s["called"] for s in stats}
+
+            return {
+                "lead": result.get("lead", 0),
+                "debtor": result.get("debtor", 0),
+                "new_student": result.get("new_student", 0),
+                "branch_id": s.branch_id,
+                "date": s.date.isoformat(),
+                "total": s.total,
+                "called": s.called,
+                "percentage": s.percentage
+            }
+
+        called_counts = await sync_to_async(get_stats)()
 
         return JsonResponse({
             "ok": True,
-            "date": filters["date"].isoformat(),
-            "results": results
+            "date": target_date.isoformat(),
+            "called_counts": called_counts
         })
+
 
 
 @method_decorator(csrf_exempt, name='dispatch')
