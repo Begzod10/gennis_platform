@@ -460,8 +460,6 @@ class CallStatisticView(View):
                 date=target_date, branch_id=branch_id
             ).select_related("branch").first()
 
-            if branch_id:
-                log_filters["branch_id"] = branch_id
 
             stats = (
                 CallLog.objects
