@@ -454,12 +454,13 @@ class CallStatisticView(View):
         def get_stats():
             log_filters = {"called_at__date": target_date}
 
-            stats_sum = CallStatistic.objects.filter(date=target_date, branch_id=branch_id).select_related("branch")
+            stats_sum = CallStatistic.objects.filter(
+                date=target_date, branch_id=branch_id
+            ).select_related("branch").first()
 
             if branch_id:
                 log_filters["branch_id"] = branch_id
 
-            # CallLog dan faqat category bo'yicha nechta call qilingan
             stats = (
                 CallLog.objects
                 .filter(**log_filters)
@@ -474,11 +475,11 @@ class CallStatisticView(View):
                 "lead": result.get("lead", 0),
                 "debtor": result.get("debtor", 0),
                 "new_student": result.get("new_student", 0),
-                "branch_id": stats_sum.branch_id,
-                "date": stats_sum.date.isoformat(),
-                "total": stats_sumtotal,
-                "called": stats_sum.called,
-                "percentage": stats_sum.percentage
+                "branch_id": stats_sum.branch_id if stats_sum else None,
+                "date": stats_sum.date.isoformat() if stats_sum else target_date.isoformat(),
+                "total": stats_sum.total if stats_sum else 0,  # <-- stats_sumtotal → stats_sum.total
+                "called": stats_sum.called if stats_sum else 0,
+                "percentage": stats_sum.percentage if stats_sum else 0,
             }
 
         called_counts = await sync_to_async(get_stats)()
