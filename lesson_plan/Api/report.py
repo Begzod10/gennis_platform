@@ -51,7 +51,7 @@ class DailyLessonPlanReportView(APIView):
             date=target_date
         ).filter(
             Q(group__isnull=False) | Q(flow__isnull=False)
-        )
+        ).distinct()
         lp_map = {lp.class_time_table_id: lp for lp in lesson_plans}
 
         # Grouping by teacher
