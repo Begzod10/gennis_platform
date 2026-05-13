@@ -75,7 +75,7 @@ class OverheadTypeLogListView(APIView):
 
         base_qs = OverheadTypeLog.objects.filter(date=month_date, deleted=False)
         if branch_id:
-            base_qs = base_qs.filter(branch_id=branch_id)
+            base_qs = base_qs.filter(overhead_type__branch_id=branch_id)
 
         qs = base_qs
         if status_param == 'paid':
