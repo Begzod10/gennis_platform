@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from website_sources.models import News, Category, Admission, ContactMessage, CareerApplication, JobPosition, TalentPool, PageSection
+from website_sources.models import News, Category, Admission, ContactMessage, CareerApplication, JobPosition, TalentPool, PageSection, PageSectionImage
 from website_sources.serializers import NewsListSerializer, PublicNewsSerializer, CategorySerializer, \
     AdmissionSerializer, AdmissionCreateSerializer, ContactMessageSerializer, ContactCreateSerializer, \
     CareerApplicationSerializer, JobPositionSerializer, TalentPoolSerializer, CareerApplicationUpdateSerializer, \
@@ -1067,4 +1067,39 @@ class PageSectionDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     queryset = PageSection.objects.all()
     serializer_class = PageSectionSerializer
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser]
+
+
+class PageSectionMultipleImageUploadView(APIView):
+    """
+    POST /api/page-sections/:id/upload-images/
+
+    Body: images (multiple files)
+    """
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, pk):
+        section = get_object_or_404(PageSection, pk=pk)
+        images = request.FILES.getlist('images')
+
+        if not images:
+            return Response(
+                {"detail": "'images' maydoni majburiy."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        for img in images:
+            PageSectionImage.objects.create(section=section, image=img)
+
+        serializer = PageSectionSerializer(section, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class PageSectionImageDeleteView(APIView):
+    """
+    DELETE /api/page-sections/images/:id/
+    """
+    def delete(self, request, pk):
+        img = get_object_or_404(PageSectionImage, pk=pk)
+        img.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

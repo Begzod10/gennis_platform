@@ -14,7 +14,8 @@ from website_sources.views import (
     # PublicSchoolStatisticListView, PublicTestimonialListView, PublicWhyChooseListView,
     # PublicPartnerListView, PublicLeadershipListView, PublicTranslationsView,
     # PageDetailView, MenuView,
-    PageSectionListCreateView, PageSectionDetailView
+    PageSectionListCreateView, PageSectionDetailView,
+    PageSectionMultipleImageUploadView, PageSectionImageDeleteView
 )
 
 urlpatterns = [
@@ -81,4 +82,6 @@ urlpatterns = [
     # ── PAGE SECTIONS ──────────────────────────────────────────────────────────
     path('page-sections/', PageSectionListCreateView.as_view(), name='page-section-list-create'),
     path('page-sections/<int:pk>/', PageSectionDetailView.as_view(), name='page-section-detail'),
+    path('page-sections/<int:pk>/upload-images/', PageSectionMultipleImageUploadView.as_view(), name='page-section-upload-images'),
+    path('page-sections/images/<int:pk>/', PageSectionImageDeleteView.as_view(), name='page-section-image-delete'),
 ]
