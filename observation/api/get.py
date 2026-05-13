@@ -525,6 +525,19 @@ class WeeklyObservationStatsAPIView(APIView):
         if teacher_id:
             schedules = schedules.filter(observed_teacher_id=teacher_id)
 
+        week = request.query_params.get('week')
+        if not week:
+            # Default to current week based on cycle start_date
+            delta = (now().date() - cycle.start_date).days
+            week = 1 if delta < 0 else (delta // 7 + 1)
+        else:
+            try:
+                week = int(week)
+            except ValueError:
+                return Response({'detail': 'week butun son bo\'lishi kerak.'}, status=400)
+
+        schedules = schedules.filter(week=week)
+
         # observed_teacher bo'yicha guruhlash
         teachers_map = {}
         for schedule in schedules:
@@ -554,16 +567,16 @@ class WeeklyObservationStatsAPIView(APIView):
                 'weekly_avg_score': round(sum(scores) / len(scores), 2) if scores else None,
             })
         from datetime import timedelta
-
         # Haftaning boshi (dushanba)
-        week_start = cycle.start_date - timedelta(days=cycle.start_date.weekday())
-        # Haftaning oxiri (yakshanba)
-        week_end = week_start + timedelta(days=6)
+        week_monday = (cycle.start_date + timedelta(weeks=week - 1))
+        week_monday = week_monday - timedelta(days=week_monday.weekday())
+        week_sunday = week_monday + timedelta(days=6)
 
         return Response({
             'cycle_id': cycle.id,
-            'start_date': cycle.start_date,
-            'end_date': week_end,
+            'week': week,
+            'start_date': week_monday,
+            'end_date': week_sunday,
             'branch_id': cycle.branch_id,
             'teachers': TeacherWeeklyObservationSerializer(result, many=True).data,
         })
