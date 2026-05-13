@@ -24,6 +24,8 @@ def _generate_logs_for_month(month: int, year: int, branch_id=None):
         cost__isnull=False,
         deleted=False,
     )
+    if branch_id is not None:
+        query = query.filter(branch_id=branch_id)
     for ot in query:
         exists = OverheadTypeLog.objects.filter(
             overhead_type=ot,
