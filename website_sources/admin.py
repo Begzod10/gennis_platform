@@ -1,13 +1,18 @@
 from django.contrib import admin
 from website_sources.models import (
-    Category, News, Admission, ContactMessage, JobPosition, CareerApplication, TalentPool, PageSection
+    Category, News, Admission, ContactMessage, JobPosition, CareerApplication, TalentPool, PageSection, PageSectionImage
 )
+
+class PageSectionImageInline(admin.TabularInline):
+    model = PageSectionImage
+    extra = 1
 
 @admin.register(PageSection)
 class PageSectionAdmin(admin.ModelAdmin):
     list_display = ('page', 'section_id', 'branch', 'updated_at')
     list_filter = ('page', 'branch')
     search_fields = ('page', 'section_id')
+    inlines = [PageSectionImageInline]
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):

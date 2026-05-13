@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from website_sources.models import News, Category, Admission, ContactMessage, JobPosition, CareerApplication, TalentPool, PageSection
+from website_sources.models import News, Category, Admission, ContactMessage, JobPosition, CareerApplication, TalentPool, PageSection, PageSectionImage
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -124,10 +124,22 @@ class CareerApplicationUpdateSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+class PageSectionImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PageSectionImage
+        fields = ['id', 'image', 'order']
+
+
 class PageSectionSerializer(serializers.ModelSerializer):
+    images = PageSectionImageSerializer(many=True, read_only=True)
+
     class Meta:
         model = PageSection
-        fields = ['id', 'branch', 'page', 'section_id', 'content_uz', 'content_en', 'content_ru', 'image', 'created_at', 'updated_at']
+        fields = [
+            'id', 'branch', 'page', 'section_id',
+            'content_uz', 'content_en', 'content_ru',
+            'image', 'images', 'created_at', 'updated_at'
+        ]
         read_only_fields = ['created_at', 'updated_at']
 
 

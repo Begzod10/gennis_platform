@@ -1,7 +1,8 @@
+import uuid
+
+from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
-import uuid
-from django.conf import settings
 
 
 class Category(models.Model):
@@ -226,3 +227,18 @@ class PageSection(models.Model):
     class Meta:
         ordering = ['page', 'section_id']
         unique_together = ('branch', 'page', 'section_id')
+
+
+class PageSectionImage(models.Model):
+    section = models.ForeignKey(
+        PageSection, related_name='images', on_delete=models.CASCADE
+    )
+    image = models.ImageField(upload_to='sections/images/')
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"Image for {self.section}"
