@@ -42,7 +42,10 @@ class DailyLessonPlanReportView(APIView):
             branch_id=branch_id,
             week=week_day
         ).filter(
-            Q(group__isnull=False) | Q(flow__isnull=False)
+            Q(date=target_date) | Q(date__isnull=True)
+        ).filter(
+            Q(group__isnull=False, group__status=True, group__deleted=False) |
+            Q(flow__isnull=False, flow__activity=True)
         ).select_related('teacher__user', 'group', 'flow', 'subject', 'hours').order_by('hours__order')
 
         # Get all lesson plans for these timetables on the target date
