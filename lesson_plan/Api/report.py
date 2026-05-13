@@ -10,10 +10,7 @@ from lesson_plan.models import LessonPlan
 from branch.models import Branch
 
 class DailyLessonPlanReportView(APIView):
-    """
-    Returns a report of lesson plans for a given branch and date.
-    Filters ClassTimeTable by branch and weekday.
-    """
+   
     def get(self, request):
         branch_id = request.query_params.get('branch_id')
         date_str = request.query_params.get('date') # Expected format: YYYY-MM-DD
@@ -29,15 +26,13 @@ class DailyLessonPlanReportView(APIView):
         else:
             target_date = datetime.now().date()
 
-        # Get weekday name to filter ClassTimeTable
         weekday_name = target_date.strftime('%A')
         try:
             week_day = WeekDays.objects.get(name_en=weekday_name)
         except WeekDays.DoesNotExist:
             return Response({"error": f"Weekday {weekday_name} not found in database"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Filter ClassTimeTable for the branch and day
-        # Exclude entries where both group and flow are null
+       
         timetables = ClassTimeTable.objects.filter(
             branch_id=branch_id,
             week=week_day
@@ -48,7 +43,6 @@ class DailyLessonPlanReportView(APIView):
             Q(flow__isnull=False, flow__activity=True)
         ).select_related('teacher__user', 'group', 'flow', 'subject', 'hours').order_by('hours__order')
 
-        # Get all lesson plans for these timetables on the target date
         lesson_plans = LessonPlan.objects.filter(
             class_time_table__in=timetables,
             date=target_date
@@ -57,7 +51,6 @@ class DailyLessonPlanReportView(APIView):
         ).distinct()
         lp_map = {lp.class_time_table_id: lp for lp in lesson_plans}
 
-        # Grouping by teacher
         teacher_map = {}
 
         for tt in timetables:
@@ -81,7 +74,6 @@ class DailyLessonPlanReportView(APIView):
             status_text = "no_plan"
             
             if lp:
-                # Check if it has content
                 if lp.objective or lp.main_lesson or lp.homework:
                     has_lesson_plan = True
                     if lp.ball is not None:
