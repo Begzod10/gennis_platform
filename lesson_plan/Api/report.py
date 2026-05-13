@@ -1,4 +1,5 @@
 from datetime import datetime
+from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -36,16 +37,20 @@ class DailyLessonPlanReportView(APIView):
             return Response({"error": f"Weekday {weekday_name} not found in database"}, status=status.HTTP_404_NOT_FOUND)
 
         # Filter ClassTimeTable for the branch and day
+        # Exclude entries where both group and flow are null
         timetables = ClassTimeTable.objects.filter(
             branch_id=branch_id,
             week=week_day
-        ).select_related('teacher__user', 'group', 'subject', 'hours')
+        ).filter(
+            Q(group__isnull=False) | Q(flow__isnull=False)
+        ).select_related('teacher__user', 'group', 'flow', 'subject', 'hours').order_by('hours__order')
 
         # Get all lesson plans for these timetables on the target date
-        # to avoid N+1 queries
         lesson_plans = LessonPlan.objects.filter(
             class_time_table__in=timetables,
             date=target_date
+        ).filter(
+            Q(group__isnull=False) | Q(flow__isnull=False)
         )
         lp_map = {lp.class_time_table_id: lp for lp in lesson_plans}
 
@@ -88,7 +93,11 @@ class DailyLessonPlanReportView(APIView):
                 "timetable_id": tt.id,
                 "group": {
                     "id": tt.group.id if tt.group else None,
-                    "name": tt.group.name if tt.group else "N/A"
+                    "name": tt.group.name if tt.group else None
+                },
+                "flow": {
+                    "id": tt.flow.id if tt.flow else None,
+                    "name": tt.flow.name if tt.flow else None
                 },
                 "subject": {
                     "id": tt.subject.id if tt.subject else None,
