@@ -90,13 +90,14 @@ class ObservationStatisticsListSerializers(serializers.ModelSerializer):
 
 class ObserverScheduleSerializer(serializers.ModelSerializer):
     observer_id = serializers.IntegerField(source='observer.id')
+    observed_teacher_id = serializers.IntegerField(source='observed_teacher.id')
     observer_name = serializers.SerializerMethodField()
     is_completed = serializers.BooleanField()
     observation_avg = serializers.SerializerMethodField()
 
     class Meta:
         model = TeacherObservationSchedule
-        fields = ['observer_id', 'observer_name', 'is_completed', 'observation_avg']
+        fields = ['id', 'observer_id', 'observed_teacher_id', 'observer_name', 'is_completed', 'observation_avg', 'week']
 
     def get_observer_name(self, obj):
         user = obj.observer.user

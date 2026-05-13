@@ -521,6 +521,10 @@ class WeeklyObservationStatsAPIView(APIView):
                 observed_teacher__user__branch_id=branch_id
             )
 
+        teacher_id = request.query_params.get('teacher_id')
+        if teacher_id:
+            schedules = schedules.filter(observed_teacher_id=teacher_id)
+
         # observed_teacher bo'yicha guruhlash
         teachers_map = {}
         for schedule in schedules:
