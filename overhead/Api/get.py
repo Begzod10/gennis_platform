@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from overhead.models import Overhead, OverheadType
+from overhead.models import Overhead, OverheadType, OverheadTypeLogPayment
 from overhead.serializer.lists import ActiveListTeacherSerializer
 from overhead.serializers import (
     OverheadSerializerGet, OverheadSerializerGetTYpe, MonthDaysSerializer,
@@ -41,6 +41,26 @@ class OverheadListView(QueryParamFilterMixin, generics.ListAPIView):
         page = self.paginate_queryset(queryset)
         serializer = self.get_serializer(page, many=True)
 
+        # Bulk-resolve OverheadTypeLogPayment rows so each Overhead in the
+        # response carries a link back to its parent log + payment row when
+        # it came from a split payment.
+        overhead_ids = [item['id'] for item in serializer.data]
+        link_map = {}
+        if overhead_ids:
+            for row in OverheadTypeLogPayment.objects.filter(
+                overhead_id__in=overhead_ids,
+                deleted=False,
+            ).values('id', 'overhead_id', 'overhead_type_log_id'):
+                link_map[row['overhead_id']] = row
+
+        enriched = []
+        for item in serializer.data:
+            out = dict(item)
+            info = link_map.get(out['id'])
+            out['payment_id'] = info['id'] if info else None
+            out['overhead_type_log_id'] = info['overhead_type_log_id'] if info else None
+            enriched.append(out)
+
         data = [
             {
                 "name": "Total Amount",
@@ -69,7 +89,7 @@ class OverheadListView(QueryParamFilterMixin, generics.ListAPIView):
         ]
 
         return self.get_paginated_response({
-            'data': serializer.data,
+            'data': enriched,
             'totalCount': data
         })
 
