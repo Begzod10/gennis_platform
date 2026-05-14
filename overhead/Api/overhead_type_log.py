@@ -491,3 +491,76 @@ class OverheadTypeLogConvertToSplitView(APIView):
             'payment': payment.convert_json(),
             'log': log.convert_json(),
         })
+
+
+@extend_schema(
+    tags=['Overhead Type Logs'],
+    summary='Update editable fields on an OverheadTypeLog',
+    description=(
+        "Currently editable: `cost`. Refuses if the new cost is less than "
+        "the log's already-paid amount."
+    ),
+)
+class OverheadTypeLogUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, log_id):
+        data = request.data or {}
+        if not data:
+            return Response({'success': False, 'message': "Yangilanadigan maydonlar yo'q"}, status=400)
+
+        new_cost = data.get('cost', None)
+
+        with transaction.atomic():
+            log = OverheadTypeLog.objects.select_for_update().filter(pk=log_id).first()
+            if not log:
+                return Response({'success': False, 'message': 'Log topilmadi'}, status=404)
+            if log.deleted:
+                return Response({'success': False, 'message': "Log o'chirilgan"}, status=400)
+
+            changed = False
+
+            if new_cost is not None:
+                try:
+                    new_cost = int(new_cost)
+                except (TypeError, ValueError):
+                    return Response({'success': False, 'message': "cost butun son bo'lishi kerak"}, status=400)
+                if new_cost <= 0:
+                    return Response({'success': False, 'message': "cost musbat bo'lishi kerak"}, status=400)
+
+                existing_paid = log.payments.filter(deleted=False).aggregate(
+                    s=Coalesce(Sum('amount'), Value(0))
+                )['s'] or 0
+
+                if new_cost < existing_paid:
+                    return Response({
+                        'success': False,
+                        'message': (
+                            f"Yangi cost to'langan summadan kichik bo'lishi mumkin emas "
+                            f"({existing_paid:,} so'm). Avval to'lovlarni o'chiring."
+                        ),
+                        'paid_amount': existing_paid,
+                    }, status=400)
+
+                log.cost = new_cost
+                changed = True
+
+            if not changed:
+                return Response({
+                    'success': False,
+                    'message': "Ruxsat etilgan maydon yo'q (faqat: cost)",
+                }, status=400)
+
+            log.save(update_fields=['cost'])
+
+            # Recompute is_paid for split-paid logs; leave legacy single-pay
+            # logs untouched.
+            has_splits = log.payments.filter(deleted=False).exists()
+            if not log.overhead_id or has_splits:
+                _recompute_log_paid(log)
+
+        return Response({
+            'success': True,
+            'message': 'Log yangilandi',
+            'log': log.convert_json(),
+        })

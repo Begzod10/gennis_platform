@@ -20,6 +20,7 @@ from overhead.Api.overhead_type_log import (
     OverheadTypeLogPaymentDeleteView,
     OverheadTypeLogPaymentListView,
     OverheadTypeLogConvertToSplitView,
+    OverheadTypeLogUpdateView,
 )
 
 urlpatterns = [
@@ -44,4 +45,6 @@ urlpatterns = [
          OverheadTypeLogPaymentDeleteView.as_view(), name='overhead-type-log-payments-delete'),
     path('overhead_type_logs/<int:log_id>/convert-to-split/',
          OverheadTypeLogConvertToSplitView.as_view(), name='overhead-type-log-convert-to-split'),
+    path('overhead_type_logs/<int:log_id>/update/',
+         OverheadTypeLogUpdateView.as_view(), name='overhead-type-log-update'),
 ]
