@@ -564,3 +564,46 @@ class OverheadTypeLogUpdateView(APIView):
             'message': 'Log yangilandi',
             'log': log.convert_json(),
         })
+
+
+@extend_schema(
+    tags=['Overhead Type Logs'],
+    summary='Soft-delete an OverheadTypeLog',
+    description=(
+        "Refuses if the log carries financial records (active split payments "
+        "or a legacy single-pay link). The admin must clear those first."
+    ),
+)
+class OverheadTypeLogDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, log_id):
+        with transaction.atomic():
+            log = OverheadTypeLog.objects.select_for_update().filter(pk=log_id).first()
+            if not log:
+                return Response({'success': False, 'message': 'Log topilmadi'}, status=404)
+            if log.deleted:
+                return Response({'success': False, 'message': "Log allaqachon o'chirilgan"}, status=400)
+
+            if log.payments.filter(deleted=False).exists():
+                return Response({
+                    'success': False,
+                    'message': "Logda faol to'lovlar bor. Avval ularni o'chiring.",
+                }, status=400)
+            if log.overhead_id:
+                return Response({
+                    'success': False,
+                    'message': (
+                        "Log legacy bir martalik to'lov bilan to'langan. Avval "
+                        "/convert-to-split qiling, so'ng to'lovni o'chiring."
+                    ),
+                }, status=400)
+
+            log.deleted = True
+            log.save(update_fields=['deleted'])
+
+        return Response({
+            'success': True,
+            'message': "Log o'chirildi",
+            'log': log.convert_json(),
+        })
