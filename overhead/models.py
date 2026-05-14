@@ -26,7 +26,25 @@ class OverheadTypeLog(models.Model):
     date = models.DateField(null=True, blank=True)
     deleted = models.BooleanField(default=False)
 
+    @property
+    def paid_amount(self) -> int:
+        return sum(p.amount for p in self.payments.all() if not p.deleted)
+
+    @property
+    def remaining_amount(self) -> int:
+        return max(0, (self.cost or 0) - self.paid_amount)
+
+    @property
+    def payment_status(self) -> str:
+        paid = self.paid_amount
+        if paid <= 0:
+            return "unpaid"
+        if paid < (self.cost or 0):
+            return "partial"
+        return "paid"
+
     def convert_json(self):
+        payments = [p for p in self.payments.all() if not p.deleted]
         return {
             "id": self.id,
             "overhead_type_id": self.overhead_type_id,
@@ -38,6 +56,44 @@ class OverheadTypeLog(models.Model):
             "overhead_id": self.overhead_id,
             "branch_id": self.branch_id,
             "date": self.date.strftime("%d.%m.%Y") if self.date else None,
+            "paid_amount": self.paid_amount,
+            "remaining_amount": self.remaining_amount,
+            "payment_status": self.payment_status,
+            "payments": [p.convert_json() for p in payments],
+        }
+
+
+class OverheadTypeLogPayment(models.Model):
+    overhead_type_log = models.ForeignKey(
+        OverheadTypeLog, on_delete=models.CASCADE, related_name='payments',
+    )
+    payment_type = models.ForeignKey(
+        PaymentTypes, on_delete=models.SET_NULL, null=True, blank=True,
+    )
+    overhead = models.ForeignKey(
+        'Overhead', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='split_payments',
+    )
+    amount = models.IntegerField()
+    paid_date = models.DateTimeField()
+    note = models.CharField(max_length=500, null=True, blank=True)
+    created_by = models.ForeignKey(
+        'user.CustomUser', on_delete=models.SET_NULL, null=True, blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    deleted = models.BooleanField(default=False)
+    management_id = models.IntegerField(null=True, blank=True, unique=True)
+
+    def convert_json(self):
+        return {
+            "id": self.id,
+            "overhead_type_log_id": self.overhead_type_log_id,
+            "payment_type_id": self.payment_type_id,
+            "payment_type_name": self.payment_type.name if self.payment_type_id else None,
+            "overhead_id": self.overhead_id,
+            "amount": self.amount,
+            "paid_date": self.paid_date.strftime("%d.%m.%Y") if self.paid_date else None,
+            "note": self.note,
         }
 
 
