@@ -563,3 +563,70 @@ class WeeklyObservationStatsAPIView(APIView):
             'branch_id': cycle.branch_id,
             'teachers': TeacherWeeklyObservationSerializer(result, many=True).data,
         })
+
+
+class ObservationsFullListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        observation_ids = request.data.get("observation_ids", [])
+        if not isinstance(observation_ids, list):
+            return Response({"detail": "observation_ids must be a list of integers."}, status=status.HTTP_400_BAD_REQUEST)
+
+        observation_options_qs = ObservationOptions.objects.all().order_by("id")
+        observation_infos_qs = ObservationInfo.objects.all().order_by("id")
+
+        result = []
+        for obs_id in observation_ids:
+            teacher_observation_day = TeacherObservationDay.objects.filter(id=obs_id).select_related("user").first()
+            if not teacher_observation_day:
+                continue
+
+            average = teacher_observation_day.average
+            observer = {
+                "name": teacher_observation_day.user.first_name if teacher_observation_day.user else "",
+                "surname": teacher_observation_day.user.last_name if teacher_observation_day.user else ""
+            }
+
+            observation_list = []
+
+            for info_item in observation_infos_qs:
+                teacher_obs = TeacherObservation.objects.filter(
+                    observation_day=teacher_observation_day,
+                    observation_info=info_item
+                ).first()
+
+                info_data = {
+                    "title": info_item.title,
+                    "values": [],
+                    "comment": teacher_obs.comment if teacher_obs else ""
+                }
+
+                for option in observation_options_qs:
+                    teacher_obs_option = TeacherObservation.objects.filter(
+                        observation_day=teacher_observation_day,
+                        observation_info=info_item,
+                        observation_options=option
+                    ).select_related("observation_options").first()
+
+                    info_data["values"].append({
+                        "name": option.name,
+                        "value": (
+                            teacher_obs_option.observation_options.value
+                            if teacher_obs_option and teacher_obs_option.observation_options
+                            else ""
+                        )
+                    })
+
+                observation_list.append(info_data)
+
+            result.append({
+                "observation_id": teacher_observation_day.id,
+                "info": observation_list,
+                "observation_options": list(observation_options_qs.values("id", "name", "value")),
+                "average": average,
+                "observer": observer
+            })
+
+        return Response(result)
+
