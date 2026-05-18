@@ -5,6 +5,11 @@ from rest_framework.views import APIView
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 
+from lesson_plan.functions.file_compress import (
+    MAX_UPLOAD_BYTES,
+    FileTooLargeError,
+    compress_to_limit,
+)
 from lesson_plan.models import LessonPlanFile
 from teachers.models import Teacher
 from terms.models import Term
@@ -49,6 +54,11 @@ class LessonPlanFileUploadView(APIView):
         ext = "." + file.name.rsplit(".", 1)[-1].lower() if "." in file.name else ""
         if ext not in allowed:
             return Response({"detail": f"Unsupported format. Allowed: {', '.join(sorted(allowed))}"}, status=400)
+
+        try:
+            file = compress_to_limit(file, MAX_UPLOAD_BYTES)
+        except FileTooLargeError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
 
         teacher = get_object_or_404(Teacher, id=teacher_id)
         term = get_object_or_404(Term, id=term_id)
