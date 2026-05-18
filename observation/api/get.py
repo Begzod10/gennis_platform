@@ -634,7 +634,7 @@ class ObservationsFullListAPIView(APIView):
                             else ""
                         )
                     })
-
+#test
                 observation_list.append(info_data)
 
             result.append({
