@@ -1,5 +1,6 @@
 from datetime import date, datetime
 
+from django.db import transaction
 from django.db.models import Sum, Value
 from django.db.models.functions import Coalesce
 from drf_spectacular.types import OpenApiTypes
@@ -8,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from overhead.models import Overhead, OverheadType, OverheadTypeLog
+from overhead.models import Overhead, OverheadType, OverheadTypeLog, OverheadTypeLogPayment
 from overhead.serializers import (
     OverheadTypeLogListResponseSerializer,
     OverheadTypeLogGenerateRequestSerializer, OverheadTypeLogGenerateResponseSerializer,
@@ -24,6 +25,8 @@ def _generate_logs_for_month(month: int, year: int, branch_id=None):
         cost__isnull=False,
         deleted=False,
     )
+    if branch_id is not None:
+        query = query.filter(branch_id=branch_id)
     for ot in query:
         exists = OverheadTypeLog.objects.filter(
             overhead_type=ot,
@@ -73,7 +76,7 @@ class OverheadTypeLogListView(APIView):
 
         base_qs = OverheadTypeLog.objects.filter(date=month_date, deleted=False)
         if branch_id:
-            base_qs = base_qs.filter(branch_id=branch_id)
+            base_qs = base_qs.filter(overhead_type__branch_id=branch_id)
 
         qs = base_qs
         if status_param == 'paid':
@@ -174,6 +177,11 @@ class OverheadTypeLogPayView(APIView):
 
             if target_log and target_log.is_paid:
                 return Response({'success': False, 'message': "Bu oy allaqachon to'langan"}, status=400)
+            if target_log and target_log.payments.filter(deleted=False).exists():
+                return Response({
+                    'success': False,
+                    'message': "Bu logga qisman to'lovlar mavjud. Prepay qilish uchun avval ularni o'chiring.",
+                }, status=400)
 
             if not target_log:
                 target_log = OverheadTypeLog.objects.create(
@@ -212,6 +220,11 @@ class OverheadTypeLogPayView(APIView):
 
             if log.is_paid:
                 return Response({'success': False, 'message': "Bu overhead allaqachon to'langan"}, status=400)
+            if log.payments.filter(deleted=False).exists():
+                return Response({
+                    'success': False,
+                    'message': "Bu logga qisman to'lovlar mavjud. Yangi to'lov uchun /overhead_type_logs/<id>/payments/add dan foydalaning.",
+                }, status=400)
 
             overhead = Overhead.objects.create(
                 name=log.overhead_type.name,
@@ -233,3 +246,364 @@ class OverheadTypeLogPayView(APIView):
                 'message': f"{log.overhead_type.name} to'landi",
                 'log': log.convert_json(),
             })
+
+
+# ---------------------------------------------------------------------------
+# Partial / split payments
+# ---------------------------------------------------------------------------
+
+def _recompute_log_paid(log: OverheadTypeLog):
+    """Recompute is_paid + paid_date from active payments."""
+    active = [p for p in log.payments.all() if not p.deleted]
+    paid = sum(p.amount for p in active)
+    if paid >= (log.cost or 0) and (log.cost or 0) > 0:
+        log.is_paid = True
+        latest = max((p.paid_date for p in active if p.paid_date), default=None)
+        log.paid_date = latest
+    else:
+        log.is_paid = False
+        log.paid_date = None
+    log.save()
+
+
+@extend_schema(
+    tags=['Overhead Type Logs'],
+    summary='Add a partial / split payment to an OverheadTypeLog',
+    description=(
+        "Records one payment installment (cash, click, etc.) against a log.\n"
+        "Sum of active payments determines `is_paid` and `payment_status`.\n\n"
+        "Body: `payment_type_id`, `amount`, `date` (YYYY-MM-DD), `branch_id`, `note` (optional)."
+    ),
+)
+class OverheadTypeLogPaymentAddView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, log_id):
+        data = request.data
+        payment_type_id = data.get('payment_type_id')
+        amount = data.get('amount')
+        date_str = data.get('date')
+        branch_id = data.get('branch_id')
+        note = data.get('note')
+
+        if not payment_type_id or amount is None or not date_str or not branch_id:
+            return Response({
+                'success': False,
+                'message': 'payment_type_id, amount, date, branch_id majburiy',
+            }, status=400)
+
+        try:
+            amount = int(amount)
+        except (TypeError, ValueError):
+            return Response({'success': False, 'message': "amount butun son bo'lishi kerak"}, status=400)
+        if amount <= 0:
+            return Response({'success': False, 'message': "amount musbat bo'lishi kerak"}, status=400)
+
+        try:
+            payment_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return Response({'success': False, 'message': 'date format: YYYY-MM-DD'}, status=400)
+
+        created_by = request.user if request.user.is_authenticated else None
+
+        with transaction.atomic():
+            try:
+                log = OverheadTypeLog.objects.select_for_update().get(pk=log_id)
+            except OverheadTypeLog.DoesNotExist:
+                return Response({'success': False, 'message': 'Log topilmadi'}, status=404)
+            if log.deleted:
+                return Response({'success': False, 'message': "Log o'chirilgan"}, status=400)
+
+            existing_paid = log.payments.filter(deleted=False).aggregate(
+                s=Coalesce(Sum('amount'), Value(0))
+            )['s'] or 0
+
+            if log.overhead_id and existing_paid <= 0:
+                return Response({
+                    'success': False,
+                    'message': "Bu log avval bir martalik to'lov bilan to'langan. Avval u to'lovni bekor qiling.",
+                }, status=400)
+
+            cost = log.cost or 0
+            if cost <= 0:
+                return Response({
+                    'success': False, 'message': "Log narxi belgilanmagan",
+                }, status=400)
+            remaining = max(0, cost - existing_paid)
+            if amount > remaining:
+                return Response({
+                    'success': False,
+                    'message': f"To'lov summasi qoldiqdan oshib ketmasligi kerak. Qoldiq: {remaining:,} so'm",
+                    'remaining_amount': remaining,
+                }, status=400)
+
+            overhead = Overhead.objects.create(
+                name=log.overhead_type.name,
+                payment_id=payment_type_id,
+                created=payment_date,
+                price=amount,
+                branch_id=branch_id,
+                type=log.overhead_type,
+            )
+
+            payment = OverheadTypeLogPayment.objects.create(
+                overhead_type_log=log,
+                payment_type_id=payment_type_id,
+                overhead=overhead,
+                amount=amount,
+                paid_date=datetime.combine(payment_date, datetime.min.time()),
+                note=note,
+                created_by=created_by,
+            )
+
+            _recompute_log_paid(log)
+
+        return Response({
+            'success': True,
+            'message': f"{amount} so'm to'lov qo'shildi",
+            'payment': payment.convert_json(),
+            'log': log.convert_json(),
+        })
+
+
+@extend_schema(
+    tags=['Overhead Type Logs'],
+    summary='Delete (soft) a payment on an OverheadTypeLog',
+    description="Soft-deletes the payment row, hard-deletes its accounting Overhead row, then recomputes the log status.",
+)
+class OverheadTypeLogPaymentDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, payment_id):
+        log_id = OverheadTypeLogPayment.objects.filter(
+            pk=payment_id
+        ).values_list('overhead_type_log_id', flat=True).first()
+        if log_id is None:
+            return Response({'success': False, 'message': 'Payment topilmadi'}, status=404)
+
+        with transaction.atomic():
+            log = OverheadTypeLog.objects.select_for_update().filter(pk=log_id).first()
+            try:
+                payment = OverheadTypeLogPayment.objects.get(pk=payment_id)
+            except OverheadTypeLogPayment.DoesNotExist:
+                return Response({'success': False, 'message': 'Payment topilmadi'}, status=404)
+            if payment.deleted:
+                return Response({'success': False, 'message': "Allaqachon o'chirilgan"}, status=400)
+
+            payment.deleted = True
+            if payment.overhead_id:
+                try:
+                    payment.overhead.delete()
+                except Overhead.DoesNotExist:
+                    pass
+                payment.overhead = None
+            payment.save()
+
+            _recompute_log_paid(log)
+
+        return Response({
+            'success': True,
+            'message': "To'lov o'chirildi",
+            'log': log.convert_json(),
+        })
+
+
+@extend_schema(
+    tags=['Overhead Type Logs'],
+    summary='List active payments for a log',
+)
+class OverheadTypeLogPaymentListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, log_id):
+        try:
+            log = OverheadTypeLog.objects.get(pk=log_id)
+        except OverheadTypeLog.DoesNotExist:
+            return Response({'success': False, 'message': 'Log topilmadi'}, status=404)
+        payments = [p.convert_json() for p in log.payments.all() if not p.deleted]
+        return Response({
+            'success': True,
+            'log_id': log.id,
+            'cost': log.cost,
+            'paid_amount': log.paid_amount,
+            'remaining_amount': log.remaining_amount,
+            'payment_status': log.payment_status,
+            'payments': payments,
+        })
+
+
+@extend_schema(
+    tags=['Overhead Type Logs'],
+    summary='Convert a legacy single-pay log into the split-payment model',
+    description=(
+        "Creates one OverheadTypeLogPayment row from the legacy Overhead's "
+        "amount / payment / date, then clears log.overhead so split payments "
+        "can be added/removed via the regular endpoints."
+    ),
+)
+class OverheadTypeLogConvertToSplitView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, log_id):
+        with transaction.atomic():
+            log = OverheadTypeLog.objects.select_for_update().filter(pk=log_id).first()
+            if not log:
+                return Response({'success': False, 'message': 'Log topilmadi'}, status=404)
+            if log.deleted:
+                return Response({'success': False, 'message': "Log o'chirilgan"}, status=400)
+            if log.payments.filter(deleted=False).exists():
+                return Response({
+                    'success': False,
+                    'message': "Bu logda allaqachon split to'lovlar mavjud.",
+                }, status=400)
+            if not log.overhead_id:
+                return Response({
+                    'success': False,
+                    'message': "Bu log legacy bir martalik to'lov bilan to'lanmagan, konversiya kerak emas.",
+                }, status=400)
+
+            legacy = log.overhead
+            if not legacy:
+                return Response({
+                    'success': False,
+                    'message': "Legacy Overhead yo'q. log.overhead ni qo'lda tozalang.",
+                }, status=400)
+
+            base_date = legacy.created or (log.paid_date.date() if log.paid_date else datetime.now().date())
+
+            payment = OverheadTypeLogPayment.objects.create(
+                overhead_type_log=log,
+                payment_type_id=legacy.payment_id,
+                overhead=legacy,
+                amount=legacy.price or log.cost or 0,
+                paid_date=datetime.combine(base_date, datetime.min.time()),
+                note="Converted from legacy single payment",
+                created_by=request.user if request.user.is_authenticated else None,
+            )
+
+            log.overhead = None
+            log.save(update_fields=['overhead'])
+            _recompute_log_paid(log)
+
+        return Response({
+            'success': True,
+            'message': "Log split-payment formatiga o'tkazildi",
+            'payment': payment.convert_json(),
+            'log': log.convert_json(),
+        })
+
+
+@extend_schema(
+    tags=['Overhead Type Logs'],
+    summary='Update editable fields on an OverheadTypeLog',
+    description=(
+        "Currently editable: `cost`. Refuses if the new cost is less than "
+        "the log's already-paid amount."
+    ),
+)
+class OverheadTypeLogUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, log_id):
+        data = request.data or {}
+        if not data:
+            return Response({'success': False, 'message': "Yangilanadigan maydonlar yo'q"}, status=400)
+
+        new_cost = data.get('cost', None)
+
+        with transaction.atomic():
+            log = OverheadTypeLog.objects.select_for_update().filter(pk=log_id).first()
+            if not log:
+                return Response({'success': False, 'message': 'Log topilmadi'}, status=404)
+            if log.deleted:
+                return Response({'success': False, 'message': "Log o'chirilgan"}, status=400)
+
+            changed = False
+
+            if new_cost is not None:
+                try:
+                    new_cost = int(new_cost)
+                except (TypeError, ValueError):
+                    return Response({'success': False, 'message': "cost butun son bo'lishi kerak"}, status=400)
+                if new_cost <= 0:
+                    return Response({'success': False, 'message': "cost musbat bo'lishi kerak"}, status=400)
+
+                existing_paid = log.payments.filter(deleted=False).aggregate(
+                    s=Coalesce(Sum('amount'), Value(0))
+                )['s'] or 0
+
+                if new_cost < existing_paid:
+                    return Response({
+                        'success': False,
+                        'message': (
+                            f"Yangi cost to'langan summadan kichik bo'lishi mumkin emas "
+                            f"({existing_paid:,} so'm). Avval to'lovlarni o'chiring."
+                        ),
+                        'paid_amount': existing_paid,
+                    }, status=400)
+
+                log.cost = new_cost
+                changed = True
+
+            if not changed:
+                return Response({
+                    'success': False,
+                    'message': "Ruxsat etilgan maydon yo'q (faqat: cost)",
+                }, status=400)
+
+            log.save(update_fields=['cost'])
+
+            # Recompute is_paid for split-paid logs; leave legacy single-pay
+            # logs untouched.
+            has_splits = log.payments.filter(deleted=False).exists()
+            if not log.overhead_id or has_splits:
+                _recompute_log_paid(log)
+
+        return Response({
+            'success': True,
+            'message': 'Log yangilandi',
+            'log': log.convert_json(),
+        })
+
+
+@extend_schema(
+    tags=['Overhead Type Logs'],
+    summary='Soft-delete an OverheadTypeLog',
+    description=(
+        "Refuses if the log carries financial records (active split payments "
+        "or a legacy single-pay link). The admin must clear those first."
+    ),
+)
+class OverheadTypeLogDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, log_id):
+        with transaction.atomic():
+            log = OverheadTypeLog.objects.select_for_update().filter(pk=log_id).first()
+            if not log:
+                return Response({'success': False, 'message': 'Log topilmadi'}, status=404)
+            if log.deleted:
+                return Response({'success': False, 'message': "Log allaqachon o'chirilgan"}, status=400)
+
+            if log.payments.filter(deleted=False).exists():
+                return Response({
+                    'success': False,
+                    'message': "Logda faol to'lovlar bor. Avval ularni o'chiring.",
+                }, status=400)
+            if log.overhead_id:
+                return Response({
+                    'success': False,
+                    'message': (
+                        "Log legacy bir martalik to'lov bilan to'langan. Avval "
+                        "/convert-to-split qiling, so'ng to'lovni o'chiring."
+                    ),
+                }, status=400)
+
+            log.deleted = True
+            log.save(update_fields=['deleted'])
+
+        return Response({
+            'success': True,
+            'message': "Log o'chirildi",
+            'log': log.convert_json(),
+        })

@@ -16,6 +16,12 @@ from overhead.Api.overhead_type_log import (
     OverheadTypeLogListView,
     OverheadTypeLogGenerateView,
     OverheadTypeLogPayView,
+    OverheadTypeLogPaymentAddView,
+    OverheadTypeLogPaymentDeleteView,
+    OverheadTypeLogPaymentListView,
+    OverheadTypeLogConvertToSplitView,
+    OverheadTypeLogUpdateView,
+    OverheadTypeLogDeleteView,
 )
 
 urlpatterns = [
@@ -31,4 +37,17 @@ urlpatterns = [
     path('overhead_type_logs/<int:month>/<int:year>/', OverheadTypeLogListView.as_view(), name='overhead-type-log-list'),
     path('overhead_type_logs/generate/<int:month>/<int:year>/', OverheadTypeLogGenerateView.as_view(), name='overhead-type-log-generate'),
     path('overhead_type_logs/pay/', OverheadTypeLogPayView.as_view(), name='overhead-type-log-pay'),
+
+    path('overhead_type_logs/<int:log_id>/payments/',
+         OverheadTypeLogPaymentListView.as_view(), name='overhead-type-log-payments-list'),
+    path('overhead_type_logs/<int:log_id>/payments/add/',
+         OverheadTypeLogPaymentAddView.as_view(), name='overhead-type-log-payments-add'),
+    path('overhead_type_logs/payments/<int:payment_id>/delete/',
+         OverheadTypeLogPaymentDeleteView.as_view(), name='overhead-type-log-payments-delete'),
+    path('overhead_type_logs/<int:log_id>/convert-to-split/',
+         OverheadTypeLogConvertToSplitView.as_view(), name='overhead-type-log-convert-to-split'),
+    path('overhead_type_logs/<int:log_id>/update/',
+         OverheadTypeLogUpdateView.as_view(), name='overhead-type-log-update'),
+    path('overhead_type_logs/<int:log_id>/delete/',
+         OverheadTypeLogDeleteView.as_view(), name='overhead-type-log-delete'),
 ]
