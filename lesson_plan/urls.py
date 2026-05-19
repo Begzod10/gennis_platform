@@ -1,6 +1,6 @@
 from django.urls import path
 
-from lesson_plan.Api.get import LessonPlanListView, GetLessonPlanView
+from lesson_plan.Api.get import LessonPlanListView, GetLessonPlanView, TeacherLessonPlanRangeView
 from lesson_plan.Api.update import ChangeLessonPlanView
 from lesson_plan.Api.lesson_plan_file import (
     LessonPlanFileUploadView,
@@ -13,6 +13,7 @@ from lesson_plan.Api.report import DailyLessonPlanReportView
 
 urlpatterns = [
     path('daily-report/', DailyLessonPlanReportView.as_view(), name='daily-lesson-plan-report'),
+    path('teacher-plans/', TeacherLessonPlanRangeView.as_view(), name='teacher-lesson-plan-range'),
     path('change_lesson_plan/<int:pk>/', ChangeLessonPlanView.as_view(), name='change_lesson_plan'),
     path('lesson_plan_list/<int:group_id>/', LessonPlanListView.as_view(), name='lesson_plan_list'),
     path('lesson_plan_list/<int:group_id>/<str:date>/', LessonPlanListView.as_view(),

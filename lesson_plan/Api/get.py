@@ -58,3 +58,46 @@ class LessonPlanListView(generics.ListAPIView):
 
         return Response({"month_list": months, "years_list": years, "month": months[0] if months else None,
                          "year": years[0] if years else None, "days": days})
+
+
+from rest_framework.views import APIView
+from lesson_plan.serializers import TeacherLessonPlanRangeSerializer
+
+class TeacherLessonPlanRangeView(APIView):
+    # permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        teacher_id = request.query_params.get('teacher_id')
+        start_date_str = request.query_params.get('start_date')
+        end_date_str = request.query_params.get('end_date')
+
+        if not teacher_id:
+            return Response({"error": "teacher_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        if not start_date_str or not end_date_str:
+            return Response({"error": "Both start_date and end_date are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"error": "Invalid date format. Use YYYY-MM-DD"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if start_date > end_date:
+            return Response({"error": "start_date must be before or equal to end_date"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Retrieve lesson plans
+        lesson_plans = LessonPlan.objects.filter(
+            teacher_id=teacher_id,
+            date__range=[start_date, end_date]
+        ).select_related(
+            'teacher__user', 
+            'group', 
+            'flow', 
+            'class_time_table__hours', 
+            'class_time_table__room', 
+            'class_time_table__subject', 
+            'class_time_table__week'
+        ).order_by('date')
+
+        serializer = TeacherLessonPlanRangeSerializer(lesson_plans, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
