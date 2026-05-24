@@ -145,6 +145,8 @@ class Mission(models.Model):
     repeat_every = models.IntegerField(default=1)  # kunlarda
     last_generated = models.DateField(null=True, blank=True)
 
+    deleted = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
