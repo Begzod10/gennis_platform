@@ -4,6 +4,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 
+from lesson_plan.functions.file_compress import (
+    MAX_UPLOAD_BYTES,
+    FileTooLargeError,
+    compress_to_limit,
+)
 from lesson_plan.models import LessonPlanFile
 from teachers.models import Teacher
 from terms.models import Term
@@ -68,6 +73,11 @@ class MobileLessonPlanFileUploadView(APIView):
                 {"detail": f"Unsupported format. Allowed: {', '.join(allowed)}"},
                 status=400,
             )
+
+        try:
+            file = compress_to_limit(file, MAX_UPLOAD_BYTES)
+        except FileTooLargeError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
 
         try:
             term = Term.objects.get(id=term_id)

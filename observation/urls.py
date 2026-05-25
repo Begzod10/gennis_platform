@@ -4,7 +4,8 @@ from .views import (ObservationInfoList, ObservationOptionsList, ObservationInfo
                     ObservationOptionsRetrieveUpdateAPIView)
 from .api.get import ObservationDayRetrieveAPIView, ObservationDayListView, ObservationStatisticsRetrieveAPIView, \
     ObservationStatisticsListView, TeacherObserveView, ObservedGroupAPIView, ObservedGroupInfoAPIView, \
-    ObservedGroupClassroomAPIView, ObservedGroupInfoClassroomAPIView, WeeklyObservationStatsAPIView
+    ObservedGroupClassroomAPIView, ObservedGroupInfoClassroomAPIView, WeeklyObservationStatsAPIView, \
+    ObservationsFullListAPIView
 from .api.createdeleteupdate import ObservationDayCreateView, ObservationDayUpdateView, ObservationDayDestroyView, \
     ObservationStatisticsCreateView, ObservationStatisticsUpdateView, ObservationStatisticsDestroyView, \
     TeacherObservationDayDestroyView
@@ -68,4 +69,5 @@ urlpatterns = [
     # Statistics
     path('teacher_stats/', TeacherStatsView.as_view(), name='teacher-stats'),
     path('observation/weekly/', WeeklyObservationStatsAPIView.as_view(), name='weekly-observation-stats'),
+    path('observations/full/list/', ObservationsFullListAPIView.as_view(), name='observations-full-list'),
 ]

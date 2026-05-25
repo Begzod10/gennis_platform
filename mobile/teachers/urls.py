@@ -48,7 +48,6 @@ urlpatterns = [
     path('lesson-plan/file/upload/', MobileLessonPlanFileUploadView.as_view(), name='mobile-lp-upload'),
     path('lesson-plan/file/<int:pk>/', MobileLessonPlanFileStatusView.as_view(), name='mobile-lp-status'),
     path('lesson-plan/file/', MobileLessonPlanFileListView.as_view(), name='mobile-lp-list'),
-
     # Terms (Baholash/Choraklar)
     path('terms/education-years/', TeacherEducationYears.as_view(), name='terms-education-years'),
     path('terms/list-term/<str:academic_year>/', TeacherListTerm.as_view(), name='terms-list-term'),

@@ -431,13 +431,15 @@ class StudentScoreView(APIView):
         except Teacher.DoesNotExist:
             return Response({"detail": "Siz teacher emassiz"}, status=403)
 
-        day = request.data.get('day')
         student_list = request.data.get('student_list')
         flow_status = request.query_params.get('flow')
         group_id = request.query_params.get('group_id')
 
         is_flow = flow_status in ['true', 'True', '1']
-        print(request.data)
+        # `day` is ignored if supplied by the client; the column is
+        # populated server-side via auto_now_add. Key the upsert on the
+        # same value so we update today's row instead of duplicating it.
+        day = localdate()
 
         if is_flow:
             flow = Flow.objects.get(id=group_id)
@@ -486,7 +488,6 @@ class StudentScoreView(APIView):
                     teacher=teacher,
                     flow=flow,
                     group=group,
-                    day=day,
                     homework=homework,
                     activeness=activeness,
                     average=average,
