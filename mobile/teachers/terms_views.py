@@ -230,23 +230,25 @@ class TeacherStudentAssignmentView(views.APIView):
         is_flow = request.query_params.get('flow', 'false').lower() == 'true'
 
         if is_flow:
-            students = Student.objects.filter(
-                group__flow_id=group_id
-            ).select_related('user')
+            flow = get_object_or_404(Flow, id=group_id)
+            students = flow.students.select_related('user').all()
         else:
-            students = Student.objects.filter(
-                group_id=group_id
-            ).select_related('user')
+            group = get_object_or_404(
+                Group.objects.prefetch_related('students__user'),
+                id=group_id
+            )
+            students = group.students.all()
 
-        assignments = Assignment.objects.filter(
-            test_id=test_id,
-            student__in=students
+        tests = Assignment.objects.filter(
+            student__in=students,
+            test_id=test_id
         )
-        assignment_map = {a.student_id: a for a in assignments}
+
+        test_map = {t.student_id: t for t in tests}
 
         result = []
         for student in students:
-            assignment = assignment_map.get(student.id)
+            assignment = test_map.get(student.id)
 
             if assignment:
                 assignment_data = {
@@ -268,8 +270,6 @@ class TeacherStudentAssignmentView(views.APIView):
             })
 
         return response.Response(result, status=status.HTTP_200_OK)
-
-
 class TeacherAssignmentCreateView(views.APIView):
     permission_classes = [IsAuthenticated]
 
