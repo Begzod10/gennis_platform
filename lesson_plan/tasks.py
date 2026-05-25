@@ -209,6 +209,74 @@ def review_lesson_plan_file(self, lesson_plan_file_id: int) -> dict:
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
+def _iter_block_items(parent):
+    """Yield paragraphs and tables in document order from a docx parent."""
+    from docx.document import Document as _DocumentCls
+    from docx.oxml.ns import qn
+    from docx.table import _Cell, Table
+    from docx.text.paragraph import Paragraph
+
+    if isinstance(parent, _DocumentCls):
+        parent_elm = parent.element.body
+    elif isinstance(parent, _Cell):
+        parent_elm = parent._tc
+    else:
+        parent_elm = getattr(parent, "_element", None) or getattr(parent, "element", None)
+        if parent_elm is None:
+            return
+
+    for child in parent_elm.iterchildren():
+        if child.tag == qn("w:p"):
+            yield Paragraph(child, parent)
+        elif child.tag == qn("w:tbl"):
+            yield Table(child, parent)
+
+
+def _extract_docx_text(doc) -> str:
+    """Extract text from a docx Document including paragraphs, tables (recursive),
+    headers, and footers. Lesson plans frequently put content inside tables."""
+    from docx.table import Table
+    from docx.text.paragraph import Paragraph
+
+    lines: list[str] = []
+
+    def walk(container):
+        for block in _iter_block_items(container):
+            if isinstance(block, Paragraph):
+                txt = block.text.strip()
+                if txt:
+                    lines.append(txt)
+            elif isinstance(block, Table):
+                for row in block.rows:
+                    cells_text: list[str] = []
+                    for cell in row.cells:
+                        cell_lines: list[str] = []
+                        for inner in _iter_block_items(cell):
+                            if isinstance(inner, Paragraph):
+                                t = inner.text.strip()
+                                if t:
+                                    cell_lines.append(t)
+                            elif isinstance(inner, Table):
+                                # Recurse into nested tables.
+                                walk(cell)
+                                break
+                        if cell_lines:
+                            cells_text.append(" ".join(cell_lines))
+                    if cells_text:
+                        lines.append(" | ".join(cells_text))
+
+    walk(doc)
+
+    for section in doc.sections:
+        for hf in (section.header, section.footer):
+            for p in hf.paragraphs:
+                t = p.text.strip()
+                if t:
+                    lines.append(t)
+
+    return "\n".join(lines)
+
+
 def _extract_text(file_field) -> str:
     """Return plain text from a .txt, .pdf, .docx, or .xlsx file."""
     name = file_field.name.lower()
@@ -233,7 +301,7 @@ def _extract_text(file_field) -> str:
             import docx
             import io
             doc = docx.Document(io.BytesIO(raw))
-            return "\n".join(p.text for p in doc.paragraphs)
+            return _extract_docx_text(doc)
         except ImportError:
             raise ImportError("python-docx not installed. Run: pip install python-docx")
 
