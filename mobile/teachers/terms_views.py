@@ -227,22 +227,26 @@ class TeacherStudentAssignmentView(views.APIView):
     def get(self, request, *args, **kwargs):
         group_id = kwargs.get('group_id')
         test_id = kwargs.get('test_id')
+        is_flow = request.query_params.get('flow', 'false').lower() == 'true'
 
-        group = get_object_or_404(
-            Group.objects.prefetch_related('students__user'),
-            id=group_id
+        if is_flow:
+            students = Student.objects.filter(
+                group__flow_id=group_id
+            ).select_related('user')
+        else:
+            students = Student.objects.filter(
+                group_id=group_id
+            ).select_related('user')
+
+        assignments = Assignment.objects.filter(
+            test_id=test_id,
+            student__in=students
         )
-
-        tests = Assignment.objects.filter(
-            student__in=group.students.all(),
-            test_id=test_id
-        )
-
-        test_map = {t.student_id: t for t in tests}
+        assignment_map = {a.student_id: a for a in assignments}
 
         result = []
-        for student in group.students.all():
-            assignment = test_map.get(student.id)
+        for student in students:
+            assignment = assignment_map.get(student.id)
 
             if assignment:
                 assignment_data = {
