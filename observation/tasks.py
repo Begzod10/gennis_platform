@@ -5,6 +5,47 @@ from datetime import date, timedelta
 logger = logging.getLogger(__name__)
 
 
+def _build_cyclic_schedule(teachers, cycle, timetable_map):
+    """
+    Build a balanced round-robin schedule using cyclic offsets.
+
+    For week w (1-based), observer at index i observes the teachers at
+    cyclic offsets (2w-1) and 2w from i, modulo N. This guarantees that:
+      * Each ordered (observer, observed) pair appears exactly once in the cycle.
+      * In every week each teacher is observed by exactly 2 observers
+        (1 in the final week when N-1 is odd).
+      * In every week each observer makes exactly 2 observations
+        (1 in the final week when N-1 is odd).
+    """
+    from observation.models import TeacherObservationSchedule
+
+    n = len(teachers)
+    schedules: list[TeacherObservationSchedule] = []
+
+    week = 1
+    offset = 1
+    while offset <= n - 1:
+        second = offset + 1 if offset + 1 <= n - 1 else None
+        for i, observer in enumerate(teachers):
+            for shift in (offset, second):
+                if shift is None:
+                    continue
+                observed = teachers[(i + shift) % n]
+                schedules.append(
+                    TeacherObservationSchedule(
+                        cycle=cycle,
+                        observer=observer,
+                        observed_teacher=observed,
+                        week=week,
+                        time_table=timetable_map.get(observed.id),
+                    )
+                )
+        week += 1
+        offset += 2
+
+    return schedules
+
+
 @shared_task(bind=True)
 def generate_observation_schedule_task(self, branch_id: int, start_date_str: str) -> dict:
     """
@@ -54,26 +95,11 @@ def generate_observation_schedule_task(self, branch_id: int, start_date_str: str
 
     cycle = TeacherObservationCycle.objects.create(branch=branch, start_date=start_date)
 
-    schedules_to_create = []
-    for obs_idx, observer in enumerate(teachers):
-        others = [t for t in teachers if t.id != observer.id]
-        # Rotate start position so each observer gets a different week-1 pair
-        offset = (obs_idx * 2) % len(others)
-        others = others[offset:] + others[:offset]
-        week = 1
-        for i in range(0, len(others), 2):
-            pair = others[i: i + 2]
-            for observed in pair:
-                schedules_to_create.append(
-                    TeacherObservationSchedule(
-                        cycle=cycle,
-                        observer=observer,
-                        observed_teacher=observed,
-                        week=week,
-                        time_table=timetable_map.get(observed.id),
-                    )
-                )
-            week += 1
+    schedules_to_create = _build_cyclic_schedule(
+        teachers=teachers,
+        cycle=cycle,
+        timetable_map=timetable_map,
+    )
 
     TeacherObservationSchedule.objects.bulk_create(schedules_to_create)
 
