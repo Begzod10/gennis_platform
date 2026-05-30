@@ -5,11 +5,14 @@ Drops the existing cycle (cascades to its TeacherObservationSchedule rows), then
 re-runs `generate_observation_schedule_task` which now uses the balanced
 cyclic-offset round-robin (see `observation/tasks.py:_build_cyclic_schedule`).
 
+Completed schedules are snapshotted before delete and re-linked to the matching
+(observer, observed) pair in the new cycle so existing scores survive the swap.
+
 Usage:
     python manage.py regenerate_observation_schedule --dry-run
     python manage.py regenerate_observation_schedule --branch-id 5
     python manage.py regenerate_observation_schedule --branch-id 5 --start-date 2026-06-01
-    python manage.py regenerate_observation_schedule --sync
+    python manage.py regenerate_observation_schedule --async
 """
 from datetime import date, timedelta
 
@@ -17,14 +20,15 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from branch.models import Branch
-from observation.models import TeacherObservationCycle
+from observation.models import TeacherObservationCycle, TeacherObservationSchedule
 from observation.tasks import generate_observation_schedule_task
 
 
 class Command(BaseCommand):
     help = (
         "Regenerate the most recent observation cycle for a branch (or every school "
-        "branch) using the balanced cyclic-offset round-robin."
+        "branch) using the balanced cyclic-offset round-robin. Preserves completed "
+        "observations by re-linking them to the new cycle."
     )
 
     def add_arguments(self, parser):
@@ -47,16 +51,19 @@ class Command(BaseCommand):
             help="Show what would be regenerated without changing anything.",
         )
         parser.add_argument(
-            "--sync",
+            "--async",
+            dest="run_async",
             action="store_true",
-            help="Run the generation inline instead of dispatching via Celery .delay().",
+            help="Dispatch generation via Celery .delay() instead of running inline. "
+                 "WARNING: completed-observation re-linking is skipped in --async mode "
+                 "because the new cycle id is not known until the task finishes.",
         )
 
     def handle(self, *args, **options):
         branch_id: int | None = options["branch_id"]
         start_date_arg: str | None = options["start_date"]
         dry_run: bool = options["dry_run"]
-        sync: bool = options["sync"]
+        run_async: bool = options["run_async"]
 
         if start_date_arg:
             try:
@@ -78,6 +85,9 @@ class Command(BaseCommand):
 
         next_monday = (date.today() + timedelta(days=(7 - date.today().weekday()) % 7 or 7)).isoformat()
 
+        # branch_id -> list of (observer_id, observed_teacher_id, observation_day_id)
+        completed_snapshot: dict[int, list[tuple[int, int, int]]] = {}
+
         planned = []
         for branch in branches:
             cycle = (
@@ -91,10 +101,20 @@ class Command(BaseCommand):
                 start_date_str = cycle.start_date.isoformat()
             else:
                 start_date_str = next_monday
-            planned.append((branch, cycle, start_date_str))
+
+            completed = []
+            if cycle:
+                completed = list(
+                    TeacherObservationSchedule.objects
+                    .filter(cycle=cycle, is_completed=True, observation_day__isnull=False)
+                    .values_list("observer_id", "observed_teacher_id", "observation_day_id")
+                )
+            completed_snapshot[branch.id] = completed
+
+            planned.append((branch, cycle, start_date_str, completed))
 
         self.stdout.write(f"Branches to regenerate: {branch_count}")
-        for branch, cycle, start_date_str in planned:
+        for branch, cycle, start_date_str, completed in planned:
             cycle_desc = (
                 f"cycle id={cycle.id} start={cycle.start_date.isoformat()}"
                 if cycle
@@ -102,34 +122,82 @@ class Command(BaseCommand):
             )
             self.stdout.write(
                 f"  - branch id={branch.id} name={branch.name!r} | {cycle_desc} | "
-                f"new start_date={start_date_str}"
+                f"new start_date={start_date_str} | completed_to_preserve={len(completed)}"
             )
 
         if dry_run:
             self.stdout.write(self.style.WARNING("DRY RUN — nothing changed."))
             return
 
+        if run_async and any(c for _, _, _, c in planned):
+            self.stdout.write(self.style.WARNING(
+                "--async dispatch will SKIP re-linking completed observations; "
+                "those rows will appear in the new cycle as is_completed=False."
+            ))
+
         deleted_cycles = 0
-        regenerated = 0
         with transaction.atomic():
-            for branch, cycle, _ in planned:
+            for branch, cycle, _, _ in planned:
                 if cycle:
                     cycle.delete()  # cascades schedules
                     deleted_cycles += 1
 
-        for branch, _cycle, start_date_str in planned:
-            if sync:
-                generate_observation_schedule_task(branch_id=branch.id, start_date_str=start_date_str)
-            else:
+        regenerated = 0
+        relinked_total = 0
+        for branch, _cycle, start_date_str, completed in planned:
+            if run_async:
                 generate_observation_schedule_task.delay(
                     branch_id=branch.id, start_date_str=start_date_str
                 )
+                regenerated += 1
+                continue
+
+            result = generate_observation_schedule_task(
+                branch_id=branch.id, start_date_str=start_date_str
+            )
             regenerated += 1
 
-        mode = "synchronously" if sync else "queued via Celery"
+            if not isinstance(result, dict) or not result.get("success"):
+                self.stderr.write(self.style.WARNING(
+                    f"  branch id={branch.id}: generation did not succeed: {result!r}"
+                ))
+                continue
+
+            new_cycle_id = result["cycle_id"]
+            relinked_branch = 0
+            missing = []
+            for observer_id, observed_id, day_id in completed:
+                updated = (
+                    TeacherObservationSchedule.objects
+                    .filter(
+                        cycle_id=new_cycle_id,
+                        observer_id=observer_id,
+                        observed_teacher_id=observed_id,
+                    )
+                    .update(is_completed=True, observation_day_id=day_id)
+                )
+                if updated:
+                    relinked_branch += updated
+                else:
+                    missing.append((observer_id, observed_id, day_id))
+
+            relinked_total += relinked_branch
+            if relinked_branch:
+                self.stdout.write(
+                    f"  branch id={branch.id}: re-linked {relinked_branch} completed observation(s)."
+                )
+            for observer_id, observed_id, day_id in missing:
+                self.stderr.write(self.style.WARNING(
+                    f"  branch id={branch.id}: no new schedule row for "
+                    f"observer={observer_id} observed={observed_id} (day_id={day_id}); "
+                    f"observation_day kept in DB but unlinked."
+                ))
+
+        mode = "queued via Celery" if run_async else "synchronously"
         self.stdout.write(
             self.style.SUCCESS(
                 f"Deleted {deleted_cycles} existing cycle(s); "
-                f"regenerated {regenerated} branch(es) {mode}."
+                f"regenerated {regenerated} branch(es) {mode}; "
+                f"re-linked {relinked_total} completed observation(s)."
             )
         )
