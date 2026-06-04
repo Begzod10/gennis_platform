@@ -4,6 +4,8 @@ from .models import Mission, Notification
 
 
 def send_notification(user, mission, message, role):
+    if user is None:
+        return
     Notification.objects.create(
         user=user,
         mission=mission,
@@ -49,19 +51,21 @@ def mission_status_changed(sender, instance, **kwargs):
 
     # Executor started work
     if new_status == "in_progress":
+        executor_name = executor.first_name if executor else "Ijrochi"
         send_notification(
             creator,
             instance,
-            f"{executor.first_name} vazifani boshladi: {instance.title}",
+            f"{executor_name} vazifani boshladi: {instance.title}",
             "creator"
         )
 
     # Executor finished work → reviewer must check
     if new_status == "completed" and reviewer:
+        executor_name = executor.first_name if executor else "Ijrochi"
         send_notification(
             reviewer,
             instance,
-            f"{executor.first_name} '{instance.title}' vazifasini tugatdi. Ko‘rib chiqing.",
+            f"{executor_name} ‘{instance.title}’ vazifasini tugatdi. Ko’rib chiqing.",
             "reviewer"
         )
 
