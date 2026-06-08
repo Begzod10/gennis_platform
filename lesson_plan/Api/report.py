@@ -40,14 +40,12 @@ class DailyLessonPlanReportView(APIView):
             Q(date=target_date) | Q(date__isnull=True)
         ).filter(
             Q(group__isnull=False, group__status=True, group__deleted=False) |
-            Q(flow__isnull=False, flow__activity=True)
+            Q(flow__isnull=False)
         ).select_related('teacher__user', 'group', 'flow', 'subject', 'hours').order_by('hours__order')
 
         lesson_plans = LessonPlan.objects.filter(
             class_time_table__in=timetables,
             date=target_date
-        ).filter(
-            Q(group__isnull=False) | Q(flow__isnull=False)
         ).distinct()
         lp_map = {lp.class_time_table_id: lp for lp in lesson_plans}
 
