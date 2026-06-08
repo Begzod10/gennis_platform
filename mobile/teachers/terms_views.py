@@ -402,20 +402,23 @@ class TeacherGroupsAndFlowsView(views.APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Source of truth: any group this teacher has a ClassTimeTable lesson for.
-        # Unioned with the legacy Group.teacher M2M for safety on older records.
-        group_ids_via_ctt = set(
-            ClassTimeTable.objects
-            .filter(teacher=teacher, group__isnull=False)
-            .values_list('group_id', flat=True)
+        ctt_qs = ClassTimeTable.objects.filter(teacher=teacher)
+
+        # Groups and subjects from timetable only
+        ctt_pairs = (
+            ctt_qs
+            .filter(group__isnull=False)
+            .values_list('group_id', 'subject_id')
             .distinct()
         )
-        group_ids_via_m2m = set(
-            Group.objects
-            .filter(teacher=teacher, deleted=False)
-            .values_list('id', flat=True)
-        )
-        all_group_ids = group_ids_via_ctt | group_ids_via_m2m
+        subject_ids_by_group = defaultdict(set)
+        all_group_ids = set()
+        all_subject_ids = set()
+        for gid, sid in ctt_pairs:
+            all_group_ids.add(gid)
+            if sid is not None:
+                subject_ids_by_group[gid].add(sid)
+                all_subject_ids.add(sid)
 
         groups = (
             Group.objects
@@ -426,47 +429,23 @@ class TeacherGroupsAndFlowsView(views.APIView):
         )
         group_ids = list(groups.values_list('id', flat=True))
 
-        # Bulk-fetch (group_id, subject_id) pairs taught by this teacher
-        ctt_pairs = (
-            ClassTimeTable.objects
-            .filter(teacher=teacher, group_id__in=group_ids)
-            .values_list('group_id', 'subject_id')
-            .distinct()
-        )
-        subject_ids_by_group = defaultdict(set)
-        all_subject_ids = set()
-        for gid, sid in ctt_pairs:
-            if sid is None:
-                continue
-            subject_ids_by_group[gid].add(sid)
-            all_subject_ids.add(sid)
-
-        teacher_subject_ids = set(teacher.subject.values_list('id', flat=True))
-        all_subject_ids |= teacher_subject_ids
-
-        # Single bulk fetch of GroupSubjects for every group + every relevant subject
         gs_qs = (
             GroupSubjects.objects
             .filter(group_id__in=group_ids, subject_id__in=all_subject_ids)
             .select_related('subject')
         )
-        gs_by_group = defaultdict(dict)  # group_id -> {subject_id: GroupSubjects}
+        gs_by_group = defaultdict(dict)
         for gs in gs_qs:
             gs_by_group[gs.group_id].setdefault(gs.subject_id, gs)
 
         groups_data = []
         for group in groups:
-            primary = subject_ids_by_group.get(group.id, set())
             subject_map = gs_by_group.get(group.id, {})
-            primary_subjects = [subject_map[sid] for sid in primary if sid in subject_map]
-
-            if primary_subjects:
-                subjects = primary_subjects
-            else:
-                subjects = [
-                    gs for sid, gs in subject_map.items() if sid in teacher_subject_ids
-                ]
-
+            subjects = [
+                subject_map[sid]
+                for sid in subject_ids_by_group.get(group.id, set())
+                if sid in subject_map
+            ]
             class_no = getattr(group.class_number, 'number', None)
             color_name = getattr(group.color, 'name', None)
             display_name = group.name or f"{class_no or '?'}-{color_name or '?'}"
@@ -482,10 +461,24 @@ class TeacherGroupsAndFlowsView(views.APIView):
                 ],
             })
 
+        # Flows from timetable only
+        flow_pairs = (
+            ctt_qs
+            .filter(flow__isnull=False)
+            .values_list('flow_id', 'subject_id')
+            .distinct()
+        )
+        subject_ids_by_flow = defaultdict(set)
+        all_flow_ids = set()
+        for fid, sid in flow_pairs:
+            all_flow_ids.add(fid)
+            if sid is not None:
+                subject_ids_by_flow[fid].add(sid)
+
         flows = (
             Flow.objects
-            .filter(teacher=teacher)
-            .select_related('subject', 'level')
+            .filter(id__in=all_flow_ids)
+            .select_related('subject')
             .annotate(students_count_=Count('students', distinct=True))
         )
 
