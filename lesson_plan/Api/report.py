@@ -3,17 +3,15 @@ from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.shortcuts import get_object_or_404
 from school_time_table.models import ClassTimeTable
-from time_table.models import WeekDays
 from lesson_plan.models import LessonPlan
-from branch.models import Branch
+
 
 class DailyLessonPlanReportView(APIView):
-   
+
     def get(self, request):
         branch_id = request.query_params.get('branch_id')
-        date_str = request.query_params.get('date') # Expected format: YYYY-MM-DD
+        date_str = request.query_params.get('date')
 
         if not branch_id:
             return Response({"error": "branch_id is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -26,18 +24,9 @@ class DailyLessonPlanReportView(APIView):
         else:
             target_date = datetime.now().date()
 
-        weekday_name = target_date.strftime('%A')
-        try:
-            week_day = WeekDays.objects.get(name_en=weekday_name)
-        except WeekDays.DoesNotExist:
-            return Response({"error": f"Weekday {weekday_name} not found in database"}, status=status.HTTP_404_NOT_FOUND)
-
-       
         timetables = ClassTimeTable.objects.filter(
             branch_id=branch_id,
-            week=week_day
-        ).filter(
-            Q(date=target_date) | Q(date__isnull=True)
+            date=target_date,
         ).filter(
             Q(group__isnull=False, group__status=True, group__deleted=False) |
             Q(flow__isnull=False)
