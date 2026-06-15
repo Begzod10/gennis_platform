@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
 from rest_framework import status
@@ -372,7 +373,15 @@ class ObservationCycleListView(APIView):
         if not branch_id:
             return Response({"detail": "branch_id is required."}, status=400)
 
-        cycles = TeacherObservationCycle.objects.filter(branch_id=branch_id).order_by("-created_at")
+        cycles = (
+            TeacherObservationCycle.objects
+            .filter(branch_id=branch_id)
+            .annotate(
+                total_schedules=Count("schedules"),
+                completed=Count("schedules", filter=Q(schedules__is_completed=True)),
+            )
+            .order_by("-created_at")
+        )
 
         data = [
             {
@@ -380,8 +389,8 @@ class ObservationCycleListView(APIView):
                 "branch_id": c.branch_id,
                 "start_date": c.start_date.isoformat(),
                 "created_at": c.created_at.isoformat(),
-                "total_schedules": c.schedules.count(),
-                "completed": c.schedules.filter(is_completed=True).count(),
+                "total_schedules": c.total_schedules,
+                "completed": c.completed,
             }
             for c in cycles
         ]
