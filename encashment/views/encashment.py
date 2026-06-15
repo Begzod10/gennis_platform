@@ -453,33 +453,15 @@ class GetSchoolStudents(APIView):
         current_year = year or datetime.now().year
         current_month = month or datetime.now().month
 
-        is_active_in_group = Group.objects.filter(
-            id=OuterRef('group_id'),
-            students=OuterRef('student_id'),
-            # deleted=False
-        )
+        today = datetime.now().date()
+        is_current_month = (current_year == today.year and current_month == today.month)
 
-        last_deleted_group = DeletedStudent.objects.filter(
-            student_id=OuterRef('student_id'),
-            # deleted=False,
-            deleted_date__gte=date(current_year, current_month, 1)
-        ).order_by('-id').values('group_id')[:1]
-
-        attendances = (
+        base_qs = (
             AttendancePerMonth.objects
             .filter(
                 month_date__year=current_year,
                 month_date__month=current_month,
                 student__user__branch_id=branch_id,
-                # group__deleted=False
-            )
-            .annotate(
-                is_active=Exists(is_active_in_group),
-                last_deleted_group_id=Subquery(last_deleted_group)
-            )
-            .filter(
-                Q(is_active=True) |
-                Q(group_id=F('last_deleted_group_id'))
             )
             .select_related(
                 'student',
@@ -494,6 +476,31 @@ class GetSchoolStudents(APIView):
                 'student__user__surname'
             )
         )
+
+        if is_current_month:
+            is_active_in_group = Group.objects.filter(
+                id=OuterRef('group_id'),
+                students=OuterRef('student_id'),
+            )
+            last_deleted_group = DeletedStudent.objects.filter(
+                student_id=OuterRef('student_id'),
+                deleted_date__gte=date(current_year, current_month, 1)
+            ).order_by('-id').values('group_id')[:1]
+
+            attendances = (
+                base_qs
+                .annotate(
+                    is_active=Exists(is_active_in_group),
+                    last_deleted_group_id=Subquery(last_deleted_group)
+                )
+                .filter(
+                    Q(is_active=True) |
+                    Q(group_id=F('last_deleted_group_id'))
+                )
+            )
+        else:
+            # Historical month: trust AttendancePerMonth records as source of truth
+            attendances = base_qs
 
         attendance_ids = list(attendances.values_list('id', flat=True))
 
