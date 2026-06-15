@@ -465,31 +465,6 @@ class GetSchoolStudents(APIView):
             deleted_date__gte=date(current_year, current_month, 1)
         ).order_by('-id').values('group_id')[:1]
 
-        # True when a higher-priority April record exists for the same student:
-        # either another record where the student IS in the group (transferred),
-        # or another excluded record with a higher id (keeps only the latest per student).
-        # Used to prevent double-counting.
-        has_higher_priority_record = AttendancePerMonth.objects.filter(
-            student_id=OuterRef('student_id'),
-            month_date__year=current_year,
-            month_date__month=current_month,
-        ).exclude(
-            id=OuterRef('id')
-        ).filter(
-            Q(Exists(Group.objects.filter(
-                id=OuterRef('group_id'),
-                students=OuterRef(OuterRef('student_id')),
-            ))) |
-            Q(remaining_debt__gt=0, id__gt=OuterRef('id'))
-        )
-
-        # True when actual payments exist against this attendance record.
-        # Such records must always appear regardless of group status.
-        has_payment_data = StudentPayment.objects.filter(
-            attendance_id=OuterRef('id'),
-            deleted=False,
-        )
-
         attendances = (
             AttendancePerMonth.objects
             .filter(
@@ -500,15 +475,12 @@ class GetSchoolStudents(APIView):
             )
             .annotate(
                 is_active=Exists(is_active_in_group),
-                last_deleted_group_id=Subquery(last_deleted_group),
-                has_higher_priority=Exists(has_higher_priority_record),
-                has_payments=Exists(has_payment_data),
+                last_deleted_group_id=Subquery(last_deleted_group)
             )
             .filter(
                 Q(is_active=True) |
                 Q(group_id=F('last_deleted_group_id')) |
-                Q(remaining_debt__gt=0, has_higher_priority=False) |
-                Q(has_payments=True)
+                Q(remaining_debt__gt=0)
             )
             .select_related(
                 'student',
