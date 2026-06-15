@@ -479,8 +479,7 @@ class GetSchoolStudents(APIView):
             )
             .filter(
                 Q(is_active=True) |
-                Q(group_id=F('last_deleted_group_id')) |
-                Q(remaining_debt__gt=0)
+                Q(group_id=F('last_deleted_group_id'))
             )
             .select_related(
                 'student',
