@@ -465,6 +465,24 @@ class GetSchoolStudents(APIView):
             deleted_date__gte=date(current_year, current_month, 1)
         ).order_by('-id').values('group_id')[:1]
 
+        # Students deleted to "new students" have no DeletedStudent record for ANY group
+        # and no DeletedNewStudent (archived) record, and are not in any group currently.
+        # These three subqueries together identify exactly the students shown in the
+        # "new students" UI list.
+        in_any_group = Group.objects.filter(
+            students=OuterRef('student_id'),
+        )
+        has_proper_deletion = DeletedStudent.objects.filter(
+            student_id=OuterRef('student_id'),
+        )
+        is_archived = DeletedNewStudent.objects.filter(
+            student_id=OuterRef('student_id'),
+        )
+        has_payment_data = StudentPayment.objects.filter(
+            attendance_id=OuterRef('id'),
+            deleted=False,
+        )
+
         attendances = (
             AttendancePerMonth.objects
             .filter(
@@ -475,11 +493,17 @@ class GetSchoolStudents(APIView):
             )
             .annotate(
                 is_active=Exists(is_active_in_group),
-                last_deleted_group_id=Subquery(last_deleted_group)
+                last_deleted_group_id=Subquery(last_deleted_group),
+                in_any_group=Exists(in_any_group),
+                has_deletion=Exists(has_proper_deletion),
+                is_archived=Exists(is_archived),
+                has_payments=Exists(has_payment_data),
             )
             .filter(
                 Q(is_active=True) |
-                Q(group_id=F('last_deleted_group_id'))
+                Q(group_id=F('last_deleted_group_id')) |
+                Q(in_any_group=False, has_deletion=False, is_archived=False, remaining_debt__gt=0) |
+                Q(in_any_group=False, has_deletion=False, is_archived=False, has_payments=True)
             )
             .select_related(
                 'student',
