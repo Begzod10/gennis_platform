@@ -126,9 +126,10 @@ class CareerApplicationUpdateSerializer(serializers.ModelSerializer):
 
 class LandingRegistrationSerializer(serializers.ModelSerializer):
     """Admin list uchun — to'liq ma'lumot."""
+    branch_name = serializers.CharField(source='branch.name', read_only=True)
     class Meta:
         model = LandingRegistration
-        fields = ['id', 'name', 'surname', 'phone', 'branch', 'created']
+        fields = ['id', 'name', 'surname', 'phone', 'branch', 'created','branch_name']
         read_only_fields = ['created']
 
 
