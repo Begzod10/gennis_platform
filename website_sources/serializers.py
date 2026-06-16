@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from website_sources.models import News, Category, Admission, ContactMessage, JobPosition, CareerApplication, TalentPool, PageSection, PageSectionImage
+from website_sources.models import News, Category, Admission, ContactMessage, JobPosition, CareerApplication, TalentPool, PageSection, PageSectionImage, LandingRegistration
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -122,6 +122,21 @@ class CareerApplicationUpdateSerializer(serializers.ModelSerializer):
         if 'cv_file' not in validated_data or validated_data.get('cv_file') is None:
             validated_data.pop('cv_file', None)
         return super().update(instance, validated_data)
+
+
+class LandingRegistrationSerializer(serializers.ModelSerializer):
+    """Admin list uchun — to'liq ma'lumot."""
+    class Meta:
+        model = LandingRegistration
+        fields = ['id', 'name', 'surname', 'phone', 'branch', 'created']
+        read_only_fields = ['created']
+
+
+class LandingRegistrationCreateSerializer(serializers.ModelSerializer):
+    """Landing page POST uchun — faqat kerakli maydonlar."""
+    class Meta:
+        model = LandingRegistration
+        fields = ['name', 'surname', 'phone', 'branch']
 
 
 class PageSectionImageSerializer(serializers.ModelSerializer):

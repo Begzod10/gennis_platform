@@ -15,7 +15,8 @@ from website_sources.views import (
     # PublicPartnerListView, PublicLeadershipListView, PublicTranslationsView,
     # PageDetailView, MenuView,
     PageSectionListCreateView, PageSectionDetailView,
-    PageSectionMultipleImageUploadView, PageSectionImageDeleteView
+    PageSectionMultipleImageUploadView, PageSectionImageDeleteView,
+    PublicLandingRegistrationCreateView, AdminLandingRegistrationListView
 )
 
 urlpatterns = [
@@ -78,6 +79,10 @@ urlpatterns = [
     path('admin/careers/positions/', AdminJobPositionListCreateView.as_view(), name='admin-job-positions'),
     path('admin/careers/positions/<int:pk>/', AdminJobPositionDetailView.as_view(), name='admin-job-position-detail'),
     path('admin/careers/applications/', AdminCareerApplicationListView.as_view(), name='admin-career-applications'),
+
+    # ── LANDING REGISTRATIONS ──────────────────────────────────────────────────
+    path('register/', PublicLandingRegistrationCreateView.as_view(), name='public-landing-register'),
+    path('admin/registrations/', AdminLandingRegistrationListView.as_view(), name='admin-landing-registrations'),
 
     # ── PAGE SECTIONS ──────────────────────────────────────────────────────────
     path('page-sections/', PageSectionListCreateView.as_view(), name='page-section-list-create'),

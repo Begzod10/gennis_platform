@@ -1,6 +1,6 @@
 from django.contrib import admin
 from website_sources.models import (
-    Category, News, Admission, ContactMessage, JobPosition, CareerApplication, TalentPool, PageSection, PageSectionImage
+    Category, News, Admission, ContactMessage, JobPosition, CareerApplication, TalentPool, PageSection, PageSectionImage, LandingRegistration
 )
 
 class PageSectionImageInline(admin.TabularInline):
@@ -55,3 +55,9 @@ class TalentPoolAdmin(admin.ModelAdmin):
     list_display = ('name', 'email', 'expertise', 'branch', 'created_at')
     list_filter = ('branch',)
     search_fields = ('name', 'email', 'expertise')
+
+@admin.register(LandingRegistration)
+class LandingRegistrationAdmin(admin.ModelAdmin):
+    list_display = ('name', 'surname', 'phone', 'branch', 'created')
+    list_filter = ('branch',)
+    search_fields = ('name', 'surname', 'phone')

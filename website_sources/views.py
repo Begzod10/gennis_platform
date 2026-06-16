@@ -6,11 +6,11 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from website_sources.models import News, Category, Admission, ContactMessage, CareerApplication, JobPosition, TalentPool, PageSection, PageSectionImage
+from website_sources.models import News, Category, Admission, ContactMessage, CareerApplication, JobPosition, TalentPool, PageSection, PageSectionImage, LandingRegistration
 from website_sources.serializers import NewsListSerializer, PublicNewsSerializer, CategorySerializer, \
     AdmissionSerializer, AdmissionCreateSerializer, ContactMessageSerializer, ContactCreateSerializer, \
     CareerApplicationSerializer, JobPositionSerializer, TalentPoolSerializer, CareerApplicationUpdateSerializer, \
-    PageSectionSerializer
+    PageSectionSerializer, LandingRegistrationSerializer, LandingRegistrationCreateSerializer
 
 
 def apply_news_filters(qs, params):
@@ -1007,6 +1007,89 @@ class AdminStatsView(APIView):
         }
 
         return Response({'success': True, 'data': data})
+
+
+# ─── LANDING REGISTRATIONS ────────────────────────────────────────────────────
+
+def apply_landing_registration_filters(qs, params):
+    """
+    Query params:
+      branch     — ?branch=1
+      search     — ?search=Ali        (ism, familiya yoki telefon bo'yicha)
+      date_from  — ?date_from=2026-01-01
+      date_to    — ?date_to=2026-12-31
+      ordering   — ?ordering=-created | created
+    """
+    branch_id = params.get('branch')
+    search = params.get('search')
+    date_from = params.get('date_from')
+    date_to = params.get('date_to')
+    ordering = params.get('ordering', '-created')
+
+    if branch_id:
+        qs = qs.filter(branch_id=branch_id)
+
+    if search:
+        from django.db.models import Q
+        qs = qs.filter(
+            Q(name__icontains=search) | Q(surname__icontains=search) | Q(phone__icontains=search)
+        ).distinct()
+
+    if date_from:
+        parsed = parse_date(date_from)
+        if parsed:
+            qs = qs.filter(created__date__gte=parsed)
+
+    if date_to:
+        parsed = parse_date(date_to)
+        if parsed:
+            qs = qs.filter(created__date__lte=parsed)
+
+    allowed = {'created', '-created'}
+    if ordering in allowed:
+        qs = qs.order_by(ordering)
+
+    return qs
+
+
+class PublicLandingRegistrationCreateView(APIView):
+    """
+    POST /api/website-sources/register/   — public, auth talab etilmaydi
+
+    Body: { "name": "Ali", "surname": "Valiev", "phone": "+998901234567", "branch": 1 }
+    (branch ixtiyoriy)
+    """
+
+    def post(self, request):
+        serializer = LandingRegistrationCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'success': True,
+                'message': 'Ro\'yxatdan o\'tdingiz. Tez orada siz bilan bog\'lanamiz.'
+            }, status=status.HTTP_201_CREATED)
+        return Response(
+            {'success': False, 'errors': serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+class AdminLandingRegistrationListView(generics.ListAPIView):
+    """
+    GET /api/website-sources/admin/registrations/
+
+    Filterlar:
+      ?branch=1
+      ?search=Ali              (ism, familiya yoki telefon)
+      ?date_from=2026-01-01
+      ?date_to=2026-12-31
+      ?ordering=-created
+    """
+    serializer_class = LandingRegistrationSerializer
+
+    def get_queryset(self):
+        qs = LandingRegistration.objects.select_related('branch')
+        return apply_landing_registration_filters(qs, self.request.query_params)
 
 
 # ─── PAGE SECTIONS ────────────────────────────────────────────────────────────

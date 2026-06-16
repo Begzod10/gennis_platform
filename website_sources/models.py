@@ -208,6 +208,23 @@ class TalentPool(models.Model):
         ordering = ['-created_at']
 
 
+class LandingRegistration(models.Model):
+    """Landing page'dagi ro'yxatdan o'tish formasidan kelgan arizalar."""
+    name = models.CharField(max_length=100)
+    surname = models.CharField(max_length=100)
+    phone = models.CharField(max_length=20)
+    branch = models.ForeignKey(
+        'branch.Branch', on_delete=models.SET_NULL, null=True, blank=True
+    )
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} {self.surname} - {self.phone}"
+
+    class Meta:
+        ordering = ['-created']
+
+
 class PageSection(models.Model):
     branch = models.ForeignKey(
         'branch.Branch', on_delete=models.CASCADE, null=True, blank=True
