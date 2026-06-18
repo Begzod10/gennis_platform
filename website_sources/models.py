@@ -223,6 +223,7 @@ class LandingRegistration(models.Model):
 
     class Meta:
         ordering = ['-created']
+        unique_together=('name','surname','phone','branch')
 
 
 class PageSection(models.Model):
