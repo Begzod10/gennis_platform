@@ -5,7 +5,7 @@ from collections import defaultdict
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from reportlab.lib.colors import white, black
+from reportlab.lib.colors import black
 from reportlab.pdfgen import canvas as rl_canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -98,12 +98,12 @@ def _build_pdf_certificate(student, level: str, class_number) -> io.BytesIO:
     overlay_buf = io.BytesIO()
     c = rl_canvas.Canvas(overlay_buf, pagesize=(PAGE_W, PAGE_H))
 
-    # ── 1) O'quvchining ismi ──────────────────────────────────────────────────
-    # Shablondagi joriy ismni oqartirib o'chiramiz (yuqorida "OF COMPLETION",
-    # pastda tavsif bor — ular tegmaydi).
-    c.setFillColor(white)
-    c.rect(56, 338, PAGE_W - 112, 72, fill=1, stroke=0)   # rl y 338-410
+    # Shablon (certificate_template.pdf) allaqachon tozalangan — undagi placeholder
+    # ism va "completed the ... year ..." qatori olib tashlangan, vatermark/fon
+    # saqlangan. Shuning uchun bu yerda hech narsa qoplamaymiz, faqat ustiga
+    # yangi matnni chizamiz.
 
+    # ── 1) O'quvchining ismi ──────────────────────────────────────────────────
     name = f"{(student.user.name or '').strip()} {(student.user.surname or '').strip()}".strip()
     size = 56
     c.setFont(NAME_FONT, size)
@@ -115,11 +115,6 @@ def _build_pdf_certificate(student, level: str, class_number) -> io.BytesIO:
     c.drawCentredString(CENTER_X, 360, name)
 
     # ── 2) "has successfully completed the <level> year <N>." ────────────────
-    # Faqat 1-qatorni qayta yozamiz; "2025-2026 demostrating..." qatorlari
-    # shablonda qoladi.
-    c.setFillColor(white)
-    c.rect(90, 300, PAGE_W - 180, 18, fill=1, stroke=0)   # rl y 300-318
-
     level_word = (level or '').lower()
     year_no = class_number if class_number is not None else ''
     line = f"has successfully completed the {level_word} year {year_no}.".strip()
