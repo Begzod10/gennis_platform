@@ -1,5 +1,11 @@
 from django.urls import path
-from .views import CreateTest, UpdateTest, ListTest, ListTerm, DeleteTest, StudentAssignmentView, AssignmentCreateView, EducationYears, TermsByGroup, TermsByStudent, GroupSubjectsApiView, EducationQualityOverview, EducationQualityDetails, StudentCertificateView
+from .views import (
+    CreateTest, UpdateTest, ListTest, ListTerm, DeleteTest,
+    StudentAssignmentView, AssignmentCreateView, EducationYears,
+    TermsByGroup, TermsByStudent, GroupSubjectsApiView,
+    EducationQualityOverview, EducationQualityDetails,
+    StudentCertificateView, CertificateDataView,
+)
 
 urlpatterns = [
     path('create-test/', CreateTest.as_view(), name='create-test'),
@@ -18,4 +24,5 @@ urlpatterns = [
     path('education-quality/', EducationQualityOverview.as_view(), name='education-quality-overview'),
     path('education-quality/<int:term_id>/', EducationQualityDetails.as_view(), name='education-quality-details'),
     path('certificate/<int:student_id>/', StudentCertificateView.as_view(), name='student-certificate'),
+    path('certificate-data/<int:student_id>/', CertificateDataView.as_view(), name='certificate-data'),
 ]

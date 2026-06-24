@@ -1,13 +1,13 @@
 import io
+import os
 from collections import defaultdict
 
+from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
-from docx.shared import Pt, RGBColor, Inches, Cm
+from reportlab.lib.colors import white, HexColor
+from reportlab.pdfgen import canvas as rl_canvas
+from pypdf import PdfReader, PdfWriter
 from rest_framework import generics, views, response, status
 
 from group.models import Group, GroupSubjects, GroupRating
@@ -18,9 +18,17 @@ from .serializers import TestCreateUpdateSerializer, Test, TermSerializer, Term
 from django.db.models import Case, When, Value, IntegerField, Avg, Q
 from flows.models import Flow
 
-GOLD = RGBColor(0xC9, 0xA2, 0x27)
-DARK_BLUE = RGBColor(0x1A, 0x3C, 0x5E)
-WHITE = RGBColor(0xFF, 0xFF, 0xFF)
+GOLD = HexColor('#C9A227')
+DARK_BLUE = HexColor('#1A3C5E')
+ROW_ALT = HexColor('#EBF0F5')
+ROW_BORDER = HexColor('#C8D4DE')
+
+CERTIFICATE_TEMPLATE = os.path.join(settings.BASE_DIR, 'media', 'certificates', 'certificate_template.pdf')
+
+# PDF page dimensions (A4 portrait, points)
+PAGE_W = 595.5
+PAGE_H = 842.25
+CENTER_X = PAGE_W / 2
 
 ACADEMIC_YEAR = "2025-2026"
 
@@ -68,175 +76,111 @@ def _get_level(class_number) -> str:
     return "N/A"
 
 
-def _set_cell_bg(cell, hex_color: str):
-    tc = cell._tc
-    tcPr = tc.get_or_add_tcPr()
-    shd = OxmlElement('w:shd')
-    shd.set(qn('w:val'), 'clear')
-    shd.set(qn('w:color'), 'auto')
-    shd.set(qn('w:fill'), hex_color)
-    tcPr.append(shd)
+def _build_pdf_certificate(student, term_data: list, final_score: float, grade: str, level: str) -> io.BytesIO:
+    """
+    Reportlab overlay + PDF template merge.
 
+    Template coordinate reference (pdfplumber → reportlab y = PAGE_H - pdfplumber_y):
+      Student name:   pdfplumber y=438-498 → rl y=344-404
+      Description:    pdfplumber y=527-576 → rl y=266-315
+      Director name:  pdfplumber y=708-721 → rl y=121-134
+      CERTIFICATE:    pdfplumber y=301-352 → rl y=490-541  (kept)
+      OF COMPLETION:  pdfplumber y=357-375 → rl y=467-485  (kept)
+    """
+    overlay_buf = io.BytesIO()
+    c = rl_canvas.Canvas(overlay_buf, pagesize=(PAGE_W, PAGE_H))
 
-def _add_paragraph(doc, text, size, bold=False, color=None, align=WD_ALIGN_PARAGRAPH.CENTER, space_before=0, space_after=6):
-    p = doc.add_paragraph()
-    p.alignment = align
-    p.paragraph_format.space_before = Pt(space_before)
-    p.paragraph_format.space_after = Pt(space_after)
-    run = p.add_run(text)
-    run.bold = bold
-    run.font.size = Pt(size)
-    run.font.name = 'Georgia'
-    if color:
-        run.font.color.rgb = color
-    return p
+    # White rect covering name + description + director zones
+    c.setFillColor(white)
+    c.setStrokeColor(white)
+    c.rect(60, 118, 476, 309, fill=1, stroke=0)   # rl y=118-427, x=60-536
 
+    # ── Student name ──────────────────────────────────────────────────────────
+    name = f"{(student.user.name or '').upper()} {(student.user.surname or '').upper()}".strip()
+    c.setFillColor(DARK_BLUE)
+    c.setFont("Times-Bold", 38)
+    c.drawCentredString(CENTER_X, 365, name)
 
-def _build_certificate(student, term_data: list, final_score: float, grade: str, level: str) -> io.BytesIO:
-    doc = Document()
+    # ── Academic year + level ─────────────────────────────────────────────────
+    c.setFont("Times-Roman", 11)
+    c.drawCentredString(CENTER_X, 336, f"Academic Year: {ACADEMIC_YEAR}   ·   Level: {level}")
 
-    section = doc.sections[0]
-    section.page_width = Inches(11)
-    section.page_height = Inches(8.5)
-    section.left_margin = Cm(2)
-    section.right_margin = Cm(2)
-    section.top_margin = Cm(1.5)
-    section.bottom_margin = Cm(1.5)
+    # ── Final grade (gold) ────────────────────────────────────────────────────
+    c.setFillColor(GOLD)
+    c.setFont("Times-Bold", 20)
+    c.drawCentredString(CENTER_X, 308, f"Final Grade:  {grade}   ·   {GRADE_DESCRIPTIONS.get(grade, '')}")
 
-    # ── HEADER TABLE (dark blue banner) ───────────────────────────────────────
-    hdr = doc.add_table(rows=1, cols=1)
-    hdr.style = 'Table Grid'
-    hdr_cell = hdr.rows[0].cells[0]
-    _set_cell_bg(hdr_cell, '1A3C5E')
-    hdr_cell.width = Inches(10.5)
+    # ── Overall score ─────────────────────────────────────────────────────────
+    c.setFillColor(DARK_BLUE)
+    c.setFont("Times-Italic", 10)
+    c.drawCentredString(CENTER_X, 285, f"Overall Score: {final_score:.1f} / 100")
 
-    p = hdr_cell.paragraphs[0]
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.space_before = Pt(8)
-    p.paragraph_format.space_after = Pt(8)
-    run = p.add_run("✦  CERTIFICATE OF EXCELLENCE  ✦")
-    run.bold = True
-    run.font.size = Pt(22)
-    run.font.name = 'Georgia'
-    run.font.color.rgb = GOLD
+    # ── Quarter breakdown table ───────────────────────────────────────────────
+    TBL_LEFT = 72
+    TBL_W    = 452
+    COL_W    = [108, 112, 80, 152]   # Quarter | Avg Score | Grade | Subjects
+    HDR_H    = 17
+    ROW_H    = 14
+    TBL_TOP  = 264   # rl y of table top edge
 
-    doc.add_paragraph()
+    # Header (dark blue background)
+    c.setFillColor(DARK_BLUE)
+    c.rect(TBL_LEFT, TBL_TOP - HDR_H, TBL_W, HDR_H, fill=1, stroke=0)
 
-    # ── GOLD LINE ─────────────────────────────────────────────────────────────
-    gl = doc.add_table(rows=1, cols=1)
-    gl.style = 'Table Grid'
-    _set_cell_bg(gl.rows[0].cells[0], 'C9A227')
-    gl.rows[0].cells[0].paragraphs[0].paragraph_format.space_before = Pt(2)
-    gl.rows[0].cells[0].paragraphs[0].paragraph_format.space_after = Pt(2)
+    c.setFillColor(white)
+    c.setFont("Times-Bold", 8.5)
+    hdr_labels = ["Quarter", "Avg Score", "Grade", "Subjects"]
+    x = TBL_LEFT
+    for lbl, w in zip(hdr_labels, COL_W):
+        c.drawCentredString(x + w / 2, TBL_TOP - HDR_H + 5, lbl)
+        x += w
 
-    doc.add_paragraph()
+    # Data rows
+    cur_y = TBL_TOP - HDR_H
+    for j, td in enumerate(term_data):
+        row_bot = cur_y - ROW_H
+        c.setFillColor(ROW_ALT if j % 2 == 0 else white)
+        c.setStrokeColor(ROW_BORDER)
+        c.setLineWidth(0.4)
+        c.rect(TBL_LEFT, row_bot, TBL_W, ROW_H, fill=1, stroke=1)
 
-    # ── BODY ──────────────────────────────────────────────────────────────────
-    _add_paragraph(doc, "This is to certify that", 13, color=DARK_BLUE, space_before=4, space_after=2)
-
-    _add_paragraph(
-        doc,
-        f"{student.user.name.upper()} {student.user.surname.upper()}",
-        28, bold=True, color=DARK_BLUE, space_before=4, space_after=4
-    )
-
-    _add_paragraph(doc, "has successfully completed the academic year", 13, color=DARK_BLUE, space_after=2)
-
-    _add_paragraph(doc, ACADEMIC_YEAR, 16, bold=True, color=GOLD, space_after=10)
-
-    _add_paragraph(doc, f"Level: {level}", 13, color=DARK_BLUE, space_after=2)
-
-    # ── GRADE BOX ─────────────────────────────────────────────────────────────
-    grade_tbl = doc.add_table(rows=1, cols=3)
-    grade_tbl.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    grade_tbl.style = 'Table Grid'
-    grade_tbl.rows[0].cells[0].width = Inches(3.5)
-    grade_tbl.rows[0].cells[1].width = Inches(1.5)
-    grade_tbl.rows[0].cells[2].width = Inches(3.5)
-
-    _set_cell_bg(grade_tbl.rows[0].cells[0], 'FFFFFF')
-    _set_cell_bg(grade_tbl.rows[0].cells[1], '1A3C5E')
-    _set_cell_bg(grade_tbl.rows[0].cells[2], 'FFFFFF')
-
-    left_p = grade_tbl.rows[0].cells[0].paragraphs[0]
-    left_p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    left_p.paragraph_format.space_before = Pt(6)
-    left_r = left_p.add_run(f"Overall Score:  {final_score:.1f}")
-    left_r.font.size = Pt(13)
-    left_r.font.name = 'Georgia'
-    left_r.font.color.rgb = DARK_BLUE
-
-    mid_p = grade_tbl.rows[0].cells[1].paragraphs[0]
-    mid_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    mid_p.paragraph_format.space_before = Pt(2)
-    mid_r = mid_p.add_run(grade)
-    mid_r.bold = True
-    mid_r.font.size = Pt(36)
-    mid_r.font.name = 'Georgia'
-    mid_r.font.color.rgb = GOLD
-
-    right_p = grade_tbl.rows[0].cells[2].paragraphs[0]
-    right_p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    right_p.paragraph_format.space_before = Pt(6)
-    right_r = right_p.add_run(f"  {GRADE_DESCRIPTIONS.get(grade, '')}")
-    right_r.font.size = Pt(13)
-    right_r.font.name = 'Georgia'
-    right_r.font.color.rgb = DARK_BLUE
-
-    doc.add_paragraph()
-
-    # ── TERM BREAKDOWN TABLE ───────────────────────────────────────────────────
-    _add_paragraph(doc, "Academic Performance by Quarter", 11, bold=True, color=DARK_BLUE, space_before=6, space_after=4)
-
-    tbl = doc.add_table(rows=1, cols=4)
-    tbl.style = 'Table Grid'
-    tbl.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    headers = ["Quarter", "Avg Score", "Grade", "Subjects"]
-    for i, h in enumerate(headers):
-        cell = tbl.rows[0].cells[i]
-        _set_cell_bg(cell, '1A3C5E')
-        p = cell.paragraphs[0]
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = p.add_run(h)
-        run.bold = True
-        run.font.size = Pt(10)
-        run.font.name = 'Georgia'
-        run.font.color.rgb = WHITE
-
-    for td in term_data:
-        row = tbl.add_row()
+        c.setFillColor(DARK_BLUE)
+        c.setFont("Times-Roman", 8.5)
         vals = [
-            f"{td['quarter']}-chorak",
+            f"{td['quarter']}-Chorak",
             f"{td['avg']:.1f}" if td['avg'] is not None else "—",
-            td['grade'] if td['avg'] is not None else "—",
+            td['grade'] if td['grade'] else "—",
             str(td['subject_count']),
         ]
-        for i, val in enumerate(vals):
-            cell = row.cells[i]
-            p = cell.paragraphs[0]
-            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            run = p.add_run(val)
-            run.font.size = Pt(10)
-            run.font.name = 'Georgia'
-            run.font.color.rgb = DARK_BLUE
+        x = TBL_LEFT
+        for val, w in zip(vals, COL_W):
+            c.drawCentredString(x + w / 2, row_bot + 4, val)
+            x += w
+        cur_y = row_bot
 
-    doc.add_paragraph()
+    # Table outer border
+    table_total_h = HDR_H + len(term_data) * ROW_H
+    c.setStrokeColor(DARK_BLUE)
+    c.setLineWidth(0.8)
+    c.rect(TBL_LEFT, TBL_TOP - table_total_h, TBL_W, table_total_h, fill=0, stroke=1)
 
-    # ── GOLD FOOTER LINE ──────────────────────────────────────────────────────
-    fl = doc.add_table(rows=1, cols=1)
-    fl.style = 'Table Grid'
-    _set_cell_bg(fl.rows[0].cells[0], 'C9A227')
-    fl.rows[0].cells[0].paragraphs[0].paragraph_format.space_before = Pt(2)
-    fl.rows[0].cells[0].paragraphs[0].paragraph_format.space_after = Pt(2)
+    c.save()
+    overlay_buf.seek(0)
 
-    from django.utils import timezone
-    today = timezone.localdate().strftime("%B %d, %Y")
-    _add_paragraph(doc, f"Issued: {today}", 9, color=DARK_BLUE, space_before=6, space_after=0)
+    # ── Merge overlay onto template ───────────────────────────────────────────
+    template_reader = PdfReader(CERTIFICATE_TEMPLATE)
+    overlay_reader  = PdfReader(overlay_buf)
 
-    buf = io.BytesIO()
-    doc.save(buf)
-    buf.seek(0)
-    return buf
+    page = template_reader.pages[0]
+    page.merge_page(overlay_reader.pages[0])
+
+    writer = PdfWriter()
+    writer.add_page(page)
+
+    out_buf = io.BytesIO()
+    writer.write(out_buf)
+    out_buf.seek(0)
+    return out_buf
 
 
 class CreateTest(generics.CreateAPIView):
@@ -703,15 +647,112 @@ class StudentCertificateView(views.APIView):
             student.class_number.number if student.class_number else None
         )
 
-        buf = _build_certificate(student, term_data, final_score, grade, level)
+        buf = _build_pdf_certificate(student, term_data, final_score, grade, level)
 
         name = f"{student.user.name}_{student.user.surname}".replace(' ', '_')
-        resp = HttpResponse(
-            buf.read(),
-            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        )
-        resp['Content-Disposition'] = f'attachment; filename="certificate_{name}_{ACADEMIC_YEAR}.docx"'
+        resp = HttpResponse(buf.read(), content_type='application/pdf')
+        resp['Content-Disposition'] = f'attachment; filename="certificate_{name}_{ACADEMIC_YEAR}.pdf"'
         return resp
+
+
+class CertificateDataView(views.APIView):
+    """
+    GET /api/terms/certificate-data/<student_id>/
+
+    2025-2026 o'quv yili bo'yicha har chorak, har fan, har test batafsil
+    breakdown + pastida PDF sertifikat yuklab olish havolasi.
+    """
+
+    def get(self, request, student_id):
+        student = get_object_or_404(
+            Student.objects.select_related('user', 'class_number'),
+            id=student_id
+        )
+
+        terms = list(Term.objects.filter(academic_year=ACADEMIC_YEAR).order_by('quarter'))
+
+        quarters = []
+        total_avg = 0.0
+        counted_terms = 0
+
+        for term in terms:
+            assignments = (
+                Assignment.objects
+                .filter(student=student, test__term=term, test__deleted=False)
+                .select_related('test__subject')
+                .order_by('test__subject__name', 'test__name')
+            )
+
+            # Group by subject
+            subjects_map = defaultdict(lambda: {
+                'subject_name': '',
+                'tests': [],
+                'subject_score': 0.0,
+            })
+
+            for a in assignments:
+                sid = a.test.subject_id
+                score = round((a.test.weight * a.percentage) / 100, 2)
+                subjects_map[sid]['subject_name'] = a.test.subject.name
+                subjects_map[sid]['tests'].append({
+                    'test_name': a.test.name,
+                    'weight': a.test.weight,
+                    'percentage': a.percentage,
+                    'calculated_score': score,
+                })
+                subjects_map[sid]['subject_score'] += score
+
+            subject_list = []
+            for sd in subjects_map.values():
+                sd['subject_score'] = round(sd['subject_score'], 2)
+                subject_list.append(sd)
+
+            subject_count = len(subject_list)
+            if subject_count > 0:
+                term_avg = round(sum(s['subject_score'] for s in subject_list) / subject_count, 2)
+                total_avg += term_avg
+                counted_terms += 1
+                term_grade = _get_grade(term_avg)
+            else:
+                term_avg = None
+                term_grade = None
+
+            quarters.append({
+                'quarter': term.quarter,
+                'subjects': subject_list,
+                'subject_count': subject_count,
+                'quarter_avg': term_avg,
+                'quarter_grade': term_grade,
+            })
+
+        if counted_terms == 0:
+            return response.Response(
+                {"detail": "Bu o'quvchi uchun 2025-2026 o'quv yilida hech qanday baho topilmadi."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        final_score = round(total_avg / counted_terms, 2)
+        grade = _get_grade(final_score)
+        level = _get_level(student.class_number.number if student.class_number else None)
+
+        certificate_url = request.build_absolute_uri(
+            f'/api/terms/certificate/{student_id}/'
+        )
+
+        return response.Response({
+            'student': {
+                'id': student.id,
+                'name': student.user.name,
+                'surname': student.user.surname,
+                'level': level,
+            },
+            'academic_year': ACADEMIC_YEAR,
+            'quarters': quarters,
+            'final_score': final_score,
+            'final_grade': grade,
+            'grade_description': GRADE_DESCRIPTIONS.get(grade, ''),
+            'certificate_url': certificate_url,
+        }, status=status.HTTP_200_OK)
 
 
 class EducationQualityDetails(views.APIView):
