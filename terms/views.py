@@ -85,11 +85,38 @@ def _get_level(class_number) -> str:
     return "N/A"
 
 
-def _build_pdf_certificate(student, level: str, class_number) -> io.BytesIO:
+def _compute_final_grade(student):
     """
-    Shablonga faqat o'quvchining ismi va "completed the <level> year <N>"
-    qatorini joylashtiradi. Boshqa hamma matn (CERTIFICATE, 2025-2026,
-    M.M.YULDASHEV) shablonning o'zidan keladi — ustiga hech narsa qo'shilmaydi.
+    2025-2026 o'quv yili yakuniy bahosini hisoblaydi.
+    Har chorak: Σ(fan ballari) / fanlar soni; yakuniy: chorak o'rtachalarining
+    o'rtachasi. Ma'lumot bo'lmasa (None, None) qaytadi.
+    """
+    total_avg = 0.0
+    counted = 0
+    for term in Term.objects.filter(academic_year=ACADEMIC_YEAR):
+        assignments = (
+            Assignment.objects
+            .filter(student=student, test__term=term, test__deleted=False)
+            .select_related('test__subject')
+        )
+        subject_scores = defaultdict(float)
+        for a in assignments:
+            subject_scores[a.test.subject_id] += (a.test.weight * a.percentage) / 100
+        if subject_scores:
+            total_avg += sum(subject_scores.values()) / len(subject_scores)
+            counted += 1
+    if counted == 0:
+        return None, None
+    final_score = total_avg / counted
+    return final_score, _get_grade(final_score)
+
+
+def _build_pdf_certificate(student, level: str, class_number, grade: str = None) -> io.BytesIO:
+    """
+    Shablonga o'quvchining ismi va
+    "completed the <level> year <N> with grade <grade>" qatorini joylashtiradi.
+    Boshqa hamma matn (CERTIFICATE, 2025-2026, M.M.YULDASHEV) shablonning
+    o'zidan keladi — ustiga hech narsa qo'shilmaydi.
 
     Koordinatalar (pdfplumber top → reportlab y = PAGE_H - top):
       Ism:            top 438-498  → rl y 344-404   (AnastasiaScript 60pt)
@@ -114,12 +141,22 @@ def _build_pdf_certificate(student, level: str, class_number) -> io.BytesIO:
     c.setFillColor(black)
     c.drawCentredString(CENTER_X, 360, name)
 
-    # ── 2) "has successfully completed the <level> year <N>." ────────────────
+    # ── 2) "has successfully completed the <level> year <N> with grade <G>." ──
     level_word = (level or '').lower()
     year_no = class_number if class_number is not None else ''
-    line = f"has successfully completed the {level_word} year {year_no}.".strip()
+    base = f"has successfully completed the {level_word} year {year_no}".rstrip()
+    if grade:
+        line = f"{base} with grade {grade}."
+    else:
+        line = f"{base}."
+    line_size = 13
+    c.setFont(BODY_FONT, line_size)
+    # uzunroq bo'lsa, qator chetga chiqib ketmasligi uchun kichiklashtiramiz
+    max_line_w = PAGE_W - 90
+    while c.stringWidth(line, BODY_FONT, line_size) > max_line_w and line_size > 9:
+        line_size -= 0.5
+        c.setFont(BODY_FONT, line_size)
     c.setFillColor(black)
-    c.setFont(BODY_FONT, 13)
     c.drawCentredString(CENTER_X, 305, line)
 
     c.save()
@@ -546,8 +583,8 @@ class StudentCertificateView(views.APIView):
     """
     GET /api/terms/certificate/<student_id>/
 
-    Shablon asosida PDF sertifikat qaytaradi. Sertifikatda faqat o'quvchining
-    ismi va darajasi (level + year) bo'ladi — baho/jadval ko'rsatilmaydi.
+    Shablon asosida PDF sertifikat qaytaradi. Sertifikatda o'quvchining ismi,
+    darajasi (level + year) va yakuniy bahosi (A*, A, B ...) bo'ladi.
     Daraja: class_number bo'yicha (1-4 Primary, 5-8 Secondary, 9-11 Advanced).
     """
 
@@ -559,8 +596,9 @@ class StudentCertificateView(views.APIView):
 
         class_number = student.class_number.number if student.class_number else None
         level = _get_level(class_number)
+        _, grade = _compute_final_grade(student)
 
-        buf = _build_pdf_certificate(student, level, class_number)
+        buf = _build_pdf_certificate(student, level, class_number, grade)
 
         name = f"{student.user.name}_{student.user.surname}".replace(' ', '_')
         resp = HttpResponse(buf.read(), content_type='application/pdf')
