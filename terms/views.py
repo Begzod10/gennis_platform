@@ -5,8 +5,10 @@ from collections import defaultdict
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from reportlab.lib.colors import white, HexColor
+from reportlab.lib.colors import white, black
 from reportlab.pdfgen import canvas as rl_canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from pypdf import PdfReader, PdfWriter
 from rest_framework import generics, views, response, status
 
@@ -18,17 +20,24 @@ from .serializers import TestCreateUpdateSerializer, Test, TermSerializer, Term
 from django.db.models import Case, When, Value, IntegerField, Avg, Q
 from flows.models import Flow
 
-GOLD = HexColor('#C9A227')
-DARK_BLUE = HexColor('#1A3C5E')
-ROW_ALT = HexColor('#EBF0F5')
-ROW_BORDER = HexColor('#C8D4DE')
-
 CERTIFICATE_TEMPLATE = os.path.join(settings.BASE_DIR, 'media', 'certificates', 'certificate_template.pdf')
+FONT_DIR = os.path.join(settings.BASE_DIR, 'terms', 'fonts')
 
 # PDF page dimensions (A4 portrait, points)
 PAGE_W = 595.5
 PAGE_H = 842.25
 CENTER_X = PAGE_W / 2
+
+# Register template-matching fonts once (script for the name, Poppins for body)
+NAME_FONT = 'GreatVibes'
+BODY_FONT = 'Poppins-Italic'
+try:
+    pdfmetrics.registerFont(TTFont(NAME_FONT, os.path.join(FONT_DIR, 'GreatVibes-Regular.ttf')))
+    pdfmetrics.registerFont(TTFont(BODY_FONT, os.path.join(FONT_DIR, 'Poppins-Italic.ttf')))
+except Exception:
+    # Fall back to built-in fonts if the TTF files are missing
+    NAME_FONT = 'Times-BoldItalic'
+    BODY_FONT = 'Times-Italic'
 
 ACADEMIC_YEAR = "2025-2026"
 
@@ -76,100 +85,54 @@ def _get_level(class_number) -> str:
     return "N/A"
 
 
-def _build_pdf_certificate(student, term_data: list, final_score: float, grade: str, level: str) -> io.BytesIO:
+def _build_pdf_certificate(student, level: str, class_number) -> io.BytesIO:
     """
-    Reportlab overlay + PDF template merge.
+    Shablonga faqat o'quvchining ismi va "completed the <level> year <N>"
+    qatorini joylashtiradi. Boshqa hamma matn (CERTIFICATE, 2025-2026,
+    M.M.YULDASHEV) shablonning o'zidan keladi — ustiga hech narsa qo'shilmaydi.
 
-    Template coordinate reference (pdfplumber → reportlab y = PAGE_H - pdfplumber_y):
-      Student name:   pdfplumber y=438-498 → rl y=344-404
-      Description:    pdfplumber y=527-576 → rl y=266-315
-      Director name:  pdfplumber y=708-721 → rl y=121-134
-      CERTIFICATE:    pdfplumber y=301-352 → rl y=490-541  (kept)
-      OF COMPLETION:  pdfplumber y=357-375 → rl y=467-485  (kept)
+    Koordinatalar (pdfplumber top → reportlab y = PAGE_H - top):
+      Ism:            top 438-498  → rl y 344-404   (AnastasiaScript 60pt)
+      Tavsif 1-qator: top 527-540  → rl y 302-315   (Poppins-Italic 13pt)
     """
     overlay_buf = io.BytesIO()
     c = rl_canvas.Canvas(overlay_buf, pagesize=(PAGE_W, PAGE_H))
 
-    # White rect covering name + description + director zones
+    # ── 1) O'quvchining ismi ──────────────────────────────────────────────────
+    # Shablondagi joriy ismni oqartirib o'chiramiz (yuqorida "OF COMPLETION",
+    # pastda tavsif bor — ular tegmaydi).
     c.setFillColor(white)
-    c.setStrokeColor(white)
-    c.rect(60, 118, 476, 309, fill=1, stroke=0)   # rl y=118-427, x=60-536
+    c.rect(56, 338, PAGE_W - 112, 72, fill=1, stroke=0)   # rl y 338-410
 
-    # ── Student name ──────────────────────────────────────────────────────────
-    name = f"{(student.user.name or '').upper()} {(student.user.surname or '').upper()}".strip()
-    c.setFillColor(DARK_BLUE)
-    c.setFont("Times-Bold", 38)
-    c.drawCentredString(CENTER_X, 365, name)
+    name = f"{(student.user.name or '').strip()} {(student.user.surname or '').strip()}".strip()
+    size = 56
+    c.setFont(NAME_FONT, size)
+    max_w = PAGE_W - 150
+    while c.stringWidth(name, NAME_FONT, size) > max_w and size > 20:
+        size -= 1
+        c.setFont(NAME_FONT, size)
+    c.setFillColor(black)
+    c.drawCentredString(CENTER_X, 360, name)
 
-    # ── Academic year + level ─────────────────────────────────────────────────
-    c.setFont("Times-Roman", 11)
-    c.drawCentredString(CENTER_X, 336, f"Academic Year: {ACADEMIC_YEAR}   ·   Level: {level}")
-
-    # ── Final grade (gold) ────────────────────────────────────────────────────
-    c.setFillColor(GOLD)
-    c.setFont("Times-Bold", 20)
-    c.drawCentredString(CENTER_X, 308, f"Final Grade:  {grade}   ·   {GRADE_DESCRIPTIONS.get(grade, '')}")
-
-    # ── Overall score ─────────────────────────────────────────────────────────
-    c.setFillColor(DARK_BLUE)
-    c.setFont("Times-Italic", 10)
-    c.drawCentredString(CENTER_X, 285, f"Overall Score: {final_score:.1f} / 100")
-
-    # ── Quarter breakdown table ───────────────────────────────────────────────
-    TBL_LEFT = 72
-    TBL_W    = 452
-    COL_W    = [108, 112, 80, 152]   # Quarter | Avg Score | Grade | Subjects
-    HDR_H    = 17
-    ROW_H    = 14
-    TBL_TOP  = 264   # rl y of table top edge
-
-    # Header (dark blue background)
-    c.setFillColor(DARK_BLUE)
-    c.rect(TBL_LEFT, TBL_TOP - HDR_H, TBL_W, HDR_H, fill=1, stroke=0)
-
+    # ── 2) "has successfully completed the <level> year <N>." ────────────────
+    # Faqat 1-qatorni qayta yozamiz; "2025-2026 demostrating..." qatorlari
+    # shablonda qoladi.
     c.setFillColor(white)
-    c.setFont("Times-Bold", 8.5)
-    hdr_labels = ["Quarter", "Avg Score", "Grade", "Subjects"]
-    x = TBL_LEFT
-    for lbl, w in zip(hdr_labels, COL_W):
-        c.drawCentredString(x + w / 2, TBL_TOP - HDR_H + 5, lbl)
-        x += w
+    c.rect(90, 300, PAGE_W - 180, 18, fill=1, stroke=0)   # rl y 300-318
 
-    # Data rows
-    cur_y = TBL_TOP - HDR_H
-    for j, td in enumerate(term_data):
-        row_bot = cur_y - ROW_H
-        c.setFillColor(ROW_ALT if j % 2 == 0 else white)
-        c.setStrokeColor(ROW_BORDER)
-        c.setLineWidth(0.4)
-        c.rect(TBL_LEFT, row_bot, TBL_W, ROW_H, fill=1, stroke=1)
-
-        c.setFillColor(DARK_BLUE)
-        c.setFont("Times-Roman", 8.5)
-        vals = [
-            f"{td['quarter']}-Chorak",
-            f"{td['avg']:.1f}" if td['avg'] is not None else "—",
-            td['grade'] if td['grade'] else "—",
-            str(td['subject_count']),
-        ]
-        x = TBL_LEFT
-        for val, w in zip(vals, COL_W):
-            c.drawCentredString(x + w / 2, row_bot + 4, val)
-            x += w
-        cur_y = row_bot
-
-    # Table outer border
-    table_total_h = HDR_H + len(term_data) * ROW_H
-    c.setStrokeColor(DARK_BLUE)
-    c.setLineWidth(0.8)
-    c.rect(TBL_LEFT, TBL_TOP - table_total_h, TBL_W, table_total_h, fill=0, stroke=1)
+    level_word = (level or '').lower()
+    year_no = class_number if class_number is not None else ''
+    line = f"has successfully completed the {level_word} year {year_no}.".strip()
+    c.setFillColor(black)
+    c.setFont(BODY_FONT, 13)
+    c.drawCentredString(CENTER_X, 305, line)
 
     c.save()
     overlay_buf.seek(0)
 
-    # ── Merge overlay onto template ───────────────────────────────────────────
+    # ── Overlay'ni shablon ustiga birlashtiramiz ──────────────────────────────
     template_reader = PdfReader(CERTIFICATE_TEMPLATE)
-    overlay_reader  = PdfReader(overlay_buf)
+    overlay_reader = PdfReader(overlay_buf)
 
     page = template_reader.pages[0]
     page.merge_page(overlay_reader.pages[0])
@@ -588,10 +551,9 @@ class StudentCertificateView(views.APIView):
     """
     GET /api/terms/certificate/<student_id>/
 
-    2025-2026 o'quv yili uchun sertifikat generatsiya qiladi.
-    - Har chorak uchun: fanlar ball yig'indisi / fanlar soni = chorak o'rtachasi
-    - Yakuniy ball: 4 chorak o'rtachasi / ma'lumot bor choraklar soni
-    - Daraja: class_number bo'yicha (1-4 Primary, 5-8 Secondary, 9-11 Advanced)
+    Shablon asosida PDF sertifikat qaytaradi. Sertifikatda faqat o'quvchining
+    ismi va darajasi (level + year) bo'ladi — baho/jadval ko'rsatilmaydi.
+    Daraja: class_number bo'yicha (1-4 Primary, 5-8 Secondary, 9-11 Advanced).
     """
 
     def get(self, request, student_id):
@@ -600,54 +562,10 @@ class StudentCertificateView(views.APIView):
             id=student_id
         )
 
-        terms = list(
-            Term.objects.filter(academic_year=ACADEMIC_YEAR).order_by('quarter')
-        )
+        class_number = student.class_number.number if student.class_number else None
+        level = _get_level(class_number)
 
-        term_data = []
-        total_avg = 0.0
-        counted_terms = 0
-
-        for term in terms:
-            assignments = (
-                Assignment.objects
-                .filter(student=student, test__term=term, test__deleted=False)
-                .select_related('test__subject')
-            )
-
-            subject_scores = defaultdict(float)
-            for a in assignments:
-                score = (a.test.weight * a.percentage) / 100
-                subject_scores[a.test.subject_id] += score
-
-            subject_count = len(subject_scores)
-            if subject_count > 0:
-                term_avg = sum(subject_scores.values()) / subject_count
-                total_avg += term_avg
-                counted_terms += 1
-            else:
-                term_avg = None
-
-            term_data.append({
-                'quarter': term.quarter,
-                'avg': term_avg,
-                'grade': _get_grade(term_avg) if term_avg is not None else None,
-                'subject_count': subject_count,
-            })
-
-        if counted_terms == 0:
-            return response.Response(
-                {"detail": "Bu o'quvchi uchun 2025-2026 o'quv yilida hech qanday baho topilmadi."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        final_score = total_avg / counted_terms
-        grade = _get_grade(final_score)
-        level = _get_level(
-            student.class_number.number if student.class_number else None
-        )
-
-        buf = _build_pdf_certificate(student, term_data, final_score, grade, level)
+        buf = _build_pdf_certificate(student, level, class_number)
 
         name = f"{student.user.name}_{student.user.surname}".replace(' ', '_')
         resp = HttpResponse(buf.read(), content_type='application/pdf')
