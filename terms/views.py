@@ -1,14 +1,242 @@
+import io
 from collections import defaultdict
 
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.shared import Pt, RGBColor, Inches, Cm
 from rest_framework import generics, views, response, status
 
-from group.models import Group, GroupSubjects, Student, GroupRating
+from group.models import Group, GroupSubjects, GroupRating
+from students.models import Student
 from .functions import create_multiple_years
 from .models import Assignment
 from .serializers import TestCreateUpdateSerializer, Test, TermSerializer, Term
 from django.db.models import Case, When, Value, IntegerField, Avg, Q
 from flows.models import Flow
+
+GOLD = RGBColor(0xC9, 0xA2, 0x27)
+DARK_BLUE = RGBColor(0x1A, 0x3C, 0x5E)
+WHITE = RGBColor(0xFF, 0xFF, 0xFF)
+
+ACADEMIC_YEAR = "2025-2026"
+
+GRADE_THRESHOLDS = [
+    (90, "A*"),
+    (80, "A"),
+    (70, "B"),
+    (60, "C"),
+    (50, "D"),
+    (40, "E"),
+    (30, "F"),
+    (20, "G"),
+    (0,  "U"),
+]
+
+GRADE_DESCRIPTIONS = {
+    "A*": "Juda yuqori natija",
+    "A":  "Excellent",
+    "B":  "Very Good",
+    "C":  "Good / Pass",
+    "D":  "Satisfactory",
+    "E":  "Minimum Pass",
+    "F":  "Pass (IGCSE)",
+    "G":  "Pass (IGCSE)",
+    "U":  "Ungraded",
+}
+
+
+def _get_grade(score: float) -> str:
+    for threshold, grade in GRADE_THRESHOLDS:
+        if score >= threshold:
+            return grade
+    return "U"
+
+
+def _get_level(class_number) -> str:
+    if class_number is None:
+        return "N/A"
+    if 1 <= class_number <= 4:
+        return "Primary"
+    if 5 <= class_number <= 8:
+        return "Secondary"
+    if 9 <= class_number <= 11:
+        return "Advanced"
+    return "N/A"
+
+
+def _set_cell_bg(cell, hex_color: str):
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+    shd = OxmlElement('w:shd')
+    shd.set(qn('w:val'), 'clear')
+    shd.set(qn('w:color'), 'auto')
+    shd.set(qn('w:fill'), hex_color)
+    tcPr.append(shd)
+
+
+def _add_paragraph(doc, text, size, bold=False, color=None, align=WD_ALIGN_PARAGRAPH.CENTER, space_before=0, space_after=6):
+    p = doc.add_paragraph()
+    p.alignment = align
+    p.paragraph_format.space_before = Pt(space_before)
+    p.paragraph_format.space_after = Pt(space_after)
+    run = p.add_run(text)
+    run.bold = bold
+    run.font.size = Pt(size)
+    run.font.name = 'Georgia'
+    if color:
+        run.font.color.rgb = color
+    return p
+
+
+def _build_certificate(student, term_data: list, final_score: float, grade: str, level: str) -> io.BytesIO:
+    doc = Document()
+
+    section = doc.sections[0]
+    section.page_width = Inches(11)
+    section.page_height = Inches(8.5)
+    section.left_margin = Cm(2)
+    section.right_margin = Cm(2)
+    section.top_margin = Cm(1.5)
+    section.bottom_margin = Cm(1.5)
+
+    # ── HEADER TABLE (dark blue banner) ───────────────────────────────────────
+    hdr = doc.add_table(rows=1, cols=1)
+    hdr.style = 'Table Grid'
+    hdr_cell = hdr.rows[0].cells[0]
+    _set_cell_bg(hdr_cell, '1A3C5E')
+    hdr_cell.width = Inches(10.5)
+
+    p = hdr_cell.paragraphs[0]
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before = Pt(8)
+    p.paragraph_format.space_after = Pt(8)
+    run = p.add_run("✦  CERTIFICATE OF EXCELLENCE  ✦")
+    run.bold = True
+    run.font.size = Pt(22)
+    run.font.name = 'Georgia'
+    run.font.color.rgb = GOLD
+
+    doc.add_paragraph()
+
+    # ── GOLD LINE ─────────────────────────────────────────────────────────────
+    gl = doc.add_table(rows=1, cols=1)
+    gl.style = 'Table Grid'
+    _set_cell_bg(gl.rows[0].cells[0], 'C9A227')
+    gl.rows[0].cells[0].paragraphs[0].paragraph_format.space_before = Pt(2)
+    gl.rows[0].cells[0].paragraphs[0].paragraph_format.space_after = Pt(2)
+
+    doc.add_paragraph()
+
+    # ── BODY ──────────────────────────────────────────────────────────────────
+    _add_paragraph(doc, "This is to certify that", 13, color=DARK_BLUE, space_before=4, space_after=2)
+
+    _add_paragraph(
+        doc,
+        f"{student.user.name.upper()} {student.user.surname.upper()}",
+        28, bold=True, color=DARK_BLUE, space_before=4, space_after=4
+    )
+
+    _add_paragraph(doc, "has successfully completed the academic year", 13, color=DARK_BLUE, space_after=2)
+
+    _add_paragraph(doc, ACADEMIC_YEAR, 16, bold=True, color=GOLD, space_after=10)
+
+    _add_paragraph(doc, f"Level: {level}", 13, color=DARK_BLUE, space_after=2)
+
+    # ── GRADE BOX ─────────────────────────────────────────────────────────────
+    grade_tbl = doc.add_table(rows=1, cols=3)
+    grade_tbl.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    grade_tbl.style = 'Table Grid'
+    grade_tbl.rows[0].cells[0].width = Inches(3.5)
+    grade_tbl.rows[0].cells[1].width = Inches(1.5)
+    grade_tbl.rows[0].cells[2].width = Inches(3.5)
+
+    _set_cell_bg(grade_tbl.rows[0].cells[0], 'FFFFFF')
+    _set_cell_bg(grade_tbl.rows[0].cells[1], '1A3C5E')
+    _set_cell_bg(grade_tbl.rows[0].cells[2], 'FFFFFF')
+
+    left_p = grade_tbl.rows[0].cells[0].paragraphs[0]
+    left_p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    left_p.paragraph_format.space_before = Pt(6)
+    left_r = left_p.add_run(f"Overall Score:  {final_score:.1f}")
+    left_r.font.size = Pt(13)
+    left_r.font.name = 'Georgia'
+    left_r.font.color.rgb = DARK_BLUE
+
+    mid_p = grade_tbl.rows[0].cells[1].paragraphs[0]
+    mid_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    mid_p.paragraph_format.space_before = Pt(2)
+    mid_r = mid_p.add_run(grade)
+    mid_r.bold = True
+    mid_r.font.size = Pt(36)
+    mid_r.font.name = 'Georgia'
+    mid_r.font.color.rgb = GOLD
+
+    right_p = grade_tbl.rows[0].cells[2].paragraphs[0]
+    right_p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    right_p.paragraph_format.space_before = Pt(6)
+    right_r = right_p.add_run(f"  {GRADE_DESCRIPTIONS.get(grade, '')}")
+    right_r.font.size = Pt(13)
+    right_r.font.name = 'Georgia'
+    right_r.font.color.rgb = DARK_BLUE
+
+    doc.add_paragraph()
+
+    # ── TERM BREAKDOWN TABLE ───────────────────────────────────────────────────
+    _add_paragraph(doc, "Academic Performance by Quarter", 11, bold=True, color=DARK_BLUE, space_before=6, space_after=4)
+
+    tbl = doc.add_table(rows=1, cols=4)
+    tbl.style = 'Table Grid'
+    tbl.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    headers = ["Quarter", "Avg Score", "Grade", "Subjects"]
+    for i, h in enumerate(headers):
+        cell = tbl.rows[0].cells[i]
+        _set_cell_bg(cell, '1A3C5E')
+        p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p.add_run(h)
+        run.bold = True
+        run.font.size = Pt(10)
+        run.font.name = 'Georgia'
+        run.font.color.rgb = WHITE
+
+    for td in term_data:
+        row = tbl.add_row()
+        vals = [
+            f"{td['quarter']}-chorak",
+            f"{td['avg']:.1f}" if td['avg'] is not None else "—",
+            td['grade'] if td['avg'] is not None else "—",
+            str(td['subject_count']),
+        ]
+        for i, val in enumerate(vals):
+            cell = row.cells[i]
+            p = cell.paragraphs[0]
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            run = p.add_run(val)
+            run.font.size = Pt(10)
+            run.font.name = 'Georgia'
+            run.font.color.rgb = DARK_BLUE
+
+    doc.add_paragraph()
+
+    # ── GOLD FOOTER LINE ──────────────────────────────────────────────────────
+    fl = doc.add_table(rows=1, cols=1)
+    fl.style = 'Table Grid'
+    _set_cell_bg(fl.rows[0].cells[0], 'C9A227')
+    fl.rows[0].cells[0].paragraphs[0].paragraph_format.space_before = Pt(2)
+    fl.rows[0].cells[0].paragraphs[0].paragraph_format.space_after = Pt(2)
+
+    from django.utils import timezone
+    today = timezone.localdate().strftime("%B %d, %Y")
+    _add_paragraph(doc, f"Issued: {today}", 9, color=DARK_BLUE, space_before=6, space_after=0)
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    buf.seek(0)
+    return buf
 
 
 class CreateTest(generics.CreateAPIView):
@@ -410,6 +638,80 @@ class EducationQualityOverview(views.APIView):
             "max_rating": 5,
             "description": "5 ballik tizimda maktab reytingi"
         }, status=status.HTTP_200_OK)
+
+
+class StudentCertificateView(views.APIView):
+    """
+    GET /api/terms/certificate/<student_id>/
+
+    2025-2026 o'quv yili uchun sertifikat generatsiya qiladi.
+    - Har chorak uchun: fanlar ball yig'indisi / fanlar soni = chorak o'rtachasi
+    - Yakuniy ball: 4 chorak o'rtachasi / ma'lumot bor choraklar soni
+    - Daraja: class_number bo'yicha (1-4 Primary, 5-8 Secondary, 9-11 Advanced)
+    """
+
+    def get(self, request, student_id):
+        student = get_object_or_404(
+            Student.objects.select_related('user', 'class_number'),
+            id=student_id
+        )
+
+        terms = list(
+            Term.objects.filter(academic_year=ACADEMIC_YEAR).order_by('quarter')
+        )
+
+        term_data = []
+        total_avg = 0.0
+        counted_terms = 0
+
+        for term in terms:
+            assignments = (
+                Assignment.objects
+                .filter(student=student, test__term=term, test__deleted=False)
+                .select_related('test__subject')
+            )
+
+            subject_scores = defaultdict(float)
+            for a in assignments:
+                score = (a.test.weight * a.percentage) / 100
+                subject_scores[a.test.subject_id] += score
+
+            subject_count = len(subject_scores)
+            if subject_count > 0:
+                term_avg = sum(subject_scores.values()) / subject_count
+                total_avg += term_avg
+                counted_terms += 1
+            else:
+                term_avg = None
+
+            term_data.append({
+                'quarter': term.quarter,
+                'avg': term_avg,
+                'grade': _get_grade(term_avg) if term_avg is not None else None,
+                'subject_count': subject_count,
+            })
+
+        if counted_terms == 0:
+            return response.Response(
+                {"detail": "Bu o'quvchi uchun 2025-2026 o'quv yilida hech qanday baho topilmadi."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        final_score = total_avg / counted_terms
+        grade = _get_grade(final_score)
+        level = _get_level(
+            student.class_number.number if student.class_number else None
+        )
+
+        buf = _build_certificate(student, term_data, final_score, grade, level)
+
+        name = f"{student.user.name}_{student.user.surname}".replace(' ', '_')
+        resp = HttpResponse(
+            buf.read(),
+            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+        resp['Content-Disposition'] = f'attachment; filename="certificate_{name}_{ACADEMIC_YEAR}.docx"'
+        return resp
 
 
 class EducationQualityDetails(views.APIView):
