@@ -48,7 +48,7 @@ class TeacherListTest(views.APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        teacher = Teacher.objects.filter(user=request.user, deleted=False).first()
+        teacher = Teacher.objects.filter(user=request.user).first()
         if not teacher:
             return response.Response(
                 {"detail": "Siz teacher emassiz"},
@@ -393,7 +393,7 @@ class TeacherGroupsAndFlowsView(views.APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        teacher = Teacher.objects.filter(user=request.user, deleted=False).first()
+        teacher = Teacher.objects.filter(user=request.user).first()
         if not teacher:
             return response.Response(
                 {"detail": "Siz teacher emassiz"},
