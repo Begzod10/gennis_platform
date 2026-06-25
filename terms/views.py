@@ -1,11 +1,12 @@
 import io
+import math
 import os
 from collections import defaultdict
 
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from reportlab.lib.colors import black
+from reportlab.lib.colors import black, HexColor
 from reportlab.pdfgen import canvas as rl_canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -135,55 +136,76 @@ def _compute_final_grade(student):
     return final_score, _get_grade(final_score)
 
 
-def _build_pdf_certificate(student, level: str, class_number, grade: str = None, director_fio: str = None) -> io.BytesIO:
-    """
-    Shablonga o'quvchining ismi, "completed the <level> year <N> with grade <G>."
-    qatori va filial direktori FIO ni joylashtiradi.
+_GRADE_BADGE_COLORS = {
+    'A*': ('#C9A84C', '#FFF9EC'),
+    'A':  ('#C9A84C', '#FFF9EC'),
+    'B':  ('#4A6FA5', '#EFF4FB'),
+    'C':  ('#6B8F71', '#F1F6F1'),
+    'D':  ('#A07850', '#F6F0EA'),
+    'E':  ('#8B7355', '#F2EDE7'),
+    'F':  ('#7A7A7A', '#F0F0F0'),
+    'G':  ('#7A7A7A', '#F0F0F0'),
+    'U':  ('#555555', '#EEEEEE'),
+}
 
-    Koordinatalar (pdfplumber top → reportlab y = PAGE_H - top):
-      Ism:            top 438-498  → rl y 344-404   (GreatVibes 56pt)
-      Tavsif qatori:  top 527-540  → rl y 302-315   (Poppins-Italic 13pt)
-      Direktor FIO:   top 708-721  → rl y 121-134   (Poppins-Italic 11pt)
-    """
+
+def _draw_grade_badge(c, cx, cy, grade: str) -> None:
+    ring_hex, inner_hex = _GRADE_BADGE_COLORS.get(grade, ('#8B7355', '#F2EDE7'))
+    ring  = HexColor(ring_hex)
+    inner = HexColor(inner_hex)
+    R, r  = 30, 24
+
+    c.saveState()
+    c.translate(cx, cy)
+
+    # 8-point star outline
+    c.setFillColor(ring)
+    path = c.beginPath()
+    for i in range(16):
+        angle  = math.radians(i * 22.5 - 90)
+        radius = R if i % 2 == 0 else R * 0.80
+        x, y   = radius * math.cos(angle), radius * math.sin(angle)
+        path.moveTo(x, y) if i == 0 else path.lineTo(x, y)
+    path.close()
+    c.drawPath(path, fill=1, stroke=0)
+
+    c.setFillColor(inner)
+    c.circle(0, 0, r, fill=1, stroke=0)
+    c.setStrokeColor(ring)
+    c.setLineWidth(1.2)
+    c.circle(0, 0, r, fill=0, stroke=1)
+
+    c.setFillColor(ring)
+    c.setFont('Helvetica-Bold', 26)
+    lw = c.stringWidth(grade, 'Helvetica-Bold', 26)
+    c.drawString(-lw / 2, -9, grade)
+
+    c.restoreState()
+
+
+def _build_pdf_certificate(student, level: str, class_number, grade: str = None, director_fio: str = None) -> io.BytesIO:
     overlay_buf = io.BytesIO()
     c = rl_canvas.Canvas(overlay_buf, pagesize=(PAGE_W, PAGE_H))
 
-    # ── 1) O'quvchining ismi ──────────────────────────────────────────────────
+    # 1) Student name
     name = f"{(student.user.name or '').strip()} {(student.user.surname or '').strip()}".strip()
     size = 56
     c.setFont(NAME_FONT, size)
-    max_w = PAGE_W - 150
-    while c.stringWidth(name, NAME_FONT, size) > max_w and size > 20:
+    while c.stringWidth(name, NAME_FONT, size) > PAGE_W - 150 and size > 20:
         size -= 1
         c.setFont(NAME_FONT, size)
     c.setFillColor(black)
     c.drawCentredString(CENTER_X, 360, name)
 
-    # ── 2) "completed the <level> year <N> with grade <G>." ──────────────────
-    # Cover the baked-in placeholder "has completed..." line at pdfplumber top=527
-    from reportlab.lib.colors import Color as RLColor
-    cream = RLColor(0.976, 0.953, 0.918)
-    c.setFillColor(cream)
-    c.rect(100, 298, 400, 22, fill=1, stroke=0)  # covers top=527→rl y=298-320
+    # 2) Grade badge — bottom-right corner (same height as director line)
+    if grade:
+        _draw_grade_badge(c, 450, 128, grade)
 
-    level_word = (level or '').lower()
-    year_no = class_number if class_number is not None else ''
-    base = f"completed the {level_word} year {year_no}".rstrip()
-    line = f"{base} with grade {grade}." if grade else f"{base}."
-    line_size = 13
-    c.setFont(BODY_FONT, line_size)
-    max_line_w = PAGE_W - 90
-    while c.stringWidth(line, BODY_FONT, line_size) > max_line_w and line_size > 9:
-        line_size -= 0.5
-        c.setFont(BODY_FONT, line_size)
-    c.setFillColor(black)
-    c.drawCentredString(CENTER_X, 305, line)
-
-    # ── 3) Direktor FIO — chiziq va ism ──────────────────────────────────────
+    # 3) Director signature line + name
     if director_fio:
         c.setStrokeColor(black)
         c.setLineWidth(0.8)
-        c.line(100, 136, 280, 136)          # signature line above name
+        c.line(100, 136, 280, 136)
         c.setFillColor(black)
         c.setFont(BODY_FONT, 11)
         c.drawString(100, 121, director_fio.upper())
