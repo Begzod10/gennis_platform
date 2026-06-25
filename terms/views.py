@@ -470,7 +470,6 @@ class TermsByStudent(views.APIView):
 
         student = Student.objects.get(id=student_id)
 
-        # Faqat o'quvchi HOZIR a'zo bo'lgan guruhlarning testlari (+ flow testlari).
         group_scope = _student_group_scope(student)
 
         if subject_id:
@@ -515,6 +514,7 @@ class TermsByStudent(views.APIView):
             subjects_data[subject_id]["subject_name"] = assignment.test.subject.name
             subjects_data[subject_id]["assignments"].append({
                 "test_name": assignment.test.name,
+                "test_id":assignment.test.id,
                 "percentage": assignment.percentage,
                 "calculated_result": round(calculated_result, 2)
             })
