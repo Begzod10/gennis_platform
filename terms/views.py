@@ -192,16 +192,16 @@ def _build_pdf_certificate(student, level: str, class_number, grade: str = None,
     overlay_buf.seek(0)
 
     # ── Overlay'ni shablon ustiga birlashtiramiz ──────────────────────────────
-    # NOTE: pypdf merge_page PREPENDS, so to put overlay ON TOP we merge
-    # the template INTO the overlay (template becomes background).
+    # pypdf merge_page(p2) APPENDS p2 onto current page → p2 renders on top.
+    # So template.merge_page(overlay) puts overlay on top of template.
     template_reader = PdfReader(CERTIFICATE_TEMPLATE)
     overlay_reader = PdfReader(overlay_buf)
 
-    overlay_page = overlay_reader.pages[0]
-    overlay_page.merge_page(template_reader.pages[0])
+    page = template_reader.pages[0]
+    page.merge_page(overlay_reader.pages[0])
 
     writer = PdfWriter()
-    writer.add_page(overlay_page)
+    writer.add_page(page)
 
     out_buf = io.BytesIO()
     writer.write(out_buf)
