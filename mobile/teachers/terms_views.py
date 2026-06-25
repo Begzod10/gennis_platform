@@ -338,6 +338,8 @@ class TeacherTermsByGroupView(views.APIView):
                     test__term_id=term_id,
                     test__deleted=False,
                     test__subject_id=subject_id
+                ).filter(
+                    Q(test__group_id=group_id) | Q(test__group_id__isnull=True)
                 ).select_related('test__subject')
             else:
                 teacher_group_subject_ids = set(
@@ -359,6 +361,8 @@ class TeacherTermsByGroupView(views.APIView):
                     test__term_id=term_id,
                     test__deleted=False,
                     test__subject_id__in=teacher_subjects_ids
+                ).filter(
+                    Q(test__group_id=group_id) | Q(test__group_id__isnull=True)
                 ).select_related('test__subject')
 
             subjects_data = defaultdict(

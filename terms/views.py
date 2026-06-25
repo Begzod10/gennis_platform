@@ -417,12 +417,12 @@ class TermsByGroup(views.APIView):
             subject_id = kwargs.get('subject_id', None)
             if subject_id:
                 assignments = Assignment.objects.filter(student=student, test__term_id=term_id,
-                                                        test__deleted=False,
+                                                        test__deleted=False, test__group_id=group_id,
                                                         test__subject_id=subject_id).select_related(
                     'test__subject')
             else:
                 assignments = Assignment.objects.filter(student=student, test__term_id=term_id,
-                                                        test__deleted=False).select_related(
+                                                        test__deleted=False, test__group_id=group_id).select_related(
                     'test__subject')
 
             subjects_data = defaultdict(
