@@ -160,6 +160,12 @@ def _build_pdf_certificate(student, level: str, class_number, grade: str = None,
     c.drawCentredString(CENTER_X, 360, name)
 
     # ── 2) "completed the <level> year <N> with grade <G>." ──────────────────
+    # Cover the baked-in placeholder "has completed..." line at pdfplumber top=527
+    from reportlab.lib.colors import Color as RLColor
+    cream = RLColor(0.976, 0.953, 0.918)
+    c.setFillColor(cream)
+    c.rect(100, 298, 400, 22, fill=1, stroke=0)  # covers top=527→rl y=298-320
+
     level_word = (level or '').lower()
     year_no = class_number if class_number is not None else ''
     base = f"completed the {level_word} year {year_no}".rstrip()
@@ -173,15 +179,14 @@ def _build_pdf_certificate(student, level: str, class_number, grade: str = None,
     c.setFillColor(black)
     c.drawCentredString(CENTER_X, 305, line)
 
-    # ── 3) Direktor FIO — M.M.YULDASHEV ustiga yozamiz ───────────────────────
+    # ── 3) Direktor FIO — chiziq va ism ──────────────────────────────────────
     if director_fio:
-        from reportlab.lib.colors import Color as RLColor
-        cream = RLColor(0.976, 0.953, 0.918)
-        c.setFillColor(cream)
-        c.rect(80, 112, 320, 22, fill=1, stroke=0)
+        c.setStrokeColor(black)
+        c.setLineWidth(0.8)
+        c.line(100, 136, 280, 136)          # signature line above name
         c.setFillColor(black)
         c.setFont(BODY_FONT, 11)
-        c.drawString(144, 121, director_fio.upper())
+        c.drawString(100, 121, director_fio.upper())
 
     c.save()
     overlay_buf.seek(0)
