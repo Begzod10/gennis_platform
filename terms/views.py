@@ -195,7 +195,7 @@ def _build_pdf_certificate(student, level: str, class_number, grade: str = None,
         size -= 1
         c.setFont(NAME_FONT, size)
     c.setFillColor(black)
-    c.drawCentredString(CENTER_X, 415, name)
+    c.drawCentredString(CENTER_X, 390, name)
 
     # 2) Grade badge + category label — bottom-right corner
     if grade:
