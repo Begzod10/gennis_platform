@@ -85,18 +85,29 @@ def _get_level(class_number) -> str:
     return "N/A"
 
 
+def _student_group_scope(student):
+    """
+    O'quvchi HOZIR a'zo bo'lgan guruhlar (+ flow) testlari uchun Q filtri.
+    Eski guruhdan qolib ketgan assignmentlar hisobga qo'shilmasligi uchun.
+    """
+    ids = list(student.groups_student.values_list('id', flat=True))
+    return Q(test__group_id__in=ids) | Q(test__group_id__isnull=True)
+
+
 def _compute_final_grade(student):
     """
     2025-2026 o'quv yili yakuniy bahosini hisoblaydi.
     Har chorak: Σ(fan ballari) / fanlar soni; yakuniy: chorak o'rtachalarining
     o'rtachasi. Ma'lumot bo'lmasa (None, None) qaytadi.
     """
+    group_scope = _student_group_scope(student)
     total_avg = 0.0
     counted = 0
     for term in Term.objects.filter(academic_year=ACADEMIC_YEAR):
         assignments = (
             Assignment.objects
             .filter(student=student, test__term=term, test__deleted=False)
+            .filter(group_scope)
             .select_related('test__subject')
         )
         subject_scores = defaultdict(float)
@@ -458,20 +469,23 @@ class TermsByStudent(views.APIView):
         subject_id = kwargs.get('subject_id', None)
 
         student = Student.objects.get(id=student_id)
-        if subject_id:
 
+        # Faqat o'quvchi HOZIR a'zo bo'lgan guruhlarning testlari (+ flow testlari).
+        group_scope = _student_group_scope(student)
+
+        if subject_id:
             assignments = Assignment.objects.filter(
                 student=student,
                 test__term_id=term_id,
                 test__deleted=False,
                 test__subject_id=subject_id
-            ).select_related('test__subject')
+            ).filter(group_scope).select_related('test__subject')
         else:
             assignments = Assignment.objects.filter(
                 student=student,
                 test__term_id=term_id,
                 test__deleted=False
-            ).select_related('test__subject')
+            ).filter(group_scope).select_related('test__subject')
 
         response_data = {
             "student": {
@@ -625,6 +639,7 @@ class CertificateDataView(views.APIView):
         )
 
         terms = list(Term.objects.filter(academic_year=ACADEMIC_YEAR).order_by('quarter'))
+        group_scope = _student_group_scope(student)
 
         quarters = []
         total_avg = 0.0
@@ -634,6 +649,7 @@ class CertificateDataView(views.APIView):
             assignments = (
                 Assignment.objects
                 .filter(student=student, test__term=term, test__deleted=False)
+                .filter(group_scope)
                 .select_related('test__subject')
                 .order_by('test__subject__name', 'test__name')
             )

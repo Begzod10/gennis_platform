@@ -7,6 +7,7 @@ from attendances.models import AttendancePerMonth
 from rest_framework.views import APIView
 from django.utils import timezone
 from datetime import date
+from django.db.models import Q
 from django.db.models.functions import ExtractMonth, ExtractYear
 from rest_framework.response import Response
 from mobile.parents.serializers import ClassTimeTableSerializer, StudentDailyAttendanceMobileSerializer, \
@@ -224,20 +225,24 @@ class TermsByChildren(APIView):
         subject_id = request.query_params.get('subject_id', None)
 
         student = Student.objects.get(pk=student_id)
-        if subject_id:
 
+        # Faqat o'quvchi hozir a'zo bo'lgan guruhlar (+ flow) testlari
+        student_group_ids = list(student.groups_student.values_list('id', flat=True))
+        group_scope = Q(test__group_id__in=student_group_ids) | Q(test__group_id__isnull=True)
+
+        if subject_id:
             assignments = Assignment.objects.filter(
                 student=student,
                 test__term_id=term_id,
                 test__deleted=False,
                 test__subject_id=subject_id
-            ).select_related('test__subject')
+            ).filter(group_scope).select_related('test__subject')
         else:
             assignments = Assignment.objects.filter(
                 student=student,
                 test__term_id=term_id,
                 test__deleted=False
-            ).select_related('test__subject')
+            ).filter(group_scope).select_related('test__subject')
 
         response_data = {
             "student": {
