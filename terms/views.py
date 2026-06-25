@@ -385,7 +385,6 @@ class StudentAssignmentView(views.APIView):
 class AssignmentCreateView(views.APIView):
     def post(self, request, *args, **kwargs):
         data = request.data
-        print(data)
 
         if not isinstance(data, list):
             return response.Response({"error": "Request body list bo'lishi kerak"}, status=status.HTTP_400_BAD_REQUEST)
@@ -418,43 +417,47 @@ class TermsByGroup(views.APIView):
     def get(self, request, *args, **kwargs):
         group_id = kwargs.get('group_id')
         term_id = kwargs.get('term_id')
+        subject_id = kwargs.get('subject_id', None)
 
-        group = Group.objects.get(id=group_id)
-        students = group.students.all()
+        group = get_object_or_404(Group.objects.prefetch_related('students__user'), id=group_id)
+        students = list(group.students.all())
+        student_ids = [s.id for s in students]
+
+        assignments_qs = Assignment.objects.filter(
+            student_id__in=student_ids,
+            test__term_id=term_id,
+            test__deleted=False,
+            test__group_id=group_id,
+        ).select_related('test__subject')
+        if subject_id:
+            assignments_qs = assignments_qs.filter(test__subject_id=subject_id)
+
+        assignments_by_student = defaultdict(list)
+        for assignment in assignments_qs:
+            assignments_by_student[assignment.student_id].append(assignment)
 
         response_data = []
 
         for student in students:
-            subject_id = kwargs.get('subject_id', None)
-            if subject_id:
-                assignments = Assignment.objects.filter(student=student, test__term_id=term_id,
-                                                        test__deleted=False, test__group_id=group_id,
-                                                        test__subject_id=subject_id).select_related(
-                    'test__subject')
-            else:
-                assignments = Assignment.objects.filter(student=student, test__term_id=term_id,
-                                                        test__deleted=False, test__group_id=group_id).select_related(
-                    'test__subject')
-
             subjects_data = defaultdict(
-                lambda: {"subject_name": "", "assignments": [], "total_result": 0, "count": 0, "average_result": 0})
+                lambda: {"subject_name": "", "assignments": [], "total_result": 0, "total_weight": 0, "average_result": 0})
 
-            for assignment in assignments:
-                subject_id = assignment.test.subject.id
+            for assignment in assignments_by_student[student.id]:
+                subj_id = assignment.test.subject.id
                 calculated_result = (assignment.test.weight * assignment.percentage) / 100
 
-                subjects_data[subject_id]["subject_name"] = assignment.test.subject.name
-                subjects_data[subject_id]["assignments"].append(
+                subjects_data[subj_id]["subject_name"] = assignment.test.subject.name
+                subjects_data[subj_id]["assignments"].append(
                     {"test_name": assignment.test.name, "percentage": assignment.percentage,
                      "calculated_result": round(calculated_result, 2)})
-                subjects_data[subject_id]["total_result"] += calculated_result
-                subjects_data[subject_id]["count"] += 1
+                subjects_data[subj_id]["total_result"] += calculated_result
+                subjects_data[subj_id]["total_weight"] += assignment.test.weight
 
             for subj_id, subj_data in subjects_data.items():
-                if subj_data["count"] > 0:
-                    subj_data["average_result"] =subj_data["total_result"]
+                if subj_data["total_weight"] > 0:
+                    subj_data["average_result"] = round(subj_data["total_result"] * 100 / subj_data["total_weight"], 2)
                 del subj_data["total_result"]
-                del subj_data["count"]
+                del subj_data["total_weight"]
 
             response_data.append({"id": student.id, "first_name": student.user.name, "last_name": student.user.surname,
                                   "subjects": list(subjects_data.values())})
@@ -468,7 +471,7 @@ class TermsByStudent(views.APIView):
         term_id = kwargs.get('term_id')
         subject_id = kwargs.get('subject_id', None)
 
-        student = Student.objects.get(id=student_id)
+        student = get_object_or_404(Student, id=student_id)
 
         group_scope = _student_group_scope(student)
 
@@ -500,12 +503,12 @@ class TermsByStudent(views.APIView):
             "subject_name": "",
             "assignments": [],
             "total_result": 0,
-            "count": 0,
+            "total_weight": 0,
             "average_result": 0
         })
 
         total_result_all = 0
-        count_all = 0
+        total_weight_all = 0
 
         for assignment in assignments:
             subject_id = assignment.test.subject.id
@@ -519,21 +522,21 @@ class TermsByStudent(views.APIView):
                 "calculated_result": round(calculated_result, 2)
             })
             subjects_data[subject_id]["total_result"] += calculated_result
-            subjects_data[subject_id]["count"] += 1
+            subjects_data[subject_id]["total_weight"] += assignment.test.weight
 
             total_result_all += calculated_result
-            count_all += 1
+            total_weight_all += assignment.test.weight
 
         for subject_id, subj_data in subjects_data.items():
-            if subj_data["count"] > 0:
-                subj_data["average_result"] = subj_data["total_result"]
-            del subj_data["count"]
+            if subj_data["total_weight"] > 0:
+                subj_data["average_result"] = round(subj_data["total_result"] * 100 / subj_data["total_weight"], 2)
+            del subj_data["total_weight"]
             del subj_data["total_result"]
             response_data["subjects"].append(subj_data)
 
-        if count_all > 0:
+        if total_weight_all > 0:
             response_data["total_result"] = round(total_result_all, 2)
-            response_data["average_result"] =total_result_all
+            response_data["average_result"] = round(total_result_all * 100 / total_weight_all, 2)
 
         return response.Response(response_data, status=status.HTTP_200_OK)
 
