@@ -226,9 +226,9 @@ class TermsByChildren(APIView):
 
         student = Student.objects.get(pk=student_id)
 
-        # Faqat o'quvchi hozir a'zo bo'lgan guruhlar (+ flow) testlari
+        # Faqat o'quvchi hozir a'zo bo'lgan guruhlarning testlari (group_id NULL emas)
         student_group_ids = list(student.groups_student.values_list('id', flat=True))
-        group_scope = Q(test__group_id__in=student_group_ids) | Q(test__group_id__isnull=True)
+        group_scope = Q(test__group_id__in=student_group_ids)
 
         if subject_id:
             assignments = Assignment.objects.filter(
