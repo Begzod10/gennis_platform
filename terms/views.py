@@ -111,16 +111,24 @@ def _compute_final_grade(student):
             .select_related('test__subject')
         )
         subject_scores = defaultdict(float)
-        seen_tests: dict[int, set] = defaultdict(set)  # subject_id → set of seen test name keys
+        subject_weights = defaultdict(int)
+        seen_tests = defaultdict(set)
         for a in assignments:
-            key = a.test.name.strip().lower()
+            key = a.test.name.strip().lower().replace(' ', '')
             if key in seen_tests[a.test.subject_id]:
                 continue
             seen_tests[a.test.subject_id].add(key)
             subject_scores[a.test.subject_id] += (a.test.weight * a.percentage) / 100
+            subject_weights[a.test.subject_id] += a.test.weight
         if subject_scores:
-            total_avg += sum(subject_scores.values()) / len(subject_scores)
-            counted += 1
+            normalized = [
+                score * 100 / subject_weights[sid]
+                for sid, score in subject_scores.items()
+                if subject_weights[sid] > 0
+            ]
+            if normalized:
+                total_avg += sum(normalized) / len(normalized)
+                counted += 1
     if counted == 0:
         return None, None
     final_score = total_avg / counted
@@ -671,13 +679,14 @@ class CertificateDataView(views.APIView):
             subjects_map = defaultdict(lambda: {
                 'subject_name': '',
                 'tests': [],
-                'subject_score': 0.0,
+                '_total_score': 0.0,
+                '_total_weight': 0,
                 '_seen': set(),
             })
 
             for a in assignments:
                 sid = a.test.subject_id
-                key = a.test.name.strip().lower()
+                key = a.test.name.strip().lower().replace(' ', '')
                 if key in subjects_map[sid]['_seen']:
                     continue
                 subjects_map[sid]['_seen'].add(key)
@@ -689,12 +698,15 @@ class CertificateDataView(views.APIView):
                     'percentage': a.percentage,
                     'calculated_score': score,
                 })
-                subjects_map[sid]['subject_score'] += score
+                subjects_map[sid]['_total_score'] += score
+                subjects_map[sid]['_total_weight'] += a.test.weight
 
             subject_list = []
             for sd in subjects_map.values():
-                sd['subject_score'] = round(sd['subject_score'], 2)
+                total_w = sd.pop('_total_weight')
+                total_s = sd.pop('_total_score')
                 sd.pop('_seen')
+                sd['subject_score'] = round(total_s * 100 / total_w, 2) if total_w > 0 else 0.0
                 subject_list.append(sd)
 
             subject_count = len(subject_list)
