@@ -402,6 +402,11 @@ class AssignmentCreateView(views.APIView):
                     {"index": index, "error": "test_id, student_id va percentage maydonlari majburiy", "data": item})
                 continue
 
+            if not isinstance(percentage, (int, float)) or not (0 <= percentage <= 100):
+                errors.append(
+                    {"index": index, "error": "percentage 0 dan 100 gacha bo'lishi kerak", "data": item})
+                continue
+
             assignment, created = Assignment.objects.update_or_create(test_id=test_id, student_id=student_id,
                                                                       defaults={"percentage": percentage, })
 
