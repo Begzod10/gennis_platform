@@ -98,10 +98,10 @@ class TeacherListTest(views.APIView):
         teacher_subject_ids = set(teacher.subject.values_list('id', flat=True))
         all_subject_ids |= teacher_subject_ids
 
-        # One bulk query for GroupSubjects covering every (group, subject) cell we may render
+        # All subjects for every group (not filtered by teacher — we show all group subjects)
         gs_qs = (
             GroupSubjects.objects
-            .filter(group_id__in=group_ids, subject_id__in=all_subject_ids)
+            .filter(group_id__in=group_ids)
             .select_related('subject')
         )
         gs_by_group = defaultdict(dict)  # group_id -> {subject_id: GroupSubjects}
@@ -142,16 +142,8 @@ class TeacherListTest(views.APIView):
 
         # Groups section
         for group in groups:
-            primary = subject_ids_by_group.get(group.id, set())
             subject_map = gs_by_group.get(group.id, {})
-            primary_subjects = [subject_map[sid] for sid in primary if sid in subject_map]
-
-            if primary_subjects:
-                subjects = primary_subjects
-            else:
-                subjects = [
-                    gs for sid, gs in subject_map.items() if sid in teacher_subject_ids
-                ]
+            subjects = list(subject_map.values())
 
             children = []
             for gs in subjects:
