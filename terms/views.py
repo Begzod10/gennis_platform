@@ -197,9 +197,17 @@ def _build_pdf_certificate(student, level: str, class_number, grade: str = None,
     c.setFillColor(black)
     c.drawCentredString(CENTER_X, 360, name)
 
-    # 2) Grade badge — bottom-right corner (same height as director line)
+    # 2) Grade badge + category label — bottom-right corner
     if grade:
-        _draw_grade_badge(c, 450, 128, grade)
+        badge_cx, badge_cy = 450, 155
+        _draw_grade_badge(c, badge_cx, badge_cy, grade)
+        # Category text below the badge
+        category = level if level and level != 'N/A' else ''
+        if category:
+            c.setFont(BODY_FONT, 9)
+            c.setFillColor(HexColor('#555555'))
+            lw = c.stringWidth(category, BODY_FONT, 9)
+            c.drawString(badge_cx - lw / 2, badge_cy - 30 - 10, category)
 
     # 3) Director signature line + name
     if director_fio:
