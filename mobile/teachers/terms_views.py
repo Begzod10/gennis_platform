@@ -334,8 +334,9 @@ class TeacherTermsByGroupView(views.APIView):
         for student in students:
             if subject_id:
                 assignments = Assignment.objects.filter(
-                    student=student, 
+                    student=student,
                     test__term_id=term_id,
+                    test__deleted=False,
                     test__subject_id=subject_id
                 ).select_related('test__subject')
             else:
@@ -356,6 +357,7 @@ class TeacherTermsByGroupView(views.APIView):
                 assignments = Assignment.objects.filter(
                     student=student,
                     test__term_id=term_id,
+                    test__deleted=False,
                     test__subject_id__in=teacher_subjects_ids
                 ).select_related('test__subject')
 

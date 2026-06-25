@@ -112,11 +112,13 @@ class ChildrenTodayTimeTableView(APIView):
             for lesson in timetable:
                 if lesson.flow_id:
                     test = Test.objects.filter(
-                        term=terms, flow_id=lesson.flow_id, subject=lesson.subject
+                        term=terms, flow_id=lesson.flow_id, subject=lesson.subject,
+                        deleted=False
                     )
                 else:
                     test = Test.objects.filter(
-                        term=terms, group=lesson.group, subject=lesson.subject
+                        term=terms, group=lesson.group, subject=lesson.subject,
+                        deleted=False
                     )
                 percentage = 0
                 for ts in test:
@@ -227,12 +229,14 @@ class TermsByChildren(APIView):
             assignments = Assignment.objects.filter(
                 student=student,
                 test__term_id=term_id,
+                test__deleted=False,
                 test__subject_id=subject_id
             ).select_related('test__subject')
         else:
             assignments = Assignment.objects.filter(
                 student=student,
-                test__term_id=term_id
+                test__term_id=term_id,
+                test__deleted=False
             ).select_related('test__subject')
 
         response_data = {
