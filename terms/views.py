@@ -87,12 +87,11 @@ def _get_level(class_number) -> str:
 
 def _student_group_scope(student):
     """
-    Faqat o'quvchi HOZIR a'zo bo'lgan guruhlarning testlari uchun Q filtri.
-    group_id NULL (flow/egasiz) testlar olinmaydi, va eski guruhdan qolib ketgan
-    assignmentlar ham hisobga qo'shilmaydi.
+    O'quvchi HOZIR a'zo bo'lgan guruhlar (+ flow) testlari uchun Q filtri.
+    Eski guruhdan qolib ketgan assignmentlar hisobga qo'shilmasligi uchun.
     """
     ids = list(student.groups_student.values_list('id', flat=True))
-    return Q(test__group_id__in=ids)
+    return Q(test__group_id__in=ids) | Q(test__group_id__isnull=True)
 
 
 def _compute_final_grade(student):
