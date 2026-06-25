@@ -21,7 +21,7 @@ from .serializers import TestCreateUpdateSerializer, Test, TermSerializer, Term
 from django.db.models import Case, When, Value, IntegerField, Avg, Q
 from flows.models import Flow
 
-CERTIFICATE_TEMPLATE = os.path.join(settings.BASE_DIR, 'media', 'certificates', 'certificate_template.pdf')
+CERTIFICATE_TEMPLATE = os.path.join(settings.BASE_DIR, 'terms', 'certificate_template.pdf')
 FONT_DIR = os.path.join(settings.BASE_DIR, 'terms', 'fonts')
 
 # PDF page dimensions (A4 portrait, points)
@@ -195,7 +195,7 @@ def _build_pdf_certificate(student, level: str, class_number, grade: str = None,
         size -= 1
         c.setFont(NAME_FONT, size)
     c.setFillColor(black)
-    c.drawCentredString(CENTER_X, 360, name)
+    c.drawCentredString(CENTER_X, 415, name)
 
     # 2) Grade badge + category label — bottom-right corner
     if grade:
