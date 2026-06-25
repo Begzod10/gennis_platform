@@ -677,6 +677,16 @@ class StudentCertificateView(views.APIView):
         branch = student.user.branch if student.user else None
         director_fio = (branch.director_fio or '').strip() if branch else ''
 
+        # Fallback: hardcoded director names by branch id if DB value is empty
+        if not director_fio and branch:
+            _branch_directors = {
+                6:  'A.Karimberdiyev',   # Xo'jakent
+                8:  'M.Yuldashev',       # Chirchiq
+                9:  'M.Yuldashev',       # Sergeli
+                10: 'M.Sherzod',         # Nurafshon
+            }
+            director_fio = _branch_directors.get(branch.id, '')
+
         buf = _build_pdf_certificate(student, level, class_number, grade, director_fio=director_fio or None)
 
         import uuid
