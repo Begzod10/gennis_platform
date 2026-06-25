@@ -111,7 +111,12 @@ def _compute_final_grade(student):
             .select_related('test__subject')
         )
         subject_scores = defaultdict(float)
+        seen_tests: dict[int, set] = defaultdict(set)  # subject_id → set of seen test name keys
         for a in assignments:
+            key = a.test.name.strip().lower()
+            if key in seen_tests[a.test.subject_id]:
+                continue
+            seen_tests[a.test.subject_id].add(key)
             subject_scores[a.test.subject_id] += (a.test.weight * a.percentage) / 100
         if subject_scores:
             total_avg += sum(subject_scores.values()) / len(subject_scores)
@@ -662,15 +667,20 @@ class CertificateDataView(views.APIView):
                 .order_by('test__subject__name', 'test__name')
             )
 
-            # Group by subject
+            # Group by subject, deduplicate tests by normalized name (case-insensitive)
             subjects_map = defaultdict(lambda: {
                 'subject_name': '',
                 'tests': [],
                 'subject_score': 0.0,
+                '_seen': set(),
             })
 
             for a in assignments:
                 sid = a.test.subject_id
+                key = a.test.name.strip().lower()
+                if key in subjects_map[sid]['_seen']:
+                    continue
+                subjects_map[sid]['_seen'].add(key)
                 score = round((a.test.weight * a.percentage) / 100, 2)
                 subjects_map[sid]['subject_name'] = a.test.subject.name
                 subjects_map[sid]['tests'].append({
@@ -684,6 +694,7 @@ class CertificateDataView(views.APIView):
             subject_list = []
             for sd in subjects_map.values():
                 sd['subject_score'] = round(sd['subject_score'], 2)
+                sd.pop('_seen')
                 subject_list.append(sd)
 
             subject_count = len(subject_list)
