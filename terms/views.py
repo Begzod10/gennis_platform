@@ -649,9 +649,11 @@ class StudentCertificateView(views.APIView):
 
         buf = _build_pdf_certificate(student, level, class_number, grade, director_fio=director_fio or None)
 
+        import uuid
         name = f"{student.user.name}_{student.user.surname}".replace(' ', '_')
+        uid = uuid.uuid4().hex[:8]
         resp = HttpResponse(buf.read(), content_type='application/pdf')
-        resp['Content-Disposition'] = f'attachment; filename="certificate_{name}_{ACADEMIC_YEAR}.pdf"'
+        resp['Content-Disposition'] = f'attachment; filename="certificate_{name}_{ACADEMIC_YEAR}_{uid}.pdf"'
         return resp
 
 
