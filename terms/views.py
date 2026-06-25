@@ -135,24 +135,18 @@ def _compute_final_grade(student):
     return final_score, _get_grade(final_score)
 
 
-def _build_pdf_certificate(student, level: str, class_number, grade: str = None) -> io.BytesIO:
+def _build_pdf_certificate(student, level: str, class_number, grade: str = None, director_fio: str = None) -> io.BytesIO:
     """
-    Shablonga o'quvchining ismi va
-    "completed the <level> year <N> with grade <grade>" qatorini joylashtiradi.
-    Boshqa hamma matn (CERTIFICATE, 2025-2026, M.M.YULDASHEV) shablonning
-    o'zidan keladi — ustiga hech narsa qo'shilmaydi.
+    Shablonga o'quvchining ismi, "completed the <level> year <N> with grade <G>."
+    qatori va filial direktori FIO ni joylashtiradi.
 
     Koordinatalar (pdfplumber top → reportlab y = PAGE_H - top):
-      Ism:            top 438-498  → rl y 344-404   (AnastasiaScript 60pt)
-      Tavsif 1-qator: top 527-540  → rl y 302-315   (Poppins-Italic 13pt)
+      Ism:            top 438-498  → rl y 344-404   (GreatVibes 56pt)
+      Tavsif qatori:  top 527-540  → rl y 302-315   (Poppins-Italic 13pt)
+      Direktor FIO:   top 708-721  → rl y 121-134   (Poppins-Italic 11pt)
     """
     overlay_buf = io.BytesIO()
     c = rl_canvas.Canvas(overlay_buf, pagesize=(PAGE_W, PAGE_H))
-
-    # Shablon (certificate_template.pdf) allaqachon tozalangan — undagi placeholder
-    # ism va "completed the ... year ..." qatori olib tashlangan, vatermark/fon
-    # saqlangan. Shuning uchun bu yerda hech narsa qoplamaymiz, faqat ustiga
-    # yangi matnni chizamiz.
 
     # ── 1) O'quvchining ismi ──────────────────────────────────────────────────
     name = f"{(student.user.name or '').strip()} {(student.user.surname or '').strip()}".strip()
@@ -165,23 +159,29 @@ def _build_pdf_certificate(student, level: str, class_number, grade: str = None)
     c.setFillColor(black)
     c.drawCentredString(CENTER_X, 360, name)
 
-    # ── 2) "has successfully completed the <level> year <N> with grade <G>." ──
+    # ── 2) "completed the <level> year <N> with grade <G>." ──────────────────
     level_word = (level or '').lower()
     year_no = class_number if class_number is not None else ''
-    base = f"has successfully completed the {level_word} year {year_no}".rstrip()
-    if grade:
-        line = f"{base} with grade {grade}."
-    else:
-        line = f"{base}."
+    base = f"completed the {level_word} year {year_no}".rstrip()
+    line = f"{base} with grade {grade}." if grade else f"{base}."
     line_size = 13
     c.setFont(BODY_FONT, line_size)
-    # uzunroq bo'lsa, qator chetga chiqib ketmasligi uchun kichiklashtiramiz
     max_line_w = PAGE_W - 90
     while c.stringWidth(line, BODY_FONT, line_size) > max_line_w and line_size > 9:
         line_size -= 0.5
         c.setFont(BODY_FONT, line_size)
     c.setFillColor(black)
     c.drawCentredString(CENTER_X, 305, line)
+
+    # ── 3) Direktor FIO — M.M.YULDASHEV ustiga yozamiz ───────────────────────
+    if director_fio:
+        from reportlab.lib.colors import Color as RLColor
+        cream = RLColor(0.976, 0.953, 0.918)
+        c.setFillColor(cream)
+        c.rect(80, 112, 320, 22, fill=1, stroke=0)
+        c.setFillColor(black)
+        c.setFont(BODY_FONT, 11)
+        c.drawString(144, 121, director_fio.upper())
 
     c.save()
     overlay_buf.seek(0)
@@ -629,7 +629,7 @@ class StudentCertificateView(views.APIView):
 
     def get(self, request, student_id):
         student = get_object_or_404(
-            Student.objects.select_related('user', 'class_number'),
+            Student.objects.select_related('user__branch', 'class_number'),
             id=student_id
         )
 
@@ -637,7 +637,10 @@ class StudentCertificateView(views.APIView):
         level = _get_level(class_number)
         _, grade = _compute_final_grade(student)
 
-        buf = _build_pdf_certificate(student, level, class_number, grade)
+        branch = student.user.branch if student.user else None
+        director_fio = (branch.director_fio or '').strip() if branch else ''
+
+        buf = _build_pdf_certificate(student, level, class_number, grade, director_fio=director_fio or None)
 
         name = f"{student.user.name}_{student.user.surname}".replace(' ', '_')
         resp = HttpResponse(buf.read(), content_type='application/pdf')
