@@ -137,7 +137,7 @@ class LandingRegistrationCreateSerializer(serializers.ModelSerializer):
     """Landing page POST uchun — faqat kerakli maydonlar."""
     class Meta:
         model = LandingRegistration
-        fields = ['name', 'surname', 'phone', 'branch']
+        fields = ['name', 'surname', 'phone', 'branch','typee']
 
 
 class PageSectionImageSerializer(serializers.ModelSerializer):
