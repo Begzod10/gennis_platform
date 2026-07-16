@@ -217,6 +217,7 @@ class LandingRegistration(models.Model):
         'branch.Branch', on_delete=models.SET_NULL, null=True, blank=True
     )
     created = models.DateTimeField(auto_now_add=True)
+    typee = models.CharField(max_length=20, choices=(('turon', 'Turon'), ('steam', 'Steam')), default='steam')
 
     def __str__(self):
         return f"{self.name} {self.surname} - {self.phone}"
