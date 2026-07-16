@@ -1025,6 +1025,7 @@ def apply_landing_registration_filters(qs, params):
     date_from = params.get('date_from')
     date_to = params.get('date_to')
     ordering = params.get('ordering', '-created')
+    typee =params.get('typee')
 
     if branch_id:
         qs = qs.filter(branch_id=branch_id)
@@ -1044,6 +1045,8 @@ def apply_landing_registration_filters(qs, params):
         parsed = parse_date(date_to)
         if parsed:
             qs = qs.filter(created__date__lte=parsed)
+    if typee:
+        qs=qs.filter(typee=typee)
 
     allowed = {'created', '-created'}
     if ordering in allowed:
