@@ -129,7 +129,7 @@ class LandingRegistrationSerializer(serializers.ModelSerializer):
     branch_name = serializers.CharField(source='branch.name', read_only=True)
     class Meta:
         model = LandingRegistration
-        fields = ['id', 'name', 'surname', 'phone', 'branch', 'created','branch_name']
+        fields = ['id', 'name', 'surname', 'phone', 'branch', 'created','branch_name','typee']
         read_only_fields = ['created']
 
 
