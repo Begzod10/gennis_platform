@@ -790,6 +790,18 @@ class GetStudentBalance(APIView):
         return Response({"balance": balance}, status=status.HTTP_200_OK)
 
 
+class RecalculateAllStudentDebts(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from students.tasks import update_student_debt
+        update_student_debt.delay()
+        return Response(
+            {"msg": "Barcha o'quvchilar qarzdorligini qayta hisoblash navbatga qo'yildi"},
+            status=status.HTTP_200_OK
+        )
+
+
 class MissingAttendanceListView2(generics.RetrieveAPIView):
 
     def get_queryset(self):
