@@ -119,6 +119,23 @@ class StudentPaymentUpdateView(CustomResponseMixin, generics.UpdateAPIView):
     queryset = StudentPayment.objects.all()
     serializer_class = StudentPaymentSerializer
 
+    def perform_update(self, serializer):
+        old_payment_sum = serializer.instance.payment_sum
+        student_payment = serializer.save()
+
+        attendance = student_payment.attendance
+        delta = student_payment.payment_sum - old_payment_sum
+        if attendance is not None and delta:
+            attendance.payment = (attendance.payment or 0) + delta
+            attendance.remaining_debt = max(
+                0, attendance.total_debt - (attendance.payment + (attendance.discount or 0))
+            )
+            attendance.status = attendance.remaining_debt == 0
+            attendance.save()
+
+        if student_payment.student_id:
+            get_remaining_debt_for_student(student_payment.student_id)
+
 
 class StudentPaymentDestroyView(CustomResponseMixin, generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
