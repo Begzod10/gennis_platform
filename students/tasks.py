@@ -1,5 +1,6 @@
 from celery import shared_task
 from datetime import datetime, timedelta
+from django.db.models import OuterRef, Subquery
 from .models import Student, DeletedStudent, DeletedNewStudent
 from attendances.models import AttendancePerMonth
 from students.models import StudentPayment
@@ -59,18 +60,19 @@ def update_debts_task():
 
 @shared_task
 def update_student_debt():
-    # Only genuinely archived deletions (deleted=True) are excluded here.
-    # A pending/soft DeletedStudent record (deleted=False) does NOT mean
-    # this student is covered elsewhere: update_deleted_students_debts() is
-    # disabled in the Celery schedule and hardcoded to a Sep-Dec 2025
-    # window, so excluding every DeletedStudent-linked student regardless
-    # of that flag silently skipped hundreds of recently-removed students.
-    # _resolve_student_group_id (via get_remaining_debt_for_student)
-    # already knows how to pick the right group for all of these cases, so
-    # there is no need to duplicate that logic here.
-    archived_deleted_student_ids = DeletedStudent.objects.filter(
-        deleted=True
-    ).values_list('student_id', flat=True)
+    # Only students whose MOST RECENT DeletedStudent record is archived
+    # (deleted=True) are excluded here -- a student can be deleted,
+    # re-added to a group, and deleted again, leaving an old deleted=True
+    # row alongside a newer deleted=False one. Filtering on "ever had
+    # deleted=True" (regardless of order) incorrectly treated such
+    # students as permanently archived based on stale history.
+    latest_deleted_flag = DeletedStudent.objects.filter(
+        student_id=OuterRef('pk')
+    ).order_by('-pk').values('deleted')[:1]
+
+    archived_deleted_student_ids = Student.objects.annotate(
+        latest_deleted_flag=Subquery(latest_deleted_flag)
+    ).filter(latest_deleted_flag=True).values_list('id', flat=True)
 
     deleted_new_student_ids = DeletedNewStudent.objects.values_list(
         'student_id', flat=True
