@@ -1,6 +1,5 @@
 from celery import shared_task
 from datetime import datetime, timedelta
-from django.db.models import Q
 from .models import Student, DeletedStudent, DeletedNewStudent
 from attendances.models import AttendancePerMonth
 from students.models import StudentPayment
@@ -60,10 +59,18 @@ def update_debts_task():
 
 @shared_task
 def update_student_debt():
-    # Any student who ever went through the formal delete flow (soft or hard)
-    # is handled by update_deleted_students_debts() instead, regardless of
-    # whether they currently have a group.
-    ever_deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
+    # Only genuinely archived deletions (deleted=True) are excluded here.
+    # A pending/soft DeletedStudent record (deleted=False) does NOT mean
+    # this student is covered elsewhere: update_deleted_students_debts() is
+    # disabled in the Celery schedule and hardcoded to a Sep-Dec 2025
+    # window, so excluding every DeletedStudent-linked student regardless
+    # of that flag silently skipped hundreds of recently-removed students.
+    # _resolve_student_group_id (via get_remaining_debt_for_student)
+    # already knows how to pick the right group for all of these cases, so
+    # there is no need to duplicate that logic here.
+    archived_deleted_student_ids = DeletedStudent.objects.filter(
+        deleted=True
+    ).values_list('student_id', flat=True)
 
     deleted_new_student_ids = DeletedNewStudent.objects.values_list(
         'student_id', flat=True
@@ -79,13 +86,9 @@ def update_student_debt():
         'groups_student__class_number',
         'groups_student__color'
     ).exclude(
+        id__in=archived_deleted_student_ids
+    ).exclude(
         id__in=deleted_new_student_ids
-    ).filter(
-        # Students with a current group, OR group-less students who were
-        # never marked deleted (e.g. removed from a group without going
-        # through the DeletedStudent flow) but may still have debt history.
-        Q(groups_student__isnull=False) |
-        (Q(groups_student__isnull=True) & ~Q(id__in=ever_deleted_student_ids))
     ).distinct().order_by('class_number__number')
     for student in active_students:
         get_remaining_debt_for_student(student.id)
