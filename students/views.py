@@ -36,6 +36,7 @@ from .serializers import (StudentListSerializer, DeletedNewStudentListSerializer
 
 
 class StudentListView(ListAPIView):
+    permission_classes = [IsAuthenticated]
     filter_mappings = {'branch': 'user__branch_id', }
     queryset = Student.objects.all()
     serializer_class = StudentListSerializer

@@ -25,7 +25,7 @@ class UserSerializerRead(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'name', 'surname', 'username', 'father_name', 'password',
+        fields = ['id', 'name', 'surname', 'username', 'father_name',
                   'phone', 'profile_img', 'observer', 'comment', 'registered_date', 'birth_date', 'language',
                   'branch', 'is_superuser', 'is_staff', 'age', 'job', 'file', 'level', 'crm_username']
 
