@@ -187,12 +187,24 @@ def get_remaining_debt_for_student(student_id):
         }
 
         for month in attendances:
-            totals = payment_totals.get(month.id, {})
-            covered = (
-                (totals.get('cash') or 0) + (totals.get('bank') or 0) +
-                (totals.get('click') or 0) + (totals.get('paid') or 0)
-            )
-            month.payment = covered
+            totals = payment_totals.get(month.id)
+            if totals is not None:
+                # At least one live StudentPayment record exists for this
+                # month -- trust it as the source of truth, since this is
+                # the case that can drift (e.g. a payment edited without
+                # syncing AttendancePerMonth).
+                covered = (
+                    (totals.get('cash') or 0) + (totals.get('bank') or 0) +
+                    (totals.get('click') or 0) + (totals.get('paid') or 0)
+                )
+                month.payment = covered
+            else:
+                # No StudentPayment rows at all for this month -- this is
+                # legacy/bulk-entered data where payment was recorded
+                # directly on AttendancePerMonth without a StudentPayment
+                # record. Trust the existing cached payment rather than
+                # treating the month as entirely unpaid.
+                covered = month.payment or 0
             if month.total_debt:
                 month.remaining_debt = max(0, month.total_debt - (covered + (month.discount or 0)))
             month.save()
