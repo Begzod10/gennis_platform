@@ -74,10 +74,12 @@ def update_student_debt():
         latest_deleted_flag=Subquery(latest_deleted_flag)
     ).filter(latest_deleted_flag=True).values_list('id', flat=True)
 
-    deleted_new_student_ids = DeletedNewStudent.objects.values_list(
-        'student_id', flat=True
-    )
-
+    # DeletedNewStudent is used elsewhere to keep students out of "active"/
+    # "new registered" rosters, but that doesn't mean their debt should
+    # stop being tracked -- they can still genuinely owe money. Nothing
+    # else recomputes their balance, so excluding them here just left it
+    # frozen indefinitely (confirmed: 601 such students, 203 with a stale
+    # balance before being recomputed manually).
     active_students = Student.objects.select_related(
         'user',
         'user__language',
@@ -89,8 +91,6 @@ def update_student_debt():
         'groups_student__color'
     ).exclude(
         id__in=archived_deleted_student_ids
-    ).exclude(
-        id__in=deleted_new_student_ids
     ).distinct().order_by('class_number__number')
     for student in active_students:
         get_remaining_debt_for_student(student.id)
