@@ -37,13 +37,13 @@ class ChangeStudentDebitFromClassProfile(generics.RetrieveUpdateDestroyAPIView):
         instance.total_debt = total_debt
         instance.save()
 
-        remaining_debt = get_remaining_debt_for_student(instance.student_id)
+        get_remaining_debt_for_student(instance.student_id)
 
         return Response(
             {
                 'msg': "Muvaffaqiyatli o'zgartirildi",
                 'total_debt': instance.total_debt,
-                'remaining_debt': int(instance.total_debt) - int(instance.payment) - int(instance.discount),
+                'remaining_debt': max(0, int(instance.total_debt) - int(instance.payment) - int(instance.discount)),
             },
             status=status.HTTP_200_OK
         )
@@ -119,12 +119,12 @@ class DeleteAttendanceMonthApiView(generics.RetrieveUpdateDestroyAPIView):
         instance.total_debt = total_debt
         instance.save()
 
-        remaining_debt = get_remaining_debt_for_student(instance.student_id)
+        get_remaining_debt_for_student(instance.student_id)
 
         return Response({'msg': "Muvaffaqiyatli o'zgartirildi", 'total_debt': instance.total_debt,
                          'discount_percentage': instance.discount_percentage, 'discount': instance.discount,
                          'payment_sum': instance.total_charity, 'reason': data.get('reason'),
-                         'remaining_debt': int(instance.total_debt) - int(instance.payment) - int(instance.discount),
+                         'remaining_debt': max(0, int(instance.total_debt) - int(instance.payment) - int(instance.discount)),
                          "persentage": data.get("persentage"), }, status=status.HTTP_200_OK)
 
 

@@ -1,5 +1,6 @@
 from celery import shared_task
 from datetime import datetime, timedelta
+from django.db.models import Q
 from .models import Student, DeletedStudent, DeletedNewStudent
 from attendances.models import AttendancePerMonth
 from students.models import StudentPayment
@@ -59,10 +60,10 @@ def update_debts_task():
 
 @shared_task
 def update_student_debt():
-    deleted_student_ids = DeletedStudent.objects.filter(
-        student__groups_student__isnull=True,
-        deleted=False
-    ).values_list('student_id', flat=True)
+    # Any student who ever went through the formal delete flow (soft or hard)
+    # is handled by update_deleted_students_debts() instead, regardless of
+    # whether they currently have a group.
+    ever_deleted_student_ids = DeletedStudent.objects.values_list('student_id', flat=True)
 
     deleted_new_student_ids = DeletedNewStudent.objects.values_list(
         'student_id', flat=True
@@ -78,11 +79,13 @@ def update_student_debt():
         'groups_student__class_number',
         'groups_student__color'
     ).exclude(
-        id__in=deleted_student_ids
-    ).exclude(
         id__in=deleted_new_student_ids
     ).filter(
-        groups_student__isnull=False
+        # Students with a current group, OR group-less students who were
+        # never marked deleted (e.g. removed from a group without going
+        # through the DeletedStudent flow) but may still have debt history.
+        Q(groups_student__isnull=False) |
+        (Q(groups_student__isnull=True) & ~Q(id__in=ever_deleted_student_ids))
     ).distinct().order_by('class_number__number')
     for student in active_students:
         get_remaining_debt_for_student(student.id)
