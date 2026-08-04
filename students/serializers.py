@@ -129,11 +129,31 @@ class GroupSerializerStudents(serializers.ModelSerializer):
         return ClassColorsSerializers(obj.color).data
 
 
-def get_remaining_debt_for_student(student_id):
-    student = Student.objects.get(pk=student_id)
+def _resolve_student_group_id(student_id, student):
     group = student.groups_student.first()
     if group:
-        attendances = AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id).all()
+        return group.id
+
+    deleted_student = DeletedStudent.objects.filter(
+        student_id=student_id
+    ).select_related('group').order_by('-pk').first()
+    if deleted_student:
+        return deleted_student.group_id
+
+    last_attendance = AttendancePerMonth.objects.filter(
+        student_id=student_id
+    ).order_by('-month_date').first()
+    if last_attendance:
+        return last_attendance.group_id
+
+    return None
+
+
+def get_remaining_debt_for_student(student_id):
+    student = Student.objects.get(pk=student_id)
+    group_id = _resolve_student_group_id(student_id, student)
+    if group_id:
+        attendances = AttendancePerMonth.objects.filter(student_id=student_id, group_id=group_id).all()
         current_date = date.today()
         for month in attendances:
             if month.payment == 0 and month.remaining_debt == 0:
@@ -148,7 +168,7 @@ def get_remaining_debt_for_student(student_id):
 
         remaining_debt_sum = AttendancePerMonth.objects.filter(
             student_id=student_id,
-            group_id=group.id,
+            group_id=group_id,
             month_date__lte=current_date
         ).aggregate(total_remaining_debt=Sum('remaining_debt'))
         total_remaining_debt = remaining_debt_sum['total_remaining_debt'] or 0
@@ -156,7 +176,7 @@ def get_remaining_debt_for_student(student_id):
         if total_remaining_debt == 0:
             remaining_debt_sum = AttendancePerMonth.objects.filter(
                 student_id=student_id,
-                group_id=group.id,
+                group_id=group_id,
                 month_date__gte=current_date
             ).aggregate(total_remaining_debt=Sum('payment'))
             student.user.balance = remaining_debt_sum['total_remaining_debt']

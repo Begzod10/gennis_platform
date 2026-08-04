@@ -31,7 +31,7 @@ from group.models import Group
 from permissions.response import QueryParamFilterMixin
 from students.serializer.lists import ActiveListSerializer, ActiveListDeletedStudentSerializer
 from .models import Student, DeletedStudent, ContractStudent, DeletedNewStudent, StudentPayment, StudentHistoryGroups
-from .serializers import StudentCharity, get_remaining_debt_for_student
+from .serializers import StudentCharity, get_remaining_debt_for_student, _resolve_student_group_id
 from .serializers import (StudentListSerializer, DeletedNewStudentListSerializer, StudentPaymentListSerializer)
 
 
@@ -387,26 +387,6 @@ class DeleteFromDeleted(APIView):
             i.deleted = True
             i.save()
         return Response({'msg': "Student muvoffaqiyatlik orqaga qaytarildi"}, status=status.HTTP_200_OK)
-
-
-def _resolve_student_group_id(student_id, student):
-    group = student.groups_student.first()
-    if group:
-        return group.id
-
-    deleted_student = DeletedStudent.objects.filter(
-        student_id=student_id
-    ).select_related('group').order_by('-pk').first()
-    if deleted_student:
-        return deleted_student.group_id
-
-    last_attendance = AttendancePerMonth.objects.filter(
-        student_id=student_id
-    ).order_by('-month_date').first()
-    if last_attendance:
-        return last_attendance.group_id
-
-    return None
 
 
 class MissingAttendanceListView(generics.RetrieveAPIView):
