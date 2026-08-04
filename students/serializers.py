@@ -1,6 +1,6 @@
 from datetime import date
 
-from django.db.models import Sum
+from django.db.models import Sum, Case, When, IntegerField
 from rest_framework import serializers
 from pprint import pprint
 from attendances.models import AttendancePerMonth
@@ -155,16 +155,47 @@ def get_remaining_debt_for_student(student_id):
     if group_id:
         attendances = AttendancePerMonth.objects.filter(student_id=student_id, group_id=group_id).all()
         current_date = date.today()
+
+        # Derive each month's covered amount live from actual StudentPayment
+        # records (same source missing_month uses) instead of trusting the
+        # cached AttendancePerMonth.payment field, which can silently drift
+        # out of sync with real payments whenever a payment is edited
+        # through a path that doesn't update it.
+        payment_totals = {
+            row['attendance_id']: row
+            for row in StudentPayment.objects.filter(
+                attendance_id__in=[month.id for month in attendances],
+                deleted=False
+            ).values('attendance_id').annotate(
+                cash=Sum(Case(
+                    When(payment_type__name='cash', status=False, then='payment_sum'),
+                    default=0, output_field=IntegerField()
+                )),
+                bank=Sum(Case(
+                    When(payment_type__name='bank', status=False, then='payment_sum'),
+                    default=0, output_field=IntegerField()
+                )),
+                click=Sum(Case(
+                    When(payment_type__name='click', status=False, then='payment_sum'),
+                    default=0, output_field=IntegerField()
+                )),
+                paid=Sum(Case(
+                    When(status=True, then='payment_sum'),
+                    default=0, output_field=IntegerField()
+                )),
+            )
+        }
+
         for month in attendances:
-            if month.payment == 0 and month.remaining_debt == 0:
-                month.remaining_debt = month.total_debt
-                month.save()
-            if month.payment < 0:
-                month.payment = 0
-                month.save()
+            totals = payment_totals.get(month.id, {})
+            covered = (
+                (totals.get('cash') or 0) + (totals.get('bank') or 0) +
+                (totals.get('click') or 0) + (totals.get('paid') or 0)
+            )
+            month.payment = covered
             if month.total_debt:
-                month.remaining_debt = max(0, month.total_debt - (month.payment + month.discount))
-                month.save()
+                month.remaining_debt = max(0, month.total_debt - (covered + (month.discount or 0)))
+            month.save()
 
         remaining_debt_sum = AttendancePerMonth.objects.filter(
             student_id=student_id,
