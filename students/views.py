@@ -389,6 +389,26 @@ class DeleteFromDeleted(APIView):
         return Response({'msg': "Student muvoffaqiyatlik orqaga qaytarildi"}, status=status.HTTP_200_OK)
 
 
+def _resolve_student_group_id(student_id, student):
+    group = student.groups_student.first()
+    if group:
+        return group.id
+
+    deleted_student = DeletedStudent.objects.filter(
+        student_id=student_id
+    ).select_related('group').order_by('-pk').first()
+    if deleted_student:
+        return deleted_student.group_id
+
+    last_attendance = AttendancePerMonth.objects.filter(
+        student_id=student_id
+    ).order_by('-month_date').first()
+    if last_attendance:
+        return last_attendance.group_id
+
+    return None
+
+
 class MissingAttendanceListView(generics.RetrieveAPIView):
 
     def get_queryset(self):
@@ -400,7 +420,7 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
             'groups_student'
         ).get(id=student_id)
 
-        group = student.groups_student.first()
+        group_id = _resolve_student_group_id(student_id, student)
 
         today = timezone.localdate()
         academic_start_year = today.year if today.month >= 9 else (today.year - 1)
@@ -412,17 +432,8 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
         start_date = date(academic_start_year, 9, 1)
         end_date = date(academic_start_year + 1, 7, 1)
 
-        if not group:
-            deleted_student = DeletedStudent.objects.filter(
-                student_id=student_id
-            ).select_related('group').order_by('-pk').first()
-
-            if not deleted_student:
-                return AttendancePerMonth.objects.none()
-
-            group_id = deleted_student.group_id
-        else:
-            group_id = group.id
+        if group_id is None:
+            return AttendancePerMonth.objects.none()
 
         return (
             AttendancePerMonth.objects
@@ -454,22 +465,15 @@ class MissingAttendanceListView(generics.RetrieveAPIView):
             'groups_student'
         ).get(pk=student_id)
 
-        group = student.groups_student.first()
-        if not group:
-            deleted_student = DeletedStudent.objects.filter(
-                student_id=student_id
-            ).select_related('group').order_by('-pk').first()
-
-            if not deleted_student:
-                return Response({"month": [], "data": []})
-
-            group = deleted_student.group
+        group_id = _resolve_student_group_id(student_id, student)
+        if group_id is None:
+            return Response({"month": [], "data": []})
 
         attendances = (
             AttendancePerMonth.objects
             .filter(
                 student_id=student_id,
-                group_id=group.id
+                group_id=group_id
             )
             .order_by('month_date__year', 'month_date__month')
         )
@@ -810,8 +814,10 @@ class MissingAttendanceListView2(generics.RetrieveAPIView):
     def get_queryset(self):
         student_id = self.kwargs.get('student_id')
         student = Student.objects.get(pk=student_id)
-        group = student.groups_student.first()
-        return AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id,
+        group_id = _resolve_student_group_id(student_id, student)
+        if group_id is None:
+            return AttendancePerMonth.objects.none()
+        return AttendancePerMonth.objects.filter(student_id=student_id, group_id=group_id,
                                                  month_date__month__in=[9, 10, 11, 12, 1, 2, 3, 4, 5, 6]).annotate(
             month_number=ExtractMonth('month_date'))
 
@@ -823,8 +829,11 @@ class MissingAttendanceListView2(generics.RetrieveAPIView):
         data = []
         student = Student.objects.get(pk=student_id)
 
-        group = student.groups_student.first()
-        attendances = AttendancePerMonth.objects.filter(student_id=student_id, group_id=group.id).all().order_by(
+        group_id = _resolve_student_group_id(student_id, student)
+        if group_id is None:
+            return Response({"month": [], "data": []})
+
+        attendances = AttendancePerMonth.objects.filter(student_id=student_id, group_id=group_id).all().order_by(
             'month_date__year', 'month_date__month')
 
         for attendance in attendances:
