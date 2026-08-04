@@ -189,6 +189,10 @@ def get_remaining_debt_for_student(student_id):
 
             return f"-{total_remaining_debt}"
 
+    student.user.balance = 0
+    student.user.save()
+    return 0
+
 
 class StudentListSerializer(serializers.ModelSerializer):
     from classes.serializers import ClassNumberSerializers
