@@ -146,13 +146,15 @@ class Command(BaseCommand):
                     f"{student.user.registered_date}): {current_class_number.number} -> {next_class_number.number}"
                 )
 
-                if dry_run:
-                    updated_count += 1
-                    continue
-
+                # dry-run bo'lsa ham chaqiramiz — transaction pastda rollback qilinadi,
+                # shunda guruh ko'chirish ham (mos guruh topiladimi-yo'qmi) oldindan ko'rinadi.
                 moved, skipped = _move_student_groups(student, current_class_number, next_class_number, today_date)
                 groups_moved_count += moved
                 groups_skipped_count += skipped
+
+                if dry_run:
+                    updated_count += 1
+                    continue
 
                 student.class_number = next_class_number
                 student.save(update_fields=["class_number"])
